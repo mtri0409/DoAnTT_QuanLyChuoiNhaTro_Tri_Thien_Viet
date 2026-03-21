@@ -1,0 +1,37 @@
+gitignore# --- IDE & System Files ---
+.idea/
+.vscode/
+*.swp
+*.iml
+*.DS_Store
+Thumbs.db
+
+# --- Java / Maven (Cho folder backend) ---
+**/target/
+**.class
+**.jar
+**.war
+**.ear
+*.log
+.factorypath
+.project
+.settings/
+.classpath
+
+# --- Node / Frontend (Cho folder frontend-web hoặc mobile) ---
+**/node_modules/
+**/dist/
+**/build/
+.env
+.env.local
+.npm
+**.bundle.js
+**.gz
+
+# --- Database ---
+**/database/*.log
+**/database/*.temp
+
+# --- Others ---
+temp/
+bin/
