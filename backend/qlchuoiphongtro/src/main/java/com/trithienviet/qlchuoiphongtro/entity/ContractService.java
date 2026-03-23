@@ -1,8 +1,8 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -12,38 +12,37 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-@Table(name="meter_readings")
-public class MeterReading {
+@Entity
+@Table(name = "contract_services")
+@Data
+public class ContractService {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long readingId;
+    private Integer contractServiceId; // Khóa chính đơn, tự tăng
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="room_id",nullable = false)
-    private Room room;
+    @JoinColumn(name = "contract_id")
+    private Contract contract;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="service_id",nullable = false)
+    @JoinColumn(name = "service_id")
     private ServiceItem service;
 
-    private BigDecimal oldValue;
-    private BigDecimal newVaule;
+    // Snapshot dữ liệu lúc ký
+    @Column(precision = 10, scale = 2)
+    private BigDecimal priceAtSigning;
+ 
+    private String unitAtSigning; // đơn vị tại thời điểm (kwh , per,....)
 
-    private BigDecimal usageValue; // old - new
     
-    private LocalDateTime readingDate = LocalDateTime.now();
-
-    private Integer periodMonth;
-    private Integer periodYear;
-
-    private String image;
 }

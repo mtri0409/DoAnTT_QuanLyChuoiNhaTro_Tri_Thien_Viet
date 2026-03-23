@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +53,15 @@ public class Profile {
     private String idFrontImage;
      @Column(nullable = true)
     private String idBackImage;
+
+    @Column(name = "id_expiration_date")
+    private LocalDate idExpirationDate; // Ngày hết hạn CCCD/Hộ chiếu
+
+    @Column(name = "id_issue_date")
+    private LocalDate idIssueDate;     // Ngày cấp (Nên có để đối chiếu)
+
+    @Column(name = "id_issue_place")
+    private String idIssuePlace;       // Nơi cấp (Cục Cảnh sát QLHC về trật tự xã hội)
 
     @OneToOne(cascade = CascadeType.PERSIST,orphanRemoval = true)
     @JoinColumn(name="user_id",nullable = true)

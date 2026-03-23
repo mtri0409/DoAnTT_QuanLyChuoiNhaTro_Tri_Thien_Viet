@@ -27,4 +27,7 @@ public class Branch {
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Floor> floors;
+
+    @ManyToMany(mappedBy = "branches")
+    private List<Room> rooms;
 }

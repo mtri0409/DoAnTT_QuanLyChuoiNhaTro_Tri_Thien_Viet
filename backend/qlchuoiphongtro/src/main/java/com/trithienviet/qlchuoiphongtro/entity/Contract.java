@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,16 +36,24 @@ public class Contract {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
+    private BigDecimal rentPrice;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_id", nullable = false)
     private Profile representative;
 
-
     private LocalDate startDate;
     private LocalDate endDate;
     private String status; // Ví dụ: "ACTIVE", "EXPIRED", "TERMINATED"
+
+    private Integer billingDay; // lưu ngày sẽ tính tiền
+    
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
     private List<RoomMember> roomMembers;
+
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+    private List<ContractService> contractServices; // danh sách dịch vụ của hợp đồng
 
     // singnature online
 
