@@ -38,6 +38,9 @@ public class Contract {
 
     private BigDecimal rentPrice;
 
+    @Column(name = "deposit_amount", precision = 10, scale = 2)
+    private BigDecimal depositAmount; // Đây là con số Snapshot từ bảng Deposit 
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_id", nullable = false)

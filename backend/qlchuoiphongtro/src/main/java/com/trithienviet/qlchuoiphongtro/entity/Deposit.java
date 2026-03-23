@@ -44,9 +44,7 @@ public class Deposit {
     @JoinColumn(name = "contract_id")
     private Contract contract;
 
-    @Column(name = "deposit_amount", precision = 10, scale = 2)
-    private BigDecimal depositAmount; // Đây là con số Snapshot từ bảng Deposit
-
+  
     @DecimalMin(value = "0.0",message = "amout deposit can not less than 0 .")
     private BigDecimal amount;
     
