@@ -24,7 +24,7 @@ import lombok.Setter;
 public class ParkingLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String logId;
+    private Long logId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="vehicle_id")
     private Vehicle vehicle;

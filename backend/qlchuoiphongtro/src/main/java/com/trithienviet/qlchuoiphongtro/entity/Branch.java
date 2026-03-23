@@ -29,5 +29,5 @@ public class Branch {
     private List<Floor> floors;
 
     @ManyToMany(mappedBy = "branches")
-    private List<Room> rooms;
+    private List<User> users;
 }
