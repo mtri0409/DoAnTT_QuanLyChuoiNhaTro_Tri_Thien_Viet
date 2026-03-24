@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
@@ -34,8 +35,10 @@ public class MeterReading {
     @JoinColumn(name="service_id",nullable = false)
     private ServiceItem service;
 
-    private Double oldValue;
-    private Double newVaule;
+    private BigDecimal oldValue;
+    private BigDecimal newVaule;
+
+    private BigDecimal usageValue; // old - new
     
     private LocalDateTime readingDate = LocalDateTime.now();
 

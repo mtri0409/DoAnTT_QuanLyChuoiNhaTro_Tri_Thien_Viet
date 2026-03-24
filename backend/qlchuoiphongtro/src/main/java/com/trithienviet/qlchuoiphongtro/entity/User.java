@@ -2,6 +2,8 @@ package com.trithienviet.qlchuoiphongtro.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.ManyToAny;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +12,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -40,4 +44,11 @@ public class User {
 
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
     private List<Notification> notifications;
+
+    @ManyToAny(fetch = FetchType.LAZY)
+    @JoinTable( name="user_branches" ,
+                joinColumns = @JoinColumn(name="user_id") ,
+                inverseJoinColumns = @JoinColumn(name="branch_id")
+                )   
+    private List<Branch> branches;
 }

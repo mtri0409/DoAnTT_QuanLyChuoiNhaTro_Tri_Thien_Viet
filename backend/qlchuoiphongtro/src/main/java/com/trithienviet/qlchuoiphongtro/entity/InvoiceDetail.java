@@ -43,11 +43,11 @@ public class InvoiceDetail {
     private MeterReading meterReading;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal quantity;
+    private BigDecimal quantity; // Số lượng (Số chữ điện, số người, hoặc 1 nếu là phí cố định)
 
     @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal unitPrice;
+    private BigDecimal unitPrice; // Lưu lại giá tại thời điểm xuất hóa đơn (Snapshot Price)
 
     @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal subTotal;
+    private BigDecimal subTotal; // quantity * unit_price
 }

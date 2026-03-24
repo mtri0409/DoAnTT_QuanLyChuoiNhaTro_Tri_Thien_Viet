@@ -41,10 +41,10 @@ public class Deposit {
 
     // nullable = true vì lúc cọc giữ chỗ chưa có hợp đồng
     @OneToOne(fetch = FetchType.LAZY)
-    // @Column(nullable = true)
     @JoinColumn(name = "contract_id")
     private Contract contract;
 
+  
     @DecimalMin(value = "0.0",message = "amout deposit can not less than 0 .")
     private BigDecimal amount;
     
