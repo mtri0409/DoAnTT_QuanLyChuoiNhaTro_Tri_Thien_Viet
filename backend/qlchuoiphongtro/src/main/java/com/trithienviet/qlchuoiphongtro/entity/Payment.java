@@ -34,7 +34,7 @@ public class Payment {
     
     private BigDecimal amount;
 
-    private LocalDateTime paymentDate;
+    private LocalDateTime paymentDate = LocalDateTime.now();
 
     private String paymentMethod; // COD , ZALOPAY, VNPAY,...
 

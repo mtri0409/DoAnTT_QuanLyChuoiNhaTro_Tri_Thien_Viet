@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -37,8 +38,10 @@ public class ServiceItem {
     @NotBlank
     private String unit; // chỉ số : "kWh", "m3", "Phòng", "Người"
     @DecimalMin(value = "0.0",message = "Price service can not less than 0 .")
-
+    
+    @Column(precision = 10, scale = 2)
     private BigDecimal price;
+
     private String serviceType; // METERED -or FIXED
     private Boolean is_active = false;   // Để ẩn/hiện dịch vụ khi không dùng nữa
 
@@ -48,7 +51,6 @@ public class ServiceItem {
     @OneToMany(mappedBy = "service", fetch = FetchType.LAZY)
     private List<InvoiceDetail> invoiceDetails = new ArrayList<>();
 
-    // Trong ServiceItem.java
     @OneToMany(mappedBy = "service")
     private List<MeterReading> meterReadings;
 }

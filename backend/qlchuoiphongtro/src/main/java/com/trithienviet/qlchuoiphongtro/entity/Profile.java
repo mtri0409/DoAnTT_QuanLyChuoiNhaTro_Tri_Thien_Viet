@@ -33,12 +33,16 @@ public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long profileId;
+
     @NotBlank(message = "Full name can not blank")
     @Size(min=8, message ="Full name must contain at least more 8 characters")
+    @Pattern(regexp = "^[a-zA-Z]*$", message = "Full Name must not contain numbers or special")
     private String fullName;
+
     @Size(min = 10, max =10 , message =  "Mobile Number must be axactly 10 digits long")
     @Pattern(regexp = "^\\d{10}$",message = "Mobile Number must contain only numbers")
     private String phone;
+
     @Email
     @Column(unique = true, nullable = true)
     private String email;
@@ -66,7 +70,7 @@ public class Profile {
     @OneToOne(cascade = CascadeType.PERSIST,orphanRemoval = true)
     @JoinColumn(name="user_id",nullable = true)
     private User user;
-// Trong Profile.java
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();
 

@@ -26,7 +26,7 @@ import lombok.Setter;
 public class RoommatePost {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long postId;
+    private Integer postId;
 
     @NotBlank
     @Column(columnDefinition = "TEXT")

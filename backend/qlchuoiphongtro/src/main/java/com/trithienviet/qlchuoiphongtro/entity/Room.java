@@ -46,6 +46,7 @@ public class Room {
     private String roomName;
 
     @DecimalMin(value = "0.0",message = "Price cannot be less than 0")
+    @Column(precision = 10, scale = 2)
     private BigDecimal price;
 
     @Min(value = 0, message = "Max people be less than 0")
@@ -53,6 +54,7 @@ public class Room {
 
     @Min(value = 0,message = "Current people be less than 0")
     private Integer currentPeople = 0;
+    
     @NotBlank
     @Column(columnDefinition = "TEXT")
     @Size(min=20, message = "Description  must contain at least 20 characters ")
@@ -97,7 +99,6 @@ public class Room {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<MeterReading> meterReadings;
 
-    // Trong Room.java
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();
 

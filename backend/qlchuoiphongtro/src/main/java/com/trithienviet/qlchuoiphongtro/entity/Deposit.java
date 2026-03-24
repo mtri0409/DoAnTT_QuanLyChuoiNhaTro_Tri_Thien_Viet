@@ -36,7 +36,7 @@ public class Deposit {
     private Room room;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_id", nullable = false)
+    @JoinColumn(name = "profile_id", nullable = true)
     private Profile profile;
 
     // nullable = true vì lúc cọc giữ chỗ chưa có hợp đồng
@@ -44,8 +44,9 @@ public class Deposit {
     @JoinColumn(name = "contract_id")
     private Contract contract;
 
-  
+    
     @DecimalMin(value = "0.0",message = "amout deposit can not less than 0 .")
+    @Column( precision = 10, scale = 2)
     private BigDecimal amount;
     
     private String status; // BOOKED, ACTIVE, REFUNDED, COMPENSATED (Bồi thường)
