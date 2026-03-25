@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PagedResponse<T> {
+public class PageResponse<T> {
     private List<T> content;      
     private int pageNumber;
     private int pageSize;

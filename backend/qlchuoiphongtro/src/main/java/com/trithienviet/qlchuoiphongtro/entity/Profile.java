@@ -67,8 +67,7 @@ public class Profile {
     @Column(name = "id_issue_place")
     private String idIssuePlace;       // Nơi cấp (Cục Cảnh sát QLHC về trật tự xã hội)
 
-    @OneToOne(cascade = CascadeType.PERSIST,orphanRemoval = true)
-    @JoinColumn(name="user_id",nullable = true)
+    @OneToOne(mappedBy = "profile",cascade = CascadeType.PERSIST,orphanRemoval = true)
     private User user;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
