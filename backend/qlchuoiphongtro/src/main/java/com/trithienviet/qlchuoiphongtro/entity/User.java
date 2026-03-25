@@ -42,9 +42,9 @@ public class User {
     @Enumerated(EnumType.STRING) 
     private UserRole role;
 
-    @OneToOne(mappedBy = "user",fetch = FetchType.LAZY)
+    @OneToOne 
+    @JoinColumn(name="profile_id", nullable = true)
     private Profile profile;
-
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
     private List<Notification> notifications;
 
