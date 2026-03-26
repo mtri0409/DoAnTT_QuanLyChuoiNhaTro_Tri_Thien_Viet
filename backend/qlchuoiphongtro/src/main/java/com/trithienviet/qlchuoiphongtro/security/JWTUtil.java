@@ -18,20 +18,20 @@ public class JWTUtil {
     private String secret;
     
     public String generateToken(String username) 
-        throws IllegalAccessException, JWTCreationException {
+        throws JWTCreationException {
             return JWT.create()
                       .withSubject("User Details")
                       .withClaim("username", username)
                       .withIssuedAt(new Date())
                       .withExpiresAt(new Date(System.currentTimeMillis() + 3600000))
-                      .withIssuer("Event Scheduler")
+                      .withIssuer("TriThienViet")
                       .sign(Algorithm.HMAC256(secret));
         }
     public String validateTokenAndRetrieveSubject(String token)
         throws JWTVerificationException {
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret))
                                       .withSubject("User Details")
-                                      .withIssuer("Event Scheduler")
+                                      .withIssuer("TriThienViet")
                                       .build();
             DecodedJWT jwt = verifier.verify(token);
             return jwt.getClaim("username").asString();

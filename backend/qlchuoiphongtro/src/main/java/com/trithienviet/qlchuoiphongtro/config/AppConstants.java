@@ -17,6 +17,7 @@ public class AppConstants {
         "/swagger-ui/**", 
         "/api/register/**", 
         "/api/login",
+        "/api/auth/create-account/**",
         "/error"
     };
     

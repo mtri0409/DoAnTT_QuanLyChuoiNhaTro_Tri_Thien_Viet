@@ -13,4 +13,7 @@ public class UserDTO {
     private Long userId;
     private String userName;
     private String password;
+    private Long profileId;
+    private String fullName;
+    private String role;
 }
