@@ -41,6 +41,8 @@ public class User {
 
     @Enumerated(EnumType.STRING) 
     private UserRole role;
+
+    private Boolean isActice = true;
     
     @OneToOne 
     @JoinColumn(name="profile_id", nullable = true)
