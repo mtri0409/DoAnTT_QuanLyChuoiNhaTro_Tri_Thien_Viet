@@ -41,7 +41,7 @@ public class User {
 
     @Enumerated(EnumType.STRING) 
     private UserRole role;
-
+    
     @OneToOne 
     @JoinColumn(name="profile_id", nullable = true)
     private Profile profile;
