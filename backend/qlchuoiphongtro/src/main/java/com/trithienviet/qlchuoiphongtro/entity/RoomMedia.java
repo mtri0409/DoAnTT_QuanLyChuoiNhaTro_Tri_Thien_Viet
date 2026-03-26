@@ -25,12 +25,13 @@ public class RoomMedia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer mediaId;
-    @Column(nullable = true)
+
     private String url;
-    @Column(nullable = true)
     private String media;
+
     @Size(min=5, message="Meadia type must contain at least 5 characters")
     private String mediaType;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="room_id")
     private Room room;

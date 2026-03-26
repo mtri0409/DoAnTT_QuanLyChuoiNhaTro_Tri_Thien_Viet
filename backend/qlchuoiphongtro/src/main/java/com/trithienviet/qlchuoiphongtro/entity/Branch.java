@@ -15,7 +15,7 @@ import lombok.*;
 public class Branch {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long branchId;
+    private Integer branchId;
 
     @NotBlank(message = "Branch name is required")
     @Size(min = 5, message = "Branch name must contain at least 5 characters")

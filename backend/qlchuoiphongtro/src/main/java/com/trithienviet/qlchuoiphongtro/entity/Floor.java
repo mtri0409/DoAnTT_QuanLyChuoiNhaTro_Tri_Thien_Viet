@@ -15,7 +15,7 @@ import lombok.*;
 public class Floor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long floorId;
+    private Integer floorId;
 
     @Min(value = 0, message = "Floor number cannot be less than 0")
     private Integer floorNumber; // Dùng Integer cho số tầng là đủ

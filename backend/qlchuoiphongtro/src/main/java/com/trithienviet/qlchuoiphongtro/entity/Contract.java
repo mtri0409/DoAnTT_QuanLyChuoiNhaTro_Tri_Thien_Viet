@@ -16,6 +16,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,7 +38,8 @@ public class Contract {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    private BigDecimal rentPrice;
+    @Column(name = "rent_price", precision = 10, scale = 2)
+    private BigDecimal rentPrice; 
 
     @Column(name = "deposit_amount", precision = 10, scale = 2)
     private BigDecimal depositAmount; // Đây là con số Snapshot từ bảng Deposit 
@@ -49,7 +52,9 @@ public class Contract {
     private LocalDate startDate;
     private LocalDate endDate;
     private String status; // Ví dụ: "ACTIVE", "EXPIRED", "TERMINATED"
-
+    
+    @Min(value = 1, message = "Billing day must be at least 1")
+    @Max(value = 31, message = "Billing day cannot be greater than 31")
     private Integer billingDay; // lưu ngày sẽ tính tiền
     
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
@@ -62,9 +67,9 @@ public class Contract {
 
     private String digitalSignature; // Chữ ký số hoặc mã hash xác thực
     private LocalDateTime signedAt;   // Thời điểm ký chính xác
-    @Column(nullable = true)
+
     private String ipAddress;    // Địa chỉ IP của người ký (để đối soát nếu có tranh chấp)
-    @Column(nullable = true)    
+
     private String deviceInformation; // Thiết bị ký (ví dụ: iPhone 15, Chrome Browser)
 
     @Column(columnDefinition = "TEXT")
@@ -73,6 +78,5 @@ public class Contract {
     private String signatureImageUrl; // Link ảnh chữ ký tay (nếu cho phép vẽ tay trên màn hình)
 
     @OneToMany(mappedBy="contract",fetch = FetchType.LAZY)
-    
     private List<Invoice> invoices;
 }

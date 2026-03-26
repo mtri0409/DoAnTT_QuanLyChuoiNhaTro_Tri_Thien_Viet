@@ -11,9 +11,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +35,8 @@ public class Expenses {
     @JoinColumn(name="branch_id")
     private Branch branch;
 
+    @NotBlank(message = "Expense category cannt not blank")
+    
     private String expenseCategory; // Tiền sửa chửa, lương ....
 
     private BigDecimal amount;

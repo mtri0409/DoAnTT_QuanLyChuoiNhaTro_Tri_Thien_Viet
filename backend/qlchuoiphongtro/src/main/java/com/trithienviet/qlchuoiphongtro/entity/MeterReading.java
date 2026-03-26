@@ -3,6 +3,7 @@ package com.trithienviet.qlchuoiphongtro.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -35,10 +36,14 @@ public class MeterReading {
     @JoinColumn(name="service_id",nullable = false)
     private ServiceItem service;
 
+    @Column(precision = 10, scale = 2)
     private BigDecimal oldValue;
-    private BigDecimal newVaule;
 
-    private BigDecimal usageValue; // old - new
+    @Column(precision = 10, scale = 2)
+    private BigDecimal newValue; 
+    
+    @Column(precision = 10, scale = 2)
+    private BigDecimal usageValue;
     
     private LocalDateTime readingDate = LocalDateTime.now();
 

@@ -1,10 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import org.hibernate.annotations.ManyToAny;
-import org.hibernate.engine.profile.Fetch;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

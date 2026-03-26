@@ -28,9 +28,9 @@ public class Amenity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer amenityId;
 
-    @NotBlank
+    @NotBlank(message = "This field cannot blank")
     @Size(min=2,message="Amenity name must contain at least than 2 characters")
-    private Long amenityName;
+    private String amenityName; 
     
     private String icon;
 
