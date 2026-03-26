@@ -7,6 +7,7 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,7 +37,6 @@ public class Profile {
 
     @NotBlank(message = "Full name can not blank")
     @Size(min=8, message ="Full name must contain at least more 8 characters")
-    @Pattern(regexp = "^[a-zA-Z]*$", message = "Full Name must not contain numbers or special")
     private String fullName;
 
     @Size(min = 10, max =10 , message =  "Mobile Number must be axactly 10 digits long")
@@ -70,7 +70,11 @@ public class Profile {
     @OneToOne(mappedBy = "profile",cascade = CascadeType.PERSIST,orphanRemoval = true)
     private User user;
 
+    @OneToOne(mappedBy = "profile",fetch = FetchType.LAZY)
+    private RoomMember roomMember;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();
 
+    private Boolean isActive = true;
 }

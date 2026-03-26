@@ -21,5 +21,5 @@ public class ProfileDTO {
     private String idBackImageUrl;
     private LocalDate idExpirationDate;
     private LocalDate idIssueDate;
-    private LocalDate idIssuePlace;
+    private String idIssuePlace;
 }
