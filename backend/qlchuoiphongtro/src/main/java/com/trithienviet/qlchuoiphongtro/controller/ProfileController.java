@@ -1,20 +1,27 @@
 package com.trithienviet.qlchuoiphongtro.controller;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
-import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+
 
 @RestController
 @RequestMapping("/api")
@@ -64,7 +71,43 @@ public class ProfileController {
     @DeleteMapping("/admin/profiles/{profileId}")
     public ResponseEntity<String> deleteProfile(@PathVariable Long profileId) {
         String message = profileService.deleteProfile(profileId);
-        return ResponseEntity.ok(message);
+        return new ResponseEntity<String>(message, HttpStatus.OK);
     }
-    
+
+    @PutMapping("/public/profiles/{profileId}/id-front-image")
+    public ResponseEntity<ProfileDTO> updateIdFrontImage(
+            @PathVariable Long profileId, 
+            @RequestParam("image") MultipartFile image) throws IOException {
+            
+        ProfileDTO updatedProfile = profileService.updateIdFrontImage(profileId, image);
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    @PutMapping("/public/profiles/{profileId}/id-back-image")
+    public ResponseEntity<ProfileDTO> updateIdBackImage(
+            @PathVariable Long profileId, 
+            @RequestParam("image") MultipartFile image) throws IOException {
+            
+        ProfileDTO updatedProfile = profileService.updateIdBackImage(profileId, image);
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    @GetMapping("/public/profiles/images/{fileName}")
+    public ResponseEntity<InputStreamResource> getImage(@PathVariable String fileName) throws IOException {
+        InputStream imageStream = profileService.getIdentificationImage(fileName);
+
+        // Tự động nhận diện loại ảnh (png, jpg, jpeg)
+        MediaType mediaType = MediaType.IMAGE_JPEG; // Mặc định
+        if (fileName.toLowerCase().endsWith(".png")) {
+            mediaType = MediaType.IMAGE_PNG;
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(mediaType); 
+        // "inline" giúp ảnh hiện trực tiếp trên trình duyệt thay vì bị bắt tải về
+        headers.setContentDisposition(ContentDisposition.inline().filename(fileName).build());
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(new InputStreamResource(imageStream));
+    }
+
 }

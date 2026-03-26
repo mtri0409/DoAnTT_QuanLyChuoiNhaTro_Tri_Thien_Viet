@@ -17,8 +17,8 @@ public class ProfileDTO {
     private String phone;
     private String address;
     private String identityNumber;
-    private String idFrontImageUrl;
-    private String idBackImageUrl;
+    private String idFrontImage;
+    private String idBackImage;
     private LocalDate idExpirationDate;
     private LocalDate idIssueDate;
     private String idIssuePlace;
