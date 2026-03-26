@@ -21,4 +21,5 @@ public class ContractDTO {
     private LocalDate endDate;
     private String status;
     private Integer billingDay;
+    private Long representativeId;
 }
