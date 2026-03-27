@@ -73,6 +73,9 @@ public class Profile {
     @OneToOne(mappedBy = "profile",fetch = FetchType.LAZY)
     private RoomMember roomMember;
 
+    @OneToMany(mappedBy = "representative")
+    private List<Contract> contracts;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();
 
