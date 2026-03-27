@@ -39,7 +39,8 @@ public class ProfileController {
         // Trả về kèm mã 201 Created (Đúng chuẩn RESTful)
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
-       @PutMapping("/public/profiles/{profileId}") 
+    
+    @PutMapping("/public/profiles/{profileId}") 
     public ResponseEntity<ProfileDTO> updateProfile(@Valid @RequestBody ProfileDTO profile,@PathVariable Long profileId) {
         // Gọi Service để lưu vào DB
         ProfileDTO updateProfile = profileService.updateProfile(profile,profileId);
@@ -59,8 +60,9 @@ public class ProfileController {
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
-       }
-    // Tri có thể thêm hàm lấy thông tin profile theo ID sau này ở đây
+    
+    }
+
     @GetMapping("/public/profiles/{profileId}")
     public ResponseEntity<ProfileDTO> getProfileById(@PathVariable Long profileId) {
         

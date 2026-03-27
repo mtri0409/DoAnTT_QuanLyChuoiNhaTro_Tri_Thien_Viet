@@ -1,6 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.payloads;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +23,10 @@ public class ProfileDTO {
     private LocalDate idExpirationDate;
     private LocalDate idIssueDate;
     private String idIssuePlace;
+    private List<VehicleDTO> vehicles;
+
+    private String roomName; // Chỉ lấy số phòng để hiển thị nhanh
+    private Long activeContractId; 
+    private LocalDate contractEndDate;
+
 }

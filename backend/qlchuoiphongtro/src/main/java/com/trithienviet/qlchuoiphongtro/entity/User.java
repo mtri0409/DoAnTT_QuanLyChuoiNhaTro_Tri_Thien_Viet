@@ -45,7 +45,7 @@ public class User {
     private Boolean isActice = true;
     
     @OneToOne 
-    @JoinColumn(name="profile_id", nullable = true)
+    @JoinColumn(name="profile_id", nullable = true,unique = true)
     private Profile profile;
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
     private List<Notification> notifications;

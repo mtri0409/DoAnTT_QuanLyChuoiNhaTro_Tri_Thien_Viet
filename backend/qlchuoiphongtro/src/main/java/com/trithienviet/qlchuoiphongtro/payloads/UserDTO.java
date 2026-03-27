@@ -1,5 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.payloads;
 
+import com.trithienviet.qlchuoiphongtro.entity.UserRole;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +17,5 @@ public class UserDTO {
     private String password;
     private Long profileId;
     private String fullName;
-    private String role;
+    private UserRole role;
 }

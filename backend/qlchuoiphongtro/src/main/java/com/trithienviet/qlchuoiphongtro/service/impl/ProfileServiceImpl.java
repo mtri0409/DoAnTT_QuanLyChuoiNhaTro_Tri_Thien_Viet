@@ -17,11 +17,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Pageable;
 
+import com.trithienviet.qlchuoiphongtro.entity.Contract;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 import com.trithienviet.qlchuoiphongtro.exceptions.APIException;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
+import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
@@ -59,30 +61,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         return modelMapper.map(savedProfile, ProfileDTO.class);
     }
-    @Override
-    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Profile> profilePage = profileRepo.findAll(pageDetails);
-
-        List<Profile> profiles = profilePage.getContent();
-        List<ProfileDTO> profileDTOs = profiles.stream()
-                .map(p -> modelMapper.map(p, ProfileDTO.class))
-                .collect(Collectors.toList());
-
-        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
-        profileResponse.setContent(profileDTOs);
-        profileResponse.setPageNumber(profilePage.getNumber());
-        profileResponse.setPageSize(profilePage.getSize());
-        profileResponse.setTotalElements(profilePage.getTotalElements());
-        profileResponse.setTotalPages(profilePage.getTotalPages());
-        profileResponse.setLastPage(profilePage.isLast());
-
-        return profileResponse;
-    }
+    
 
     @Override
     public ProfileDTO updateProfile(ProfileDTO profileDTO, Long profileId) {
@@ -144,12 +123,49 @@ public class ProfileServiceImpl implements ProfileService {
         
         return "Xóa thành công " + profileId + "!"; 
     }
+    @Override
+    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
 
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Profile> profilePage = profileRepo.findAll(pageDetails);
+
+        List<Profile> profiles = profilePage.getContent();
+        List<ProfileDTO> profileDTOs = profiles.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
     @Override
     public ProfileDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
-        return modelMapper.map(profile, ProfileDTO.class);
+
+        ProfileDTO profileDTO = modelMapper.map(profile, ProfileDTO.class);
+
+        if (profile.getRoomMember() != null && profile.getRoomMember().getContract() != null) {
+            Contract contract = profile.getRoomMember().getContract();
+            
+            profileDTO.setActiveContractId(contract.getContractId());
+            profileDTO.setContractEndDate(contract.getEndDate());
+            
+            if (contract.getRoom() != null) {
+                profileDTO.setRoomName(contract.getRoom().getRoomName());
+            }
+        }
+
+        return profileDTO;
     }
 
     @Override
