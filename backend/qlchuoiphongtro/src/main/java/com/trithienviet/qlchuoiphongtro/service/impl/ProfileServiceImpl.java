@@ -71,7 +71,7 @@ public class ProfileServiceImpl implements ProfileService {
         profileFromDB.setFullName(profileDTO.getFullName());
         profileFromDB.setPhone(profileDTO.getPhone());
         profileFromDB.setAddress(profileDTO.getAddress());
-        profileFromDB.setIdentity_number(profileDTO.getIdentityNumber());
+        profileFromDB.setIdentityNumber(profileDTO.getIdentityNumber());
         profileFromDB.setIdFrontImage(profileDTO.getIdFrontImage());
         profileFromDB.setIdBackImage(profileDTO.getIdBackImage());
         profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
