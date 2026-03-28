@@ -2,20 +2,43 @@ import axios from 'axios';
 import { apiURL } from './config';
 
 const axiosClient = axios.create({
-    baseURL: apiURL, // Địa chỉ Backend của bạn
-    timeout:10000,
+    baseURL: apiURL, 
+    timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Tự động đính kèm Token nếu bạn có làm bảo mật JWT sau này
-axiosClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+// 1. REQUEST INTERCEPTOR: Tự động đính kèm Token
+axiosClient.interceptors.request.use(
+    (config) => {
+        // PHẢI KHỚP với key "authToken" trong AuthProvider của Tri
+        const token = localStorage.getItem('authToken'); 
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-});
+);
+
+// 2. RESPONSE INTERCEPTOR: Xử lý lỗi hệ thống toàn cục
+axiosClient.interceptors.response.use(
+    (response) => {
+        // Trả về thẳng data để khi dùng Tri không cần .data nữa
+        return response.data; 
+    },
+    (error) => {
+        // Nếu Server trả về 401 (Hết hạn token) hoặc 403 (Không có quyền)
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.error("Phiên đăng nhập hết hạn!");
+            localStorage.clear(); // Xóa sạch để bảo mật
+            window.location.href = '/login'; // Đá về trang đăng nhập
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default axiosClient;

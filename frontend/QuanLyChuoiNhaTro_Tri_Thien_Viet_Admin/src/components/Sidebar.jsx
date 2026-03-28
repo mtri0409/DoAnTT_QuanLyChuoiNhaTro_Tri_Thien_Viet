@@ -3,10 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog } from 'react-icons/fa';
 
 const NAV_ITEMS = [
-  { title: 'Dashboard',      path: '/admin',          icon: <FaHome /> },
+  { title: 'Dashboard',      path: '/',          icon: <FaHome /> },
   { title: 'Chi nhánh',      path: '/admin/branches', icon: <FaBuilding /> },
   { title: 'Quản lý Phòng',  path: '/admin/rooms',    icon: <FaBed /> },
-  { title: 'Người thuê',     path: '/admin/tenants',  icon: <FaUsers /> },
+  { title: 'Người thuê',     path: '/profile/1',  icon: <FaUsers /> },
   { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
   { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
 ];
