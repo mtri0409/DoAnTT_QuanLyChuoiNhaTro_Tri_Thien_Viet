@@ -11,12 +11,12 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ProfileUpdateDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileRequestDTO;
 
 public interface ProfileService {
      // UserDTO createUserForProfile(Long profileId,String userName,String password);
-     ProfileDTO createProfile(ProfileDTO Profile);
-     ProfileUpdateDTO updateProfile(ProfileUpdateDTO profile,Long profileId);
+     ProfileRequestDTO createProfile(ProfileRequestDTO Profile);
+     ProfileRequestDTO updateProfile(ProfileRequestDTO profile,Long profileId);
 
      PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
      ProfileDetailDTO getProfileById (Long profileId);

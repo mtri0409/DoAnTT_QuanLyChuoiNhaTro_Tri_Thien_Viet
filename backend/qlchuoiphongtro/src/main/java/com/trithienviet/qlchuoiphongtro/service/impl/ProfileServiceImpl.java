@@ -28,7 +28,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ProfileUpdateDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileRequestDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.repo.VehicleRepo;
@@ -58,16 +58,16 @@ public class ProfileServiceImpl implements ProfileService {
     @Value("${path.images.identification}")
     private String path;
     @Override
-    public ProfileDTO createProfile(ProfileDTO profileDTO) {
+    public ProfileRequestDTO createProfile(ProfileRequestDTO profileDTO) {
         Profile profile = modelMapper.map(profileDTO, Profile.class);
         Profile savedProfile = profileRepo.save(profile);
 
-        return modelMapper.map(savedProfile, ProfileDTO.class);
+        return modelMapper.map(savedProfile, ProfileRequestDTO.class);
     }
     
 
     @Override
-    public ProfileUpdateDTO updateProfile(ProfileUpdateDTO profileDTO, Long profileId) {
+    public ProfileRequestDTO updateProfile(ProfileRequestDTO profileDTO, Long profileId) {
 
         Profile profileFromDB = profileRepo.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
@@ -83,7 +83,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         Profile updatedProfile = profileRepo.save(profileFromDB);
 
-        return modelMapper.map(updatedProfile, ProfileUpdateDTO.class);
+        return modelMapper.map(updatedProfile, ProfileRequestDTO.class);
     }
 
     @Transactional

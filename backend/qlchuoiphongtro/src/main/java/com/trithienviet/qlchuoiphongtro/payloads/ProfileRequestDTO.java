@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProfileUpdateDTO {
+public class ProfileRequestDTO {
     private Long profileId;
     private String fullName;
     private String phone;
