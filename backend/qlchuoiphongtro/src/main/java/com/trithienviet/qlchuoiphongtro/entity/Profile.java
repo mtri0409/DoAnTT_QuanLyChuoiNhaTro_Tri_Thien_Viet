@@ -28,7 +28,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name="profiles")
+@Table(name = "profiles")
 @Entity
 public class Profile {
     @Id
@@ -37,17 +37,18 @@ public class Profile {
 
     @NotBlank(message = "Full name can not blank")
     @Size(min=8, message ="Full name must contain at least more 8 characters")
+    
     private String fullName;
 
-    @Size(min = 10, max =10 , message =  "Mobile Number must be axactly 10 digits long")
-    @Pattern(regexp = "^\\d{10}$",message = "Mobile Number must contain only numbers")
+    @Size(min = 10, max = 10, message = "Mobile Number must be axactly 10 digits long")
+    @Pattern(regexp = "^\\d{10}$", message = "Mobile Number must contain only numbers")
     private String phone;
 
     @Email
     @Column(unique = true, nullable = true)
     private String email;
 
-    @Size(min = 12, max =12 , message =  "identity number must be axactly 10 digits long")
+    @Size(min = 12, max = 12, message = "identity number must be axactly 10 digits long")
     private String identity_number;
 
     @Size(min = 20, message = "Address must contain at least 20 characters")
@@ -55,19 +56,19 @@ public class Profile {
 
     @Column(nullable = true)
     private String idFrontImage;
-     @Column(nullable = true)
+    @Column(nullable = true)
     private String idBackImage;
 
     @Column(name = "id_expiration_date")
     private LocalDate idExpirationDate; // Ngày hết hạn CCCD/Hộ chiếu
 
     @Column(name = "id_issue_date")
-    private LocalDate idIssueDate;     // Ngày cấp (Nên có để đối chiếu)
+    private LocalDate idIssueDate; // Ngày cấp (Nên có để đối chiếu)
 
     @Column(name = "id_issue_place")
-    private String idIssuePlace;       // Nơi cấp (Cục Cảnh sát QLHC về trật tự xã hội)
+    private String idIssuePlace; // Nơi cấp (Cục Cảnh sát QLHC về trật tự xã hội)
 
-    @OneToOne(mappedBy = "profile",cascade = CascadeType.PERSIST,orphanRemoval = true)
+    @OneToOne(mappedBy = "profile", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private User user;
 
     @OneToOne(mappedBy = "profile",fetch = FetchType.LAZY)
