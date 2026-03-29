@@ -18,4 +18,5 @@ public class UserDTO {
     private Long profileId;
     private String fullName;
     private UserRole role;
+    private Boolean isActice; 
 }

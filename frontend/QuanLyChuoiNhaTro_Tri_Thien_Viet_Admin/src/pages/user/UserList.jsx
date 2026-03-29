@@ -32,19 +32,30 @@ const ListUser = () => {
     fetchUsers();
   }, [currentPage, sortBy, sortOrder]);
 
-  // 1. Xử lý Đổi trạng thái (Active/Inactive)
+  // 1. Đổi trạng thái (Active/Locked)
   const handleToggleStatus = async (userId) => {
     try {
-     const res= await apiUser.changeStatus(userId);
-     console.log(res);
-      fetchUsers(); // Refresh lại danh sách
+      await apiUser.changeStatus(userId);
+      fetchUsers(); 
     } catch (err) {
-      alert("Lỗi khi thay đổi trạng thái người dùng!");
+      alert("Lỗi khi thay đổi trạng thái!");
+    }
+  };
+
+  // 2. Cập nhật Vai trò (Role) trực tiếp từ Select
+  const handleUpdateRole = async (userId, newRole) => {
+    try {
+      // Giả sử API của Tri là apiUser.updateRole(userId, roleName)
+      await apiUser.updateRole(userId, newRole);
+      alert(`Đã cập nhật vai trò sang ${newRole} thành công!`);
+      fetchUsers(); 
+    } catch (err) {
+      alert("Lỗi khi cập nhật vai trò!");
       console.log(err);
     }
   };
 
-  // 2. Xử lý Đặt lại mật khẩu (Reset)
+  // 3. Reset mật khẩu
   const handleResetPassword = async (userId) => {
     if (window.confirm("Hệ thống sẽ tạo mật khẩu ngẫu nhiên và gửi mail cho người dùng này?")) {
       try {
@@ -52,31 +63,31 @@ const ListUser = () => {
         alert("Đã reset mật khẩu thành công! Kiểm tra email người dùng.");
       } catch (err) {
         alert("Lỗi khi reset mật khẩu!");
-        console.log(err);
       }
     }
   };
 
-  // 3. Xử lý Xóa tài khoản
+  // 4. Xóa tài khoản (mở lại nếu Tri cần dùng)
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa tài khoản này? Người dùng sẽ không thể đăng nhập được nữa!")) {
+    if (window.confirm("Bạn có chắc muốn xóa tài khoản này?")) {
       try {
         await apiUser.deleteUser(id);
-        alert("Xóa tài khoản thành công!");
+        alert("Xóa thành công!");
         fetchUsers();
       } catch (err) {
-        alert(err.response?.data?.message || "Lỗi khi xóa tài khoản!");
+        alert("Lỗi khi xóa!");
       }
     }
   };
 
-  const renderRoleBadge = (role) => {
-    const isAdmin = role === 'ADMIN';
-    return (
-      <span className={`badge ${isAdmin ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info'} border-0 px-3`}>
-        {isAdmin ? 'Quản trị viên' : 'Người dùng'}
-      </span>
-    );
+  // Helper đổi màu Text dựa trên Role được chọn
+  const getRoleColor = (role) => {
+    switch(role) {
+      case 'ADMIN': return 'text-danger fw-bold';
+      case 'STAFF': return 'text-warning fw-bold';
+      case 'TENANT': return 'text-info fw-bold';
+      default: return 'text-dark';
+    }
   };
 
   return (
@@ -101,20 +112,12 @@ const ListUser = () => {
           </div>
 
           <div className="d-flex gap-2">
-            <select 
-              className="form-select form-select-sm border-0 bg-light px-3" 
-              value={sortBy} 
-              onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-            >
+            <select className="form-select form-select-sm border-0 bg-light px-3" value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}>
               <option value="userId">Mới nhất</option>
               <option value="userName">Tên đăng nhập</option>
               <option value="role">Vai trò</option>
             </select>
-            <select 
-              className="form-select form-select-sm border-0 bg-light" 
-              value={sortOrder} 
-              onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}
-            >
+            <select className="form-select form-select-sm border-0 bg-light" value={sortOrder} onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}>
                 <option value="asc">Tăng dần</option>
                 <option value="desc">Giảm dần</option>
             </select>
@@ -127,7 +130,7 @@ const ListUser = () => {
               <tr className="text-muted small text-uppercase">
                 <th className="ps-4 py-3">Tài khoản</th>
                 <th>Liên kết hồ sơ</th>
-                <th className="text-center">Vai trò</th>
+                <th className="text-center" style={{ width: '180px' }}>Vai trò</th>
                 <th className="text-center">Trạng thái</th>
                 <th className="text-end pe-4">Thao tác</th>
               </tr>
@@ -158,16 +161,24 @@ const ListUser = () => {
                         <span className="text-muted small fst-italic">Chưa liên kết</span>
                       )}
                     </td>
-                    <td className="text-center">
-                      {renderRoleBadge(user.role)}
-                    </td>
-                    <td className="text-center">
-                      <div 
-                        className="cursor-pointer d-flex flex-column align-items-center" 
-                        onClick={() => handleToggleStatus(user.userId)}
-                        title="Bấm để đổi trạng thái"
+                    
+                    {/* Cột Vai trò mới: Select Option */}
+                    <td className="text-center px-3">
+                      <select 
+                        className={`form-select form-select-sm border-0 bg-light ${getRoleColor(user.role)}`}
+                        value={user.role}
+                        onChange={(e) => handleUpdateRole(user.userId, e.target.value)}
+                        style={{ cursor: 'pointer' }}
                       >
-                        {user.isActive ? (
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="STAFF">STAFF</option>
+                        <option value="TENANT">TENANT</option>
+                      </select>
+                    </td>
+
+                    <td className="text-center">
+                      <div className="cursor-pointer d-flex flex-column align-items-center" onClick={() => handleToggleStatus(user.userId)}>
+                        {user.isActice ? (
                           <>
                             <FaToggleOn size={24} className="text-success" />
                             <small className="text-success fw-bold" style={{fontSize: '9px'}}>ACTIVE</small>
@@ -182,32 +193,13 @@ const ListUser = () => {
                     </td>
                     <td className="text-end pe-4">
                       <div className="d-flex justify-content-end gap-1">
-                        <button 
-                          className="btn btn-sm btn-outline-primary border-0"
-                          title='Đặt lại mật khẩu'
-                          onClick={() => handleResetPassword(user.userId)}
-                        >
+                        <button className="btn btn-sm btn-outline-primary border-0" title='Đặt lại mật khẩu' onClick={() => handleResetPassword(user.userId)}>
                           <FaKey size={14}/>
                         </button>
-                        <button 
-                          className="btn btn-sm btn-outline-warning border-0 text-dark"
-                          title='Đổi vai trò'
-                          onClick={() => navigate(`/admin/users/${user.userId}/role`)}
-                        >
-                          <FaShieldAlt size={14}/>
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-outline-dark border-0"
-                          title='Sửa thông tin'
-                          onClick={() => navigate(`/admin/users/${user.userId}/edit`)}
-                        >
+                        <button className="btn btn-sm btn-outline-dark border-0" title='Sửa thông tin' onClick={() => navigate(`/admin/users/${user.userId}/edit`)}>
                           <FaUserEdit size={16}/>
                         </button>
-                        <button 
-                          className="btn btn-sm btn-outline-danger border-0"
-                          title='Xóa tài khoản'
-                          onClick={() => handleDelete(user.userId)}
-                        >
+                        <button className="btn btn-sm btn-outline-danger border-0" title='Xóa tài khoản' onClick={() => handleDelete(user.userId)}>
                           <FaTrash size={14}/>
                         </button>
                       </div>
@@ -221,11 +213,7 @@ const ListUser = () => {
 
         <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
           <span className="text-muted small">Hiển thị {data.content?.length} trên tổng số {data.totalElements}</span>
-          <Pagination 
-            currentPage={data.pageNumber} 
-            totalPages={data.totalPages} 
-            onPageChange={(p) => setCurrentPage(p + 1)} 
-          />
+          <Pagination currentPage={data.pageNumber} totalPages={data.totalPages} onPageChange={(p) => setCurrentPage(p + 1)} />
         </div>
       </div>
     </div>

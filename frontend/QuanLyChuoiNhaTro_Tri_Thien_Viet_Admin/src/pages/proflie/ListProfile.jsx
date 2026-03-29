@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FaUserCircle, FaEdit, FaTrash, FaIdCard, FaMapMarkerAlt, 
-  FaPhoneAlt, FaSearch, FaPlus, FaCheckCircle, FaTimesCircle, FaEye
+  FaPhoneAlt, FaSearch, FaPlus, FaCheckCircle, FaTimesCircle, FaEye,
+  FaUserPlus
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import Pagination from '../../components/Pagination';
 import { Link, Route, useNavigate } from 'react-router-dom';
-
+import apiUser from '../../api/apiUser';
 const ListProfile = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,7 +67,24 @@ const ListProfile = () => {
       }
     }
   };
-
+  const handleGenerateAccount = async (profileId, fullName) => {
+  if (window.confirm(`Bạn có muốn cấp tài khoản tự động cho khách hàng: ${fullName}?`)) {
+    try {
+      setLoading(true);
+      // Gọi API mà bạn đã định nghĩa: axiosInstance.post(`/auth/create-account/${profileId}`)
+      const res =await apiUser.generareAcount(profileId); 
+        console.log(res);
+      alert("Cấp tài khoản thành công! Thông tin đã được gửi đến khách hàng.");
+      fetchProfiles(); // Load lại để cập nhật trạng thái nếu cần
+    } catch (err) {
+      console.error("Lỗi cấp tài khoản:", err);
+      const errorMsg = err.response?.data?.message || "Lỗi khi tạo tài khoản. Có thể hồ sơ này đã có tài khoản rồi!";
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }
+};
   return (
     <div className="container-fluid py-4">
       {/* Header */}
@@ -143,6 +161,13 @@ const ListProfile = () => {
                     <td><div className="text-muted small text-truncate" style={{ maxWidth: '150px' }}>{item.address}</div></td>
                     <td className="text-end pe-4">
                       <div className="d-flex justify-content-end gap-1">
+                        <button 
+                        className="btn btn-sm btn-light border-0" 
+                        title='Cấp tài khoản nhanh'
+                        onClick={() => handleGenerateAccount(item.profileId, item.fullName)}
+                      >
+                        <FaUserPlus className="text-success"/>
+                      </button>
                       <button 
                         className="btn btn-sm btn-light border-0" 
                         title='Xem chi tiết'

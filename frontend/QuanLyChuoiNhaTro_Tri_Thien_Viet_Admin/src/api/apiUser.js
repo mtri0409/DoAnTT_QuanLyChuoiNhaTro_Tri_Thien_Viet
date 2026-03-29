@@ -1,19 +1,22 @@
 import axiosInstance from "./axios";
 const apiUser = {
-  createUser: (data) => {
-    return axiosInstance.post("/auth/local/register", data);
-  },
 
   loginUser: (data) => {
     return axiosInstance.post("/auth/login", data);
   },
-  getAll: () => {
-    return axiosInstance.get("/users").then((res) => res.data);
+  getAllUsers: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
+    return axiosInstance.get(`/admin/users`, {
+      params: { pageNumber, pageSize, sortBy, sortOrder }
+    });
   },
-  getUserById: (id) => {
-    return axiosInstance
-      .get(`users?filters[documentId][$eq]=${id}`)
-      .then((res) => res.data);
-  },
+  createAccout:(profileId,data)=> axiosInstance.post(`/auth/create-account/${profileId}`,data),
+  generareAcount:(profileId)=> axiosInstance.post(`/auth/create-account/${profileId}`),
+
+   deleteUser: (id) => axiosInstance.delete(`/admin/users/${id}`),
+  // Cập nhật Role cho User
+  updateRole: (id, role) => axiosInstance.put(`/admin/users/${id}/role`, { role }),
+  changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
+  resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`)
+
 };
 export default apiUser;
