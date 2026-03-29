@@ -35,8 +35,12 @@ public class Vehicle {
     @JoinColumn(name="owner_id")
     private Profile owner;
 
+    private Boolean status;
+
     private String licensePlate;
 
     @OneToMany(mappedBy = "vehicle",fetch = FetchType.LAZY)
     private List<ParkingLog> parkingLogs;
+
+
 }

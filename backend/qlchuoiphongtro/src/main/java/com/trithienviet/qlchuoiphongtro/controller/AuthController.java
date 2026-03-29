@@ -5,11 +5,9 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,8 +21,12 @@ import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.security.JWTUtil;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api")
+@SecurityRequirement(name = "Manager Room Application")
+
 public class AuthController {
   
     @Autowired
@@ -39,7 +41,7 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/login")
+    @PostMapping("auth/login")
     public Map<String, Object> loginHandler(@RequestBody LoginCredentials credentials) {
         try {
             // 1️⃣ Authenticate
@@ -74,7 +76,6 @@ public class AuthController {
             @PathVariable Long profileId,
             @RequestBody LoginCredentials credentials) {
         
-        // Gọi xuống Service mà anh em mình vừa sửa xong
         UserDTO newUser = userService.createAccountForProfile(
             profileId, 
             credentials.getUserName(), 

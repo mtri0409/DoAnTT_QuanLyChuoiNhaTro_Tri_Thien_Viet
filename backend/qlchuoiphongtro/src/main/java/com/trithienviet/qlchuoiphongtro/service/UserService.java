@@ -1,6 +1,5 @@
 package com.trithienviet.qlchuoiphongtro.service;
 
-import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 
 public interface UserService {
