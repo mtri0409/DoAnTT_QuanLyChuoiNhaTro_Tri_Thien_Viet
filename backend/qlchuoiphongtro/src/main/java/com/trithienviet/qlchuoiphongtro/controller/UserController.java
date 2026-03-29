@@ -69,13 +69,13 @@ public class UserController {
         return ResponseEntity.ok("Đổi mật khẩu thành công!");
     }
 
-    @PatchMapping("/admim/{userId/reset-password")
+    @PatchMapping("/admim/{userId}/reset-password")
     public ResponseEntity<String> resetPassword(@PathVariable Long userId){
         String message = userService.resetPassword(userId);
         return ResponseEntity.ok(message);
     }
 
-    @PatchMapping("/admim/{userId/changeStatus")
+    @PatchMapping("/admim/{userId}/changeStatus")
     public ResponseEntity<String> changeStatus(@PathVariable Long userId){
         String message = userService.changeStatus(userId);
         return ResponseEntity.ok(message);
