@@ -16,10 +16,13 @@ public class AppConstants {
     public static final String[] PUBLIC_URLS = { 
         "/v3/api-docs/**", 
         "/swagger-ui/**", 
+        "/api/public/profile/image/**",
         "/api/register/**", 
+        
         "/api/auth/login",
         "/api/auth/create-account/**",
         "/error"
+        
     };
     
     public static final String[] USER_URLS = { "/api/public/**" };
