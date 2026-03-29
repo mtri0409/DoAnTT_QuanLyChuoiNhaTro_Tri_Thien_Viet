@@ -12,11 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProfileDTO {
-    private Long profileId;
-    private String fullName;
-    private String phone;
-    private String address;
-    private String identityNumber;
-    private Boolean isActive;
+public class ProfileImageDTO {
+    private String idFrontImage;
+    private String idBackImage;
+    
 }
