@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -45,7 +46,7 @@ public class UserController {
     }
     
     @GetMapping("/public/users/{userId}")
-    public ResponseEntity<UserDTO> getProfileById(@PathVariable Long userId) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
         
         UserDTO userDTO = userService.getUserById(userId);
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
@@ -67,4 +68,17 @@ public class UserController {
         userService.changePassword(userId, oldPassword, newPassword);
         return ResponseEntity.ok("Đổi mật khẩu thành công!");
     }
+
+    @PatchMapping("/admim/{userId}/reset-password")
+    public ResponseEntity<String> resetPassword(@PathVariable Long userId){
+        String message = userService.resetPassword(userId);
+        return ResponseEntity.ok(message);
+    }
+
+    @PatchMapping("/admim/{userId}/changeStatus")
+    public ResponseEntity<String> changeStatus(@PathVariable Long userId){
+        String message = userService.changeStatus(userId);
+        return ResponseEntity.ok(message);
+    }
+    
 }
