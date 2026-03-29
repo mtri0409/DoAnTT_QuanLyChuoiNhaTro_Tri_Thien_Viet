@@ -95,7 +95,7 @@ public class ProfileController {
         return ResponseEntity.ok(updatedProfile);
     }
 
-    @GetMapping("/public/profiles/images/{fileName}")
+    @GetMapping("/public/profile/image/{fileName}")
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String fileName) throws IOException {
         InputStream imageStream = profileService.getIdentificationImage(fileName);
 
