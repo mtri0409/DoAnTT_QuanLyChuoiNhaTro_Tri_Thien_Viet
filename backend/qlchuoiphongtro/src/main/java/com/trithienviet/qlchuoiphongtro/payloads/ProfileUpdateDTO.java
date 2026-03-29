@@ -12,11 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class ProfileDTO {
+public class ProfileUpdateDTO {
     private Long profileId;
     private String fullName;
     private String phone;
     private String address;
     private String identityNumber;
-    private Boolean isActive;
+    private LocalDate idExpirationDate;
+    private LocalDate idIssueDate;
+    private String idIssuePlace;
 }

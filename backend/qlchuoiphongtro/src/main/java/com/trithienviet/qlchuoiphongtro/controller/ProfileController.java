@@ -14,6 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileUpdateDTO;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -39,11 +42,10 @@ public class ProfileController {
         // Trả về kèm mã 201 Created (Đúng chuẩn RESTful)
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
-    
-    @PutMapping("/public/profiles/{profileId}") 
-    public ResponseEntity<ProfileDTO> updateProfile(@Valid @RequestBody ProfileDTO profile,@PathVariable Long profileId) {
+       @PutMapping("/public/profiles/{profileId}") 
+    public ResponseEntity<ProfileUpdateDTO> updateProfile(@Valid @RequestBody ProfileUpdateDTO profile,@PathVariable Long profileId) {
         // Gọi Service để lưu vào DB
-        ProfileDTO updateProfile = profileService.updateProfile(profile,profileId);
+        ProfileUpdateDTO updateProfile = profileService.updateProfile(profile,profileId);
         
         return new ResponseEntity<>(updateProfile, HttpStatus.OK);
     }
@@ -60,13 +62,12 @@ public class ProfileController {
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
-    
-    }
-
+       }
+    // Tri có thể thêm hàm lấy thông tin profile theo ID sau này ở đây
     @GetMapping("/public/profiles/{profileId}")
-    public ResponseEntity<ProfileDTO> getProfileById(@PathVariable Long profileId) {
+    public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
         
-        ProfileDTO profileDTO = profileService.getProfileById(profileId);
+        ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
         return new ResponseEntity<>(profileDTO,HttpStatus.OK);
     }
 
@@ -77,20 +78,20 @@ public class ProfileController {
     }
 
     @PutMapping("/public/profiles/{profileId}/id-front-image")
-    public ResponseEntity<ProfileDTO> updateIdFrontImage(
+    public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {
             
-        ProfileDTO updatedProfile = profileService.updateIdFrontImage(profileId, image);
+        ProfileImageDTO updatedProfile = profileService.updateIdFrontImage(profileId, image);
         return ResponseEntity.ok(updatedProfile);
     }
 
     @PutMapping("/public/profiles/{profileId}/id-back-image")
-    public ResponseEntity<ProfileDTO> updateIdBackImage(
+    public ResponseEntity<ProfileImageDTO> updateIdBackImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {
             
-        ProfileDTO updatedProfile = profileService.updateIdBackImage(profileId, image);
+        ProfileImageDTO updatedProfile = profileService.updateIdBackImage(profileId, image);
         return ResponseEntity.ok(updatedProfile);
     }
 

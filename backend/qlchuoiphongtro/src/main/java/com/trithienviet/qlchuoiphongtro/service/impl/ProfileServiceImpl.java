@@ -26,6 +26,9 @@ import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileUpdateDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.repo.VehicleRepo;
@@ -64,7 +67,7 @@ public class ProfileServiceImpl implements ProfileService {
     
 
     @Override
-    public ProfileDTO updateProfile(ProfileDTO profileDTO, Long profileId) {
+    public ProfileUpdateDTO updateProfile(ProfileUpdateDTO profileDTO, Long profileId) {
 
         Profile profileFromDB = profileRepo.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
@@ -72,15 +75,17 @@ public class ProfileServiceImpl implements ProfileService {
         profileFromDB.setPhone(profileDTO.getPhone());
         profileFromDB.setAddress(profileDTO.getAddress());
         profileFromDB.setIdentityNumber(profileDTO.getIdentityNumber());
-        profileFromDB.setIdFrontImage(profileDTO.getIdFrontImage());
-        profileFromDB.setIdBackImage(profileDTO.getIdBackImage());
+
+        profileFromDB.setIdFrontImage("default.jpg");
+        profileFromDB.setIdBackImage("default.jpg");
+
         profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
         profileFromDB.setIdIssueDate(profileDTO.getIdIssueDate());
         profileFromDB.setIdIssuePlace(profileDTO.getIdIssuePlace());
 
         Profile updatedProfile = profileRepo.save(profileFromDB);
 
-        return modelMapper.map(updatedProfile, ProfileDTO.class);
+        return modelMapper.map(updatedProfile, ProfileUpdateDTO.class);
     }
 
     @Transactional
@@ -133,6 +138,7 @@ public class ProfileServiceImpl implements ProfileService {
         Page<Profile> profilePage = profileRepo.findAll(pageDetails);
 
         List<Profile> profiles = profilePage.getContent();
+
         List<ProfileDTO> profileDTOs = profiles.stream()
                 .map(p -> modelMapper.map(p, ProfileDTO.class))
                 .collect(Collectors.toList());
@@ -148,11 +154,11 @@ public class ProfileServiceImpl implements ProfileService {
         return profileResponse;
     }
     @Override
-    public ProfileDTO getProfileById(Long profileId) {
+    public ProfileDetailDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
 
-        ProfileDTO profileDTO = modelMapper.map(profile, ProfileDTO.class);
+        ProfileDetailDTO profileDTO = modelMapper.map(profile, ProfileDetailDTO.class);
 
         if (profile.getRoomMember() != null && profile.getRoomMember().getContract() != null) {
             Contract contract = profile.getRoomMember().getContract();
@@ -169,7 +175,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public ProfileDTO updateIdFrontImage(Long profileId,MultipartFile image) throws IOException{
+    public ProfileImageDTO updateIdFrontImage(Long profileId,MultipartFile image) throws IOException{
         Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
             new ResourceNotFoundException("Profile","profileId",profileId));
         if(profileFromDB == null){
@@ -179,11 +185,11 @@ public class ProfileServiceImpl implements ProfileService {
         profileFromDB.setIdFrontImage(fileName);
         Profile updateIdFrontImage = profileRepo.save(profileFromDB);
         
-        return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
+        return modelMapper.map(updateIdFrontImage, ProfileImageDTO.class);
     }
 
     @Override
-    public ProfileDTO updateIdBackImage(Long profileId,MultipartFile image) throws IOException{
+    public ProfileImageDTO updateIdBackImage(Long profileId,MultipartFile image) throws IOException{
         Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
             new ResourceNotFoundException("Profile","profileId",profileId));
         if(profileFromDB == null){
@@ -193,7 +199,7 @@ public class ProfileServiceImpl implements ProfileService {
         profileFromDB.setIdBackImage(fileName);
         Profile updateIdFrontImage = profileRepo.save(profileFromDB);
         
-        return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
+        return modelMapper.map(updateIdFrontImage, ProfileImageDTO.class);
     }
 
     @Override
