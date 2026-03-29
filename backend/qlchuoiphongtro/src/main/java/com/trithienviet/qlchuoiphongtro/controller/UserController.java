@@ -52,15 +52,15 @@ public class UserController {
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
     
-    @PutMapping("/admin/users/{userId}")
-    public ResponseEntity<String> updateUser(@PathVariable Long userId, @RequestBody UpdateRoleDTO roleDTO) {
+    @PutMapping("/admin/users/{userId}/role")
+    public ResponseEntity<String> updateUserRole(@PathVariable Long userId, @RequestBody UpdateRoleDTO roleDTO) {
         String message = userService.updateUserRole(userId, roleDTO);
 
         return new ResponseEntity<String> (message,HttpStatus.OK);
     }
 
     // Endpoint dành cho mọi User tự đổi mật khẩu của mình
-    @PostMapping("/users/{userId}/change-password")
+    @PostMapping("public/users/{userId}/change-password")
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId, 
             @RequestParam String oldPassword, 
