@@ -15,6 +15,8 @@ import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
+import com.trithienviet.qlchuoiphongtro.utils.PasswordGenerator;
+
 import org.springframework.data.domain.Pageable; 
 
 import jakarta.transaction.Transactional;
@@ -122,6 +124,7 @@ public class UserServiceImpl implements UserService{
         
         return modelMapper.map(user, UserDTO.class);
     }
+
     @Transactional
     @Override
     public String updateUserRole(Long userId, UpdateRoleDTO roleDTO) {
@@ -160,6 +163,28 @@ public class UserServiceImpl implements UserService{
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepo.save(user);
         return "Đổi mật khẩu thành công !";
+    }
+    @Override
+    @Transactional
+    public String resetPassword(Long userId){
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+        String rawPassword = PasswordGenerator.generateRandomPassword(10);
+        user.setPassword((passwordEncoder.encode(rawPassword)));
+        userRepo.save(user);
+        return "Đã reset mật khẩu thành công";
+    }
+
+    @Override
+    @Transactional // Cực kỳ quan trọng để đảm bảo dữ liệu được cập nhật
+    public String changeStatus(Long userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+
+        user.setIsActice(!user.getIsActice());
+        userRepo.save(user);
+        
+        return user.getIsActice() ? "Đã kích hoạt" : "Đã khóa";
     }
 }
     
