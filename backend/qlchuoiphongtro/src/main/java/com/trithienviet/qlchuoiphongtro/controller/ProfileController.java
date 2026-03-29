@@ -16,7 +16,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ProfileUpdateDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileRequestDTO;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,17 +35,17 @@ public class ProfileController {
     private ProfileService profileService;
 
     @PostMapping("/admin/profiles") // Chỉ Admin mới được tạo profile khách
-    public ResponseEntity<ProfileDTO> createProfile(@Valid @RequestBody ProfileDTO profile) {
+    public ResponseEntity<ProfileRequestDTO> createProfile(@Valid @RequestBody ProfileRequestDTO profile) {
         // Gọi Service để lưu vào DB
-        ProfileDTO createdProfile = profileService.createProfile(profile);
+        ProfileRequestDTO createdProfile = profileService.createProfile(profile);
         
         // Trả về kèm mã 201 Created (Đúng chuẩn RESTful)
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
        @PutMapping("/public/profiles/{profileId}") 
-    public ResponseEntity<ProfileUpdateDTO> updateProfile(@Valid @RequestBody ProfileUpdateDTO profile,@PathVariable Long profileId) {
+    public ResponseEntity<ProfileRequestDTO> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,@PathVariable Long profileId) {
         // Gọi Service để lưu vào DB
-        ProfileUpdateDTO updateProfile = profileService.updateProfile(profile,profileId);
+        ProfileRequestDTO updateProfile = profileService.updateProfile(profile,profileId);
         
         return new ResponseEntity<>(updateProfile, HttpStatus.OK);
     }
