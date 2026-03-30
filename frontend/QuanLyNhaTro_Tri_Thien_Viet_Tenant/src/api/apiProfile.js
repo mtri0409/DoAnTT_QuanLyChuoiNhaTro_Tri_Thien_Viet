@@ -21,6 +21,6 @@ const apiProfile = {
 
   getProfileById: (id) => {
     return axiosInstance.get(`/public/profiles/${id}`);
-  }
+  },
 };
 export default apiProfile;
