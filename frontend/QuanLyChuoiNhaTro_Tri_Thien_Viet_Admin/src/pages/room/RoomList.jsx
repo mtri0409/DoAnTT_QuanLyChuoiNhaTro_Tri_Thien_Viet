@@ -73,6 +73,11 @@ const RoomList = () => {
             setFloors([]);
         }
     };
+    const getFloorNumber = (floorId) => {
+        if (!floorId || !Array.isArray(floors)) return '-';
+        const floor = floors.find(f => f.floorId === floorId);
+        return floor ? floor.floorNumber : '-';
+    };
 
     useEffect(() => {
         fetchFilters();
@@ -217,7 +222,7 @@ const RoomList = () => {
                                         <td className="small">
                                             {item.currentPeople}/{item.maxPeople}
                                         </td>
-                                        <td className="small">Tầng {item.floorNumber}</td>
+                                        <td className="small">Tầng {getFloorNumber(item.floorId)}</td>
                                         <td className="text-center">
                                             <span
                                                 className={`badge rounded-pill ${
