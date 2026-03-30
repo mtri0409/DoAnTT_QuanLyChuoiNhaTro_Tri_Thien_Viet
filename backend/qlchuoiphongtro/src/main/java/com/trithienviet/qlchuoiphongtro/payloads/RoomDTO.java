@@ -23,13 +23,12 @@ public class RoomDTO {
     private String description;
     private String Status;
     private Long floorId;
+    
     @Builder.Default
-    private List<RoomDTO> roomMedia= new ArrayList<>();
+    private List<RoomMediaDTO> roomMedia = new ArrayList<>();
     @Singular
     private List<AmenityDTO> amenities;
 
     @Singular
     private List<AssetDTO> assets;
-
-
 }

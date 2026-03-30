@@ -4,6 +4,7 @@ import {
 } from 'react-icons/fa';
 import apiBranches from '../../api/apiBranches';
 import Pagination from '../../components/Pagination';
+import { Link } from 'react-router-dom';
 
 const BranchList = () => {
   const [data, setData] = useState({
@@ -20,7 +21,7 @@ const BranchList = () => {
     setLoading(true);
     try {
       const response = await apiBranches.getAllBranches(page);
-      setData(response);
+      setData(response); 
     } catch (err) {
       console.error("Lỗi:", err);
     } finally {
@@ -38,33 +39,38 @@ const BranchList = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* Header */}
+
+      {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h4 className="fw-bold text-dark mb-1">QUẢN LÝ CHI NHÁNH</h4>
-          <p className="text-muted small mb-0">Danh sách các chi nhánh trong hệ thống</p>
+          <p className="text-muted small mb-0">
+            Hệ thống quản lý chi nhánh
+          </p>
         </div>
-        <button className="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
-          <FaPlus size={14} /> Thêm chi nhánh
-        </button>
+
+        <Link className="btn btn-primary shadow-sm">
+          <FaPlus /> Thêm mới
+        </Link>
       </div>
 
       <div className="card border-0 shadow-sm rounded-3">
-        {/* Search */}
-        <div className="card-header bg-white py-3 border-0">
-          <div className="input-group" style={{ maxWidth: '300px' }}>
+
+        {/* TOOLBAR */}
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+          <div className="input-group" style={{ maxWidth: '250px' }}>
             <span className="input-group-text bg-light border-0">
-              <FaSearch className="text-muted" />
+              <FaSearch />
             </span>
             <input 
               type="text" 
               className="form-control bg-light border-0 small" 
-              placeholder="Tìm tên chi nhánh..." 
+              placeholder="Tìm kiếm..." 
             />
           </div>
         </div>
 
-        {/* Table */}
+        {/* TABLE */}
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
@@ -74,46 +80,50 @@ const BranchList = () => {
                 <th className="text-end pe-4">Thao tác</th>
               </tr>
             </thead>
+
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="3" className="text-center py-5 text-muted">
-                    Đang tải dữ liệu...
+                  <td colSpan="3" className="text-center py-5">
+                    Đang tải...
                   </td>
                 </tr>
               ) : (
                 data.content?.map((item) => (
                   <tr key={item.branchId}>
+                    
+                    {/* NAME */}
                     <td className="ps-4">
                       <div className="d-flex align-items-center">
-                        <FaBuilding className="fs-4 text-primary me-2" />
-                        <span className="fw-bold text-dark">
+                        <FaBuilding className="fs-3 text-secondary me-2" />
+                        <span className="fw-bold">
                           {item.branchName}
                         </span>
                       </div>
                     </td>
 
+                    {/* ADDRESS */}
                     <td>
                       <div 
-                        className="text-muted small text-truncate" 
-                        style={{ maxWidth: '300px' }}
-                        title={item.address}
+                        className="text-muted small text-truncate"
+                        style={{ maxWidth: '150px' }}
                       >
-                        <FaMapMarkerAlt className="me-1 text-danger" size={12}/>
                         {item.address}
                       </div>
                     </td>
 
+                    {/* ACTION */}
                     <td className="text-end pe-4">
-                      <div className="d-flex justify-content-end gap-2">
-                        <button className="btn btn-sm btn-outline-primary border-0 bg-light">
-                          <FaEdit />
+                      <div className="d-flex justify-content-end gap-1">
+                        <button className="btn btn-sm btn-light border-0">
+                          <FaEdit className="text-primary"/>
                         </button>
-                        <button className="btn btn-sm btn-outline-danger border-0 bg-light">
-                          <FaTrash />
+                        <button className="btn btn-sm btn-light border-0">
+                          <FaTrash className="text-danger"/>
                         </button>
                       </div>
                     </td>
+
                   </tr>
                 ))
               )}
@@ -121,17 +131,19 @@ const BranchList = () => {
           </table>
         </div>
 
-        {/* Footer */}
-        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-top-0">
-          <span className="text-muted small">
-            Tổng số: <strong>{data.totalElements}</strong> chi nhánh
-          </span>
+        {/* FOOTER */}
+        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
+          <small className="text-muted">
+            Tổng: {data.totalElements}
+          </small>
+
           <Pagination 
             currentPage={data.pageNumber}
             totalPages={data.totalPages}
             onPageChange={handlePageChange}
           />
         </div>
+
       </div>
     </div>
   );

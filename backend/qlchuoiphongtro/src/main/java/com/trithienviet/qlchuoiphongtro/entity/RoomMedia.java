@@ -1,5 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,5 +36,6 @@ public class RoomMedia {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="room_id")
+    @JsonIgnore
     private Room room;
 }

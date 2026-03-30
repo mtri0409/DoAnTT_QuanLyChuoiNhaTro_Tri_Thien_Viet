@@ -4,9 +4,9 @@ import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog
 
 const NAV_ITEMS = [
   { title: 'Dashboard',      path: '/',          icon: <FaHome /> },
-  { title: 'Chi nhánh',      path: '/branch/1', icon: <FaBuilding /> },
-  { title: 'Quản lý Phòng',  path: '/admin/rooms',    icon: <FaBed /> },
-  { title: 'Người thuê',     path: '/profile/1',  icon: <FaUsers /> },
+  { title: 'Chi nhánh',      path: '/branches/1', icon: <FaBuilding /> },
+  { title: 'Quản lý Phòng',  path: '/rooms/1',    icon: <FaBed /> },
+  { title: 'Người thuê',     path: '/profiles/1',  icon: <FaUsers /> },
   { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
   { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
 ];
