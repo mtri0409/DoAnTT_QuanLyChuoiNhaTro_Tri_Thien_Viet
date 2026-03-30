@@ -190,7 +190,7 @@ const BranchList = () => {
                     <td className="text-end pe-4">
                       <div className="d-flex justify-content-end gap-1">
                         <Link
-                          to={`/admin/branches/${item.branchId}/edit`}
+                          to={`/branches/${item.branchId}/update`}
                           className="btn btn-sm btn-light border-0"
                           title="Chỉnh sửa"
                         >
