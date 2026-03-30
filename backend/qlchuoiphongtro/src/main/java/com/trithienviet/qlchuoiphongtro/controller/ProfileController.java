@@ -3,6 +3,7 @@ package com.trithienviet.qlchuoiphongtro.controller;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -62,8 +63,13 @@ public class ProfileController {
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
-       }
-    // Tri có thể thêm hàm lấy thông tin profile theo ID sau này ở đây
+    }
+
+    @GetMapping("/admin/profiles/unassigned")
+    public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
+        return ResponseEntity.ok(profileService.getProfilesWithoutAccount());
+    }
+
     @GetMapping("/public/profiles/{profileId}")
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
         
