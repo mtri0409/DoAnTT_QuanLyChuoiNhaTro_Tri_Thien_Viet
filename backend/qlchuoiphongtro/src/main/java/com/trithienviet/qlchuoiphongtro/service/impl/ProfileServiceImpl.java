@@ -204,4 +204,13 @@ public class ProfileServiceImpl implements ProfileService {
     public InputStream getIdentificationImage(String fileName) throws FileNotFoundException {
         return fileService.getResource(path, fileName);
     }
+
+    @Override
+    public List<ProfileDTO> getProfilesWithoutAccount() {
+        List<Profile> profiles = profileRepo.findAllProfilesWithoutAccount();
+        // Chuyển đổi sang DTO và return
+        return profiles.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+    }
 }
