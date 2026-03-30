@@ -9,6 +9,7 @@ const apiUser = {
       params: { pageNumber, pageSize, sortBy, sortOrder }
     });
   },
+  getUserByUsername :(username)=> axiosInstance.get(`/public/users/username/${username}`),
   createAccount:(profileId,data)=> axiosInstance.post(`/auth/create-account/${profileId}`,data),
   generareAcount:(profileId)=> axiosInstance.post(`/auth/create-account/${profileId}`),
 
@@ -18,5 +19,6 @@ const apiUser = {
   changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
   resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`)
 
+  
 };
 export default apiUser;

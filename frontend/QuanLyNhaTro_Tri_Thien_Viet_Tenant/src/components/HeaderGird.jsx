@@ -1,13 +1,14 @@
 import React from 'react';
 import { FaBell, FaChevronRight, FaInfoCircle, FaCreditCard } from 'react-icons/fa';
 
-const HeaderGrid = () => {
+const HeaderGrid = ({ profileData, userData }) => {
+
   const notifications = [
     { id: 1, title: "Thanh toán tiền phòng", content: "Hóa đơn tháng 03/2026 của bạn đã có, vui lòng thanh toán trước ngày 05/04.", type: "danger", time: "2 giờ trước" },
     { id: 2, title: "Thông báo bảo trì", content: "Hệ thống điện sẽ được bảo trì vào lúc 14:00 ngày mai. Vui lòng chuẩn bị.", type: "warning", time: "1 ngày trước" },
     { id: 3, title: "Tin nhắn chủ trọ", content: "Vui lòng cập nhật CCCD mới nhất để làm đăng ký tạm trú.", type: "info", time: "2 ngày trước" }
   ];
-
+//   const p = profileData || {};
   return (
     <div className="row g-3 mb-4">
       
@@ -22,27 +23,27 @@ const HeaderGrid = () => {
           <div className="row g-4">
             <div className="col-sm-6 col-md-4 justify-content-between">
               <span className="small text-muted d-block mb-1">Họ tên:</span>
-              <span className="fw-bold text-dark fs-6">Phạm Đình Minh Tri</span>
+              <span className="fw-bold text-dark fs-6">{profileData.fullName || "Đang tải..."}</span>
             </div>
             <div className="col-sm-6 col-md-4">
               <span className="small text-muted d-block mb-1">Số điện thoại:</span>
-              <span className="fw-bold text-dark">0322749354</span>
+              <span className="fw-bold text-dark">{profileData.phone || "Đang tải..."}</span>
             </div>
             <div className="col-sm-6 col-md-4">
               <span className="small text-muted d-block mb-1">Phòng đang ở:</span>
-              <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">Phòng A101</span>
+              <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">Phòng {profileData.roomName || "Đang tải"}</span>
             </div>
             <div className="col-sm-6 col-md-4">
               <span className="small text-muted d-block mb-1">Email:</span>
-              <span className="fw-bold text-dark">minhtri@gmail.com</span>
+              <span className="fw-bold text-dark">{profileData.email || "Chưa cập nhập"}</span>
             </div>
             <div className="col-sm-6 col-md-4">
-              <span className="small text-muted d-block mb-1">Ngày vào ở:</span>
-              <span className="fw-bold text-dark">15/01/2026</span>
+              <span className="small text-muted d-block mb-1">Địa chỉ</span>
+              <span className="text-success fw-bold">{profileData.address || "chưa cập nhập "}</span>
             </div>
             <div className="col-sm-6 col-md-4">
-              <span className="small text-muted d-block mb-1">Trạng thái:</span>
-              <span className="text-success fw-bold">● Đang thuê</span>
+              <span className="small text-muted d-block mb-1">Ngày hêt hạn:</span>
+              <span className="fw-bold text-dark">{profileData.contractEndDate || "Chưa cập nhập"}</span>
             </div>
           </div>
         </div>

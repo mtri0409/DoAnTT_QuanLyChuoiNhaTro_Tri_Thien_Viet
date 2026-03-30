@@ -32,7 +32,7 @@ const Login = () => {
         // const username = response.userName; 
         const token = response.token;
         
-        login(response,token); 
+        login(response.username,token); 
 
         navigate('/'); // Hoặc '/' tùy vào cấu trúc route của bạn
         

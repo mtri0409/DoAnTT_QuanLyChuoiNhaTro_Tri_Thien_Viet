@@ -6,7 +6,7 @@ import NavLinks from './NavLinks';
 /* ─── Navbar ────────────────────────────────────────────────── */
 const Navbar = () => {
   const navigate = useNavigate();
-
+  
   return (
     <nav
       className="navbar navbar-expand-lg navbar-light bg-white sticky-top py-2"
