@@ -7,22 +7,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
-import com.trithienviet.qlchuoiphongtro.entity.UserRole;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
-import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -52,11 +48,22 @@ public class UserController {
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
     
-    @PutMapping("/admin/users/{userId}/role")
-    public ResponseEntity<String> updateUserRole(@PathVariable Long userId, @RequestBody UpdateRoleDTO roleDTO) {
-        String message = userService.updateUserRole(userId, roleDTO);
+    @PatchMapping("/admin/users/{userId}/role")
+    public ResponseEntity<String> updateUserRole(
+            @PathVariable Long userId, 
+            @RequestBody UpdateRoleDTO role) {
 
-        return new ResponseEntity<String> (message,HttpStatus.OK);
+        if (role == null) {
+            return ResponseEntity.badRequest().body("Lỗi: Dữ liệu 'ROLE' không được để trống!");
+        }
+
+        try {
+            String message = userService.updateUserRole(userId, role.getRole()); 
+            return ResponseEntity.ok(message);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Lỗi: Role không hợp lệ. Chỉ chấp nhận: ADMIN, STAFF, TENANT");
+        }
     }
 
     // Endpoint dành cho mọi User tự đổi mật khẩu của mình

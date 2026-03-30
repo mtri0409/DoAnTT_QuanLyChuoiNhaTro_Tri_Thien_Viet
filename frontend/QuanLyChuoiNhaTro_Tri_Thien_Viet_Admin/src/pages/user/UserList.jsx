@@ -1,26 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FaUserShield, FaUserEdit, FaTrash, FaSearch, FaPlus, 
-  FaUserCircle, FaKey, FaIdBadge, FaToggleOn, FaToggleOff, FaShieldAlt 
-} from 'react-icons/fa';
-import apiUser from '../../api/apiUser';
-import Pagination from '../../components/Pagination';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  FaUserShield,
+  FaUserEdit,
+  FaTrash,
+  FaSearch,
+  FaPlus,
+  FaUserCircle,
+  FaKey,
+  FaIdBadge,
+  FaToggleOn,
+  FaToggleOff,
+  FaShieldAlt,
+} from "react-icons/fa";
+import apiUser from "../../api/apiUser";
+import Pagination from "../../components/Pagination";
+import { Link, useNavigate } from "react-router-dom";
 
 const ListUser = () => {
-  const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
+  const [data, setData] = useState({
+    content: [],
+    pageNumber: 0,
+    totalPages: 0,
+    totalElements: 0,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  
-  const [sortBy, setSortBy] = useState('userId');
-  const [sortOrder, setSortOrder] = useState('desc');
+
+  const [sortBy, setSortBy] = useState("userId");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await apiUser.getAllUsers(currentPage, 10, sortBy, sortOrder);      
-      setData(response); 
+      const response = await apiUser.getAllUsers(
+        currentPage,
+        10,
+        sortBy,
+        sortOrder,
+      );
+      setData(response);
     } catch (err) {
       console.error("Lỗi tải danh sách user:", err);
     } finally {
@@ -36,10 +55,11 @@ const ListUser = () => {
   const handleToggleStatus = async (userId) => {
     try {
       await apiUser.changeStatus(userId);
-      fetchUsers(); 
+      fetchUsers();
     } catch (err) {
+      console.log(err);
       alert("Lỗi khi thay đổi trạng thái!");
-    }
+    }  
   };
 
   // 2. Cập nhật Vai trò (Role) trực tiếp từ Select
@@ -48,7 +68,7 @@ const ListUser = () => {
       // Giả sử API của Tri là apiUser.updateRole(userId, roleName)
       await apiUser.updateRole(userId, newRole);
       alert(`Đã cập nhật vai trò sang ${newRole} thành công!`);
-      fetchUsers(); 
+      fetchUsers();
     } catch (err) {
       alert("Lỗi khi cập nhật vai trò!");
       console.log(err);
@@ -57,11 +77,16 @@ const ListUser = () => {
 
   // 3. Reset mật khẩu
   const handleResetPassword = async (userId) => {
-    if (window.confirm("Hệ thống sẽ tạo mật khẩu ngẫu nhiên và gửi mail cho người dùng này?")) {
+    if (
+      window.confirm(
+        "Hệ thống sẽ tạo mật khẩu ngẫu nhiên và gửi mail cho người dùng này?",
+      )
+    ) {
       try {
         await apiUser.resetPassword(userId);
         alert("Đã reset mật khẩu thành công! Kiểm tra email người dùng.");
       } catch (err) {
+        console.log(err);
         alert("Lỗi khi reset mật khẩu!");
       }
     }
@@ -75,6 +100,7 @@ const ListUser = () => {
         alert("Xóa thành công!");
         fetchUsers();
       } catch (err) {
+        console.log(err);
         alert("Lỗi khi xóa!");
       }
     }
@@ -82,11 +108,15 @@ const ListUser = () => {
 
   // Helper đổi màu Text dựa trên Role được chọn
   const getRoleColor = (role) => {
-    switch(role) {
-      case 'ADMIN': return 'text-danger fw-bold';
-      case 'STAFF': return 'text-warning fw-bold';
-      case 'TENANT': return 'text-info fw-bold';
-      default: return 'text-dark';
+    switch (role) {
+      case "ADMIN":
+        return "text-danger fw-bold";
+      case "STAFF":
+        return "text-warning fw-bold";
+      case "TENANT":
+        return "text-info fw-bold";
+      default:
+        return "text-dark";
     }
   };
 
@@ -95,31 +125,58 @@ const ListUser = () => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="fw-bold text-dark mb-1 text-uppercase">Quản lý tài khoản</h4>
-          <p className="text-muted small mb-0">Hệ thống quản lý quyền truy cập cư dân và quản trị viên</p>
+          <h4 className="fw-bold text-dark mb-1 text-uppercase">
+            Quản lý tài khoản
+          </h4>
+          <p className="text-muted small mb-0">
+            Hệ thống quản lý quyền truy cập cư dân và quản trị viên
+          </p>
         </div>
-        <Link to="/admin/users/create" className="btn btn-primary shadow-sm px-4">
-          <FaPlus size={14} className="me-2"/> Tạo tài khoản
+        <Link
+          to="/users/create"
+          className="btn btn-primary shadow-sm px-4"
+        >
+          <FaPlus size={14} className="me-2" /> Tạo tài khoản
         </Link>
       </div>
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         {/* Toolbar */}
         <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-          <div className="input-group" style={{ maxWidth: '350px' }}>
-            <span className="input-group-text bg-light border-0"><FaSearch className="text-muted"/></span>
-            <input type="text" className="form-control bg-light border-0 small" placeholder="Tìm theo tên đăng nhập..." />
+          <div className="input-group" style={{ maxWidth: "350px" }}>
+            <span className="input-group-text bg-light border-0">
+              <FaSearch className="text-muted" />
+            </span>
+            <input
+              type="text"
+              className="form-control bg-light border-0 small"
+              placeholder="Tìm theo tên đăng nhập..."
+            />
           </div>
 
           <div className="d-flex gap-2">
-            <select className="form-select form-select-sm border-0 bg-light px-3" value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}>
+            <select
+              className="form-select form-select-sm border-0 bg-light px-3"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
               <option value="userId">Mới nhất</option>
               <option value="userName">Tên đăng nhập</option>
               <option value="role">Vai trò</option>
             </select>
-            <select className="form-select form-select-sm border-0 bg-light" value={sortOrder} onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}>
-                <option value="asc">Tăng dần</option>
-                <option value="desc">Giảm dần</option>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="asc">Tăng dần</option>
+              <option value="desc">Giảm dần</option>
             </select>
           </div>
         </div>
@@ -130,45 +187,71 @@ const ListUser = () => {
               <tr className="text-muted small text-uppercase">
                 <th className="ps-4 py-3">Tài khoản</th>
                 <th>Liên kết hồ sơ</th>
-                <th className="text-center" style={{ width: '180px' }}>Vai trò</th>
+                <th className="text-center" style={{ width: "180px" }}>
+                  Vai trò
+                </th>
                 <th className="text-center">Trạng thái</th>
                 <th className="text-end pe-4">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" className="text-center py-5"><div className="spinner-border spinner-border-sm text-primary me-2"></div> Đang tải dữ liệu...</td></tr>
+                <tr>
+                  <td colSpan="5" className="text-center py-5">
+                    <div className="spinner-border spinner-border-sm text-primary me-2"></div>{" "}
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
               ) : (
                 data.content?.map((user) => (
                   <tr key={user.userId}>
                     <td className="ps-4">
                       <div className="d-flex align-items-center gap-2">
-                        <div className="bg-primary-subtle p-2 rounded-circle text-primary d-flex align-items-center justify-content-center" style={{width: '40px', height: '40px'}}>
-                           <FaUserCircle size={24}/>
+                        <div
+                          className="bg-primary-subtle p-2 rounded-circle text-primary d-flex align-items-center justify-content-center"
+                          style={{ width: "40px", height: "40px" }}
+                        >
+                          <FaUserCircle size={24} />
                         </div>
                         <div>
-                          <div className="fw-bold text-dark">{user.userName}</div>
-                          <div className="text-muted" style={{fontSize: '11px'}}>UID: {user.userId}</div>
+                          <div className="fw-bold text-dark">
+                            {user.userName}
+                          </div>
+                          <div
+                            className="text-muted"
+                            style={{ fontSize: "11px" }}
+                          >
+                            UID: {user.userId}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td>
                       {user.profileId ? (
-                        <span className="badge bg-light text-primary border cursor-pointer" onClick={() => navigate(`/profile/${user.profileId}/detail`)}>
-                          <FaIdBadge className="me-1"/> PR-{user.profileId}
+                        <span
+                          className="badge bg-light text-primary border cursor-pointer"
+                          onClick={() =>
+                            navigate(`/profile/${user.profileId}/detail`)
+                          }
+                        >
+                          <FaIdBadge className="me-1" /> PR-{user.profileId}
                         </span>
                       ) : (
-                        <span className="text-muted small fst-italic">Chưa liên kết</span>
+                        <span className="text-muted small fst-italic">
+                          Chưa liên kết
+                        </span>
                       )}
                     </td>
-                    
+
                     {/* Cột Vai trò mới: Select Option */}
                     <td className="text-center px-3">
-                      <select 
+                      <select
                         className={`form-select form-select-sm border-0 bg-light ${getRoleColor(user.role)}`}
                         value={user.role}
-                        onChange={(e) => handleUpdateRole(user.userId, e.target.value)}
-                        style={{ cursor: 'pointer' }}
+                        onChange={(e) =>
+                          handleUpdateRole(user.userId, e.target.value)
+                        }
+                        style={{ cursor: "pointer" }}
                       >
                         <option value="ADMIN">ADMIN</option>
                         <option value="STAFF">STAFF</option>
@@ -177,30 +260,57 @@ const ListUser = () => {
                     </td>
 
                     <td className="text-center">
-                      <div className="cursor-pointer d-flex flex-column align-items-center" onClick={() => handleToggleStatus(user.userId)}>
+                      <div
+                        className="cursor-pointer d-flex flex-column align-items-center"
+                        onClick={() => handleToggleStatus(user.userId)}
+                      >
                         {user.isActice ? (
                           <>
                             <FaToggleOn size={24} className="text-success" />
-                            <small className="text-success fw-bold" style={{fontSize: '9px'}}>ACTIVE</small>
+                            <small
+                              className="text-success fw-bold"
+                              style={{ fontSize: "9px" }}
+                            >
+                              ACTIVE
+                            </small>
                           </>
                         ) : (
                           <>
                             <FaToggleOff size={24} className="text-secondary" />
-                            <small className="text-secondary fw-bold" style={{fontSize: '9px'}}>LOCKED</small>
+                            <small
+                              className="text-secondary fw-bold"
+                              style={{ fontSize: "9px" }}
+                            >
+                              LOCKED
+                            </small>
                           </>
                         )}
                       </div>
                     </td>
                     <td className="text-end pe-4">
                       <div className="d-flex justify-content-end gap-1">
-                        <button className="btn btn-sm btn-outline-primary border-0" title='Đặt lại mật khẩu' onClick={() => handleResetPassword(user.userId)}>
-                          <FaKey size={14}/>
+                        <button
+                          className="btn btn-sm btn-outline-primary border-0"
+                          title="Đặt lại mật khẩu"
+                          onClick={() => handleResetPassword(user.userId)}
+                        >
+                          <FaKey size={14} />
                         </button>
-                        <button className="btn btn-sm btn-outline-dark border-0" title='Sửa thông tin' onClick={() => navigate(`/admin/users/${user.userId}/edit`)}>
-                          <FaUserEdit size={16}/>
+                        <button
+                          className="btn btn-sm btn-outline-dark border-0"
+                          title="Sửa thông tin"
+                          onClick={() =>
+                            navigate(`/admin/users/${user.userId}/edit`)
+                          }
+                        >
+                          <FaUserEdit size={16} />
                         </button>
-                        <button className="btn btn-sm btn-outline-danger border-0" title='Xóa tài khoản' onClick={() => handleDelete(user.userId)}>
-                          <FaTrash size={14}/>
+                        <button
+                          className="btn btn-sm btn-outline-danger border-0"
+                          title="Xóa tài khoản"
+                          onClick={() => handleDelete(user.userId)}
+                        >
+                          <FaTrash size={14} />
                         </button>
                       </div>
                     </td>
@@ -212,8 +322,14 @@ const ListUser = () => {
         </div>
 
         <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
-          <span className="text-muted small">Hiển thị {data.content?.length} trên tổng số {data.totalElements}</span>
-          <Pagination currentPage={data.pageNumber} totalPages={data.totalPages} onPageChange={(p) => setCurrentPage(p + 1)} />
+          <span className="text-muted small">
+            Hiển thị {data.content?.length} trên tổng số {data.totalElements}
+          </span>
+          <Pagination
+            currentPage={data.pageNumber}
+            totalPages={data.totalPages}
+            onPageChange={(p) => setCurrentPage(p + 1)}
+          />
         </div>
       </div>
     </div>

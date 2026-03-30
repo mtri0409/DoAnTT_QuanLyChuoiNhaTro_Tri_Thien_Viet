@@ -11,8 +11,8 @@ public interface UserService {
     UserDTO generateAccountForFile(Long profileId);
 
     PageResponse<UserDTO> getAllUsers(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
-    UserDTO getUserById(Long userId);
-    String updateUserRole(Long userId, UpdateRoleDTO roleDTO);
+    UserDTO getUserById(Long id);
+    String updateUserRole(Long userId, String role);
     String changePassword(Long userId, String oldPassword, String newPassword);
     String resetPassword(Long userId);
     String changeStatus(Long userId);
