@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 
 import jakarta.transaction.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -127,21 +128,31 @@ public class UserServiceImpl implements UserService{
 
     @Transactional
     @Override
-    public String updateUserRole(Long userId, UpdateRoleDTO roleDTO) {
+    public String updateUserRole(Long userId, String roleName) { 
+        // 1. Tìm User
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
         try {
-            // Chuyển từ String sang Enum, dùng valueOf để khớp với định nghĩa Enum
-            // UserRole role = UserRole.valueOf(roleDTO.getUserRole().toUpperCase());
-            user.setRole(roleDTO.getUserRole());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new RuntimeException("Role không hợp lệ! Vui lòng nhập: ADMIN, TENANT..." + roleDTO.getUserRole());
+            // 2. Chuyển String nhận từ Controller sang Enum UserRole
+            // Dùng toUpperCase() và trim() để tránh lỗi thừa dấu cách hoặc viết thường
+            UserRole enumRole = UserRole.valueOf(roleName.toUpperCase().trim());
+            
+            // 3. Set vào entity
+            user.setRole(enumRole);
+            
+            // Vì có @Transactional nên không nhất thiết phải gọi userRepo.save(user)
+            // Nhưng viết vào cũng không sao để tường minh
+            userRepo.save(user);
+            
+        } catch (IllegalArgumentException e) {
+            // Lỗi này xảy ra khi roleName không khớp với bất kỳ giá trị nào trong Enum
+            throw new RuntimeException("Role '" + roleName + "' không tồn tại trong hệ thống!");
         }
 
-        userRepo.save(user);
         return "Thay đổi quyền thành công cho user: " + user.getUserName();
     }
+
     @Transactional
     @Override
     public String changePassword(Long userId, String oldPassword, String newPassword) {
