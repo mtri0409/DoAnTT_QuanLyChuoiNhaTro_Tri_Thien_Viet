@@ -12,6 +12,7 @@ public interface UserService {
 
     PageResponse<UserDTO> getAllUsers(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
     UserDTO getUserById(Long id);
+    UserDTO getUserByUsername(String username);
     String updateUserRole(Long userId, String role);
     String changePassword(Long userId, String oldPassword, String newPassword);
     String resetPassword(Long userId);

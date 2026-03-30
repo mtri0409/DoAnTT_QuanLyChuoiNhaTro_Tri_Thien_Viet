@@ -125,6 +125,14 @@ public class UserServiceImpl implements UserService{
         
         return modelMapper.map(user, UserDTO.class);
     }
+    @Override
+    public UserDTO getUserByUsername(String username){
+        User user = userRepo.findByUserName(username)
+            .orElseThrow(()-> new RuntimeException("Không tìn thấy tài khoản với username : "+ username));
+        
+        return modelMapper.map(user, UserDTO.class);
+
+    }
 
     @Transactional
     @Override
