@@ -12,6 +12,7 @@ const apiProfile = {
       }
     });
   },
+  getProfileWithoutAccount:()=> axiosInstance.get('/admin/profiles/unassigned'),
   createProfile:(data)=> axiosInstance.post("/admin/profiles",data),
 
   updateProfile: (id, data) => axiosInstance.put(`/public/profiles/${id}`, data),

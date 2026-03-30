@@ -78,7 +78,7 @@ const ListProfile = () => {
       fetchProfiles(); // Load lại để cập nhật trạng thái nếu cần
     } catch (err) {
       console.error("Lỗi cấp tài khoản:", err);
-      const errorMsg = err.response?.data?.message || "Lỗi khi tạo tài khoản. Có thể hồ sơ này đã có tài khoản rồi!";
+      const errorMsg = err.response?.message || "Lỗi khi tạo tài khoản. Có thể hồ sơ này đã có tài khoản rồi!";
       alert(errorMsg);
     } finally {
       setLoading(false);

@@ -3,6 +3,7 @@ import CreateProfile from "../pages/proflie/CreateProfile";
 import ListProfile from "../pages/proflie/ListProfile";
 import ProfileDetail from "../pages/proflie/ProfileDetail";
 import UpdateProfile from "../pages/proflie/UpdateProfile";
+import CreateAccount from "../pages/user/CreateAccount";
 import ListUser from "../pages/user/UserList";
 
 const AdminRoute = [
@@ -12,7 +13,7 @@ const AdminRoute = [
   { path: "/profile/:id/detail", component: ProfileDetail },
   { path: "/profile/:id/update", component: UpdateProfile },
   { path: "/users", component: ListUser },
-
+  { path: "/users/create", component: CreateAccount },
 
 ];
 export default AdminRoute;
