@@ -2,11 +2,12 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaBell, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 import NavLinks from './NavLinks';
+import { useAuth } from '../context/AuthContext';
 
 /* ─── Navbar ────────────────────────────────────────────────── */
 const Navbar = () => {
   const navigate = useNavigate();
-  
+  const {logout} =useAuth();
   return (
     <nav
       className="navbar navbar-expand-lg navbar-light bg-white sticky-top py-2"
@@ -23,7 +24,7 @@ const Navbar = () => {
             <FaHome size={16} />
           </div>
           <span className="fw-bold text-dark text-uppercase" style={{ fontSize: 13, letterSpacing: '0.05em' }}>
-            RoomyPortal
+            Hệ thống nhà trọ TTV
           </span>
         </Link>
 
@@ -47,7 +48,9 @@ const Navbar = () => {
           {/* User actions */}
           <div className="d-flex align-items-center gap-2 mt-3 mt-lg-0 pt-3 pt-lg-0 border-top border-lg-0 ms-lg-auto">
             <NotificationBell count={3} />
-            <UserProfileDropdown onLogout={() => navigate('/login')} />
+            <UserProfileDropdown onLogout={() => {
+                logout();
+                navigate('/login')}} />
           </div>
         </div>
 

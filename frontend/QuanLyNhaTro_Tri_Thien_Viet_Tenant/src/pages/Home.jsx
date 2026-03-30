@@ -43,7 +43,7 @@ const Home = () => {
       </div>
     );
   }
-
+  if(!profile) return;
   return (
     <div className="animate__animated animate__fadeIn">
       {/* Tiêu đề trang */}
