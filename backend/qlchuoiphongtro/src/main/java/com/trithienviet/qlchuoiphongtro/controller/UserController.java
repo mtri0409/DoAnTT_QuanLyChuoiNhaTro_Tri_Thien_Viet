@@ -73,8 +73,7 @@ public class UserController {
         }
     }
 
-    // Endpoint dành cho mọi User tự đổi mật khẩu của mình
-    @PostMapping("public/users/{userId}/change-password")
+    @PostMapping("/public/users/{userId}/change-password")
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId, 
             @RequestParam String oldPassword, 
