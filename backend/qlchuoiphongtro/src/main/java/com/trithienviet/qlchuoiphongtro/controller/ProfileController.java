@@ -83,7 +83,7 @@ public class ProfileController {
         return new ResponseEntity<String>(message, HttpStatus.OK);
     }
 
-    @PutMapping("/public/profiles/{profileId}/id-front-image")
+    @PutMapping("/public/profiles/{profileId}/idfrontimage")
     public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {
@@ -92,7 +92,7 @@ public class ProfileController {
         return ResponseEntity.ok(updatedProfile);
     }
 
-    @PutMapping("/public/profiles/{profileId}/id-back-image")
+    @PutMapping("/public/profiles/{profileId}/idbackimage")
     public ResponseEntity<ProfileImageDTO> updateIdBackImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {
