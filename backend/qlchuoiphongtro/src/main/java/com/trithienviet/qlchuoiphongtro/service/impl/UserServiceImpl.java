@@ -123,15 +123,26 @@ public class UserServiceImpl implements UserService{
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với ID: " + userId));
         
-        return modelMapper.map(user, UserDTO.class);
-    }
-    @Override
-    public UserDTO getUserByUsername(String username){
-        User user = userRepo.findByUserName(username)
-            .orElseThrow(()-> new RuntimeException("Không tìn thấy tài khoản với username : "+ username));
-        
-        return modelMapper.map(user, UserDTO.class);
+        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
 
+            if (user.getProfile() != null) {
+                userDTO.setFullName(user.getProfile().getFullName());
+            }
+
+            return userDTO;
+    }
+  @Override
+    public UserDTO getUserByUsername(String username) {
+        User user = userRepo.findByUserName(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản: " + username));
+
+        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+
+        if (user.getProfile() != null) {
+            userDTO.setFullName(user.getProfile().getFullName());
+        }
+
+        return userDTO;
     }
 
     @Transactional
