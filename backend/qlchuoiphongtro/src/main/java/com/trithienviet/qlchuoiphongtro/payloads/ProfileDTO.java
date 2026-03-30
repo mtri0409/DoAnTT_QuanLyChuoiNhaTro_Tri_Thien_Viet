@@ -13,6 +13,7 @@ public class ProfileDTO {
     private Long profileId;
     private String fullName;
     private String phone;
+    private String email;
     private String address;
     private String identityNumber;
     private Boolean isActive;
