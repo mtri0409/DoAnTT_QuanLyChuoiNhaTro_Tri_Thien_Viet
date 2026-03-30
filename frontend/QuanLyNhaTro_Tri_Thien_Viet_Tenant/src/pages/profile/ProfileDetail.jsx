@@ -42,15 +42,16 @@ const ProfileDetail = () => {
     if (!file) return;
     const formData = new FormData();
     formData.append('image', file);
-
+    console.log(formData);
     try {
       setUploadingFront(true);
       // Gọi đúng API mặt trước của ní ở đây
-      await apiProfile.uploadFrontImage(id, formData); 
+     const response= await apiProfile.uploadFrontImage(id, formData); 
+     console.log(response);
       await fetchDetail(); // Refresh dữ liệu
       alert("Cập nhật mặt trước thành công!");
     } catch (err) {
-      alert("Lỗi upload mặt trước!");
+      alert("Lỗi upload mặt trước :>!");
     } finally {
       setUploadingFront(false);
     }
@@ -93,7 +94,7 @@ const ProfileDetail = () => {
           </div>
         </div>
         <div className="d-flex gap-2">
-           <button onClick={() => navigate(`/admin/profiles/edit/${id}`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
+           <button onClick={() => navigate(`/user/profile/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
              <FaUserEdit /> Cập nhật
            </button>
            <button className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">

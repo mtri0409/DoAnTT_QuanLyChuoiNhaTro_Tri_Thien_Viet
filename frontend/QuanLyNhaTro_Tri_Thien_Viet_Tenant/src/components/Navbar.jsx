@@ -16,7 +16,7 @@ const Navbar = () => {
       <div className="container-fluid px-lg-5">
 
         {/* Logo */}
-        <Link className="navbar-brand d-flex align-items-center gap-2" to="/user/dashboard">
+        <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           <div
             className="bg-primary rounded-3 text-white d-flex align-items-center justify-content-center"
             style={{ width: 34, height: 34, flexShrink: 0 }}

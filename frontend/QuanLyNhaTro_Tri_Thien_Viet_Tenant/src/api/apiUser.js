@@ -17,8 +17,7 @@ const apiUser = {
   // Cập nhật Role cho User
   updateRole: (id, role) => axiosInstance.patch(`/admin/users/${id}/role`, { role }),
   changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
-  resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`)
-
-  
+  resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`),
+ 
 };
 export default apiUser;
