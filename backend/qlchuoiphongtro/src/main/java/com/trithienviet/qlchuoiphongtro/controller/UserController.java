@@ -47,6 +47,13 @@ public class UserController {
         UserDTO userDTO = userService.getUserById(userId);
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
+
+    @GetMapping("/public/users/{username}") 
+    public ResponseEntity<UserDTO> getUserUserName(@PathVariable String usename) {
+        
+        UserDTO userDTO = userService.getUserByUsername(usename);
+        return new ResponseEntity<>(userDTO,HttpStatus.OK);
+    }
     
     @PatchMapping("/admin/users/{userId}/role")
     public ResponseEntity<String> updateUserRole(
