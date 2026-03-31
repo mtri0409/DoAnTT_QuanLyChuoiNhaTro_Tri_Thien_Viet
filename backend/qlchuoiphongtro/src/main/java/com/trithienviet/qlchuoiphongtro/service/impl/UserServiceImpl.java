@@ -216,7 +216,7 @@ public class UserServiceImpl implements UserService{
         }
 
         // 2. Lấy đối tượng User để liên kết với OtpToken
-        User user = userRepo.findByProfileId(request.getProfileId())
+        User user = userRepo.findByProfileProfileId(request.getProfileId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "profileId", request.getProfileId()));
 
         // 3. Tạo mới OtpToken (Đây là bước nhóm đang thiếu)
