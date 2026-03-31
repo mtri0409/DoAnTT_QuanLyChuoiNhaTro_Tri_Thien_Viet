@@ -21,4 +21,6 @@ public interface UserRepo extends JpaRepository<User,Long> {
     @Query("SELECT u.profile.email FROM User u WHERE u.profile.id = :profileId")
     Optional<String> findEmailByProfileId(@Param("profileId") Long profileId);
     Optional<User> findByProfileId(Long profileId);
+
+    Optional<String> finByResetToken(String resetToken);
 }
