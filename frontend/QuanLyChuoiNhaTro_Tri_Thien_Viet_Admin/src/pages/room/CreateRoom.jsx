@@ -36,16 +36,16 @@ const CreateRoom = () => {
         const floorRes = await apiFloor.getAllFloors();
         const floorData = floorRes.data || floorRes;
         setFloors(Array.isArray(floorData) ? floorData : []);
-        console.log('✅ Floors loaded:', floorData);
+        console.log(' Floors loaded:', floorData);
 
         // ===== BRANCHES =====
         const branchRes = await apiBranches.getAllBranches(1, 100);
         const branchData = branchRes.data || branchRes;
         const branchList = branchData?.content || [];
         setBranches(branchList);
-        console.log('✅ Branches loaded:', branchList);
+        console.log(' Branches loaded:', branchList);
       } catch (err) {
-        console.error('❌ Fetch filters error:', err);
+        console.error(' Fetch filters error:', err);
         alert('Lỗi khi tải dữ liệu!');
       }
     };
@@ -88,11 +88,11 @@ const CreateRoom = () => {
 
     try {
       const response = await apiRoom.createRoom(formData);
-      console.log('✅ Response:', response);
+      console.log(' Response:', response);
       alert("Tạo phòng thành công!");
       navigate('/rooms/1');
     } catch (err) {
-      console.error("❌ Lỗi API:", err);
+      console.error(" Lỗi API:", err);
 
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
@@ -130,9 +130,9 @@ const CreateRoom = () => {
 
   // Helper: lấy tên chi nhánh từ floorId
   const getBranchName = (floorId) => {
-    console.log('🔍 getBranchName called with floorId:', floorId);
-    console.log('📍 Floors:', floors);
-    console.log('🏪 Branches:', branches);
+    console.log(' getBranchName called with floorId:', floorId);
+    console.log(' Floors:', floors);
+    console.log(' Branches:', branches);
     
     if (!floorId || !Array.isArray(floors)) {
         console.log('⚠️ No floorId or floors');
@@ -140,7 +140,7 @@ const CreateRoom = () => {
     }
     
     const floor = floors.find(f => f.floorId === parseInt(floorId));
-    console.log('🏢 Found floor:', floor);
+    console.log(' Found floor:', floor);
     
     if (!floor || !floor.branchId) {
         console.log('⚠️ No floor or floor.branchId:', floor?.branchId);
@@ -148,7 +148,7 @@ const CreateRoom = () => {
     }
     
     const branch = branches.find(b => b.branchId === floor.branchId);
-    console.log('🏪 Found branch:', branch);
+    console.log(' Found branch:', branch);
     
     return branch ? branch.branchName : '-';
 };

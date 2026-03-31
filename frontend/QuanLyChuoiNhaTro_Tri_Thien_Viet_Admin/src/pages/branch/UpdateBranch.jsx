@@ -13,16 +13,13 @@ const UpdateBranch = () => {
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
 
-  // FORM
   const [formData, setFormData] = useState({
     branchName: '',
     address: ''
   });
 
-  // ERROR
   const [errors, setErrors] = useState({});
 
-  // 🔥 LOAD DETAIL
   const loadBranch = async () => {
     try {
       const res = await apiBranches.getBranchById(id);
@@ -102,7 +99,6 @@ const UpdateBranch = () => {
     );
   };
 
-  // 🔥 loading lần đầu
   if (initLoading) {
     return (
       <div className="container-fluid py-4 text-center">

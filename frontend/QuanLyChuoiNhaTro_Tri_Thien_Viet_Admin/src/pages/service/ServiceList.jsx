@@ -5,7 +5,7 @@ import Pagination from '../../components/Pagination';
 import { Link } from 'react-router-dom';
 
 const ServiceList = () => {
-    const PAGE_SIZE = 5;
+    const PAGE_SIZE = 6;
 
     const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
     const [currentPage, setCurrentPage] = useState(0);
@@ -29,7 +29,7 @@ const ServiceList = () => {
             setData(serviceData || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
 
         } catch (err) {
-            console.error('❌ Fetch services error:', err);
+            console.error(' Fetch services error:', err);
             setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
         } finally {
             setLoading(false);

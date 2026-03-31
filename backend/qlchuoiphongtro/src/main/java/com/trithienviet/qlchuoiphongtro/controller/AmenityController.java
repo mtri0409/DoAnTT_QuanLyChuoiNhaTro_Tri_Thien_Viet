@@ -18,7 +18,6 @@ public class AmenityController {
     @Autowired
     private AmenityService amenityService;
 
-    // ✅ GET ALL (với pagination & sorting)
     @GetMapping("/admin/amenities")
     public ResponseEntity<PageResponse<AmenityDTO>> getAllAmenities(
             @RequestParam(defaultValue = "0") Integer pageNumber,
@@ -30,21 +29,18 @@ public class AmenityController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ✅ GET BY ID
     @GetMapping("/public/amenities/{amenityId}")
     public ResponseEntity<AmenityDTO> getAmenityById(@PathVariable Integer amenityId) {
         AmenityDTO amenity = amenityService.getAmenityById(amenityId);
         return ResponseEntity.ok(amenity);
     }
 
-    // ✅ CREATE
     @PostMapping("/admin/amenities")
     public ResponseEntity<AmenityDTO> createAmenity(@Valid @RequestBody AmenityDTO amenityDTO) {
         AmenityDTO created = amenityService.createAmenity(amenityDTO);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    // ✅ UPDATE
     @PutMapping("/admin/amenities/{amenityId}")
     public ResponseEntity<AmenityDTO> updateAmenity(
             @PathVariable Integer amenityId,
@@ -54,7 +50,6 @@ public class AmenityController {
         return ResponseEntity.ok(updated);
     }
 
-    // ✅ DELETE
     @DeleteMapping("/admin/amenities/{amenityId}")
     public ResponseEntity<String> deleteAmenity(@PathVariable Integer amenityId) {
         String message = amenityService.deleteAmenity(amenityId);

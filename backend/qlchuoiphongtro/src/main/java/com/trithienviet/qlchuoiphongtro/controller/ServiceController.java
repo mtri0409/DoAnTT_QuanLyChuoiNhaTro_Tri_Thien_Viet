@@ -21,7 +21,6 @@ public class ServiceController {
     @Autowired
     private ServiceService serviceService;
 
-    // ✅ GET ALL
     @GetMapping("/admin/services")
     public ResponseEntity<PageResponse<ServiveDTO>> getAllServices(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
@@ -39,21 +38,18 @@ public class ServiceController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ✅ GET BY ID
     @GetMapping("/public/services/{id}")
     public ResponseEntity<ServiveDTO> getServiceById(@PathVariable Integer id) {
         ServiveDTO dto = serviceService.getServiceById(id);
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
-    // ✅ CREATE
     @PostMapping("/admin/services")
     public ResponseEntity<ServiveDTO> createService(@Valid @RequestBody ServiveDTO dto) {
         ServiveDTO saved = serviceService.createService(dto);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    // ✅ UPDATE
     @PutMapping("/admin/services/{id}")
     public ResponseEntity<ServiveDTO> updateService(
             @PathVariable Integer id,
@@ -63,7 +59,6 @@ public class ServiceController {
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
-    // ✅ DELETE
     @DeleteMapping("/admin/services/{id}")
     public ResponseEntity<String> deleteService(@PathVariable Integer id) {
         String message = serviceService.deleteService(id);

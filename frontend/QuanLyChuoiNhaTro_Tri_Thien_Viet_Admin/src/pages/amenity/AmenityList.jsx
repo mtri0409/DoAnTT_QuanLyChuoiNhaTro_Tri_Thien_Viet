@@ -79,12 +79,12 @@ const AmenityList = () => {
         setDeletingAmenity(amenityId);
         try {
             const res = await apiAmenity.deleteAmenity(amenityId);
-            console.log('✅ Amenity deleted:', res);
+            console.log(' Amenity deleted:', res);
 
             fetchAmenities();
             alert('Xóa tiện ích thành công!');
         } catch (err) {
-            console.error('❌ Delete amenity error:', err);
+            console.error(' Delete amenity error:', err);
             alert('Lỗi khi xóa tiện ích: ' + (err.response?.data?.message || err.message));
         } finally {
             setDeletingAmenity(null);

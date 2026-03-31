@@ -29,7 +29,6 @@ public class ServiceServiceImpl implements ServiceService {
     @Autowired
     private ModelMapper modelMapper;
 
-    // ✅ GET ALL
     @Override
     public PageResponse<ServiveDTO> getAllServices(Integer pageNumber, Integer pageSize, String sortBy,
             String sortOrder) {
@@ -58,7 +57,6 @@ public class ServiceServiceImpl implements ServiceService {
         return response;
     }
 
-    // ✅ GET BY ID
     @Override
     public ServiveDTO getServiceById(Integer id) {
         ServiceItem service = serviceRepo.findById(id)
@@ -67,7 +65,6 @@ public class ServiceServiceImpl implements ServiceService {
         return modelMapper.map(service, ServiveDTO.class);
     }
 
-    // ✅ CREATE
     @Transactional
     @Override
     public ServiveDTO createService(ServiveDTO serviveDTO) {
@@ -78,7 +75,6 @@ public class ServiceServiceImpl implements ServiceService {
         return modelMapper.map(saved, ServiveDTO.class);
     }
 
-    // ✅ UPDATE
     @Transactional
     @Override
     public ServiveDTO updateService(Integer id, ServiveDTO serviveDTO) {
@@ -112,7 +108,6 @@ public class ServiceServiceImpl implements ServiceService {
         }
     }
 
-    // ✅ DELETE
     @Transactional
     @Override
     public String deleteService(Integer id) {

@@ -27,7 +27,6 @@ public class BranchServiceImpl implements BranchService {
     @Autowired
     private ModelMapper modelMapper;
 
-    // ✅ GET ALL
     @Override
     public PageResponse<BranchDTO> getAllBranches(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
 
@@ -55,7 +54,6 @@ public class BranchServiceImpl implements BranchService {
         return response;
     }
 
-    // ✅ GET BY ID
     @Override
     public BranchDTO getBranchById(Long id) {
         Branch branch = branchRepo.findById(id)
@@ -64,7 +62,6 @@ public class BranchServiceImpl implements BranchService {
         return modelMapper.map(branch, BranchDTO.class);
     }
 
-    // ✅ CREATE
     @Transactional
     @Override
     public BranchDTO createBranch(BranchDTO branchDTO) {
@@ -75,7 +72,6 @@ public class BranchServiceImpl implements BranchService {
         return modelMapper.map(saved, BranchDTO.class);
     }
 
-    // ✅ UPDATE
     @Transactional
     @Override
     public BranchDTO updateBranch(Long id, BranchDTO branchDTO) {
@@ -91,7 +87,6 @@ public class BranchServiceImpl implements BranchService {
         return modelMapper.map(updated, BranchDTO.class);
     }
 
-    // ✅ DELETE
     @Transactional
     @Override
     public String deleteBranch(Long id) {

@@ -7,7 +7,7 @@ import Pagination from '../../components/Pagination';
 import { Link } from 'react-router-dom';
 
 const BranchList = () => {
-  const PAGE_SIZE = 5; // 5 chi nhánh mỗi trang
+  const PAGE_SIZE = 5; 
   
   const [data, setData] = useState({
     content: [],
@@ -44,9 +44,9 @@ const BranchList = () => {
         totalElements: 0
       });
       
-      console.log('✅ Branches loaded:', branchData.content?.length || 0);
+      console.log(' Branches loaded:', branchData.content?.length || 0);
     } catch (err) {
-      console.error('❌ Fetch error:', err);
+      console.error(' Fetch error:', err);
       setData({
         content: [],
         pageNumber: 0,
@@ -83,13 +83,13 @@ const BranchList = () => {
     setDeleting(branchId);
     try {
       const response = await apiBranches.deleteBranch(branchId);
-      console.log('✅ Delete response:', response);
+      console.log(' Delete response:', response);
       
       // Refresh list
       fetchBranches(currentPage, search);
       alert('Xóa chi nhánh thành công!');
     } catch (err) {
-      console.error('❌ Delete error:', err);
+      console.error(' Delete error:', err);
       alert('Lỗi khi xóa chi nhánh: ' + (err.response?.data?.message || err.message));
     } finally {
       setDeleting(null);

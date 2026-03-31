@@ -1,7 +1,6 @@
 import axiosInstance from "./axios";
 
 const apiRoom = {
-    // ✅ GET ALL ROOMS (với pagination, filtering, sorting)
     getAllRooms: (
         pageNumber = 0,
         pageSize = 10,
@@ -25,25 +24,21 @@ const apiRoom = {
         });
     },
 
-    // ✅ GET ROOM BY ID
     getRoomById: (roomId) => {
         const url = `/public/rooms/${roomId}`;
         return axiosInstance.get(url);
     },
 
-    // ✅ CREATE ROOM
     createRoom: (roomDTO) => {
         const url = `/admin/rooms`;
         return axiosInstance.post(url, roomDTO);
     },
 
-    // ✅ UPDATE ROOM
     updateRoom: (roomId, roomDTO) => {
         const url = `/public/rooms/${roomId}`;
         return axiosInstance.put(url, roomDTO);
     },
 
-    // ✅ DELETE ROOM
     deleteRoom: (roomId) => {
         const url = `/admin/rooms/${roomId}`;
         return axiosInstance.delete(url);

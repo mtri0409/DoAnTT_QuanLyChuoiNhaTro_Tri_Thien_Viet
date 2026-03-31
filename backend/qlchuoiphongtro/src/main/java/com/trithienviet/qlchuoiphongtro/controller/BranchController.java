@@ -21,7 +21,6 @@ public class BranchController {
     @Autowired
     private BranchService branchService;
 
-    // ✅ GET ALL (FIX sortBy = branchId)
     @GetMapping("/admin/branches")
     public ResponseEntity<PageResponse<BranchDTO>> getAllBranches(
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
@@ -39,21 +38,18 @@ public class BranchController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ✅ GET BY ID
     @GetMapping("/public/branches/{id}")
     public ResponseEntity<BranchDTO> getBranchById(@PathVariable Long id) {
         BranchDTO branchDTO = branchService.getBranchById(id);
         return new ResponseEntity<>(branchDTO, HttpStatus.OK);
     }
 
-    // ✅ CREATE
     @PostMapping("/admin/branches")
     public ResponseEntity<BranchDTO> createBranch(@Valid @RequestBody BranchDTO branchDTO) {
         BranchDTO savedBranch = branchService.createBranch(branchDTO);
         return new ResponseEntity<>(savedBranch, HttpStatus.CREATED);
     }
 
-    // ✅ UPDATE
     @PutMapping("/admin/branches/{id}")
     public ResponseEntity<BranchDTO> updateBranch(
             @PathVariable Long id,
@@ -63,7 +59,6 @@ public class BranchController {
         return new ResponseEntity<>(updatedBranch, HttpStatus.OK);
     }
 
-    // ✅ DELETE (bonus thêm luôn cho đủ CRUD)
     @DeleteMapping("/admin/branches/{id}")
     public ResponseEntity<String> deleteBranch(@PathVariable Long id) {
         String message = branchService.deleteBranch(id);

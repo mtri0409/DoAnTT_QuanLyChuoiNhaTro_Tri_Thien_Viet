@@ -49,9 +49,9 @@ const RoomList = () => {
 
             const roomData = res.data || res;
             setData(roomData || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-            console.log('✅ Set room data:', roomData);
+            console.log(' Set room data:', roomData);
         } catch (err) {
-            console.error('❌ Fetch rooms error:', err);
+            console.error(' Fetch rooms error:', err);
             setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
         } finally {
             setLoading(false);
@@ -65,18 +65,18 @@ const RoomList = () => {
             const floorRes = await apiFloor.getAllFloors();
             const floorData = floorRes.data || floorRes;
             setFloors(Array.isArray(floorData) ? floorData : []);
-            console.log('✅ Set floors:', floorData);
+            console.log(' Set floors:', floorData);
 
             // ===== BRANCHES =====
             const branchRes = await apiBranches.getAllBranches(1, 100);
             const branchData = branchRes.data || branchRes;
             const branchList = branchData?.content || [];
-            console.log('✅ Set branches:', branchList);
+            console.log(' Set branches:', branchList);
 
             setBranches([{ branchId: 'all', branchName: 'Tất cả' }, ...branchList]);
 
         } catch (err) {
-            console.error('❌ Fetch filters error:', err);
+            console.error(' Fetch filters error:', err);
             setBranches([{ branchId: 'all', branchName: 'Tất cả' }]);
             setFloors([]);
         }
@@ -90,12 +90,12 @@ const RoomList = () => {
         setDeletingRoom(roomId);
         try {
             const res = await apiRoom.deleteRoom(roomId);
-            console.log('✅ Room deleted:', res);
+            console.log(' Room deleted:', res);
 
             fetchRooms();
             alert('Xóa phòng thành công!');
         } catch (err) {
-            console.error('❌ Delete room error:', err);
+            console.error(' Delete room error:', err);
             alert('Lỗi khi xóa phòng: ' + (err.response?.data?.message || err.message));
         } finally {
             setDeletingRoom(null);
@@ -133,9 +133,9 @@ const RoomList = () => {
                 branchId: parseInt(newFloorData.branchId)  // ← branchId đã là number
             };
 
-            console.log('📤 Sending floorDTO:', floorDTO);
+            console.log(' Sending floorDTO:', floorDTO);
             const res = await apiFloor.createFloor(floorDTO);
-            console.log('✅ Floor created:', res);
+            console.log(' Floor created:', res);
 
             fetchFilters();
 
@@ -143,7 +143,7 @@ const RoomList = () => {
             setNewFloorData({ floorNumber: '', branchId: '' });
             alert('Thêm tầng thành công!');
         } catch (err) {
-            console.error('❌ Create floor error:', err);
+            console.error(' Create floor error:', err);
             alert('Lỗi khi thêm tầng: ' + err.message);
         } finally {
             setAddingFloor(false);
@@ -164,9 +164,9 @@ const RoomList = () => {
                 branchId: parseInt(newFloorData.branchId)
             };
 
-            console.log('📤 Updating floor:', editingFloorId, floorDTO);
+            console.log(' Updating floor:', editingFloorId, floorDTO);
             const res = await apiFloor.updateFloor(editingFloorId, floorDTO);
-            console.log('✅ Floor updated:', res);
+            console.log('Floor updated:', res);
 
             fetchFilters();
 
@@ -175,7 +175,7 @@ const RoomList = () => {
             setNewFloorData({ floorNumber: '', branchId: '' });
             alert('Cập nhật tầng thành công!');
         } catch (err) {
-            console.error('❌ Update floor error:', err);
+            console.error(' Update floor error:', err);
             alert('Lỗi khi cập nhật tầng: ' + err.message);
         } finally {
             setAddingFloor(false);
@@ -190,11 +190,11 @@ const RoomList = () => {
 
         try {
             await apiFloor.deleteFloor(floorId);
-            console.log('✅ Floor deleted');
+            console.log(' Floor deleted');
             fetchFilters();
             alert('Xóa tầng thành công!');
         } catch (err) {
-            console.error('❌ Delete floor error:', err);
+            console.error(' Delete floor error:', err);
             alert('Lỗi khi xóa tầng: ' + err.message);
         }
     };
@@ -241,7 +241,7 @@ const RoomList = () => {
                     >
                         <FaPlus /> Thêm tầng
                     </button>
-                    <Link to="/admin/rooms/create" className="btn btn-primary shadow-sm">
+                    <Link to="/rooms/create" className="btn btn-primary shadow-sm">
                         <FaPlus /> Thêm phòng
                     </Link>
                 </div>

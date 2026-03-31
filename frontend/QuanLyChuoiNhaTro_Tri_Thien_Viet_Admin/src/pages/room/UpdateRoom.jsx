@@ -41,20 +41,20 @@ const UpdateRoom = () => {
         // ===== ROOM DATA =====
         const roomRes = await apiRoom.getRoomById(roomId);
         const roomData = roomRes.data || roomRes;
-        console.log('✅ Room loaded:', roomData);
+        console.log(' Room loaded:', roomData);
 
         // ===== FLOORS =====
         const floorRes = await apiFloor.getAllFloors();
         const floorData = floorRes.data || floorRes;
         setFloors(Array.isArray(floorData) ? floorData : []);
-        console.log('✅ Floors loaded:', floorData);
+        console.log(' Floors loaded:', floorData);
 
         // ===== BRANCHES =====
         const branchRes = await apiBranches.getAllBranches(1, 100);
         const branchData = branchRes.data || branchRes;
         const branchList = branchData?.content || [];
         setBranches(branchList);
-        console.log('✅ Branches loaded:', branchList);
+        console.log(' Branches loaded:', branchList);
 
         // ===== SET FORM DATA =====
         // Tìm branchId từ floorId
@@ -73,7 +73,7 @@ const UpdateRoom = () => {
         });
 
       } catch (err) {
-        console.error('❌ Fetch error:', err);
+        console.error(' Fetch error:', err);
         alert('Lỗi khi tải dữ liệu phòng!');
         navigate('/rooms/1');
       } finally {
@@ -139,11 +139,11 @@ const UpdateRoom = () => {
 
     try {
       const response = await apiRoom.updateRoom(roomId, formData);
-      console.log('✅ Response:', response);
+      console.log(' Response:', response);
       alert("Cập nhật phòng thành công!");
       navigate('/rooms/1');
     } catch (err) {
-      console.error("❌ Lỗi API:", err);
+      console.error(" Lỗi API:", err);
 
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
@@ -379,9 +379,9 @@ const UpdateRoom = () => {
                     value={formData.Status}
                     onChange={handleInputChange}
                   >
-                    <option value="AVAILABLE">✓ Có sẵn</option>
-                    <option value="OCCUPIED">📌 Đã cho thuê</option>
-                    <option value="MAINTENANCE">🔧 Bảo trì</option>
+                    <option value="AVAILABLE"> Có sẵn</option>
+                    <option value="OCCUPIED"> Đã cho thuê</option>
+                    <option value="MAINTENANCE"> Bảo trì</option>
                   </select>
                   {renderError('Status')}
                 </div>
