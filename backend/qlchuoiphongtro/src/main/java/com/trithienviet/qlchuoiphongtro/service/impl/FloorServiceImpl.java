@@ -44,9 +44,7 @@ public class FloorServiceImpl implements FloorService {
                 return FloorDTO.builder()
                                 .floorId(saved.getFloorId().intValue())
                                 .floorNumber(saved.getFloorNumber())
-                                .branchId(saved.getBranch() != null ? saved.getBranch().getBranchId().intValue() : null) // ←
-                                                                                                                         // Include
-                                                                                                                         // branchId
+                                .branchId(saved.getBranch() != null ? saved.getBranch().getBranchId().intValue() : null) 
                                 .build();
         }
 
