@@ -1,24 +1,53 @@
 import axiosInstance from "./axios";
 
 const apiRoom = {
-    getAllRooms: (pageNumber, pageSize = 10, sortBy = "roomName", sortOrder = "asc", floorId = null, branchId = null, search = "") => {
-        return axiosInstance.get("/admin/rooms", {
+    // ✅ GET ALL ROOMS (với pagination, filtering, sorting)
+    getAllRooms: (
+        pageNumber = 0,
+        pageSize = 10,
+        sortBy = 'roomName',
+        sortOrder = 'asc',
+        floorId = null,
+        branchId = null,
+        search = ''
+    ) => {
+        const url = `/admin/rooms`;
+        return axiosInstance.get(url, {
             params: {
-                pageNumber,
-                pageSize,
-                sortBy,
-                sortOrder,
-                floorId: floorId || null,
-                branchId: branchId || null,
-                search
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                ...(floorId && { floorId: floorId }),      // ← Chỉ thêm nếu có
+                ...(branchId && { branchId: branchId }),   // ← Chỉ thêm nếu có
+                ...(search && { search: search })           // ← Chỉ thêm nếu có
             }
         });
     },
 
-    createRoom: (data) => axiosInstance.post("/admin/rooms", data),
-    updateRoom: (id, data) => axiosInstance.put(`/public/rooms/${id}`, data),
-    deleteRoom: (id) => axiosInstance.delete(`/admin/rooms/${id}`),
-    getRoomById: (id) => axiosInstance.get(`/public/rooms/${id}`)
+    // ✅ GET ROOM BY ID
+    getRoomById: (roomId) => {
+        const url = `/public/rooms/${roomId}`;
+        return axiosInstance.get(url);
+    },
+
+    // ✅ CREATE ROOM
+    createRoom: (roomDTO) => {
+        const url = `/admin/rooms`;
+        return axiosInstance.post(url, roomDTO);
+    },
+
+    // ✅ UPDATE ROOM
+    updateRoom: (roomId, roomDTO) => {
+        const url = `/public/rooms/${roomId}`;
+        return axiosInstance.put(url, roomDTO);
+    },
+
+    // ✅ DELETE ROOM
+    deleteRoom: (roomId) => {
+        const url = `/admin/rooms/${roomId}`;
+        return axiosInstance.delete(url);
+    }
 };
 
 export default apiRoom;

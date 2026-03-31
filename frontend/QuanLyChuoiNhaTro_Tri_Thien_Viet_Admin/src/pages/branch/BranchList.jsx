@@ -19,7 +19,7 @@ const BranchList = () => {
   const [currentPage, setCurrentPage] = useState(0); // 0-indexed
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [deleting, setDeleting] = useState(null); // Track which branch is being deleted
+  const [deleting, setDeleting] = useState(null); 
 
   // Fetch branches
   const fetchBranches = async (page = 0, searchText = '') => {

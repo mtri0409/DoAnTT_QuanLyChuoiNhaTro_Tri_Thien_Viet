@@ -1,19 +1,35 @@
 import axiosInstance from "./axios";
 
 const apiFloor = {
+    // ✅ GET ALL FLOORS
+    getAllFloors: () => {
+        const url = `/public/floors`;
+        return axiosInstance.get(url);
+    },
 
-  getAllFloors: () => {
-    const url = `/public/floors`;
-    return axiosInstance.get(url);
-  },
+    // ✅ GET FLOOR BY ID
+    getFloorById: (floorId) => {
+        const url = `/public/floors/${floorId}`;
+        return axiosInstance.get(url);
+    },
 
-  createFloor: (data) => axiosInstance.post("/admin/floors", data),
+    // ✅ CREATE FLOOR
+    createFloor: (floorDTO) => {
+        const url = `/admin/floors`;
+        return axiosInstance.post(url, floorDTO);
+    },
 
-  updateFloor: (id, data) => axiosInstance.put(`/public/floors/${id}`, data),
+    // ✅ UPDATE FLOOR
+    updateFloor: (floorId, floorDTO) => {
+        const url = `/public/floors/${floorId}`;
+        return axiosInstance.put(url, floorDTO);
+    },
 
-  deleteFloor: (id) => axiosInstance.delete(`/admin/floors/${id}`),
-
-  getFloorById: (id) => axiosInstance.get(`/public/floors/${id}`),
+    // ✅ DELETE FLOOR
+    deleteFloor: (floorId) => {
+        const url = `/admin/floors/${floorId}`;
+        return axiosInstance.delete(url);
+    }
 };
 
 export default apiFloor;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaBed, FaSearch, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaBed, FaSearch, FaPlus, FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
 import apiRoom from '../../api/apiRoom';
 import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
@@ -7,10 +7,10 @@ import Pagination from '../../components/Pagination';
 import { Link } from 'react-router-dom';
 
 const RoomList = () => {
-    const PAGE_SIZE = 5; // 5 phòng mỗi trang
-    
+    const PAGE_SIZE = 5;
+
     const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-    const [currentPage, setCurrentPage] = useState(0); // Backend dùng 0-indexed
+    const [currentPage, setCurrentPage] = useState(0);
     const [loading, setLoading] = useState(false);
 
     const [search, setSearch] = useState('');
@@ -18,15 +18,27 @@ const RoomList = () => {
     const [selectedBranch, setSelectedBranch] = useState('all');
 
     const [floors, setFloors] = useState([]);
+    const [filteredFloors, setFilteredFloors] = useState([]);
     const [branches, setBranches] = useState([]);
+    const [deletingRoom, setDeletingRoom] = useState(null);
+
+    // Modal state
+    const [showAddFloorModal, setShowAddFloorModal] = useState(false);
+    const [showEditFloorModal, setShowEditFloorModal] = useState(false); // ← Edit modal
+    const [editingFloorId, setEditingFloorId] = useState(null);
+    const [newFloorData, setNewFloorData] = useState({
+        floorNumber: '',
+        branchId: ''
+    });
+    const [addingFloor, setAddingFloor] = useState(false);
 
     // fetch rooms
     const fetchRooms = async () => {
         setLoading(true);
         try {
             const res = await apiRoom.getAllRooms(
-                currentPage,        // 0-indexed
-                PAGE_SIZE,           // 5 phòng mỗi trang
+                currentPage,
+                PAGE_SIZE,
                 'roomName',
                 'asc',
                 selectedFloor || null,
@@ -34,7 +46,7 @@ const RoomList = () => {
                 search
             );
             console.log('🛏️ Raw response:', res);
-            
+
             const roomData = res.data || res;
             setData(roomData || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
             console.log('✅ Set room data:', roomData);
@@ -51,20 +63,16 @@ const RoomList = () => {
         try {
             // ===== FLOORS =====
             const floorRes = await apiFloor.getAllFloors();
-            console.log('🏢 Raw floors response:', floorRes);
-            
             const floorData = floorRes.data || floorRes;
             setFloors(Array.isArray(floorData) ? floorData : []);
             console.log('✅ Set floors:', floorData);
 
             // ===== BRANCHES =====
             const branchRes = await apiBranches.getAllBranches(1, 100);
-            console.log('🏪 Raw branches response:', branchRes);
-            
             const branchData = branchRes.data || branchRes;
             const branchList = branchData?.content || [];
             console.log('✅ Set branches:', branchList);
-            
+
             setBranches([{ branchId: 'all', branchName: 'Tất cả' }, ...branchList]);
 
         } catch (err) {
@@ -73,30 +81,148 @@ const RoomList = () => {
             setFloors([]);
         }
     };
+
+    const handleDeleteRoom = async (roomId, roomName) => {
+        if (!window.confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) {
+            return;
+        }
+
+        setDeletingRoom(roomId);
+        try {
+            const res = await apiRoom.deleteRoom(roomId);
+            console.log('✅ Room deleted:', res);
+
+            fetchRooms();
+            alert('Xóa phòng thành công!');
+        } catch (err) {
+            console.error('❌ Delete room error:', err);
+            alert('Lỗi khi xóa phòng: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setDeletingRoom(null);
+        }
+    };
+
+    // ← Filter floors theo branch
+    useEffect(() => {
+        if (selectedBranch === 'all') {
+            setFilteredFloors(floors);
+        } else {
+            const filtered = floors.filter(f => f.branchId === parseInt(selectedBranch));
+            setFilteredFloors(filtered);
+            setSelectedFloor('');
+        }
+    }, [selectedBranch, floors]);
+
     const getFloorNumber = (floorId) => {
         if (!floorId || !Array.isArray(floors)) return '-';
         const floor = floors.find(f => f.floorId === floorId);
         return floor ? floor.floorNumber : '-';
     };
 
+    // Handle thêm tầng
+    const handleAddFloor = async () => {
+        if (!newFloorData.floorNumber || !newFloorData.branchId) {
+            alert('Vui lòng nhập đầy đủ thông tin!');
+            return;
+        }
+
+        setAddingFloor(true);
+        try {
+            const floorDTO = {
+                floorNumber: parseInt(newFloorData.floorNumber),
+                branchId: parseInt(newFloorData.branchId)  // ← branchId đã là number
+            };
+
+            console.log('📤 Sending floorDTO:', floorDTO);
+            const res = await apiFloor.createFloor(floorDTO);
+            console.log('✅ Floor created:', res);
+
+            fetchFilters();
+
+            setShowAddFloorModal(false);
+            setNewFloorData({ floorNumber: '', branchId: '' });
+            alert('Thêm tầng thành công!');
+        } catch (err) {
+            console.error('❌ Create floor error:', err);
+            alert('Lỗi khi thêm tầng: ' + err.message);
+        } finally {
+            setAddingFloor(false);
+        }
+    };
+
+    // Handle sửa tầng
+    const handleEditFloor = async () => {
+        if (!newFloorData.floorNumber) {
+            alert('Vui lòng nhập số tầng!');
+            return;
+        }
+
+        setAddingFloor(true);
+        try {
+            const floorDTO = {
+                floorNumber: parseInt(newFloorData.floorNumber),
+                branchId: parseInt(newFloorData.branchId)
+            };
+
+            console.log('📤 Updating floor:', editingFloorId, floorDTO);
+            const res = await apiFloor.updateFloor(editingFloorId, floorDTO);
+            console.log('✅ Floor updated:', res);
+
+            fetchFilters();
+
+            setShowEditFloorModal(false);
+            setEditingFloorId(null);
+            setNewFloorData({ floorNumber: '', branchId: '' });
+            alert('Cập nhật tầng thành công!');
+        } catch (err) {
+            console.error('❌ Update floor error:', err);
+            alert('Lỗi khi cập nhật tầng: ' + err.message);
+        } finally {
+            setAddingFloor(false);
+        }
+    };
+
+    // Handle delete floor
+    const handleDeleteFloor = async (floorId, floorNumber) => {
+        if (!window.confirm(`Xóa tầng ${floorNumber}?`)) {
+            return;
+        }
+
+        try {
+            await apiFloor.deleteFloor(floorId);
+            console.log('✅ Floor deleted');
+            fetchFilters();
+            alert('Xóa tầng thành công!');
+        } catch (err) {
+            console.error('❌ Delete floor error:', err);
+            alert('Lỗi khi xóa tầng: ' + err.message);
+        }
+    };
+
+    // Open edit modal
+    const openEditFloorModal = (floor) => {
+        setEditingFloorId(floor.floorId);
+        setNewFloorData({
+            floorNumber: floor.floorNumber.toString(),
+            branchId: floor.branchId.toString()
+        });
+        setShowEditFloorModal(true);
+    };
+
     useEffect(() => {
         fetchFilters();
     }, []);
 
-    // Fetch rooms khi filter thay đổi, RESET về trang 0
     useEffect(() => {
         setCurrentPage(0);
     }, [search, selectedFloor, selectedBranch]);
 
-    // Fetch rooms khi currentPage hoặc filters thay đổi
     useEffect(() => {
         fetchRooms();
     }, [currentPage, search, selectedFloor, selectedBranch]);
 
-    // Handle pagination
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        // Scroll lên top table
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -108,16 +234,160 @@ const RoomList = () => {
                     <h4 className="fw-bold text-dark mb-1">QUẢN LÝ PHÒNG</h4>
                     <p className="text-muted small mb-0">Hệ thống quản lý phòng</p>
                 </div>
-                <Link to="/admin/rooms/create" className="btn btn-primary shadow-sm">
-                    <FaPlus /> Thêm mới
-                </Link>
+                <div className="d-flex gap-2">
+                    <button
+                        className="btn btn-outline-primary shadow-sm"
+                        onClick={() => setShowAddFloorModal(true)}
+                    >
+                        <FaPlus /> Thêm tầng
+                    </button>
+                    <Link to="/admin/rooms/create" className="btn btn-primary shadow-sm">
+                        <FaPlus /> Thêm phòng
+                    </Link>
+                </div>
             </div>
+
+            {/* MODAL THÊM TẦNG */}
+            {showAddFloorModal && (
+                <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 rounded-4">
+                            <div className="modal-header border-0 pb-0">
+                                <h5 className="modal-title fw-bold">Thêm tầng mới</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowAddFloorModal(false)}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label className="form-label small fw-bold text-muted">SỐ TẦNG <span className="text-danger">*</span></label>
+                                    <input
+                                        type="number"
+                                        className="form-control bg-light border-0 py-2"
+                                        placeholder="VD: 1, 2, 3..."
+                                        value={newFloorData.floorNumber}
+                                        onChange={(e) => setNewFloorData({ ...newFloorData, floorNumber: e.target.value })}
+                                        min="0"
+                                    />
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="form-label small fw-bold text-muted">CHI NHÁNH <span className="text-danger">*</span></label>
+                                    <select
+                                        className="form-select bg-light border-0 py-2"
+                                        value={newFloorData.branchId}
+                                        onChange={(e) => setNewFloorData({ ...newFloorData, branchId: e.target.value })}
+                                    >
+                                        <option value="">-- Chọn chi nhánh --</option>
+                                        {Array.isArray(branches) && branches
+                                            .filter(b => b.branchId !== 'all')
+                                            .map(branch => (
+                                                <option key={branch.branchId} value={branch.branchId}>
+                                                    {branch.branchName}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer border-0 pt-0">
+                                <button
+                                    type="button"
+                                    className="btn btn-light"
+                                    onClick={() => setShowAddFloorModal(false)}
+                                    disabled={addingFloor}
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleAddFloor}
+                                    disabled={addingFloor}
+                                >
+                                    {addingFloor ? '...' : 'Thêm'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL SỬA TẦNG */}
+            {showEditFloorModal && (
+                <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 rounded-4">
+                            <div className="modal-header border-0 pb-0">
+                                <h5 className="modal-title fw-bold">Sửa tầng</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowEditFloorModal(false)}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label className="form-label small fw-bold text-muted">SỐ TẦNG <span className="text-danger">*</span></label>
+                                    <input
+                                        type="number"
+                                        className="form-control bg-light border-0 py-2"
+                                        placeholder="VD: 1, 2, 3..."
+                                        value={newFloorData.floorNumber}
+                                        onChange={(e) => setNewFloorData({ ...newFloorData, floorNumber: e.target.value })}
+                                        min="0"
+                                    />
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="form-label small fw-bold text-muted">CHI NHÁNH</label>
+                                    <select
+                                        className="form-select bg-light border-0 py-2"
+                                        value={newFloorData.branchId}
+                                        onChange={(e) => setNewFloorData({ ...newFloorData, branchId: e.target.value })}
+                                        disabled
+                                    >
+                                        {Array.isArray(branches) && branches
+                                            .filter(b => b.branchId !== 'all')
+                                            .map(branch => (
+                                                <option key={branch.branchId} value={branch.branchId}>
+                                                    {branch.branchName}
+                                                </option>
+                                            ))}
+                                    </select>
+                                    <small className="text-muted d-block mt-2">Chi nhánh không thể thay đổi</small>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer border-0 pt-0">
+                                <button
+                                    type="button"
+                                    className="btn btn-light"
+                                    onClick={() => setShowEditFloorModal(false)}
+                                    disabled={addingFloor}
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleEditFloor}
+                                    disabled={addingFloor}
+                                >
+                                    {addingFloor ? '...' : 'Cập nhật'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="card border-0 shadow-sm rounded-3">
 
                 {/* TOOLBAR */}
                 <div className="card-header bg-white py-3 border-0">
-                    {/* search + floor filter */}
                     <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div className="input-group" style={{ maxWidth: '250px' }}>
                             <span className="input-group-text bg-light border-0">
@@ -132,7 +402,6 @@ const RoomList = () => {
                             />
                         </div>
 
-                        {/* floor filter */}
                         <select
                             className="form-select form-select-sm border-0 bg-light"
                             style={{ maxWidth: '180px' }}
@@ -140,7 +409,7 @@ const RoomList = () => {
                             onChange={(e) => setSelectedFloor(e.target.value)}
                         >
                             <option value="">Tất cả tầng</option>
-                            {Array.isArray(floors) && floors.map(f => (
+                            {Array.isArray(filteredFloors) && filteredFloors.map(f => (
                                 <option key={f.floorId} value={f.floorId}>
                                     Tầng {f.floorNumber}
                                 </option>
@@ -148,21 +417,46 @@ const RoomList = () => {
                         </select>
                     </div>
 
-                    {/* branch tabs */}
+                    {/* branch tabs với edit/delete actions */}
                     <div className="d-flex gap-2 mb-2 flex-wrap">
                         {Array.isArray(branches) && branches.length > 0 ? (
                             branches.map(b => (
-                                <button
-                                    key={b.branchId}
-                                    className={`btn btn-sm ${
-                                        selectedBranch === b.branchId.toString()
-                                            ? 'btn-primary'
-                                            : 'btn-light border'
-                                    }`}
-                                    onClick={() => setSelectedBranch(b.branchId.toString())}
-                                >
-                                    {b.branchName}
-                                </button>
+                                <div key={b.branchId} className="position-relative">
+                                    <button
+                                        className={`btn btn-sm ${selectedBranch === b.branchId.toString()
+                                                ? 'btn-primary'
+                                                : 'btn-light border'
+                                            }`}
+                                        onClick={() => setSelectedBranch(b.branchId.toString())}
+                                    >
+                                        {b.branchName}
+                                    </button>
+                                    
+                                    {/* ← Edit/Delete floor buttons ở đây */}
+                                    {selectedBranch === b.branchId.toString() && b.branchId !== 'all' && (
+                                        <div className="d-flex gap-1 ms-2">
+                                            {filteredFloors.map(floor => (
+                                                <div key={floor.floorId} className="d-flex align-items-center gap-1 small">
+                                                    <span className="text-muted">Tầng {floor.floorNumber}</span>
+                                                    <button
+                                                        className="btn btn-sm btn-link text-primary p-0"
+                                                        onClick={() => openEditFloorModal(floor)}
+                                                        title="Sửa"
+                                                    >
+                                                        <FaEdit size={12} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-link text-danger p-0"
+                                                        onClick={() => handleDeleteFloor(floor.floorId, floor.floorNumber)}
+                                                        title="Xóa"
+                                                    >
+                                                        <FaTrash size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             ))
                         ) : (
                             <small className="text-muted">Đang tải branches...</small>
@@ -226,18 +520,22 @@ const RoomList = () => {
                                         <td className="text-center">
                                             <span
                                                 className={`badge rounded-pill ${
-                                                    item.status === 'AVAILABLE'
+                                                    (item.Status?.toUpperCase() === 'AVAILABLE' || item.status?.toUpperCase() === 'AVAILABLE')
                                                         ? 'bg-success-subtle text-success'
-                                                        : 'bg-secondary-subtle text-secondary'
-                                                }`}
+                                                        : (item.Status?.toUpperCase() === 'OCCUPIED' || item.status?.toUpperCase() === 'OCCUPIED')
+                                                            ? 'bg-warning-subtle text-warning'
+                                                            : 'bg-secondary-subtle text-secondary'
+                                                    }`}
                                             >
-                                                {item.status === 'AVAILABLE' ? '✓ Có sẵn' : 'Không'}
+                                                {item.Status?.toUpperCase() === 'AVAILABLE' || item.status?.toUpperCase() === 'AVAILABLE' ? '✓ Có sẵn'
+                                                    : item.Status?.toUpperCase() === 'OCCUPIED' || item.status?.toUpperCase() === 'OCCUPIED' ? '📌 Đã cho thuê'
+                                                        : item.Status || item.status || 'Chưa xác định'}
                                             </span>
                                         </td>
                                         <td className="text-end pe-4">
                                             <div className="d-flex justify-content-end gap-1">
                                                 <Link
-                                                    to={`/admin/rooms/${item.roomId}/edit`}
+                                                    to={`/rooms/${item.roomId}/update`}
                                                     className="btn btn-sm btn-light border-0"
                                                     title="Chỉnh sửa"
                                                 >
@@ -245,14 +543,17 @@ const RoomList = () => {
                                                 </Link>
                                                 <button
                                                     className="btn btn-sm btn-light border-0"
-                                                    onClick={() => {
-                                                        if (window.confirm('Bạn có chắc muốn xóa phòng này?')) {
-                                                            // Call delete API
-                                                        }
-                                                    }}
+                                                    onClick={() => handleDeleteRoom(item.roomId, item.roomName)}
+                                                    disabled={deletingRoom === item.roomId}
                                                     title="Xóa"
                                                 >
-                                                    <FaTrash className="text-danger" />
+                                                    {deletingRoom === item.roomId ? (
+                                                        <span className="spinner-border spinner-border-sm text-danger">
+                                                            <span className="visually-hidden">Đang xóa...</span>
+                                                        </span>
+                                                    ) : (
+                                                        <FaTrash className="text-danger" />
+                                                    )}
                                                 </button>
                                             </div>
                                         </td>
