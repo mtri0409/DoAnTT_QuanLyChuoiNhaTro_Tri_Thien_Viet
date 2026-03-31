@@ -4,25 +4,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.trithienviet.qlchuoiphongtro.entity.OtpToken;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.UserRole;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.PasswordResetRequest;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
+import com.trithienviet.qlchuoiphongtro.repo.OtpTokenRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
+import com.trithienviet.qlchuoiphongtro.utils.OtpUtils;
 import com.trithienviet.qlchuoiphongtro.utils.PasswordGenerator;
 
 import org.springframework.data.domain.Pageable; 
 
 import jakarta.transaction.Transactional;
 
+import java.lang.foreign.Linker.Option;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -40,6 +47,8 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private ProfileRepo profileRepo;
 
+    @Autowired
+    private OtpTokenRepo otpTokenRepo;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -83,7 +92,7 @@ public class UserServiceImpl implements UserService{
             throw new RuntimeException("Profile này đã được liên kết với một tài khoản khác!");
         }        
         User newUser = new User();
-        newUser.setUserName(profile.getPhone());
+        newUser.setUserName(profile.getEmail());
         newUser.setPassword(passwordEncoder.encode(profile.getPhone()));
         newUser.setRole(UserRole.TENANT); 
         newUser.setProfile(profile);
@@ -172,28 +181,7 @@ public class UserServiceImpl implements UserService{
         return "Thay đổi quyền thành công cho user: " + user.getUserName();
     }
 
-    @Transactional
-    @Override
-    public String changePassword(Long userId, String oldPassword, String newPassword) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
-        // 1. Kiểm tra mật khẩu cũ có đúng không
-        // passwordEncoder.matches(mật_khẩu_thô, mật_khẩu_đã_mã_hóa_trong_db)
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new RuntimeException("Mật khẩu cũ không chính xác!");
-        }
-
-        // 2. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ (tùy chọn)
-        if (oldPassword.equals(newPassword)) {
-            throw new RuntimeException("Mật khẩu mới phải khác mật khẩu cũ!");
-        }
-
-        // 3. Mã hóa và lưu mật khẩu mới
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepo.save(user);
-        return "Đổi mật khẩu thành công !";
-    }
     @Override
     @Transactional
     public String resetPassword(Long userId){
@@ -216,6 +204,74 @@ public class UserServiceImpl implements UserService{
         
         return user.getIsActice() ? "Đã kích hoạt" : "Đã khóa";
     }
+    
+   @Override
+    public String verifyEmailUser(String email, PasswordResetRequest request) {
+        // 1. Lấy email từ DB để so khớp
+        String emailFromDB = userRepo.findEmailByProfileId(request.getProfileId())
+                .orElseThrow(() -> new ResourceNotFoundException("Email", "profileId", request.getProfileId()));
+
+        if (!emailFromDB.equals(email)) {
+            throw new RuntimeException("Email không trùng khớp với email đã đăng ký!");
+        }
+
+        // 2. Lấy đối tượng User để liên kết với OtpToken
+        User user = userRepo.findByProfileId(request.getProfileId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "profileId", request.getProfileId()));
+
+        // 3. Tạo mới OtpToken (Đây là bước nhóm đang thiếu)
+        OtpToken otpToken = new OtpToken();
+        otpToken.setOtpCode("123456"); 
+        otpToken.setUser(user); // Gán user vào để biết OTP này của ai
+        otpToken.setExpiryDate(LocalDateTime.now().plusMinutes(10)); 
+        otpToken.setUsed(false);
+
+        // 4. Lưu vào Database
+        otpTokenRepo.save(otpToken);
+
+        return "Đã gửi OTP đến email: " + email + " (Mã test: 123456, ID: " + otpToken.getId() + ")";
+    }
+    public String verifyOtpByUserId(Long userId, String code) {
+        // Tìm cái mới nhất của ông này
+        OtpToken token = otpTokenRepo.findLatestTokenByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("OTP", "userId", userId));
+
+        if (!token.getOtpCode().equals(code)) return "Mã OTP không đúng !";
+        if (token.getExpiryDate().isBefore(LocalDateTime.now())) return "Mã OTP đã hết hạn !";
+        
+        User user = userRepo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "profileId", userId));
+
+        String tokenRest = OtpUtils.generateRandomToken(10);
+        user.setResetToken(tokenRest);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(10));
+        return "Xác thực thành công";
+    }
+
+        @Transactional
+    @Override
+    public String changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+
+        // if(user.getResetToken())
+        // 1. Kiểm tra mật khẩu cũ có đúng không
+        // passwordEncoder.matches(mật_khẩu_thô, mật_khẩu_đã_mã_hóa_trong_db)
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Mật khẩu cũ không chính xác!");
+        }
+
+        // 2. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ (tùy chọn)
+        if (oldPassword.equals(newPassword)) {
+            throw new RuntimeException("Mật khẩu mới phải khác mật khẩu cũ!");
+        }
+
+        // 3. Mã hóa và lưu mật khẩu mới
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        return "Đổi mật khẩu thành công !";
+    }
+    
 }
     
 
