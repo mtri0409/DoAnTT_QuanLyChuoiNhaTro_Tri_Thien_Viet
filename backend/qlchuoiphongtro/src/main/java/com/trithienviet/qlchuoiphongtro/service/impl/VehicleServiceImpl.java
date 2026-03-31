@@ -55,6 +55,8 @@ public class VehicleServiceImpl implements VehicleService {
             .map((Vehicle v) -> { // Khai báo rõ (Vehicle v) để tránh lỗi infer
                 return VehicleLoadDTO.builder()
                     // Kiểm tra null để tránh lỗi khi xe chưa gán vào phòng/chủ
+                    .vehicleId(v.getVehicleId())
+                    .licensePlate(v.getLicensePlate())
                     .roomId(v.getRoom() != null ? v.getRoom().getRoomId() : null)
                     .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
                     .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
