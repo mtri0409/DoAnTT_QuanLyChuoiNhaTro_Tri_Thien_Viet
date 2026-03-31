@@ -179,7 +179,7 @@ const ServiceList = () => {
                 {/* FOOTER */}
                 <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0 flex-wrap gap-2">
                     <small className="text-muted">
-                        Tổng: <strong>{data?.totalElements || 0}</strong> | Trang: <strong>{(currentPage + 1)}/{data?.totalPages || 1}</strong>
+                        Tổng: <strong>{data?.totalElements || 0} Dịch vụ</strong> | Trang: <strong>{(currentPage + 1)}/{data?.totalPages || 1}</strong>
                     </small>
 
                     {data?.totalPages > 1 && (
