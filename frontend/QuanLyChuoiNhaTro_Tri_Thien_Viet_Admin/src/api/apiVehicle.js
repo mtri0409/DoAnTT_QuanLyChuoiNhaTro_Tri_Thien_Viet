@@ -8,6 +8,12 @@ const apiVehicle = {
            pageNumber,pageSize,sortBy,sortOrder
         }
      }),
+   getAllVehiclesDeleted: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => 
+    axiosInstance.get(`/admin/vehicles/history`, { 
+        params: {
+           pageNumber,pageSize,sortBy,sortOrder
+        }
+     }),
 
   // Tìm kiếm theo keyword
   searchVehicles: (keyword,pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => 

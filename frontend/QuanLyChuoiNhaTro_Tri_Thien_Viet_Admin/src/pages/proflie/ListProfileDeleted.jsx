@@ -1,0 +1,219 @@
+import React, { useState, useEffect } from "react";
+import {
+  FaUndo,
+  FaSearch,
+  FaUserCircle,
+  FaIdBadge,
+  FaArrowLeft,
+  FaTimes,
+  FaPhoneAlt,
+  FaMapMarkerAlt
+} from "react-icons/fa";
+import apiProfile from "../../api/apiProfile";
+import Pagination from "../../components/Pagination";
+import { useNavigate } from "react-router-dom";
+
+const ListProfileDeleted = () => {
+  const [data, setData] = useState({
+    content: [],
+    pageNumber: 0,
+    totalPages: 0,
+    totalElements: 0,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // --- STATE FILTER & SORT ---
+  const [searchTerm, setSearchTerm] = useState(""); 
+  const [appliedSearch, setAppliedSearch] = useState(""); 
+  const [sortBy, setSortBy] = useState("profileId");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  // 1. Fetch danh sách Hồ sơ đã bị ẩn (isActive = false)
+  const fetchDeletedProfiles = async () => {
+    setLoading(true);
+    try {
+      // Đảm bảo Tri đã định nghĩa hàm này trong apiProfile.js
+      // API sẽ gọi đến endpoint: /api/admin/profiles/deleted (hoặc tương tự)
+      const response = await apiProfile.getAllProfilesDeleted(
+        currentPage,
+        10,
+        sortBy,
+        sortOrder,
+        appliedSearch
+      );
+      setData(response);
+      console.log("data profile was deleted",response)
+    } catch (err) {
+      console.error("Lỗi tải kho lưu trữ hồ sơ:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeletedProfiles();
+  }, [currentPage, sortBy, sortOrder, appliedSearch]);
+
+  // 2. Xử lý Tìm kiếm
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setAppliedSearch(searchTerm);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setAppliedSearch("");
+    setCurrentPage(1);
+  };
+
+  // 3. Hàm Khôi phục hồ sơ (Restore)
+  const handleRestore = async (id, fullName) => {
+    if (window.confirm(`Bạn có chắc muốn khôi phục hồ sơ của khách: ${fullName}?`)) {
+      try {
+        setLoading(true);
+        // Thường là gọi API cập nhật isActive = true
+        await apiProfile.restoreProfile(id); 
+        alert("Khôi phục hồ sơ thành công!");
+        
+        if (data.content.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        } else {
+          fetchDeletedProfiles();
+        }
+      } catch (err) {
+        alert("Lỗi khi khôi phục hồ sơ!");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className="container-fluid py-4 bg-light min-vh-100">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex align-items-center gap-3">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="btn btn-white shadow-sm rounded-circle p-2 border-0"
+          >
+            <FaArrowLeft className="text-muted" />
+          </button>
+          <div>
+            <h4 className="fw-bold text-secondary mb-0 text-uppercase">Kho lưu trữ hồ sơ</h4>
+            <p className="text-muted small mb-0">Danh sách khách thuê đã ngừng hợp đồng hoặc bị ẩn</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+        {/* Toolbar */}
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <form onSubmit={handleSearchSubmit} className="input-group" style={{ maxWidth: "400px" }}>
+            <span className="input-group-text bg-light border-0">
+              <FaSearch className="text-muted" />
+            </span>
+            <input
+              type="text"
+              className="form-control bg-light border-0 small"
+              placeholder="Tìm tên, CCCD, SĐT đã xóa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {appliedSearch && (
+              <button type="button" className="btn btn-light border-0" onClick={handleClearSearch}>
+                <FaTimes className="text-muted" />
+              </button>
+            )}
+            <button type="submit" className="btn btn-secondary px-3">Tìm</button>
+          </form>
+
+          <div className="d-flex gap-2">
+            <select className="form-select form-select-sm border-0 bg-light" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="profileId">Sắp xếp: ID</option>
+              <option value="fullName">Sắp xếp: Tên</option>
+            </select>
+            <select className="form-select form-select-sm border-0 bg-light" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+              <option value="asc">Tăng dần</option>
+              <option value="desc">Giảm dần</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-secondary text-uppercase small text-muted">
+              <tr>
+                <th className="ps-4 py-3">Khách thuê cũ</th>
+                <th>Liên lạc</th>
+                <th>CCCD/Định danh</th>
+                <th>Địa chỉ cũ</th>
+                <th className="text-end pe-4">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-5">Đang tải kho lưu trữ...</td></tr>
+              ) : data.content?.length > 0 ? (
+                data.content.map((item) => (
+                  <tr key={item.profileId} className="bg-light-subtle opacity-75">
+                    <td className="ps-4">
+                      <div className="d-flex align-items-center gap-2">
+                        <FaUserCircle className="fs-3 text-secondary" />
+                        <div>
+                          <div className="fw-bold text-muted text-decoration-line-through">{item.fullName}</div>
+                          <small className="text-muted">ID: {item.profileId}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="small text-muted"><FaPhoneAlt size={10} className="me-1"/> {item.phone}</div>
+                    </td>
+                    <td>
+                      <span className="badge bg-white text-muted border fw-normal">{item.identityNumber}</span>
+                    </td>
+                    <td>
+                      <div className="text-muted x-small text-truncate" style={{ maxWidth: '150px' }}>
+                        <FaMapMarkerAlt size={10} className="me-1"/> {item.address}
+                      </div>
+                    </td>
+                    <td className="text-end pe-4">
+                      <button
+                        className="btn btn-sm btn-success shadow-sm d-inline-flex align-items-center gap-2 px-3 fw-bold"
+                        onClick={() => handleRestore(item.profileId, item.fullName)}
+                      >
+                        <FaUndo size={12} /> Khôi phục hồ sơ
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-muted">
+                    Kho lưu trữ hồ sơ trống.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
+          <small className="text-muted">Tổng cộng: <strong>{data.totalElements}</strong> hồ sơ đã lưu trữ</small>
+          <Pagination
+            currentPage={data.pageNumber}
+            totalPages={data.totalPages}
+            onPageChange={(p) => setCurrentPage(p + 1)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ListProfileDeleted;

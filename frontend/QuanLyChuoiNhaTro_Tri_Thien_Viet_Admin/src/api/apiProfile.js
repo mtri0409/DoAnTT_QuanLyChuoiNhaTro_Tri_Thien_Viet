@@ -12,6 +12,17 @@ const apiProfile = {
       }
     });
   },
+   getAllProfilesDeleted: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+    const url = `/admin/profiles/history`;
+    return axiosInstance.get(url, {
+      params: {
+        pageNumber: pageNumber, // Gửi 1, 2, 3...
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }
+    });
+  },
     searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
     const url = `/admin/profiles/search`;
     return axiosInstance.get(url, {

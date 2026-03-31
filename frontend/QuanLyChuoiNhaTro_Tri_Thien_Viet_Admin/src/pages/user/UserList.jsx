@@ -139,6 +139,12 @@ const ListUser = () => {
         >
           <FaPlus size={14} className="me-2" /> Tạo tài khoản
         </Link>
+         <Link
+          to="/users/restore"
+          className="btn btn-danger shadow-sm px-4"
+        >
+          <FaTrash size={14} className="me-2" /> Danh sách tài khoản đã xóa
+        </Link>
       </div>
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">

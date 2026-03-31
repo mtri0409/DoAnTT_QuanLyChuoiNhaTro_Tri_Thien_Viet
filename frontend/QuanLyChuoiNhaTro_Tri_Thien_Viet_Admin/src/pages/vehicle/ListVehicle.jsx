@@ -85,6 +85,8 @@ const ListVehicle = () => {
           <p className="text-muted small mb-0">Danh sách phương tiện của khách thuê</p>
         </div>
         <Link to="/vehicle/create" className="btn btn-primary shadow-sm"><FaPlus /> Đăng ký xe</Link>
+        <Link to="/vehicle/restore" className="btn btn-danger shadow-sm"><FaPlus /> Danh sách đã xóa</Link>
+
       </div>
 
       <div className="card border-0 shadow-sm rounded-3">

@@ -118,6 +118,8 @@ const ListProfile = () => {
           <p className="text-muted small mb-0">Hệ thống quản lý cư dân</p>
         </div>
         <Link to="/profile/create" className="btn btn-primary shadow-sm"><FaPlus /> Thêm mới</Link>
+        <Link to="/profile/restore" className="btn btn-danger shadow-sm"><FaTrash /> Danh sách đã xóa</Link>
+
       </div>
 
       <div className="card border-0 shadow-sm rounded-3">

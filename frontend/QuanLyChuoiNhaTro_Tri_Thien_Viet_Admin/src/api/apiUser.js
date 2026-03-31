@@ -9,6 +9,11 @@ const apiUser = {
       params: { pageNumber, pageSize, sortBy, sortOrder }
     });
   },
+  getAllUsersDeleted: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
+    return axiosInstance.get(`/admin/users/history`, {
+      params: { pageNumber, pageSize, sortBy, sortOrder }
+    });
+  },
    searchUsers: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
     return axiosInstance.get(`/admin/users/search`, {
       params: { pageNumber, pageSize, sortBy, sortOrder }
