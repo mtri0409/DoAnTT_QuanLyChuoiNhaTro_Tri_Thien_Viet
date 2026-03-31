@@ -35,6 +35,8 @@ public class Vehicle {
     @JoinColumn(name="owner_id")
     private Profile owner;
 
+    private String brand;
+    
     private Boolean status;
 
     private String licensePlate;

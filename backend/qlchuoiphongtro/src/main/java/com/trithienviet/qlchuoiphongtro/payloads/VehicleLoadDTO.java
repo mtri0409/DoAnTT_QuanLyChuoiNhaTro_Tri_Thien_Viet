@@ -13,6 +13,7 @@ public class VehicleLoadDTO {
     private Long vehicleId;
     private Long roomId;
     private String roomName;
+    private String brand;
     private Long ownerId;
     private String ownerName;
     private String licensePlate;
