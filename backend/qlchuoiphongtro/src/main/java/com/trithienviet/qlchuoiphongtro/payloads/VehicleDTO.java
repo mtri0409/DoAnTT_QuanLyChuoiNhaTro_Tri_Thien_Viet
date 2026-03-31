@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class VehicleDTO {
+    private String vehicleId;
     private String brand;
     private String licensePlate;
 }
