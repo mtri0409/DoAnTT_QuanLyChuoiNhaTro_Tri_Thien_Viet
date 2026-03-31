@@ -65,7 +65,7 @@ public class VehicleController {
     }
 
     @GetMapping("/public/vehice/{vehicleId}")
-    public ResponseEntity<VehicleLoadDTO> getVehicleById(@RequestParam Long vehicleId)
+    public ResponseEntity<VehicleLoadDTO> getVehicleById(@PathVariable Long vehicleId)
     {
         VehicleLoadDTO vehicleLoadDTO = vehicleService.getVehicleById(vehicleId);
         return new ResponseEntity<>(vehicleLoadDTO,HttpStatus.OK);
