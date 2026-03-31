@@ -73,10 +73,9 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
         profileFromDB.setFullName(profileDTO.getFullName());
         profileFromDB.setPhone(profileDTO.getPhone());
+        profileDTO.setEmail(profileDTO.getEmail());
         profileFromDB.setAddress(profileDTO.getAddress());
         profileFromDB.setIdentityNumber(profileDTO.getIdentityNumber());
-        profileFromDB.setIdFrontImage("default.jpg");
-        profileFromDB.setIdBackImage("default.jpg");
         profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
         profileFromDB.setIdIssueDate(profileDTO.getIdIssueDate());
         profileFromDB.setIdIssuePlace(profileDTO.getIdIssuePlace());
