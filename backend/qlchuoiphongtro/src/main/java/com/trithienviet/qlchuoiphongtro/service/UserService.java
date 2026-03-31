@@ -10,6 +10,7 @@ public interface UserService {
 
     PageResponse<UserDTO> getAllUsers(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
     PageResponse<UserDTO> searchUsers(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder);
+    PageResponse<UserDTO> getAllUsersIsDelete(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
 
     UserDTO getUserById(Long id);
     UserDTO getUserByUsername(String username);

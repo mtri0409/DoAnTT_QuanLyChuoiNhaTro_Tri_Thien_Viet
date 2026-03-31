@@ -40,6 +40,7 @@ const ListUser = () => {
         sortOrder,
       );
       setData(response);
+      console.log("Data user",response)
     } catch (err) {
       console.error("Lỗi tải danh sách user:", err);
     } finally {
@@ -264,7 +265,7 @@ const ListUser = () => {
                         className="cursor-pointer d-flex flex-column align-items-center"
                         onClick={() => handleToggleStatus(user.userId)}
                       >
-                        {user.isActice ? (
+                        {user.actice ? (
                           <>
                             <FaToggleOn size={24} className="text-success" />
                             <small

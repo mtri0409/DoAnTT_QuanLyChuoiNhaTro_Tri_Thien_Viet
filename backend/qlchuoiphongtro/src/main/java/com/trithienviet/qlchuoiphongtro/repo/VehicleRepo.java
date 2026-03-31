@@ -25,14 +25,17 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByOwnerProfileIdAndStatusFalse(Long profileId);
 
     // 4. Kiểm tra biển số chưa xóa
-    boolean existsByLicensePlateAndStatusFalse(String licensePlate);
-
+        boolean existsByLicensePlateAndStatusFalse(String licensePlate);
     @Query("SELECT v FROM Vehicle v " +
         "LEFT JOIN v.owner u " +
         "LEFT JOIN v.room r " +
-        "WHERE (:keyword IS NULL OR " +
+        "WHERE v.status = true AND " + // Thêm điều kiện status ở đây
+        "(:keyword IS NULL OR " +
         "LOWER(v.licensePlate) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
         "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
         "LOWER(r.roomName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Vehicle> searchVehicles(@Param("keyword") String keyword, Pageable pageable);
+    Page<Vehicle> findByStatusTrue(Pageable pageable);
+    Page<Vehicle> findByStatusFalse(Pageable pageable);
+
 }
