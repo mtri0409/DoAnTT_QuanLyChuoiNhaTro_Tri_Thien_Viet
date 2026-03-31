@@ -161,7 +161,7 @@ const ListVehicle = () => {
                         <button 
                           className="btn btn-sm btn-light border-0" 
                           title='Sửa thông tin xe'
-                          onClick={() => navigate(`/vehicle/update/${item.vehicleId}`)}
+                          onClick={() => navigate(`/vehicle/${item.vehicleId}/update`)}
                         >
                           <FaEdit className="text-primary"/>
                         </button>

@@ -20,11 +20,12 @@ const apiVehicle = {
            sortOrder
         }
      }),
+   getVehicleById : (id) => axiosInstance.get(`/public/vehice/${id}`),
   // Xóa xe
-  deleteVehicle: (id) => axiosInstance.delete(`/vehicles/${id}`),
+  deleteVehicle: (id) => axiosInstance.delete(`/public/vehicles/${id}`),
 
   // Cập nhật (Sử dụng cho trang Update)
-  updateVehicle: (id, data) => axiosInstance.put(`/vehicles/${id}`, data),
+  updateVehicle: (id, data) => axiosInstance.put(`/public/vehicles/${id}`, data),
 
   createVehicle : (profileId,data) => axiosInstance.post(`/public/vehicles/${profileId}`,data)
 };
