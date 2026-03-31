@@ -36,4 +36,6 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
         "LOWER(r.roomName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Vehicle> searchVehicles(@Param("keyword") String keyword, Pageable pageable);
     Page<Vehicle> findByStatusTrue(Pageable pageable);
+    Page<Vehicle> findByStatusFalse(Pageable pageable);
+
 }

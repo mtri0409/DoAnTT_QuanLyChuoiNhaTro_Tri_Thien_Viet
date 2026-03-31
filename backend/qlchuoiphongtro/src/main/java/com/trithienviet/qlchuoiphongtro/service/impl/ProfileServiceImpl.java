@@ -132,7 +132,32 @@ public class ProfileServiceImpl implements ProfileService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Profile> profilePage = profileRepo.findByStatusTrue(pageDetails);
+        Page<Profile> profilePage = profileRepo.findByIsActiveTrue(pageDetails);
+
+        List<Profile> profiles = profilePage.getContent();
+
+        List<ProfileDTO> profileDTOs = profiles.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+      @Override
+    public PageResponse<ProfileDTO> getProfileIsDelete(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Profile> profilePage = profileRepo.findByIsActiveFalse(pageDetails);
 
         List<Profile> profiles = profilePage.getContent();
 

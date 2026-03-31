@@ -47,7 +47,19 @@ public class VehicleController {
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
+    @GetMapping("/admin/vehicles/history")
+    public ResponseEntity<PageResponse<VehicleLoadDTO>> getAllVehicleIsDelete( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
+            PageResponse<VehicleLoadDTO> profileResponse = vehicleService.getAllVehicleIsDelete(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
+    }
     @GetMapping("/admin/vehicles/search")
     public ResponseEntity<PageResponse<VehicleLoadDTO>> searchVehicles( 
         @RequestParam String keyword,

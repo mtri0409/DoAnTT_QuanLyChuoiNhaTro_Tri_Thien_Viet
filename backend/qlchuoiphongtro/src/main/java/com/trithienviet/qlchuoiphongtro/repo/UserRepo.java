@@ -31,6 +31,7 @@ public interface UserRepo extends JpaRepository<User,Long> {
         "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
     
-    Page<User> findByStatusTrue(Pageable pageable);
+    Page<User> findByIsActiceTrue(Pageable pageable);
+    Page<User> findByIsActiceFalse(Pageable pageable);
 
 }

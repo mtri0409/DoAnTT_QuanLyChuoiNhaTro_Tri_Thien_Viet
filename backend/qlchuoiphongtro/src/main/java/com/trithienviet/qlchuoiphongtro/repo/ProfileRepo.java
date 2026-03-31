@@ -22,7 +22,7 @@ public interface ProfileRepo extends JpaRepository<Profile,Long> {
         "(:keyword IS NULL OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
     Page<Profile> searchProfiles(@Param("keyword") String keyword, Pageable pageable);
 
-    Page<Profile> findByStatusTrue(Pageable pageable);
-
+    Page<Profile> findByIsActiveTrue(Pageable pageable);
+    Page<Profile> findByIsActiveFalse(Pageable pageable);
     
 }
