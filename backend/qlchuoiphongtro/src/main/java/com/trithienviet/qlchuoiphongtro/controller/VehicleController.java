@@ -64,11 +64,19 @@ public class VehicleController {
         return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
 
+    @GetMapping("/public/vehice/{vehicleId}")
+    public ResponseEntity<VehicleLoadDTO> getVehicleById(@RequestParam Long vehicleId)
+    {
+        VehicleLoadDTO vehicleLoadDTO = vehicleService.getVehicleById(vehicleId);
+        return new ResponseEntity<>(vehicleLoadDTO,HttpStatus.OK);
+    }   
+
     @PostMapping("/public/vehicles/{owner_id}")
     public ResponseEntity<VehicleDTO> addVehicleForTenant(@Valid @PathVariable Long owner_id,@RequestBody VehicleDTO vehicelDTO) {
         VehicleDTO addVehicle = vehicleService.addVehicleForTenant(owner_id, vehicelDTO);
         return new ResponseEntity<VehicleDTO>(addVehicle,HttpStatus.OK);
     }
+    
     @PutMapping("/public/vehicles/{vehicleId}")
     public ResponseEntity<VehicleDTO> updateVehicle(
             @PathVariable Long vehicleId, 

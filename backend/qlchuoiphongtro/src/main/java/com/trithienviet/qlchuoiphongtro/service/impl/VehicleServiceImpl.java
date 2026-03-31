@@ -111,6 +111,20 @@ public class VehicleServiceImpl implements VehicleService {
         return response;
     }
 
+    public VehicleLoadDTO  getVehicleById(Long vehicleId) {
+        Vehicle vehicle = vehicleRepo.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy xe với Id: " + vehicleId));
+        
+        VehicleLoadDTO vehicleLoadDTO = modelMapper.map(vehicle, VehicleLoadDTO.class);
+
+        // 3. Xử lý lấy tên chủ xe (Owner) an toàn
+        if (vehicle.getOwner() != null) {
+            vehicleLoadDTO.setOwnerName(vehicle.getOwner().getFullName());
+        }
+
+        return vehicleLoadDTO;
+    }
+
     @Transactional
     @Override
     public VehicleDTO addVehicleForTenant(Long profileId, VehicleDTO vehicleDTO) {
