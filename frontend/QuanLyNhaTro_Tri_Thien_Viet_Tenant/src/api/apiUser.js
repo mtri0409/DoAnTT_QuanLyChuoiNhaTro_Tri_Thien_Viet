@@ -18,6 +18,6 @@ const apiUser = {
   updateRole: (id, role) => axiosInstance.patch(`/admin/users/${id}/role`, { role }),
   changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
   resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`),
- 
+  changePassword:(id,data) => axiosInstance.post(`public/users/${id}/change-password`,data),
 };
 export default apiUser;

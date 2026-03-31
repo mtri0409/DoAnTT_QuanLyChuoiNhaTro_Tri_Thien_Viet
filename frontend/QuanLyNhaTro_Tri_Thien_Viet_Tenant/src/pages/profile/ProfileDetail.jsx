@@ -97,7 +97,9 @@ const ProfileDetail = () => {
            <button onClick={() => navigate(`/user/profile/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
              <FaUserEdit /> Cập nhật
            </button>
-           <button className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">
+           <button 
+            onClick={() => navigate(`/user/change-password`)}
+              className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">
              <FaKey /> Đổi mật khẩu
            </button>
         </div>

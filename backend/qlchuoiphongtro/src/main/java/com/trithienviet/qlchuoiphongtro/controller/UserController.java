@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.PasswordUpdateDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
@@ -78,9 +79,11 @@ public class UserController {
     @PostMapping("/public/users/{userId}/change-password")
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId, 
-            @RequestParam String oldPassword, 
-            @RequestParam String newPassword) {
-        userService.changePassword(userId, oldPassword, newPassword);
+            @RequestBody PasswordUpdateDTO request) { // Dùng DTO đã tạo
+        
+        // Truyền dữ liệu từ DTO vào Service
+        userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+        
         return ResponseEntity.ok("Đổi mật khẩu thành công!");
     }
 
