@@ -20,6 +20,7 @@ public interface ProfileService {
      ProfileRequestDTO updateProfile(ProfileRequestDTO profile,Long profileId);
 
      PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
+     PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder);
      ProfileDetailDTO getProfileById (Long profileId);
      String deleteProfile(Long profileId);
 

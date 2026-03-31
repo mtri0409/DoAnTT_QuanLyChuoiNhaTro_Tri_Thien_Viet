@@ -150,6 +150,30 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileResponse;
     }
+  @Override
+    public PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
+
+        Page<Profile> profilePage = profileRepo.searchProfiles(keyword, pageable);
+
+        List<ProfileDTO> profileDTOs = profilePage.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
     @Override
     public ProfileDetailDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)

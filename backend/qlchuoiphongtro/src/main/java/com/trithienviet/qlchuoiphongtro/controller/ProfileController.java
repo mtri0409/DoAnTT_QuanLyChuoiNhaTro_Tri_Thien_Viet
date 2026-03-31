@@ -65,6 +65,22 @@ public class ProfileController {
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
     }
 
+    @GetMapping("/admin/profiles/search")
+    public ResponseEntity<PageResponse<ProfileDTO>> searchProfiles(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+        
+       PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
+                    keyword,
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return ResponseEntity.ok(profileResponse);
+    }
+
     @GetMapping("/admin/profiles/unassigned")
     public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
         return ResponseEntity.ok(profileService.getProfilesWithoutAccount());

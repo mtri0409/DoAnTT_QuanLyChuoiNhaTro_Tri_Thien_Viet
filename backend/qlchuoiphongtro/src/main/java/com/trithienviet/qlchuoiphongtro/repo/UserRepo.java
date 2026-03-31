@@ -3,6 +3,8 @@ package com.trithienviet.qlchuoiphongtro.repo;
 
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,4 +25,8 @@ public interface UserRepo extends JpaRepository<User,Long> {
     Optional<User> findByProfileProfileId(Long profileId);
 
     Optional<String> findByResetToken(String resetToken);
+
+    @Query("SELECT u FROM User u WHERE " +
+        "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
 }
