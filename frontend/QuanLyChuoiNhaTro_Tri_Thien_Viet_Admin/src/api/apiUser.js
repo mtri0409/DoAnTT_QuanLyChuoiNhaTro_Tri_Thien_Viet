@@ -9,6 +9,11 @@ const apiUser = {
       params: { pageNumber, pageSize, sortBy, sortOrder }
     });
   },
+   searchUsers: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
+    return axiosInstance.get(`/admin/users/search`, {
+      params: { pageNumber, pageSize, sortBy, sortOrder }
+    });
+  },
   createAccount:(profileId,data)=> axiosInstance.post(`/auth/create-account/${profileId}`,data),
   generareAcount:(profileId)=> axiosInstance.post(`/auth/create-account/${profileId}`),
 

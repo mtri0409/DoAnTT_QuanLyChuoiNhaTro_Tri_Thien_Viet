@@ -1,4 +1,5 @@
 import Dashboard from "../pages/Dashboard";
+import ListVehicle from "../pages/vehicle/ListVehicle";
 import CreateProfile from "../pages/proflie/CreateProfile";
 import ListProfile from "../pages/proflie/ListProfile";
 import ProfileDetail from "../pages/proflie/ProfileDetail";
@@ -14,6 +15,7 @@ const AdminRoute = [
   { path: "/profile/:id/update", component: UpdateProfile },
   { path: "/users", component: ListUser },
   { path: "/users/create", component: CreateAccount },
+  { path: "/vehicles", component: ListVehicle },
 
 ];
 export default AdminRoute;
