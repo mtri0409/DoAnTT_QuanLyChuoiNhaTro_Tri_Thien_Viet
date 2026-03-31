@@ -136,14 +136,30 @@ const ProfileDetail = () => {
           </div>
 
           {/* XE CỘ */}
-          <div className="card border-0 shadow-sm rounded-4 p-4">
-            <h6 className="fw-bold mb-3 d-flex align-items-center gap-2"><FaMotorcycle className="text-warning"/> Biển số xe</h6>
+         <div className="card border-0 shadow-sm rounded-4 p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h6 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                <FaMotorcycle className="text-warning"/> Biển số xe
+              </h6>
+              {/* Nút Chỉnh sửa chung */}
+              <button 
+                onClick={() => navigate(`/user/manager-vehicle/${profile.profileId}`)}
+                className="btn btn-sm btn-light text-primary fw-bold border-0 shadow-none p-0"
+              >
+                <FaEdit className="me-1"/> Chỉnh sửa
+              </button>
+            </div>
+
             <div className="d-flex flex-wrap gap-2">
               {profile.vehicles?.length > 0 ? (
                 profile.vehicles.map((v, i) => (
-                  <span key={i} className="badge bg-light text-dark border px-3 py-2 fw-bold">{v.licensePlate}</span>
+                  <span key={i} className="badge bg-light text-dark border px-3 py-2 fw-bold">
+                    {v.licensePlate}
+                  </span>
                 ))
-              ) : <span className="text-muted small italic">Chưa đăng ký</span>}
+              ) : (
+                <span className="text-muted small italic">Chưa đăng ký</span>
+              )}
             </div>
           </div>
         </div>

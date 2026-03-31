@@ -23,7 +23,6 @@ public class SwaggerConfig {
             .version("v1.0.0")
             .contact(new Contact().name("Minh Tri").url("minhtri05k47@gmail.com").email("minhtri05k47@gmail.com"))
             .license(new License().name("License").url("/"));
-
         return new OpenAPI()
             .info(info)
             .externalDocs(new ExternalDocumentation()
