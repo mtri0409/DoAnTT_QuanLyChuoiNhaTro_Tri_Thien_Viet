@@ -111,13 +111,13 @@ public class UserServiceImpl implements UserService{
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
         Page<User> userpage = userRepo.findAll(pageDetails);
 
-        List<User> profiles = userpage.getContent();
-        List<UserDTO> profileDTOs = profiles.stream()
+        List<User> users = userpage.getContent();
+        List<UserDTO> userDTOs = users.stream()
                 .map(p -> modelMapper.map(p, UserDTO.class))
                 .collect(Collectors.toList());
 
         PageResponse<UserDTO> userResponse = new PageResponse<>();
-        userResponse.setContent(profileDTOs);
+        userResponse.setContent(userDTOs);
         userResponse.setPageNumber(userpage.getNumber());
         userResponse.setPageSize(userpage.getSize());
         userResponse.setTotalElements(userpage.getTotalElements());
@@ -126,6 +126,28 @@ public class UserServiceImpl implements UserService{
 
         return userResponse;
     }
+
+    @Override
+    public PageResponse<UserDTO> searchUsers(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder)
+    {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
+        Page<User> userPages = userRepo.searchUsers(keyword,pageable);
+        List<User> users = userPages.getContent();
+        List<UserDTO> profileDTOs = users.stream()
+                .map(p -> modelMapper.map(p, UserDTO.class))
+                .collect(Collectors.toList());
+        PageResponse<UserDTO> useResponse = new PageResponse<>();
+        useResponse.setContent(profileDTOs);
+        useResponse.setPageNumber(userPages.getNumber());
+        useResponse.setPageSize(userPages.getSize());
+        useResponse.setTotalElements(userPages.getTotalElements());
+        useResponse.setLastPage(useResponse.isLastPage());
+        return useResponse;
+    }
+
 
     @Override
     public UserDTO getUserById(Long userId) {
