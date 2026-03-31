@@ -48,7 +48,7 @@ public class VehicleServiceImpl implements VehicleService {
                 : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Vehicle> vehiclePages = vehicleRepo.findAll(pageable);
+        Page<Vehicle> vehiclePages = vehicleRepo.findByStatusTrue(pageable);
         
         // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
         List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
@@ -62,6 +62,7 @@ public class VehicleServiceImpl implements VehicleService {
                     .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
                     .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
                     .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
+                    .status(v.getStatus()!=null ? v.getStatus() :false)
                     .build();
             })
             .collect(Collectors.toList());
@@ -73,7 +74,6 @@ public class VehicleServiceImpl implements VehicleService {
         response.setTotalElements(vehiclePages.getTotalElements());
         response.setTotalPages(vehiclePages.getTotalPages());
         response.setLastPage(vehiclePages.isLast());
-
         return response;
     }
     
@@ -96,6 +96,8 @@ public class VehicleServiceImpl implements VehicleService {
                     .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
                     .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
                     .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
+                    .status(v.getStatus()!=null ? v.getStatus() :false)
+
                     .build();
             })
             .collect(Collectors.toList());

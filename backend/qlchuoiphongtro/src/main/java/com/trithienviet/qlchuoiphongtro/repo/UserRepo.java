@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.User;
+import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 
 @Repository
 public interface UserRepo extends JpaRepository<User,Long> {
@@ -29,4 +30,7 @@ public interface UserRepo extends JpaRepository<User,Long> {
     @Query("SELECT u FROM User u WHERE " +
         "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
+    
+    Page<User> findByStatusTrue(Pageable pageable);
+
 }

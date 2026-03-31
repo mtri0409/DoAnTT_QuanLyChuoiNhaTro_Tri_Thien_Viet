@@ -132,7 +132,7 @@ public class ProfileServiceImpl implements ProfileService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Profile> profilePage = profileRepo.findAll(pageDetails);
+        Page<Profile> profilePage = profileRepo.findByStatusTrue(pageDetails);
 
         List<Profile> profiles = profilePage.getContent();
 
@@ -186,7 +186,6 @@ public class ProfileServiceImpl implements ProfileService {
             
             profileDTO.setActiveContractId(contract.getContractId());
             profileDTO.setContractEndDate(contract.getEndDate());
-            
             if (contract.getRoom() != null) {
                 profileDTO.setRoomName(contract.getRoom().getRoomName());
             }

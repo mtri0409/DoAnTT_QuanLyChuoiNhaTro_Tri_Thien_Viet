@@ -17,4 +17,5 @@ public class VehicleLoadDTO {
     private Long ownerId;
     private String ownerName;
     private String licensePlate;
+    private Boolean status;
 }

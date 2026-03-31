@@ -37,7 +37,7 @@ public class Vehicle {
 
     private String brand;
     
-    private Boolean status;
+    private Boolean status = true;
 
     private String licensePlate;
 
