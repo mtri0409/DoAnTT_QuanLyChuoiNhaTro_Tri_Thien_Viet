@@ -8,6 +8,12 @@ const HeaderGrid = ({ profileData, userData }) => {
     { id: 2, title: "Thông báo bảo trì", content: "Hệ thống điện sẽ được bảo trì vào lúc 14:00 ngày mai. Vui lòng chuẩn bị.", type: "warning", time: "1 ngày trước" },
     { id: 3, title: "Tin nhắn chủ trọ", content: "Vui lòng cập nhật CCCD mới nhất để làm đăng ký tạm trú.", type: "info", time: "2 ngày trước" }
   ];
+  
+  if (!profileData) {
+      return (
+        <div className="alert alert-info">Đang tải thông tin người dùng...</div>
+      );
+    }
 //   const p = profileData || {};
   return (
     <div className="row g-3 mb-4">

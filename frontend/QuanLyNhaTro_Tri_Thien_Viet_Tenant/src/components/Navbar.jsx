@@ -8,6 +8,9 @@ import { useAuth } from '../context/AuthContext';
 const Navbar = () => {
   const navigate = useNavigate();
   const {logout , user} =useAuth();
+  if(!user){
+    return null;
+  }
   return (
     <nav
       className="navbar navbar-expand-lg navbar-light bg-white sticky-top py-2"
@@ -97,13 +100,13 @@ const UserProfileDropdown = ({ onLogout,user }) => (
       <span className="small fw-semibold text-dark d-none d-md-inline" style={{ fontSize: 13 }}>
         {user.fullName}
        </span>
-      {/* <img
+      <img
         src="https://ui-avatars.com/api/?name=Tri+Pham&background=0d6efd&color=fff&size=64"
         className="rounded-circle"
         width={32}
         height={32}
         alt="Avatar"
-      /> */}
+      />
     </div>
 
     <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2" style={{ minWidth: 180 }}>
