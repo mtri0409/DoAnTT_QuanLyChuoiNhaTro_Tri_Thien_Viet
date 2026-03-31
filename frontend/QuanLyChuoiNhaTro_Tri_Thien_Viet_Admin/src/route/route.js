@@ -13,6 +13,7 @@ const AdminRoute = [
   { path: "/profile/:id/update", component: UpdateProfile },
 
   { path: "/users", component: ListUser },
+  { path: "/user/profile", component: ProfileDetail },
 
 
 ];

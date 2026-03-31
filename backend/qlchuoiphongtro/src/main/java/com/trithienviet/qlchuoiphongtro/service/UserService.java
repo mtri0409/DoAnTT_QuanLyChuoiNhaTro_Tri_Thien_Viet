@@ -1,9 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.service;
 
-import com.trithienviet.qlchuoiphongtro.entity.UserRole;
-import com.trithienviet.qlchuoiphongtro.payloads.LoginCredentials;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
-import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PasswordResetRequest;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 
 public interface UserService {
@@ -14,7 +12,12 @@ public interface UserService {
     UserDTO getUserById(Long id);
     UserDTO getUserByUsername(String username);
     String updateUserRole(Long userId, String role);
-    String changePassword(Long userId, String oldPassword, String newPassword);
+    // String changeUserPassword(String username, String oldPassword, String newPassword);
     String resetPassword(Long userId);
     String changeStatus(Long userId);
+
+    String verifyEmailUser(String email,PasswordResetRequest request);
+    String verifyOtpByUserId(Long userId, String code);
+    String changePassword(Long userId, String oldPassword, String newPassword);
+    
 }
