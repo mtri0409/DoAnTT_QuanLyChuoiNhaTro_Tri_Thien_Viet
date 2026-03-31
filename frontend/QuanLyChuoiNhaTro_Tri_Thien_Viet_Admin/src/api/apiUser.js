@@ -23,5 +23,6 @@ const apiUser = {
   changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
   resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`)
 
+  
 };
 export default apiUser;

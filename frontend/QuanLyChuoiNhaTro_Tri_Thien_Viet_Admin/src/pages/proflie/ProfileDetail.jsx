@@ -86,8 +86,11 @@ const ProfileDetail = () => {
             <div className="d-flex flex-wrap gap-2">
               {profile.vehicles?.filter(v => v.licensePlate).length > 0 ? (
                 profile.vehicles.filter(v => v.licensePlate).map((v, index) => (
-                  <span key={index} className="badge bg-light text-dark border border-secondary-subtle px-3 py-2 fw-bold">
-                    {v.licensePlate}
+                  <span key={index} className="badge bg-light text-dark border border-secondary-subtle px-3 py-2 fw-bold d-flex align-items-center">
+                    {/* Hiển thị Brand nếu có, nếu không thì chỉ hiện biển số */}
+                    {v.brand && <span className="text-primary me-2 text-uppercase">{v.brand}</span>}
+                    <span className="text-muted opacity-50 me-2">|</span>
+                    <span>{v.licensePlate}</span>
                   </span>
                 ))
               ) : (

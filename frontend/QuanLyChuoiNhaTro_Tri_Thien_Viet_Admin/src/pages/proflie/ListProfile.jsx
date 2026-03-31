@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FaUserCircle, FaEdit, FaTrash, FaSearch, FaPlus, 
-  FaTimesCircle, FaEye, FaUserPlus 
+  FaTimesCircle, FaEye, FaUserPlus, 
+  FaMotorcycle
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 // import apiUser from '../../api/apiUser';
@@ -208,7 +209,13 @@ const ListProfile = () => {
                       >
                         <FaUserPlus className="text-success"/>
                       </button>
-
+                      <button 
+                        className="btn btn-sm btn-light border-0"
+                        title='Thêm xe'
+                        onClick={() => navigate(`/profile/${item.profileId}/vehicle`)}
+                      >
+                        <FaMotorcycle className="text-primary"/>
+                      </button>
                       {/* Nút Xem chi tiết */}
                       <button 
                         className="btn btn-sm btn-light border-0" 

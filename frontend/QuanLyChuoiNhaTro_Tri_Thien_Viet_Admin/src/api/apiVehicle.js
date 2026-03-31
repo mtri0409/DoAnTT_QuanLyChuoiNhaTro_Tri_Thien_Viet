@@ -1,3 +1,4 @@
+import CreateVehicle from "../pages/proflie/CreateVehicle";
 import axiosInstance from "./axios";
 const apiVehicle = {
   // Lấy tất cả có phân trang & sort
@@ -23,7 +24,9 @@ const apiVehicle = {
   deleteVehicle: (id) => axiosInstance.delete(`/vehicles/${id}`),
 
   // Cập nhật (Sử dụng cho trang Update)
-  updateVehicle: (id, data) => axiosInstance.put(`/vehicles/${id}`, data)
+  updateVehicle: (id, data) => axiosInstance.put(`/vehicles/${id}`, data),
+
+  createVehicle : (profileId,data) => axiosInstance.post(`/public/vehicles/${profileId}`,data)
 };
 
 export default apiVehicle;

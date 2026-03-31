@@ -6,6 +6,7 @@ import ProfileDetail from "../pages/proflie/ProfileDetail";
 import UpdateProfile from "../pages/proflie/UpdateProfile";
 import CreateAccount from "../pages/user/CreateAccount";
 import ListUser from "../pages/user/UserList";
+import CreateVehicle from "../pages/proflie/CreateVehicle";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -13,6 +14,7 @@ const AdminRoute = [
   { path: "/profile/create", component: CreateProfile },
   { path: "/profile/:id/detail", component: ProfileDetail },
   { path: "/profile/:id/update", component: UpdateProfile },
+  {path:"profile/:profileId/vehicle",component:CreateVehicle},
   { path: "/users", component: ListUser },
   { path: "/users/create", component: CreateAccount },
   { path: "/vehicles", component: ListVehicle },
