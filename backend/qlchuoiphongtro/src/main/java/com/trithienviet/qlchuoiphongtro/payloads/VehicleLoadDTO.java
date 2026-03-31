@@ -9,7 +9,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class VehicleDTO {
-    
+public class VehicleLoadDTO {
+    private Integer vehicleId;
+    private Long roomId;
+    private String roomName;
+    private Long ownerId;
+    private String ownerName;
     private String licensePlate;
 }

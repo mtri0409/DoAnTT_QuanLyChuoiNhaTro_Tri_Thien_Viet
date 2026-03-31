@@ -40,7 +40,20 @@ public class UserController {
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
     }
-    
+    @GetMapping("/admin/users/search")
+    public ResponseEntity<PageResponse<UserDTO>> searchUsers( 
+        @RequestParam String keyword,
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_USERS_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+            PageResponse<UserDTO> profileResponse = userService.searchUsers(keyword,
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    }
     @GetMapping("/public/users/{userId}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
         
@@ -48,10 +61,10 @@ public class UserController {
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
 
-    @GetMapping("/public/users/{username}") 
-    public ResponseEntity<UserDTO> getUserUserName(@PathVariable String usename) {
+    @GetMapping("/public/users/users/{username}") 
+    public ResponseEntity<UserDTO> getUserUserName(@PathVariable String username) {
         
-        UserDTO userDTO = userService.getUserByUsername(usename);
+        UserDTO userDTO = userService.getUserByUsername(username);
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
     
