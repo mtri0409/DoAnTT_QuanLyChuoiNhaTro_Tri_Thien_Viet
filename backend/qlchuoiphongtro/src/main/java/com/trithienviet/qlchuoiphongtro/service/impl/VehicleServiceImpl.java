@@ -218,4 +218,19 @@ public class VehicleServiceImpl implements VehicleService {
 
         return "Đã xóa thành công";
     }
+    
+     @Override
+    @Transactional 
+    public String restoreVehilcle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepo.findById(vehicleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Xe", "xe id", vehicleId));
+        if(vehicle.getStatus() == true){
+            throw new RuntimeException("Xe chưa bị xóa !");
+        }
+        
+        vehicle.setStatus(true);
+        vehicleRepo.save(vehicle);
+        
+        return "Đã khôi phục xe" + vehicleId;
+    }
 }

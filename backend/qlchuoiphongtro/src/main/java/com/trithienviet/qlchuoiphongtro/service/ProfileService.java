@@ -32,4 +32,6 @@ public interface ProfileService {
      InputStream getIdentificationImage(String fileName) throws FileNotFoundException ;
 
      List<ProfileDTO> getProfilesWithoutAccount();
+
+     String restoreProfile(Long profileId);
 }
