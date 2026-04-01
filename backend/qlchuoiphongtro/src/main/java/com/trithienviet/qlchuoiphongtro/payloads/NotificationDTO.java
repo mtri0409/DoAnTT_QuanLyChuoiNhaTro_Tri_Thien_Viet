@@ -1,5 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.payloads;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +19,6 @@ public class NotificationDTO {
     private String content;
     private Boolean isRead;
     private String type;
+    private LocalDateTime createdAt;
+
 }

@@ -11,6 +11,7 @@ import UpdateVehicle from "../pages/vehicle/updateVehicle";
 import ListUserDeleted from "../pages/user/ListUserDeleted";
 import ListProfileDeleted from "../pages/proflie/ListProfileDeleted";
 import ListVehicleDeleted from "../pages/vehicle/ListVehicleDeleted";
+import ListNotification from "../pages/notification/ListNotification";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -28,5 +29,6 @@ const AdminRoute = [
   {path:"/vehicle/:vehicleId/update",component:UpdateVehicle},
   { path: "/vehicle/restore", component: ListVehicleDeleted },
 
+  {path:"/notify",component:ListNotification}
 ];
 export default AdminRoute;

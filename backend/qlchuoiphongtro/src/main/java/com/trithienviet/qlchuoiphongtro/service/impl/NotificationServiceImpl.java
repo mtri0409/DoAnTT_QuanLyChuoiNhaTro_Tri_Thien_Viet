@@ -12,7 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+// import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.trithienviet.qlchuoiphongtro.entity.Notification;
@@ -27,8 +27,8 @@ import com.trithienviet.qlchuoiphongtro.service.NotificationService;
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate; // Thư viện bắn tin của Spring
+    // @Autowired
+    // private SimpMessagingTemplate messagingTemplate; // Thư viện bắn tin của Spring
 
     @Autowired 
     private ModelMapper modelMapper;
@@ -61,18 +61,18 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         
         // 1. Nếu gửi cho cá nhân
-        if (userId != 0) {
-            messagingTemplate.convertAndSendToUser(
-                userId.toString(), 
-                "/queue/notifications", 
-                notificationDTO
-            );
-        }
+        // if (userId != 0) {
+        //     messagingTemplate.convertAndSendToUser(
+        //         userId.toString(), 
+        //         "/queue/notifications", 
+        //         notificationDTO
+        //     );
+        // }
 
-        // 2. Nếu là thông báo bảo trì hoặc gửi cho TẤT CẢ (userId = 0)
-        if (userId == 0 || "MAINTENANCE".equals(notificationDTO.getType())) {
-            messagingTemplate.convertAndSend("/topic/public", notificationDTO);
-        }
+        // // 2. Nếu là thông báo bảo trì hoặc gửi cho TẤT CẢ (userId = 0)
+        // if (userId == 0 || "MAINTENANCE".equals(notificationDTO.getType())) {
+        //     messagingTemplate.convertAndSend("/topic/public", notificationDTO);
+        // }
         notificationRepo.save(notification);
     }
     @Override
@@ -152,17 +152,17 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationDTO payload = modelMapper.map(notification, NotificationDTO.class);
         
         // Gửi cá nhân
-        if (userId != 0) {
-            messagingTemplate.convertAndSendToUser(
-                userId.toString(), 
-                "/queue/notifications", 
-                payload
-            );
-        }
+        // if (userId != 0) {
+        //     messagingTemplate.convertAndSendToUser(
+        //         userId.toString(), 
+        //         "/queue/notifications", 
+        //         payload
+        //     );
+        // }
 
         // Gửi chung (nếu là bảo trì hoặc userId = 0)
-        if (userId == 0 || "MAINTENANCE".equals(type) || "SYSTEM".equals(type)) {
-            messagingTemplate.convertAndSend("/topic/public", payload);
-        }
+        // if (userId == 0 || "MAINTENANCE".equals(type) || "SYSTEM".equals(type)) {
+        //     messagingTemplate.convertAndSend("/topic/public", payload);
+        // }
     }
 }

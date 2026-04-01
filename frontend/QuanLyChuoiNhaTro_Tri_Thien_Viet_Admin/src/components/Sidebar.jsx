@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaMotorcycle } from 'react-icons/fa';
+import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaMotorcycle, FaBell } from 'react-icons/fa';
 
 const NAV_ITEMS = [
   { title: 'Dashboard',      path: '/',          icon: <FaHome /> },
@@ -9,8 +9,9 @@ const NAV_ITEMS = [
   { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
   { title: 'Người thuê',     path: '/profiles',  icon: <FaUsers /> },
   { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
-  { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
-  { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
+  // { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
+  // { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
+  { title: 'Thông báo',     path: '/notify',  icon: <FaBell /> },
 ];
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
