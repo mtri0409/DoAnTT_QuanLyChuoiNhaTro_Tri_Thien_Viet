@@ -36,8 +36,12 @@ Thumbs.db
 temp/
 bin/
 
+
 #--- image
 **/images/**
 
 .vite/
+
+=======
+.vite/**
 
