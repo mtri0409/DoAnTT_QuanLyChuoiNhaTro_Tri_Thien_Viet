@@ -3,6 +3,8 @@ package com.trithienviet.qlchuoiphongtro.payloads;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +21,7 @@ public class ContractDTO {
     private BigDecimal depositAmount;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String status;
     private Integer billingDay;
     private Long representativeId;
+    private ContractStatus status;
 }
