@@ -36,4 +36,4 @@ Thumbs.db
 temp/
 bin/
 
-.vite/
+.vite/**
