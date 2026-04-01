@@ -13,4 +13,5 @@ public interface VehicleService {
     VehicleDTO addVehicleForTenant(Long profileId,VehicleDTO vehicleDTO);
     VehicleDTO updateVehicle(Long vehicleId, VehicleDTO vehicleDTO);
     String deleteVehicle(Long vehicleId);
+    String restoreVehilcle(Long vehicleId);
 }

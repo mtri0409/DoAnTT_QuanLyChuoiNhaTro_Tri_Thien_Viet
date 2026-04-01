@@ -260,4 +260,30 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(p -> modelMapper.map(p, ProfileDTO.class))
                 .collect(Collectors.toList());
     }
+    @Override
+    public String restoreProfile(Long profileId){
+        Profile profile = profileRepo.findById(profileId)
+            .orElseThrow(() -> new ResourceNotFoundException("Hồ sơ","profile Id",profileId));
+        if(profile.getIsActive()){
+            throw new RuntimeException("Hồ sơ chưa bị xóa ");
+        }
+        User user = profile.getUser();
+        if (user != null) {
+            user.setIsActice(true); 
+            userRepo.save(user);
+        }
+
+        List<Vehicle> vehicles = profile.getVehicles();
+
+        if(vehicles !=null)
+        {
+            vehicles.forEach(vehicle-> {
+                vehicle.setStatus(true);
+            });
+            vehicleRepo.saveAll(vehicles);
+        }
+        profile.setIsActive(true);
+        profileRepo.save(profile);
+        return "Khôi phục hồ sơ thành công !";
+    }
 }

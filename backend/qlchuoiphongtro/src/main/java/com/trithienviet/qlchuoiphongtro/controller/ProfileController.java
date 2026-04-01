@@ -148,4 +148,10 @@ public class ProfileController {
                 .body(new InputStreamResource(imageStream));
     }
 
+    @PatchMapping("/admin/profile/restore/{profileId}")
+    public ResponseEntity<String> restoreProfile(@PathVariable Long profileId){
+        String message = profileService.restoreProfile(profileId);
+        return new ResponseEntity<>(message,HttpStatus.OK);
+    }
+
 }
