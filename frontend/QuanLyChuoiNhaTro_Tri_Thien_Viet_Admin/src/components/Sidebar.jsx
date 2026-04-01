@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+
 import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaWifi, FaServicestack } from 'react-icons/fa';
 
 const NAV_ITEMS = [
@@ -8,7 +9,10 @@ const NAV_ITEMS = [
   { title: 'Quản lý Phòng',  path: '/rooms/1',    icon: <FaBed /> },
   { title: 'Quản lý Dịch vụ',  path: '/services/1',    icon: <FaServicestack /> },
   { title: 'Quản lý Tiện ích',  path: '/amenities/1',    icon: <FaWifi /> },
-  { title: 'Người thuê',     path: '/profiles/1',  icon: <FaUsers /> },
+  { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
+  { title: 'Người thuê',     path: '/profiles',  icon: <FaUsers /> },
+  { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
+
   { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
   { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
 ];

@@ -35,3 +35,9 @@ Thumbs.db
 # --- Others ---
 temp/
 bin/
+
+#--- image
+**/images/**
+
+.vite/
+

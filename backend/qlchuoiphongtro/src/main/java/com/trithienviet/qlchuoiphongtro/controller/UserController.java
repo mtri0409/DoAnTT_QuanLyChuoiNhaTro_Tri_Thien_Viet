@@ -4,24 +4,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
-import com.trithienviet.qlchuoiphongtro.entity.UserRole;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
-import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PasswordUpdateDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -43,28 +41,89 @@ public class UserController {
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
     }
+    @GetMapping("/admin/users/search")
+    public ResponseEntity<PageResponse<UserDTO>> searchUsers( 
+        @RequestParam String keyword,
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_USERS_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+            PageResponse<UserDTO> profileResponse = userService.searchUsers(keyword,
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    }
     
+    @GetMapping("/admin/users/history")
+    public ResponseEntity<PageResponse<UserDTO>> getAllUsersIsDelete( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_USERS_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+            PageResponse<UserDTO> profileResponse = userService.getAllUsersIsDelete(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    }
     @GetMapping("/public/users/{userId}")
-    public ResponseEntity<UserDTO> getProfileById(@PathVariable Long userId) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
         
         UserDTO userDTO = userService.getUserById(userId);
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
-    
-    @PutMapping("/admin/users/{userId}")
-    public ResponseEntity<String> updateUser(@PathVariable Long userId, @RequestBody UpdateRoleDTO roleDTO) {
-        String message = userService.updateUserRole(userId, roleDTO);
 
-        return new ResponseEntity<String> (message,HttpStatus.OK);
+    @GetMapping("/public/users/username/{username}") 
+
+ 
+    public ResponseEntity<UserDTO> getUserUserName(@PathVariable String username) {
+        
+        UserDTO userDTO = userService.getUserByUsername(username);
+        return new ResponseEntity<>(userDTO,HttpStatus.OK);
+    }
+    
+    @PatchMapping("/admin/users/{userId}/role")
+    public ResponseEntity<String> updateUserRole(
+            @PathVariable Long userId, 
+            @RequestBody UpdateRoleDTO role) {
+
+        if (role == null) {
+            return ResponseEntity.badRequest().body("Lỗi: Dữ liệu 'ROLE' không được để trống!");
+        }
+
+        try {
+            String message = userService.updateUserRole(userId, role.getRole()); 
+            return ResponseEntity.ok(message);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Lỗi: Role không hợp lệ. Chỉ chấp nhận: ADMIN, STAFF, TENANT");
+        }
     }
 
-    // Endpoint dành cho mọi User tự đổi mật khẩu của mình
-    @PostMapping("/users/{userId}/change-password")
+    @PostMapping("/public/users/{userId}/change-password")
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId, 
-            @RequestParam String oldPassword, 
-            @RequestParam String newPassword) {
-        userService.changePassword(userId, oldPassword, newPassword);
+            @RequestBody PasswordUpdateDTO request) { // Dùng DTO đã tạo
+        
+        // Truyền dữ liệu từ DTO vào Service
+        userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+        
         return ResponseEntity.ok("Đổi mật khẩu thành công!");
     }
+
+    @PatchMapping("/admin/user/{userId}/reset-password")
+    public ResponseEntity<String> resetPassword(@PathVariable Long userId){
+        String message = userService.resetPassword(userId);
+        return ResponseEntity.ok(message);
+    }
+
+    @PatchMapping("/admin/user/{userId}/changeStatus")
+    public ResponseEntity<String> changeStatus(@PathVariable Long userId){
+        String message = userService.changeStatus(userId);
+        return ResponseEntity.ok(message);
+    }
+    
 }
