@@ -63,6 +63,7 @@ public class VehicleServiceImpl implements VehicleService {
                     .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
                     .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
                     .status(v.getStatus()!=null ? v.getStatus() :false)
+                    .branchId(v.getRoom() != null ? v.getRoom().getFloor().getBranch().getBranchId():null)
                     .build();
             })
             .collect(Collectors.toList());
@@ -99,6 +100,7 @@ public class VehicleServiceImpl implements VehicleService {
                     .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
                     .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
                     .status(v.getStatus()!=null ? v.getStatus() :false)
+                     .branchId(v.getRoom() != null ? v.getRoom().getFloor().getBranch().getBranchId():null)
                     .build();
             })
             .collect(Collectors.toList());

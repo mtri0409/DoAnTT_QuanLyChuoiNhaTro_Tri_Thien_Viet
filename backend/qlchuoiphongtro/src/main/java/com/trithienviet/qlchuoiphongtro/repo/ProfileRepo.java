@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,7 +22,31 @@ public interface ProfileRepo extends JpaRepository<Profile,Long> {
         "(:keyword IS NULL OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
     Page<Profile> searchProfiles(@Param("keyword") String keyword, Pageable pageable);
 
+    @EntityGraph(attributePaths = {
+        "roomMember", 
+        "roomMember.contract", 
+        "roomMember.contract.room", 
+        "roomMember.contract.room.floor", 
+        "roomMember.contract.room.floor.branch"
+    })
+    @Query("SELECT p FROM Profile p " +
+           "JOIN p.user u " + 
+           "WHERE p.isActive = true " +
+           "AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
     Page<Profile> findByIsActiveTrue(Pageable pageable);
+
+   @EntityGraph(attributePaths = {
+        "roomMember", 
+        "roomMember.contract", 
+        "roomMember.contract.room", 
+        "roomMember.contract.room.floor", 
+        "roomMember.contract.room.floor.branch"
+    })
+    @Query("SELECT p FROM Profile p " +
+        "JOIN p.user u " + 
+        "WHERE p.isActive = true " +
+        "AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
     Page<Profile> findByIsActiveFalse(Pageable pageable);
+    
     
 }
