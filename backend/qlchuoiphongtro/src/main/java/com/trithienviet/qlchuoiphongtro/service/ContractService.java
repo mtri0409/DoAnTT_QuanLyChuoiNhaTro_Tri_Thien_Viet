@@ -2,6 +2,7 @@ package com.trithienviet.qlchuoiphongtro.service;
 
 import java.util.List;
 
+import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 
 public interface ContractService {
@@ -15,4 +16,10 @@ public interface ContractService {
     ContractDTO updateContract(Long id, ContractDTO dto);
 
     void deleteContract(Long id);
+
+    void updateStatus(Long contractId, ContractStatus status);
+
+    List<ContractDTO> autoUpdateStatus();
+
+    List<ContractDTO> getContractsByStatus(ContractStatus status);
 }
