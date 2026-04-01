@@ -15,4 +15,6 @@ public class NotificationDTO {
     private Integer userId;
     private String title;
     private String content;
+    private Boolean isRead;
+    private String type;
 }

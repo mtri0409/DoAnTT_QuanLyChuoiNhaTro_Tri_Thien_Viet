@@ -1,0 +1,59 @@
+package com.trithienviet.qlchuoiphongtro.controller;
+
+import com.trithienviet.qlchuoiphongtro.config.AppConstants;
+import com.trithienviet.qlchuoiphongtro.payloads.NotificationDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.VehicleLoadDTO;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/notifications")
+public class NotificationController {
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @GetMapping("/admin/notification")
+    public ResponseEntity<PageResponse<NotificationDTO>> getAll( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_NOTIFICATION_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+            PageResponse<NotificationDTO> notificationResponse = notificationService.getAllNoti(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "notifi":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(notificationResponse, HttpStatus.OK);     
+    }
+    // 1. API dành cho Admin gửi thông báo thủ công
+    @PostMapping("/admin/send/{userId}")
+    public ResponseEntity<String> sendManualNotification(
+            @PathVariable Long userId, 
+            @RequestBody NotificationDTO notificationDTO) {
+        if(notificationDTO == null) throw new RuntimeException("NOTI null");
+        notificationService.sendNotification(userId, notificationDTO);
+        return ResponseEntity.ok("Đã gửi thông báo thành công!");
+    }
+
+    // 2. API lấy danh sách thông báo cho User (để hiện ở cái chuông)
+    @GetMapping("public/user/{userId}")
+    public ResponseEntity<List<NotificationDTO>> getNotificationsByUser(@PathVariable Long userId) {
+        // Tri cần viết thêm hàm này trong Service để lấy từ Repository nhé
+        List<NotificationDTO> notifications = notificationService.getNotificationsByUserId(userId);
+        return ResponseEntity.ok(notifications);
+    }
+
+    // 3. API đánh dấu đã đọc
+    @PutMapping("/{notiId}/read")
+    public ResponseEntity<Void> markAsRead(@PathVariable Long notiId) {
+        notificationService.markAsRead(notiId);
+        return ResponseEntity.ok().build();
+    }
+}
