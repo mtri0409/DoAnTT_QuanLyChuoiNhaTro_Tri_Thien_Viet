@@ -13,14 +13,14 @@ public class ResourceNotFoundException extends RuntimeException {
     }
 
     public ResourceNotFoundException(String resourceName, String field, String fieldName) {
-        super("%s not found with %s: %s".formatted(resourceName, field, fieldName));
+        super("%s không tìm thấy với %s: %s".formatted(resourceName, field, fieldName));
         this.resourceName = resourceName;
         this.field = field;
         this.fieldName = fieldName;
     }
 
     public ResourceNotFoundException(String resourceName, String field, Long fieldId) {
-        super("%s not found with %s: %d".formatted(resourceName, field, fieldId));
+        super("%s không tìm thấy với %s: %d".formatted(resourceName, field, fieldId));
         this.resourceName = resourceName;
         this.field = field;
         this.fieldId = fieldId;

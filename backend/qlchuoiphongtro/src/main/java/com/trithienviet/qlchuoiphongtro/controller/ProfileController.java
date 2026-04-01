@@ -64,6 +64,19 @@ public class ProfileController {
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
     }
+       @GetMapping("/admin/profiles/history")
+    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfileIsDelete( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+            PageResponse<ProfileDTO> profileResponse = profileService.getProfileIsDelete(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    }
 
     @GetMapping("/admin/profiles/search")
     public ResponseEntity<PageResponse<ProfileDTO>> searchProfiles(
@@ -133,6 +146,12 @@ public class ProfileController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(new InputStreamResource(imageStream));
+    }
+
+    @PatchMapping("/admin/profile/restore/{profileId}")
+    public ResponseEntity<String> restoreProfile(@PathVariable Long profileId){
+        String message = profileService.restoreProfile(profileId);
+        return new ResponseEntity<>(message,HttpStatus.OK);
     }
 
 }

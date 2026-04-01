@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,7 +48,19 @@ public class VehicleController {
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
+    @GetMapping("/admin/vehicles/history")
+    public ResponseEntity<PageResponse<VehicleLoadDTO>> getAllVehicleIsDelete( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
+            PageResponse<VehicleLoadDTO> profileResponse = vehicleService.getAllVehicleIsDelete(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
+                        sortOrder) ;
+        return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
+    }
     @GetMapping("/admin/vehicles/search")
     public ResponseEntity<PageResponse<VehicleLoadDTO>> searchVehicles( 
         @RequestParam String keyword,
@@ -90,5 +103,11 @@ public class VehicleController {
     public ResponseEntity<String> deleteVehicle(@PathVariable Long vehicleId) {
         String message =  vehicleService.deleteVehicle(vehicleId);
         return new ResponseEntity<>(message, HttpStatus.OK);
+    }
+
+    @PatchMapping("/admin/vehicles/restore/{vehicleId}")
+    public ResponseEntity<String> restoreVehicle(@PathVariable Long vehicleId){
+        String message = vehicleService.restoreVehilcle(vehicleId);
+        return new ResponseEntity<>(message,HttpStatus.OK);
     }
 }
