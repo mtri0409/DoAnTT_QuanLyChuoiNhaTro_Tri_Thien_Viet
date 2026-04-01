@@ -255,7 +255,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    @Transactional // Cực kỳ quan trọng để đảm bảo dữ liệu được cập nhật
+    @Transactional 
     public String changeStatus(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
