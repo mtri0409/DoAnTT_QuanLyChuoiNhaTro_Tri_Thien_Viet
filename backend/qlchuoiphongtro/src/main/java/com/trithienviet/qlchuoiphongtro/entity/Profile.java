@@ -48,7 +48,7 @@ public class Profile {
     private String email;
 
     @Size(min = 12, max =12 , message =  "identity number must be axactly 10 digits long")
-    private String identity_number;
+    private String identityNumber;
 
     @Size(min = 20, message = "Address must contain at least 20 characters")
     private String address;
@@ -72,6 +72,9 @@ public class Profile {
 
     @OneToOne(mappedBy = "profile",fetch = FetchType.LAZY)
     private RoomMember roomMember;
+
+    @OneToMany(mappedBy = "representative")
+    private List<Contract> contracts;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();

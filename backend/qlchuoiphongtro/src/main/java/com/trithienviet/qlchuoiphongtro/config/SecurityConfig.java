@@ -93,9 +93,10 @@ public class SecurityConfig {
         // Liệt kê các địa chỉ của Frontend được phép gọi đến Backend
         configuration.setAllowedOrigins(List.of(
             "http://localhost:3000",
-            "http://localhost:5173" 
+            "http://localhost:5173",
+            "http://localhost:5174" 
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true); // Cho phép gửi Token/Cookie kèm theo
 

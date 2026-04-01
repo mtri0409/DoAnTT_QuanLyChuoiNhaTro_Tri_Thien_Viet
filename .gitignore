@@ -38,3 +38,6 @@ bin/
 
 #--- image
 **/images/**
+
+.vite/
+
