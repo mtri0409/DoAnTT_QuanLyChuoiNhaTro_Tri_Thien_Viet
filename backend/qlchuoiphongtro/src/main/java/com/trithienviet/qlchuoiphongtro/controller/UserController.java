@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.PasswordUpdateDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UpdateRoleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
@@ -75,7 +76,9 @@ public class UserController {
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
 
-    @GetMapping("/public/users/users/{username}") 
+    @GetMapping("/public/users/username/{username}") 
+
+ 
     public ResponseEntity<UserDTO> getUserUserName(@PathVariable String username) {
         
         UserDTO userDTO = userService.getUserByUsername(username);
@@ -100,13 +103,14 @@ public class UserController {
         }
     }
 
-    // Endpoint dành cho mọi User tự đổi mật khẩu của mình
-    @PostMapping("public/users/{userId}/change-password")
+    @PostMapping("/public/users/{userId}/change-password")
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId, 
-            @RequestParam String oldPassword, 
-            @RequestParam String newPassword) {
-        userService.changePassword(userId, oldPassword, newPassword);
+            @RequestBody PasswordUpdateDTO request) { // Dùng DTO đã tạo
+        
+        // Truyền dữ liệu từ DTO vào Service
+        userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+        
         return ResponseEntity.ok("Đổi mật khẩu thành công!");
     }
 
