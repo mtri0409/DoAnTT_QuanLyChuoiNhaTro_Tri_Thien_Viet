@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Pageable;
 
+import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
@@ -38,10 +39,10 @@ public class ProfileServiceImpl implements ProfileService {
     @Autowired
     private ProfileRepo profileRepo;
 
-    @Autowired 
+    @Autowired
     private UserRepo userRepo;
 
-    @Autowired 
+    @Autowired
     private VehicleRepo vehicleRepo;
 
     @Autowired
@@ -52,6 +53,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Value("${path.images.identification}")
     private String path;
+
     @Override
     public ProfileDTO createProfile(ProfileDTO profileDTO) {
         Profile profile = modelMapper.map(profileDTO, Profile.class);
@@ -59,9 +61,11 @@ public class ProfileServiceImpl implements ProfileService {
 
         return modelMapper.map(savedProfile, ProfileDTO.class);
     }
+
     @Override
-    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy,
+            String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
@@ -106,43 +110,40 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Transactional
     @Override
-    public String deleteProfile(Long profileId)
-    {
+    public String deleteProfile(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
-            .orElseThrow(()-> new ResourceNotFoundException("Profile","profileId",profileId));
-        
-       if (profile.getRoomMember() != null && 
-            profile.getRoomMember().getContract() != null) {
-            
-            String contractStatus = profile.getRoomMember().getContract().getStatus();
-            
-            // Dùng .equals() và viết hằng số ra trước để tránh NullPointer
-            if ("ACTIVE".equals(contractStatus)) {
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        // Kiểm tra xem Profile này có đang là thành viên của hợp đồng ACTIVE không
+        if (profile.getRoomMember() != null
+                && profile.getRoomMember().getContract() != null) {
+
+            ContractStatus contractStatus = profile.getRoomMember().getContract().getStatus();
+
+            // dùng .name() để chuyển Enum thành String
+            if ("ACTIVE".equals(contractStatus.name())) {
                 throw new APIException("Không thể xóa! Khách thuê đang có hợp đồng còn hiệu lực. " +
-                                    "Vui lòng thanh lý hợp đồng trước.");
+                        "Vui lòng thanh lý hợp đồng trước.");
             }
         }
-
         User user = profile.getUser();
         if (user != null) {
-            user.setIsActice(false); 
+            user.setIsActice(false);
             userRepo.save(user);
         }
 
         List<Vehicle> vehicles = profile.getVehicles();
 
-        if(vehicles !=null)
-        {
-            vehicles.forEach(vehicle-> {
+        if (vehicles != null) {
+            vehicles.forEach(vehicle -> {
                 vehicle.setStatus(false);
             });
             vehicleRepo.saveAll(vehicles);
         }
-       
+
         profile.setIsActive(false);
         profileRepo.save(profile);
-        
-        return "Xóa thành công " + profileId + "!"; 
+
+        return "Xóa thành công " + profileId + "!";
     }
 
     @Override
@@ -153,30 +154,30 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public ProfileDTO updateIdFrontImage(Long profileId,MultipartFile image) throws IOException{
-        Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
-            new ResourceNotFoundException("Profile","profileId",profileId));
-        if(profileFromDB == null){
-            throw new APIException("Không tìm thấy thông tin người dùng " +profileId);
+    public ProfileDTO updateIdFrontImage(Long profileId, MultipartFile image) throws IOException {
+        Profile profileFromDB = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        if (profileFromDB == null) {
+            throw new APIException("Không tìm thấy thông tin người dùng " + profileId);
         }
-        String fileName = fileService.uploadImage(path,image);
+        String fileName = fileService.uploadImage(path, image);
         profileFromDB.setIdFrontImage(fileName);
         Profile updateIdFrontImage = profileRepo.save(profileFromDB);
-        
+
         return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
     }
 
     @Override
-    public ProfileDTO updateIdBackImage(Long profileId,MultipartFile image) throws IOException{
-        Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
-            new ResourceNotFoundException("Profile","profileId",profileId));
-        if(profileFromDB == null){
-            throw new APIException("Không tìm thấy thông tin người dùng " +profileId);
+    public ProfileDTO updateIdBackImage(Long profileId, MultipartFile image) throws IOException {
+        Profile profileFromDB = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        if (profileFromDB == null) {
+            throw new APIException("Không tìm thấy thông tin người dùng " + profileId);
         }
-        String fileName = fileService.uploadImage(path,image);
+        String fileName = fileService.uploadImage(path, image);
         profileFromDB.setIdBackImage(fileName);
         Profile updateIdFrontImage = profileRepo.save(profileFromDB);
-        
+
         return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
     }
 
