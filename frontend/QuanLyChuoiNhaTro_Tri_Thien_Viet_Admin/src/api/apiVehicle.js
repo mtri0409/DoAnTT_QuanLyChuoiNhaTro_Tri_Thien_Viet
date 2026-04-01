@@ -33,7 +33,9 @@ const apiVehicle = {
   // Cập nhật (Sử dụng cho trang Update)
   updateVehicle: (id, data) => axiosInstance.put(`/public/vehicles/${id}`, data),
 
-  createVehicle : (profileId,data) => axiosInstance.post(`/public/vehicles/${profileId}`,data)
+  createVehicle : (profileId,data) => axiosInstance.post(`/public/vehicles/${profileId}`,data),
+
+  restoreVehicle :(id) => axiosInstance.patch(`/admin/vehicles/restore/${id}`)
 };
 
 export default apiVehicle;

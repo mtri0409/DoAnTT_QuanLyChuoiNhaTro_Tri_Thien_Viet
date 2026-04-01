@@ -44,6 +44,7 @@ const apiProfile = {
 
   getProfileById: (id) => {
     return axiosInstance.get(`/public/profiles/${id}`);
-  }
+  },
+  restoreProfile :(id) => axiosInstance.patch( `/admin/profile/restore/${id}`)
 };
 export default apiProfile;
