@@ -47,6 +47,5 @@ public interface ProfileRepo extends JpaRepository<Profile,Long> {
         "WHERE p.isActive = true " +
         "AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
     Page<Profile> findByIsActiveFalse(Pageable pageable);
-    
-    
+     
 }
