@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.trithienviet.qlchuoiphongtro.config.EmailTemplate;
 import com.trithienviet.qlchuoiphongtro.entity.OtpToken;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.User;
@@ -17,6 +18,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.repo.OtpTokenRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
+import com.trithienviet.qlchuoiphongtro.service.EmailService;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
 import com.trithienviet.qlchuoiphongtro.utils.OtpUtils;
 import com.trithienviet.qlchuoiphongtro.utils.PasswordGenerator;
@@ -25,11 +27,8 @@ import org.springframework.data.domain.Pageable;
 
 import jakarta.transaction.Transactional;
 
-import java.lang.foreign.Linker.Option;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -55,6 +54,9 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     @Override
     public UserDTO createAccountForProfile(Long profileId, String userName, String password) {
@@ -77,7 +79,9 @@ public class UserServiceImpl implements UserService{
         newUser.setProfile(profile);
 
         User savedUser = userRepo.save(newUser);
-
+        String template = EmailTemplate.getNewAccountCreated(profile.getFullName(), userName, password);
+        emailService.sendHtmlEmail(profile.getEmail(), "TÀI KHOẢN QUẢN LÝ PHÒNG", template);
+        
         return modelMapper.map(savedUser, UserDTO.class); 
     }
 
@@ -90,6 +94,14 @@ public class UserServiceImpl implements UserService{
 
         if (userRepo.existsByProfile(profile)) {
             throw new RuntimeException("Profile này đã được liên kết với một tài khoản khác!");
+        }
+        if(profile.getEmail()==null)
+        {
+            throw new RuntimeException("Vui lòng cập nhập email cho hồ sơ này!");
+        }   
+         if(profile.getPhone()==null)
+        {
+            throw new RuntimeException("Vui lòng cập nhập số điện thoại cho hồ sơ này!");
         }        
         User newUser = new User();
         newUser.setUserName(profile.getEmail());
@@ -98,7 +110,9 @@ public class UserServiceImpl implements UserService{
         newUser.setProfile(profile);
 
         User savedUser = userRepo.save(newUser);
-
+        
+        String template = EmailTemplate.getNewAccountCreated(profile.getFullName(), profile.getEmail(), profile.getPhone());
+        emailService.sendHtmlEmail(profile.getEmail(), "TÀI KHOẢN QUẢN LÝ PHÒNG", template);
         return modelMapper.map(savedUser, UserDTO.class); 
     }
 

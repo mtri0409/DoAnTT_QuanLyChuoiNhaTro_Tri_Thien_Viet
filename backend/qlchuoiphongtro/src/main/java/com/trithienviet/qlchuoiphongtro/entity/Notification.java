@@ -28,7 +28,7 @@ public class Notification {
     private Long notificationId;
 
     @Column(nullable = false)
-    private String tilte;
+    private String title;
     
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -37,7 +37,8 @@ public class Notification {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    private Boolean isRead;
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="user_id",nullable = false)
+    @JoinColumn(name="user_id")
     private User user;
 }
