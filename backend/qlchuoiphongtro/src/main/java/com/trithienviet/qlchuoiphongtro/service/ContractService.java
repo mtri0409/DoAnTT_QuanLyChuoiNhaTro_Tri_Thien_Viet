@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
 
 public interface ContractService {
 
@@ -22,4 +23,22 @@ public interface ContractService {
     List<ContractDTO> autoUpdateStatus();
 
     List<ContractDTO> getContractsByStatus(ContractStatus status);
+
+    void terminateContract(Long contractId);
+
+    void addMember(Long contractId, Long profileId);
+
+    void removeMember(Long contractId, Long profileId);
+
+    List<Long> getMemberIds(Long contractId);
+
+    List<ContractDTO> getContractsByRoom(Long roomId);
+
+    List<ContractServiceDTO> getServicesByContract(Long contractId);
+
+    void addServices(Long contractId, List<ContractServiceDTO> services);
+
+    void updateService(Integer contractServiceId, ContractServiceDTO dto);
+
+    void deleteService(Integer contractServiceId);
 }
