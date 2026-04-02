@@ -11,42 +11,71 @@ import org.springframework.data.repository.query.Param;
 
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 
-public interface ProfileRepo extends JpaRepository<Profile,Long> {
-    // Lấy các profile chưa được gán cho bất kỳ user nào
+public interface ProfileRepo extends JpaRepository<Profile, Long> {
+
+    // 1. Lấy hồ sơ chưa có tài khoản (Để Admin biết ai cần cấp acc)
     @Query("SELECT p FROM Profile p WHERE p.profileId NOT IN " +
            "(SELECT u.profile.profileId FROM User u WHERE u.profile.profileId IS NOT NULL)")
-    List<Profile> findAllProfilesWithoutAccount();
+    List<Profile> findAllByHasNoAccount();
+
+    // 2. Tìm kiếm linh hoạt (Tên, CCCD, SĐT)
     @Query("SELECT p FROM Profile p WHERE " +
-        "(:keyword IS NULL OR LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
-        "(:keyword IS NULL OR p.phone LIKE CONCAT('%', :keyword, '%')) OR " +
-        "(:keyword IS NULL OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
-    Page<Profile> searchProfiles(@Param("keyword") String keyword, Pageable pageable);
+           "(:keyword IS NULL OR LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "(:keyword IS NULL OR p.phone LIKE CONCAT('%', :keyword, '%')) OR " +
+           "(:keyword IS NULL OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
+    Page<Profile> searchAllProfiles(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("SELECT p FROM Profile p " +
+       "JOIN p.user u " +
+       "LEFT JOIN p.roomMember rm LEFT JOIN rm.contract c LEFT JOIN c.room r LEFT JOIN r.floor f " +
+       "WHERE u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT " +
+       "AND p.isActive = :status " +
+       "AND (:branchId IS NULL OR f.branch.branchId = :branchId) " + // Lọc theo chi nhánh nếu có
+       "AND (LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+       "OR p.phone LIKE CONCAT('%', :keyword, '%') " +
+       "OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
+    Page<Profile> searchTenants(@Param("keyword") String keyword, 
+                            @Param("branchId") Integer branchId, 
+                            @Param("status") Boolean status,
+                            Pageable pageable);
+
+    // 3. Lấy danh sách Khách thuê ĐANG HOẠT ĐỘNG (Dùng cho trang chủ quản lý)
     @EntityGraph(attributePaths = {
-        "roomMember", 
-        "roomMember.contract", 
-        "roomMember.contract.room", 
-        "roomMember.contract.room.floor", 
         "roomMember.contract.room.floor.branch"
     })
-    @Query("SELECT p FROM Profile p " +
-           "JOIN p.user u " + 
-           "WHERE p.isActive = true " +
-           "AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
-    Page<Profile> findByIsActiveTrue(Pageable pageable);
+    @Query("SELECT p FROM Profile p JOIN p.user u " + 
+           "WHERE p.isActive = :status AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
+    Page<Profile> findAllTenants(Pageable pageable,  @Param("status") Boolean status);
 
-   @EntityGraph(attributePaths = {
-        "roomMember", 
-        "roomMember.contract", 
-        "roomMember.contract.room", 
-        "roomMember.contract.room.floor", 
+    // 4. Lấy danh sách Khách thuê ĐÃ XÓA/NGỪNG HOẠT ĐỘNG (Dùng cho trang Restore)
+    // @EntityGraph(attributePaths = {
+    //     "roomMember.contract.room.floor.branch"
+    // })
+    // @Query("SELECT p FROM Profile p JOIN p.user u " + 
+    //        "WHERE p.isActive = false AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
+    // Page<Profile> findAllInactiveTenants(Pageable pageable);
+
+    // 5. Lọc Khách thuê theo Chi nhánh cụ thể
+    @EntityGraph(attributePaths = {
         "roomMember.contract.room.floor.branch"
     })
     @Query("SELECT p FROM Profile p " +
-        "JOIN p.user u " + 
-        "WHERE p.isActive = true " +
-        "AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
-    Page<Profile> findByIsActiveFalse(Pageable pageable);
-    
-    
+           "JOIN p.user u " +
+           "JOIN p.roomMember rm JOIN rm.contract c JOIN c.room r JOIN r.floor f " +
+           "WHERE u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT " +
+           "AND p.isActive = :status AND f.branch.branchId = :branchId")
+    Page<Profile> findTenantsByBranch(  @Param("branchId") Integer branchId,
+                                        Pageable pageable,
+                                        @Param("status") Boolean status);
+
+     // 5. Lọc Khách thuê (Đã ẩn/xóa) theo Chi nhánh cụ thể
+    // @EntityGraph(attributePaths = {
+    //     "roomMember.contract.room.floor.branch"
+    // })
+    // @Query("SELECT p FROM Profile p " +
+    //        "JOIN p.user u " +
+    //        "JOIN p.roomMember rm JOIN rm.contract c JOIN c.room r JOIN r.floor f " +
+    //        "WHERE u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT " +
+    //        "AND p.isActive = false AND f.branch.branchId = :branchId")
+    // Page<Profile> findInactiveTenantsByBranch(@Param("branchId") Integer branchId, Pageable pageable);
 }

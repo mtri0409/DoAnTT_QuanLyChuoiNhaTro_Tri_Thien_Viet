@@ -129,13 +129,18 @@ public class ProfileServiceImpl implements ProfileService {
         return "Xóa thành công " + profileId + "!"; 
     }
     @Override
-    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Profile> profilePage = profileRepo.findByIsActiveTrue(pageDetails);
+        Page<Profile> profilePage;
+        if (branchId != null) {
+            profilePage = profileRepo.findTenantsByBranch(branchId, pageDetails,status);
+        } else {
+            profilePage = profileRepo.findAllTenants(pageDetails,status);
+        }
 
         // List<Profile> profiles = profilePage.getContent();
         List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
@@ -170,17 +175,18 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileResponse;
     }
+   
     @Override
-    public PageResponse<ProfileDTO> getProfileIsDelete(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
-        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        
-        Page<Profile> profilePage = profileRepo.findByIsActiveFalse(pageDetails);
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
 
-        List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+        Page<Profile> profilePage = profileRepo.searchTenants(keyword,branchId, status,pageable);
+        
+          List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
                 .map(p -> {
                     
                     ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
@@ -200,7 +206,6 @@ public class ProfileServiceImpl implements ProfileService {
                 })
                 .collect(Collectors.toList());
 
-        // 4. Đóng gói PageResponse
         PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
         profileResponse.setContent(profileDTOs);
         profileResponse.setPageNumber(profilePage.getNumber());
@@ -211,30 +216,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileResponse;
     }
-  @Override
-    public PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder) {
-        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
 
-        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
-
-        Page<Profile> profilePage = profileRepo.searchProfiles(keyword, pageable);
-
-        List<ProfileDTO> profileDTOs = profilePage.stream()
-                .map(p -> modelMapper.map(p, ProfileDTO.class))
-                .collect(Collectors.toList());
-
-        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
-        profileResponse.setContent(profileDTOs);
-        profileResponse.setPageNumber(profilePage.getNumber());
-        profileResponse.setPageSize(profilePage.getSize());
-        profileResponse.setTotalElements(profilePage.getTotalElements());
-        profileResponse.setTotalPages(profilePage.getTotalPages());
-        profileResponse.setLastPage(profilePage.isLast());
-
-        return profileResponse;
-    }
     @Override
     public ProfileDetailDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
@@ -292,7 +274,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public List<ProfileDTO> getProfilesWithoutAccount() {
-        List<Profile> profiles = profileRepo.findAllProfilesWithoutAccount();
+        List<Profile> profiles = profileRepo.findAllByHasNoAccount();
         // Chuyển đổi sang DTO và return
         return profiles.stream()
                 .map(p -> modelMapper.map(p, ProfileDTO.class))

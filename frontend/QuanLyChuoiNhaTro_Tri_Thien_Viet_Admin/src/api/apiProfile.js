@@ -1,29 +1,20 @@
 import axiosInstance from "./axios";
 const apiProfile = {
  
-   getAllProfiles: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+   getAllProfiles: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",branchId="",status = true) => {
     const url = `/admin/profiles`;
     return axiosInstance.get(url, {
       params: {
         pageNumber: pageNumber, // Gửi 1, 2, 3...
         pageSize: pageSize,
         sortBy: sortBy,
-        sortOrder: sortOrder
+        sortOrder: sortOrder,
+        branchId:branchId,
+        status:status
       }
     });
   },
-   getAllProfilesDeleted: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
-    const url = `/admin/profiles/history`;
-    return axiosInstance.get(url, {
-      params: {
-        pageNumber: pageNumber, // Gửi 1, 2, 3...
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder
-      }
-    });
-  },
-    searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+    searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",branchId,status) => {
     const url = `/admin/profiles/search`;
     return axiosInstance.get(url, {
       params: {
@@ -31,7 +22,9 @@ const apiProfile = {
         pageNumber: pageNumber, 
         pageSize: pageSize,
         sortBy: sortBy,
-        sortOrder: sortOrder
+        sortOrder: sortOrder,
+        branchId:branchId,
+        status:status
       }
     });
   },

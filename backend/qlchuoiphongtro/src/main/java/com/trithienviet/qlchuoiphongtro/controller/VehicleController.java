@@ -40,40 +40,49 @@ public class VehicleController {
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
         @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+        @RequestParam(name = "branchId", required = false) Integer branchId,
+        @RequestParam(name = "status", required = false) Boolean status) {
 
             PageResponse<VehicleLoadDTO> profileResponse = vehicleService.getAll(
                 Math.max(0,pageNumber-1),
                         pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
-                        sortOrder) ;
+                        sortOrder,
+                        branchId,
+                        status) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
-    @GetMapping("/admin/vehicles/history")
-    public ResponseEntity<PageResponse<VehicleLoadDTO>> getAllVehicleIsDelete( 
-        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+    // @GetMapping("/admin/vehicles/history")
+    // public ResponseEntity<PageResponse<VehicleLoadDTO>> getAllVehicleIsDelete( 
+    //     @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+    //     @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+    //     @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
+    //     @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
-            PageResponse<VehicleLoadDTO> profileResponse = vehicleService.getAllVehicleIsDelete(
-                Math.max(0,pageNumber-1),
-                        pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
-                        sortOrder) ;
-        return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
-    }
+    //         PageResponse<VehicleLoadDTO> profileResponse = vehicleService.getAllVehicleIsDelete(
+    //             Math.max(0,pageNumber-1),
+    //                     pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
+    //                     sortOrder) ;
+    //     return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
+    // }
     @GetMapping("/admin/vehicles/search")
     public ResponseEntity<PageResponse<VehicleLoadDTO>> searchVehicles( 
         @RequestParam String keyword,
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
         @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+        @RequestParam(name = "branchId", required = false) Integer branchId,
+        @RequestParam(name = "status", required = false) Boolean status
+        ) {
 
             PageResponse<VehicleLoadDTO> profileResponse = vehicleService.searchVehicles(
                 keyword,
                 Math.max(0,pageNumber-1),
                         pageSize, "id".equals(sortBy) ? "vehicleId":sortBy,
-                        sortOrder) ;
+                        sortOrder,
+                        branchId,
+                        status) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
 

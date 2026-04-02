@@ -13,4 +13,5 @@ import lombok.NoArgsConstructor;
 public class FloorDTO {
     private Integer floorId;
     private Integer floorNumber;
+    private Integer branchId;
 }

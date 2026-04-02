@@ -27,6 +27,7 @@ const Login = () => {
 
     setLoading(true);
     try {
+        console.log(">>-------------")
         const response = await authApi.loginUser(form);
         console.log("res: ",response);
         // const username = response.userName; 

@@ -12,63 +12,80 @@ import {
 import apiProfile from "../../api/apiProfile";
 import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";
+import apiBranches from "../../api/apiBranches";
 
 const ListProfileDeleted = () => {
-  const [data, setData] = useState({
-    content: [],
-    pageNumber: 0,
-    totalPages: 0,
-    totalElements: 0,
-  });
+  const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState([]);
+  // --- STATE QUẢN LÝ SEARCH ---
+  const [searchTerm, setSearchTerm] = useState('');      
+  const [appliedSearch, setAppliedSearch] = useState(''); 
 
-  // --- STATE FILTER & SORT ---
-  const [searchTerm, setSearchTerm] = useState(""); 
-  const [appliedSearch, setAppliedSearch] = useState(""); 
-  const [sortBy, setSortBy] = useState("profileId");
-  const [sortOrder, setSortOrder] = useState("desc");
+  // State Sort
+  const [sortBy, setSortBy] = useState('profileId');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  // 1. Fetch danh sách Hồ sơ đã bị ẩn (isActive = false)
+  
+  // Hàm gọi API chung cho cả Load All và Search
   const fetchDeletedProfiles = async () => {
     setLoading(true);
     try {
-      // Đảm bảo Tri đã định nghĩa hàm này trong apiProfile.js
-      // API sẽ gọi đến endpoint: /api/admin/profiles/deleted (hoặc tương tự)
-      const response = await apiProfile.getAllProfilesDeleted(
-        currentPage,
-        10,
-        sortBy,
-        sortOrder,
-        appliedSearch
-      );
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiProfile.searchProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,selectedBranch,false);
+      } else {
+        // Gọi API GetAll bình thường
+        response = await apiProfile.getAllProfiles(currentPage, 10, sortBy, sortOrder,selectedBranch,false);
+        console.log(response);
+      }
+      console.log(response);
       setData(response);
-      console.log("data profile was deleted",response)
     } catch (err) {
-      console.error("Lỗi tải kho lưu trữ hồ sơ:", err);
+      console.error("Lỗi:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Gọi lại API khi: Trang đổi, Tiêu chí Sort đổi, hoặc khi bấm nút Search (appliedSearch đổi)
   useEffect(() => {
     fetchDeletedProfiles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch]);
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch]);
 
-  // 2. Xử lý Tìm kiếm
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await apiBranches.getAllBranches(0,10); 
+        console.log("branch",response.content);
+        setBranches(response.content);
+      } catch (err) {
+        console.error("Lỗi lấy chi nhánh:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
+  
+  // Xử lý khi bấm nút Search hoặc Enter
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset về trang 1 khi search mới
     setAppliedSearch(searchTerm);
   };
 
+  // Xử lý khi bấm nút X để xóa search
   const handleClearSearch = () => {
-    setSearchTerm("");
-    setAppliedSearch("");
+    setSearchTerm('');
+    setAppliedSearch('');
     setCurrentPage(1);
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page + 1);
+  };
   // 3. Hàm Khôi phục hồ sơ (Restore)
   const handleRestore = async (id, fullName) => {
     if (window.confirm(`Bạn có chắc muốn khôi phục hồ sơ của khách: ${fullName}?`)) {
@@ -140,6 +157,19 @@ const ListProfileDeleted = () => {
               <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
             </select>
+
+             <select 
+                className="form-select form-select-sm border-0 bg-primary-subtle text-primary fw-bold" 
+                style={{ width: '180px' }}
+                value={selectedBranch} 
+                onChange={(e) => { setSelectedBranch(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                
+                {branches.length > 0 ? branches.map(b => (
+                  <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
+              )) : <option value="">Chưa có chi nhánh nào</option>}
+            </select>
           </div>
         </div>
 
@@ -208,7 +238,7 @@ const ListProfileDeleted = () => {
           <Pagination
             currentPage={data.pageNumber}
             totalPages={data.totalPages}
-            onPageChange={(p) => setCurrentPage(p + 1)}
+            onPageChange={handlePageChange}
           />
         </div>
       </div>

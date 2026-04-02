@@ -1,13 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaMotorcycle } from 'react-icons/fa';
+import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaWifi, FaServicestack, FaMotorcycle } from 'react-icons/fa';
 
 const NAV_ITEMS = [
   { title: 'Dashboard',      path: '/',          icon: <FaHome /> },
-  { title: 'Chi nhánh',      path: '/admin/branches', icon: <FaBuilding /> },
-  { title: 'Quản lý Phòng',  path: '/admin/rooms',    icon: <FaBed /> },
-  { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
+  
+  { title: 'Chi nhánh',      path: '/branches/1', icon: <FaBuilding /> },
+  { title: 'Quản lý Phòng',  path: '/rooms/1',    icon: <FaBed /> },
+  { title: 'Quản lý Dịch vụ',  path: '/services/1',    icon: <FaServicestack /> },
+  { title: 'Quản lý Tiện ích',  path: '/amenities/1',    icon: <FaWifi /> },
   { title: 'Người thuê',     path: '/profiles',  icon: <FaUsers /> },
+  { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
   { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
   { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },
   { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },

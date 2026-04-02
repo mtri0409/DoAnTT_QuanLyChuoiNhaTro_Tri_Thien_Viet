@@ -56,25 +56,16 @@ public class ProfileController {
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
         @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+        @RequestParam(name = "branchId", required = false) Integer branchId,
+        @RequestParam(name = "status", required = false) Boolean status) {
 
             PageResponse<ProfileDTO> profileResponse = profileService.getAllProfiles(
                 Math.max(0,pageNumber-1),
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
-                        sortOrder) ;
-        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
-    }
-       @GetMapping("/admin/profiles/history")
-    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfileIsDelete( 
-        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
-
-            PageResponse<ProfileDTO> profileResponse = profileService.getProfileIsDelete(
-                Math.max(0,pageNumber-1),
-                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
-                        sortOrder) ;
+                        sortOrder,
+                        branchId,
+                        status);
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
     }
 
@@ -84,13 +75,17 @@ public class ProfileController {
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+           @RequestParam(name = "branchId", required = false) Integer branchId,
+            @RequestParam(name = "status", required = false) Boolean status) {
         
        PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
                     keyword,
                 Math.max(0,pageNumber-1),
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
-                        sortOrder) ;
+                        sortOrder,
+                        branchId,
+                        status);
         return ResponseEntity.ok(profileResponse);
     }
 

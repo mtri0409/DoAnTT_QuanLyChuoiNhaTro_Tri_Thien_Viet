@@ -42,13 +42,19 @@ public class VehicleServiceImpl implements VehicleService {
     private ModelMapper modelMapper;
 
     @Override
-    public PageResponse<VehicleLoadDTO> getAll(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public PageResponse<VehicleLoadDTO> getAll(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Vehicle> vehiclePages = vehicleRepo.findByStatusTrue(pageable);
+        Page<Vehicle> vehiclePages ;
+        if(branchId != null){
+            vehiclePages = vehicleRepo.findVehiclesByBranch(branchId,status,pageable);
+        }else
+            {
+            vehiclePages = vehicleRepo.findVehicles(pageable,status);
+        }
         
         // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
         List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
@@ -79,56 +85,21 @@ public class VehicleServiceImpl implements VehicleService {
     }
     
      @Override
-    public PageResponse<VehicleLoadDTO> getAllVehicleIsDelete(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public PageResponse<VehicleLoadDTO> searchVehicles(String keyword,Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Vehicle> vehiclePages = vehicleRepo.findByStatusFalse(pageable);
-        
-        // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
-        List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
-            .map((Vehicle v) -> { // Khai báo rõ (Vehicle v) để tránh lỗi infer
-                return VehicleLoadDTO.builder()
-                    // Kiểm tra null để tránh lỗi khi xe chưa gán vào phòng/chủ
-                    .vehicleId(v.getVehicleId())
-                    .brand(v.getBrand())
-                    .licensePlate(v.getLicensePlate())
-                    .roomId(v.getRoom() != null ? v.getRoom().getRoomId() : null)
-                    .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
-                    .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
-                    .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
-                    .status(v.getStatus()!=null ? v.getStatus() :false)
-                     .branchId(v.getRoom() != null ? v.getRoom().getFloor().getBranch().getBranchId():null)
-                    .build();
-            })
-            .collect(Collectors.toList());
-
-        PageResponse<VehicleLoadDTO> response = new PageResponse<>();
-        response.setContent(vehicleLoadDTOs);
-        response.setPageNumber(vehiclePages.getNumber());
-        response.setPageSize(vehiclePages.getSize());
-        response.setTotalElements(vehiclePages.getTotalElements());
-        response.setTotalPages(vehiclePages.getTotalPages());
-        response.setLastPage(vehiclePages.isLast());
-        return response;
-    }
-
-     @Override
-    public PageResponse<VehicleLoadDTO> searchVehicles(String keyword,Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
-        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Vehicle> vehiclePages = vehicleRepo.searchVehicles(keyword,pageable);
+        Page<Vehicle> vehiclePages = vehicleRepo.searchVehicles(keyword,pageable,branchId,status);
         
         // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
         List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
             .map((Vehicle v) -> { 
                 return VehicleLoadDTO.builder()
-                    // Kiểm tra null để tránh lỗi khi xe chưa gán vào phòng/chủ
+                    .vehicleId(v.getVehicleId())
+                    .brand(v.getBrand())
+                    .licensePlate(v.getLicensePlate())
                     .roomId(v.getRoom() != null ? v.getRoom().getRoomId() : null)
                     .brand(v.getBrand())
                     .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)

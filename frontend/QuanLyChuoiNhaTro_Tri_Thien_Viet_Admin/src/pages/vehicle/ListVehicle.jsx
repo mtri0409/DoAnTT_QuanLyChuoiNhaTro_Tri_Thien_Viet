@@ -6,13 +6,15 @@ import {
 import apiVehicle from '../../api/apiVehicle';
 import Pagination from '../../components/Pagination';
 import { useNavigate, Link } from 'react-router-dom';
+import apiBranches from '../../api/apiBranches';
 
 const ListVehicle = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+ const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState([]);
   // --- STATE SEARCH ---
   const [searchTerm, setSearchTerm] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -27,9 +29,10 @@ const ListVehicle = () => {
     try {
       let response;
       if (appliedSearch.trim()) {
-        response = await apiVehicle.searchVehicles(appliedSearch, currentPage, 10, sortBy, sortOrder);
+        console.log(appliedSearch)
+        response = await apiVehicle.searchVehicles(appliedSearch, currentPage, 10, sortBy, sortOrder,selectedBranch,true);
       } else {
-        response = await apiVehicle.getAllVehicles(currentPage, 10, sortBy, sortOrder);
+        response = await apiVehicle.getAllVehicles(currentPage, 10, sortBy, sortOrder,selectedBranch,true);
       }
       setData(response);
     } catch (err) {
@@ -40,9 +43,23 @@ const ListVehicle = () => {
   };
 
   useEffect(() => {
-    fetchVehicles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch]);
+        console.log(selectedBranch);
 
+    fetchVehicles();
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch]);
+
+   useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await apiBranches.getAllBranches(0,10); 
+        console.log("branch",response.content);
+        setBranches(response.content);
+      } catch (err) {
+        console.error("Lỗi lấy chi nhánh:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
   // 2. Hàm Xóa xe
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa thông tin xe này?")) {
@@ -120,6 +137,18 @@ const ListVehicle = () => {
             <select className="form-select form-select-sm border-0 bg-light" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
               <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
+            </select>
+             <select 
+                className="form-select form-select-sm border-0 bg-primary-subtle text-primary fw-bold" 
+                style={{ width: '180px' }}
+                value={selectedBranch} 
+                onChange={(e) => { setSelectedBranch(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                
+                {branches.length > 0 ? branches.map(b => (
+                  <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
+              )) : <option value="">Chưa có chi nhánh nào</option>}
             </select>
           </div>
         </div>

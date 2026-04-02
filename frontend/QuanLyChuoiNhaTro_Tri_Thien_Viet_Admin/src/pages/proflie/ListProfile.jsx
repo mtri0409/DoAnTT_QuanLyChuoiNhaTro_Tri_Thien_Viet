@@ -9,13 +9,15 @@ import apiProfile from '../../api/apiProfile';
 import Pagination from '../../components/Pagination';
 import { Link, useNavigate } from 'react-router-dom';
 import apiUser from '../../api/apiUser';
+import apiBranch from '../../api/apiBranches';
 
 const ListProfile = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState([]);
   // --- STATE QUẢN LÝ SEARCH ---
   const [searchTerm, setSearchTerm] = useState('');      
   const [appliedSearch, setAppliedSearch] = useState(''); 
@@ -24,17 +26,18 @@ const ListProfile = () => {
   const [sortBy, setSortBy] = useState('profileId');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  
   // Hàm gọi API chung cho cả Load All và Search
   const fetchProfiles = async () => {
     setLoading(true);
     try {
       let response;
       if (appliedSearch.trim()) {
-        // Gọi API Search nếu có từ khóa
-        response = await apiProfile.searchProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder);
+        response = await apiProfile.searchProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,selectedBranch,true);
       } else {
         // Gọi API GetAll bình thường
-        response = await apiProfile.getAllProfiles(currentPage, 10, sortBy, sortOrder);
+        response = await apiProfile.getAllProfiles(currentPage, 10, sortBy, sortOrder,selectedBranch,true);
+        console.log(response);
       }
       console.log(response);
       setData(response);
@@ -48,8 +51,21 @@ const ListProfile = () => {
   // Gọi lại API khi: Trang đổi, Tiêu chí Sort đổi, hoặc khi bấm nút Search (appliedSearch đổi)
   useEffect(() => {
     fetchProfiles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch]);
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch]);
 
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await apiBranch.getAllBranches(0,10); 
+        console.log("branch",response.content);
+        setBranches(response.content);
+      } catch (err) {
+        console.error("Lỗi lấy chi nhánh:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
+  
   // Xử lý khi bấm nút Search hoặc Enter
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -165,6 +181,20 @@ const ListProfile = () => {
               <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
             </select>
+
+            <select 
+                className="form-select form-select-sm border-0 bg-primary-subtle text-primary fw-bold" 
+                style={{ width: '180px' }}
+                value={selectedBranch} 
+                onChange={(e) => { setSelectedBranch(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                
+                {branches.length > 0 ? branches.map(b => (
+                  <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
+              )) : <option value="">Chưa có chi nhánh nào</option>}
+            </select>
+
           </div>
         </div>
 
@@ -175,6 +205,7 @@ const ListProfile = () => {
               <tr className="text-muted small text-uppercase">
                 <th className="ps-4 py-3">Khách hàng</th>
                 <th>Điện thoại</th>
+                <th>Eamil</th>
                 <th>CCCD</th>
                 <th className="text-center">Trạng thái</th>
                 <th>Địa chỉ</th>
@@ -194,6 +225,7 @@ const ListProfile = () => {
                       </div>
                     </td>
                     <td className="small">{item.phone}</td>
+                     <td className="small">{item.email}</td>
                     <td><span className="badge bg-light text-dark border fw-normal">{item.identityNumber || 'N/A'}</span></td>
                     <td className="text-center">
                       <span className={`badge rounded-pill ${item.isActive ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`}>
