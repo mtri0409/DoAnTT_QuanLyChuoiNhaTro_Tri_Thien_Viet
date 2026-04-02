@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class NotificationDTO {
     private Long notificationId;
-    private Long userName;
+    private String userName;
     private Integer userId;
     private String title;
     private String content;

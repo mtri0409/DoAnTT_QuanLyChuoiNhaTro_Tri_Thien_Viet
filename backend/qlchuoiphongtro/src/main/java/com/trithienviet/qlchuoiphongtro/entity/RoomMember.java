@@ -19,14 +19,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name="room_members")
+@Table(name = "room_members")
 public class RoomMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer memberId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="profile_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id")
     private Profile profile;
 
     private Boolean isStaying = true;
