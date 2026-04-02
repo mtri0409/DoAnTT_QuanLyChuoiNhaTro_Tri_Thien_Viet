@@ -3,7 +3,7 @@ package com.trithienviet.qlchuoiphongtro.payloads;
 import lombok.Data;
 
 @Data
-public class PasswordConfirm {
-    private String resetToken;
+public class PasswordUpdateDTO {
+    private String oldPassword;
     private String newPassword;
 }

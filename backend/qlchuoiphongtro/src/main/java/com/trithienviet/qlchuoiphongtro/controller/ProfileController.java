@@ -53,17 +53,22 @@ public class ProfileController {
     }
 
     @GetMapping("/admin/profiles")
-    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles(
-            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+        @RequestParam(name = "branchId", required = false) Integer branchId,
+        @RequestParam(name = "status", required = false) Boolean status) {
 
-        PageResponse<ProfileDTO> profileResponse = profileService.getAllProfiles(
-                Math.max(0, pageNumber - 1),
-                pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
-                sortOrder);
-        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);
+            PageResponse<ProfileDTO> profileResponse = profileService.getAllProfiles(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder,
+                        branchId,
+                        status);
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+
     }
 
     @GetMapping("/admin/profiles/search")
@@ -72,21 +77,59 @@ public class ProfileController {
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+           @RequestParam(name = "branchId", required = false) Integer branchId,
+            @RequestParam(name = "status", required = false) Boolean status) {
+        
+       PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
+                    keyword,
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder,
+                        branchId,
+                        status);
 
-        PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
-                keyword,
-                Math.max(0, pageNumber - 1),
-                pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
-                sortOrder);
         return ResponseEntity.ok(profileResponse);
     }
 
+    @GetMapping("/admin/profiles/internal")
+    public ResponseEntity<PageResponse<ProfileDTO>> getAllInternalProfiles( 
+        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+        @RequestParam(name = "status", required = false) Boolean status) {
+
+            PageResponse<ProfileDTO> profileResponse = profileService.getInternalProfiles(
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder,
+                        status);
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    }
+
+    @GetMapping("/admin/profiles/internal/search")
+    public ResponseEntity<PageResponse<ProfileDTO>> searchInternalProfiles(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder,
+            @RequestParam(name = "branchId", required = false) Integer branchId,
+            @RequestParam(name = "status", required = false) Boolean status) {
+            
+        PageResponse<ProfileDTO> profileResponse = profileService.searchInternalProfiles(
+                    keyword,
+                    Math.max(0,pageNumber-1),
+                    pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                    sortOrder,
+                    status);
+        return ResponseEntity.ok(profileResponse);
+    }
     @GetMapping("/admin/profiles/unassigned")
     public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
         return ResponseEntity.ok(profileService.getProfilesWithoutAccount());
     }
-
     @GetMapping("/public/profiles/{profileId}")
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
 
@@ -134,6 +177,12 @@ public class ProfileController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(new InputStreamResource(imageStream));
+    }
+
+    @PatchMapping("/admin/profile/restore/{profileId}")
+    public ResponseEntity<String> restoreProfile(@PathVariable Long profileId){
+        String message = profileService.restoreProfile(profileId);
+        return new ResponseEntity<>(message,HttpStatus.OK);
     }
 
 }

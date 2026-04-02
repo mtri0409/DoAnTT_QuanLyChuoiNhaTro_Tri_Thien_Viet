@@ -109,7 +109,32 @@ public class UserServiceImpl implements UserService{
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<User> userpage = userRepo.findAll(pageDetails);
+        Page<User> userpage = userRepo.findByIsActiceTrue(pageDetails);
+
+        List<User> users = userpage.getContent();
+        List<UserDTO> userDTOs = users.stream()
+                .map(p -> modelMapper.map(p, UserDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<UserDTO> userResponse = new PageResponse<>();
+        userResponse.setContent(userDTOs);
+        userResponse.setPageNumber(userpage.getNumber());
+        userResponse.setPageSize(userpage.getSize());
+        userResponse.setTotalElements(userpage.getTotalElements());
+        userResponse.setTotalPages(userpage.getTotalPages());
+        userResponse.setLastPage(userpage.isLast());
+
+        return userResponse;
+    }
+
+      public PageResponse<UserDTO> getAllUsersIsDelete(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder){
+
+         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<User> userpage = userRepo.findByIsActiceFalse(pageDetails);
 
         List<User> users = userpage.getContent();
         List<UserDTO> userDTOs = users.stream()

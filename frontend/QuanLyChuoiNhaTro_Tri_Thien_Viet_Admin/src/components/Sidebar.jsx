@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -24,17 +25,13 @@ const NAV_ITEMS = [
   { title: "Tài khoản", path: "/users", icon: <FaUsers /> },
   { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator /> },
   { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar /> },
-
   { title: "Cài đặt", path: "/admin/settings", icon: <FaCog /> },
   { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding /> },
   { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },
   { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },
   { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi /> },
-  { title: "Người thuê", path: "/profiles/1", icon: <FaUsers /> },
-  { title: "Hóa đơn", path: "/admin/invoices", icon: <FaFileInvoiceDollar /> },
-  { title: "Cài đặt", path: "/admin/settings", icon: <FaCog /> },
-];
-
+  { title: "Cài đặt", path: "/admin/settings", icon: <Faog /> },
+]
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
 

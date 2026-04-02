@@ -19,8 +19,12 @@ public interface ProfileService {
      ProfileRequestDTO createProfile(ProfileRequestDTO Profile);
      ProfileRequestDTO updateProfile(ProfileRequestDTO profile,Long profileId);
 
-     PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
-     PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder);
+     PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status);
+     PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status);
+
+     PageResponse<ProfileDTO> getInternalProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Boolean status);
+     PageResponse<ProfileDTO> searchInternalProfiles(String keyword,Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Boolean status);
+
      ProfileDetailDTO getProfileById (Long profileId);
      String deleteProfile(Long profileId);
 
@@ -30,4 +34,6 @@ public interface ProfileService {
      InputStream getIdentificationImage(String fileName) throws FileNotFoundException ;
 
      List<ProfileDTO> getProfilesWithoutAccount();
+
+     String restoreProfile(Long profileId);
 }
