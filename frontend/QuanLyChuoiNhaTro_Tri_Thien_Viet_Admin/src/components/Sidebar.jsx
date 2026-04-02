@@ -14,23 +14,23 @@ import {
   FaServicestack,
   FaWifi,
   FaCalculator,
+  FaGoodreadsG,
+  FaCogs,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
   { title: "Dashboard", path: "/", icon: <FaHome /> },
-
   { title: "Quản lý xe", path: "/vehicles", icon: <FaMotorcycle /> },
   { title: "Người thuê", path: "/profiles", icon: <FaUsers /> },
   { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract /> },
   { title: "Tài khoản", path: "/users", icon: <FaUsers /> },
   { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator /> },
   { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar /> },
-  { title: "Cài đặt", path: "/admin/settings", icon: <FaCog /> },
   { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding /> },
   { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },
   { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },
   { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi /> },
-  { title: "Cài đặt", path: "/admin/settings", icon: <Faog /> },
+  { title: "Cài đặt", path: "/admin/settings", icon: <FaCogs /> },
 ]
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
