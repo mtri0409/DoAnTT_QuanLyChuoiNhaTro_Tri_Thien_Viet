@@ -60,9 +60,12 @@ public class AuthController {
         User user = userRepo.findByUserName(credentials.getUserName())
             .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
+        if (user.getIsActice() != null && !user.getIsActice()) {
+        throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
+        }
         //  Generate JWT
         String token = jwtUtil.generateToken(user.getUserName());
-
+        
         // Trả data cho Frontend (React)
         return Map.of(
             "token", token,

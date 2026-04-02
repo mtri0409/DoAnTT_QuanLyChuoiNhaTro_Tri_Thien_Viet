@@ -3,6 +3,7 @@ package com.trithienviet.qlchuoiphongtro.service;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,7 @@ public interface ProfileService {
      ProfileRequestDTO updateProfile(ProfileRequestDTO profile,Long profileId);
 
      PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
+     PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder);
      ProfileDetailDTO getProfileById (Long profileId);
      String deleteProfile(Long profileId);
 
@@ -27,4 +29,5 @@ public interface ProfileService {
      
      InputStream getIdentificationImage(String fileName) throws FileNotFoundException ;
 
+     List<ProfileDTO> getProfilesWithoutAccount();
 }

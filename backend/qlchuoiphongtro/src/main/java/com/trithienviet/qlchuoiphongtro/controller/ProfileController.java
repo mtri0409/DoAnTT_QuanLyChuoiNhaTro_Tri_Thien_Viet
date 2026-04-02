@@ -3,6 +3,7 @@ package com.trithienviet.qlchuoiphongtro.controller;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -62,8 +63,29 @@ public class ProfileController {
                         pageSize, "id".equals(sortBy) ? "profileId":sortBy,
                         sortOrder) ;
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
-       }
-    // Tri có thể thêm hàm lấy thông tin profile theo ID sau này ở đây
+    }
+
+    @GetMapping("/admin/profiles/search")
+    public ResponseEntity<PageResponse<ProfileDTO>> searchProfiles(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+        
+       PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
+                    keyword,
+                Math.max(0,pageNumber-1),
+                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
+                        sortOrder) ;
+        return ResponseEntity.ok(profileResponse);
+    }
+
+    @GetMapping("/admin/profiles/unassigned")
+    public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
+        return ResponseEntity.ok(profileService.getProfilesWithoutAccount());
+    }
+
     @GetMapping("/public/profiles/{profileId}")
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
         
@@ -77,7 +99,7 @@ public class ProfileController {
         return new ResponseEntity<String>(message, HttpStatus.OK);
     }
 
-    @PutMapping("/public/profiles/{profileId}/id-front-image")
+    @PutMapping("/public/profiles/{profileId}/idfrontimage")
     public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {
@@ -86,7 +108,7 @@ public class ProfileController {
         return ResponseEntity.ok(updatedProfile);
     }
 
-    @PutMapping("/public/profiles/{profileId}/id-back-image")
+    @PutMapping("/public/profiles/{profileId}/idbackimage")
     public ResponseEntity<ProfileImageDTO> updateIdBackImage(
             @PathVariable Long profileId, 
             @RequestParam("image") MultipartFile image) throws IOException {

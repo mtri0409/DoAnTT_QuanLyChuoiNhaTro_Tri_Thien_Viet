@@ -1,8 +1,5 @@
 package com.trithienviet.qlchuoiphongtro.payloads;
 
-import java.time.LocalDate;
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +13,7 @@ public class ProfileDTO {
     private Long profileId;
     private String fullName;
     private String phone;
+    private String email;
     private String address;
     private String identityNumber;
     private Boolean isActive;

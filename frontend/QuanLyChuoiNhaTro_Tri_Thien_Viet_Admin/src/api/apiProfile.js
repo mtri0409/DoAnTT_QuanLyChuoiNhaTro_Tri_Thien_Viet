@@ -12,6 +12,19 @@ const apiProfile = {
       }
     });
   },
+    searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+    const url = `/admin/profiles/search`;
+    return axiosInstance.get(url, {
+      params: {
+        keyword,
+        pageNumber: pageNumber, 
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }
+    });
+  },
+  getProfileWithoutAccount:()=> axiosInstance.get('/admin/profiles/unassigned'),
   createProfile:(data)=> axiosInstance.post("/admin/profiles",data),
 
   updateProfile: (id, data) => axiosInstance.put(`/public/profiles/${id}`, data),

@@ -103,11 +103,9 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
         profileFromDB.setFullName(profileDTO.getFullName());
         profileFromDB.setPhone(profileDTO.getPhone());
+        profileFromDB.setEmail(profileDTO.getEmail());
         profileFromDB.setAddress(profileDTO.getAddress());
         profileFromDB.setIdentityNumber(profileDTO.getIdentityNumber());
-
-        profileFromDB.setIdFrontImage("default.jpg");
-        profileFromDB.setIdBackImage("default.jpg");
 
         profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
         profileFromDB.setIdIssueDate(profileDTO.getIdIssueDate());
@@ -184,6 +182,32 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    public PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize, String sortBy,
+            String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+
+        Page<Profile> profilePage = profileRepo.searchProfiles(keyword, pageable);
+
+        List<ProfileDTO> profileDTOs = profilePage.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+
+    @Override
     public ProfileDetailDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
@@ -239,5 +263,14 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public InputStream getIdentificationImage(String fileName) throws FileNotFoundException {
         return fileService.getResource(path, fileName);
+    }
+
+    @Override
+    public List<ProfileDTO> getProfilesWithoutAccount() {
+        List<Profile> profiles = profileRepo.findAllProfilesWithoutAccount();
+        // Chuyển đổi sang DTO và return
+        return profiles.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
     }
 }
