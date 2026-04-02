@@ -50,11 +50,11 @@ const CreateProfile = () => {
     } catch (err) {
       console.error("Lỗi API:", err.response);
       if (err.response && err.response.status === 400) {
-        const backendErrors = err.response.data.message;
+        const backendErrors = err.response.data;
         if (backendErrors) {
           setErrors(backendErrors);
         } else {
-          alert(err.response.data.message || "Dữ liệu không hợp lệ.");
+          alert(err.response.data || "Dữ liệu không hợp lệ.");
         }
       } else {
         alert("Lỗi hệ thống hoặc mất kết nối Server.");

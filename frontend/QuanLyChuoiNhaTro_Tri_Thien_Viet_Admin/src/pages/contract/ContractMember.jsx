@@ -43,7 +43,7 @@ const AddMemberModal = ({ contractId, existingIds, onAdded, onClose }) => {
     setLoading(true);
     setSearched(true);
     try {
-      const res = await apiProfile.searchProfiles(keyword.trim(), 0, 10);
+      const res = await apiProfile.searchProfiles(keyword.trim(), 0, 10,null,null,null,true);
       setResults(res?.content ?? res ?? []);
     } catch {
       setResults([]);
