@@ -159,7 +159,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
-
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
@@ -245,7 +244,6 @@ public class ProfileServiceImpl implements ProfileService {
 
         return profileResponse;
     }
-
 
      @Override
     public PageResponse<ProfileDTO> getInternalProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Boolean status) {
@@ -340,11 +338,11 @@ public class ProfileServiceImpl implements ProfileService {
 
         if (profile.getRoomMember() != null && profile.getRoomMember().getContract() != null) {
             Contract contract = profile.getRoomMember().getContract();
-
             profileDTO.setActiveContractId(contract.getContractId());
             
             profileDTO.setContractEndDate(contract.getEndDate());
             profileDTO.setBranchName(contract.getRoom().getFloor().getBranch().getBranchName());
+
 
             if (contract.getRoom() != null) {
                 profileDTO.setRoomName(contract.getRoom().getRoomName());

@@ -1,27 +1,39 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-
-import { FaHome, FaBuilding, FaBed, FaUsers, FaFileInvoiceDollar, FaTimes, FaCog, FaWifi, FaServicestack, FaMotorcycle, FaFileContract, FaBell } from 'react-icons/fa';
-
-
-
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaHome,
+  FaBuilding,
+  FaBed,
+  FaUsers,
+  FaFileInvoiceDollar,
+  FaTimes,
+  FaCog,
+  FaMotorcycle,
+  FaFileContract,
+  FaServicestack,
+  FaWifi,
+  FaCalculator,
+  FaGoodreadsG,
+  FaCogs,
+  FaBell,
+} from "react-icons/fa";
 
 const NAV_ITEMS = [
-  { title: 'Dashboard',      path: '/',          icon: <FaHome /> },
-  
-  { title: 'Chi nhánh',      path: '/branches/1', icon: <FaBuilding /> },
-  { title: 'Quản lý Phòng',  path: '/rooms/1',    icon: <FaBed /> },
-  { title: 'Quản lý Dịch vụ',  path: '/services/1',    icon: <FaServicestack /> },
-  { title: 'Quản lý Tiện ích',  path: '/amenities/1',    icon: <FaWifi /> },
-  { title: 'Quản lý hồ sơ',     path: '/profiles',  icon: <FaUsers /> },
-  { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
-  { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
-  { title: 'Thông báo',     path: '/notifications',  icon: <FaBell /> },
+  { title: "Dashboard", path: "/", icon: <FaHome /> },
+  { title: "Quản lý xe", path: "/vehicles", icon: <FaMotorcycle /> },
+  { title: "Người thuê", path: "/profiles", icon: <FaUsers /> },
   { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract /> },
+  { title: "Tài khoản", path: "/users", icon: <FaUsers /> },
+  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator /> },
+  { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar /> },
+  { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding /> },
+  { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },
+  { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },
+  { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi /> },
+  { title: "Cài đặt", path: "/admin/settings", icon: <FaCogs /> },
+  { title: 'Thông báo',     path: '/notifications',  icon: <FaBell /> },
 
-  { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },
-
-];
+]
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();

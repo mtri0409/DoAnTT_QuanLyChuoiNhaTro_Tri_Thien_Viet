@@ -30,8 +30,12 @@ import com.trithienviet.qlchuoiphongtro.repo.RoomMemberRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ServiceItemRepo;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
+
 import com.trithienviet.qlchuoiphongtro.service.EmailService;
 import com.trithienviet.qlchuoiphongtro.service.NotificationService;
+
+import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,8 +51,12 @@ public class ContractServiceImpl implements ContractService {
     private final ContractServiceRepo contractServiceRepo;
     private final ServiceItemRepo serviceItemRepo;
     private final DepositRepo depositRepo;
+
     private final EmailService emailService;
     private final NotificationService notificationService;
+
+    private final InvoiceService invoiceService;
+
     // ==================== terminateContract ====================
     @Override
     public void terminateContract(Long contractId) {
@@ -235,6 +243,7 @@ public class ContractServiceImpl implements ContractService {
 
         ContractDTO response = mapToDTO(savedContract);
         response.setContractServices(savedContractServices);
+
         String template = EmailTemplate.
                                 getContractCreatedSuccess(
                                 representative.getFullName(),
@@ -252,6 +261,16 @@ public class ContractServiceImpl implements ContractService {
             room.getRoomName()
         );
 
+
+        // 15. Tự động tạo hóa đơn tiền cọc → status DRAFT
+        try {
+            invoiceService.createDepositInvoice(
+                    savedContract.getContractId(),
+                    roomDeposit.getDepositId());
+        } catch (Exception ex) {
+            System.err.println("[ContractService] Cảnh báo: Tạo hóa đơn cọc thất bại cho hợp đồng "
+                    + savedContract.getContractId() + " — " + ex.getMessage());
+        }
         notificationService.sendSystemNotification(
             representative.getProfileId(), 
             title, 

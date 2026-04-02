@@ -26,6 +26,8 @@ import ListVehicleDeleted from "../pages/vehicle/ListVehicleDeleted";
 import ListNotification from "../pages/notification/ListNotification";
 
 
+
+
 import CreateRoom from "../pages/room/CreateRoom";
 import RoomDetail from "../pages/room/RoomDetail";
 import RoomList from "../pages/room/RoomList";
@@ -36,7 +38,13 @@ import UpdateService from "../pages/service/UpdateService";
 
 import ContractDetail from "../pages/contract/ContractDetail";
 import ContractMember from "../pages/contract/ContractMember";
+
 import CreateNotification from "../pages/notification/CreateNotify";
+
+import MeterReadingPage from "../pages/meter-reading/MeterReadingPage";
+import ListInvoice from "../pages/invoice/ListInvoice";
+import InvoiceDetail from "../pages/invoice/InvoiceDetail";
+
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -44,7 +52,6 @@ const AdminRoute = [
   { path: "/profile/create", component: CreateProfile },
   { path: "/profile/:id/detail", component: ProfileDetail },
   { path: "/profile/:id/update", component: UpdateProfile },
-
   { path: "/profile/:profileId/vehicle", component: CreateVehicle },
   { path: "/users", component: ListUser },
   { path: "/users/create", component: CreateAccount },
@@ -58,6 +65,12 @@ const AdminRoute = [
   { path: "/contracts/create", component: CreateContract },
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
+
+
+  //meter-reading
+  { path: "/meter-reading", component: MeterReadingPage },
+  { path: "/invoice", component: ListInvoice },
+  { path: "/invoice/:invoiceId", component: InvoiceDetail },
 
 
   {path:"/profile/:profileId/vehicle",component:CreateVehicle},
@@ -89,7 +102,7 @@ const AdminRoute = [
   { path: "/services/:id/update", component: UpdateService },
 
   {path:"/notifications",component:ListNotification},
-    {path:"/notifications/create",component:CreateNotification}
+  {path:"/notifications/create",component:CreateNotification}
 
 ];
 export default AdminRoute;

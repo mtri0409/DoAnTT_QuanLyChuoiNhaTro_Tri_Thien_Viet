@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 public class DepositDTO {
     private Long despositId;
     private Long roomId;
-    
-    private Integer contractId;
+
+    private Long contractId; // fix integer -> long
     private BigDecimal amount;
     private String status;
 }

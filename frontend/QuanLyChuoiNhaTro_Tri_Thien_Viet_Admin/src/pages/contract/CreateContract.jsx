@@ -322,6 +322,7 @@ const RoomPicker = ({ value, onSelect, error }) => {
           >
             {results.filter((room) => room.Status === "AVAILABLE")
                     .map((room) => (
+
               <button
                 key={room.roomId}
                 type="button"

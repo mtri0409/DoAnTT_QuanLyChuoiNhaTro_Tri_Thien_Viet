@@ -51,7 +51,7 @@ public class ProfileController {
 
         return new ResponseEntity<>(updateProfile, HttpStatus.OK);
     }
-    
+
     @GetMapping("/admin/profiles")
     public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles( 
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
@@ -68,6 +68,7 @@ public class ProfileController {
                         branchId,
                         status);
         return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+
     }
 
     @GetMapping("/admin/profiles/search")
@@ -87,6 +88,7 @@ public class ProfileController {
                         sortOrder,
                         branchId,
                         status);
+
         return ResponseEntity.ok(profileResponse);
     }
 
