@@ -28,6 +28,32 @@ const apiProfile = {
       }
     });
   },
+  getInternalProfile: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",status = true) => {
+    const url = `/admin/profiles/internal`;
+    return axiosInstance.get(url, {
+      params: {
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        status:status
+      }
+    });
+  }
+  ,
+  searchInternalProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",status) => {
+    const url = `/admin/profiles/internal/search`;
+    return axiosInstance.get(url, {
+      params: {
+        keyword,
+        pageNumber: pageNumber, 
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        status:status
+      }
+    });
+  },
   getProfileWithoutAccount:()=> axiosInstance.get('/admin/profiles/unassigned'),
   createProfile:(data)=> axiosInstance.post("/admin/profiles",data),
 

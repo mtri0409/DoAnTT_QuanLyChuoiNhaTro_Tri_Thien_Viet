@@ -39,21 +39,12 @@ public interface ProfileRepo extends JpaRepository<Profile, Long> {
                             @Param("status") Boolean status,
                             Pageable pageable);
 
-    // 3. Lấy danh sách Khách thuê ĐANG HOẠT ĐỘNG (Dùng cho trang chủ quản lý)
     @EntityGraph(attributePaths = {
         "roomMember.contract.room.floor.branch"
     })
     @Query("SELECT p FROM Profile p JOIN p.user u " + 
            "WHERE p.isActive = :status AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
     Page<Profile> findAllTenants(Pageable pageable,  @Param("status") Boolean status);
-
-    // 4. Lấy danh sách Khách thuê ĐÃ XÓA/NGỪNG HOẠT ĐỘNG (Dùng cho trang Restore)
-    // @EntityGraph(attributePaths = {
-    //     "roomMember.contract.room.floor.branch"
-    // })
-    // @Query("SELECT p FROM Profile p JOIN p.user u " + 
-    //        "WHERE p.isActive = false AND u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
-    // Page<Profile> findAllInactiveTenants(Pageable pageable);
 
     // 5. Lọc Khách thuê theo Chi nhánh cụ thể
     @EntityGraph(attributePaths = {
@@ -67,15 +58,19 @@ public interface ProfileRepo extends JpaRepository<Profile, Long> {
     Page<Profile> findTenantsByBranch(  @Param("branchId") Integer branchId,
                                         Pageable pageable,
                                         @Param("status") Boolean status);
+           @EntityGraph(attributePaths = {
+              "roomMember.contract.room.floor.branch"
+              })      
+    @Query("SELECT p FROM Profile p JOIN p.user u " + 
+           "WHERE p.isActive = :status AND u.role != com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT")
+    Page<Profile> getInternalProfiles(Pageable pageable,  @Param("status") Boolean status);
 
-     // 5. Lọc Khách thuê (Đã ẩn/xóa) theo Chi nhánh cụ thể
-    // @EntityGraph(attributePaths = {
-    //     "roomMember.contract.room.floor.branch"
-    // })
-    // @Query("SELECT p FROM Profile p " +
-    //        "JOIN p.user u " +
-    //        "JOIN p.roomMember rm JOIN rm.contract c JOIN c.room r JOIN r.floor f " +
-    //        "WHERE u.role = com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT " +
-    //        "AND p.isActive = false AND f.branch.branchId = :branchId")
-    // Page<Profile> findInactiveTenantsByBranch(@Param("branchId") Integer branchId, Pageable pageable);
+    @Query("SELECT p FROM Profile p JOIN p.user u " +
+       "WHERE u.role != com.trithienviet.qlchuoiphongtro.entity.UserRole.TENANT " +
+       "AND p.isActive = :status " +
+       "AND (LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+       "OR p.phone LIKE CONCAT('%', :keyword, '%') " +
+       "OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
+       Page<Profile> searchInternalProfiles(@Param("keyword") String keyword, @Param("status") Boolean status, Pageable page);
+   
 }

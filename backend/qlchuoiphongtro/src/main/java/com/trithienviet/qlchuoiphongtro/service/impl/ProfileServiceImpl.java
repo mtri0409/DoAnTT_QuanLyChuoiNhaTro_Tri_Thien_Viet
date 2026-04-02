@@ -217,6 +217,89 @@ public class ProfileServiceImpl implements ProfileService {
         return profileResponse;
     }
 
+     @Override
+    public PageResponse<ProfileDTO> getInternalProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Profile>  profilePage = profileRepo.getInternalProfiles(pageDetails,status);
+
+        // List<Profile> profiles = profilePage.getContent();
+        List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                                                
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            System.out.print(">>-----------"+room);
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+      @Override
+    public PageResponse<ProfileDTO> searchInternalProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
+
+        Page<Profile> profilePage = profileRepo.searchInternalProfiles(keyword, status,pageable);
+        
+          List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+
     @Override
     public ProfileDetailDTO getProfileById(Long profileId) {
         Profile profile = profileRepo.findById(profileId)
@@ -234,7 +317,12 @@ public class ProfileServiceImpl implements ProfileService {
             if (contract.getRoom() != null) {
                 profileDTO.setRoomName(contract.getRoom().getRoomName());
             }
+           
         }
+         if(profile.getUser().getRole()!=null)
+            {
+                profileDTO.setRoleName(profile.getUser().getRole().toString());
+            }
 
         return profileDTO;
     }

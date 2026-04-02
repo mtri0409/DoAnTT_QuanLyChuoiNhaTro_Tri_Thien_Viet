@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { title: 'Quản lý Phòng',  path: '/rooms/1',    icon: <FaBed /> },
   { title: 'Quản lý Dịch vụ',  path: '/services/1',    icon: <FaServicestack /> },
   { title: 'Quản lý Tiện ích',  path: '/amenities/1',    icon: <FaWifi /> },
-  { title: 'Người thuê',     path: '/profiles',  icon: <FaUsers /> },
+  { title: 'Quản lý hồ sơ',     path: '/profiles',  icon: <FaUsers /> },
   { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
   { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
   { title: 'Hóa đơn',        path: '/admin/invoices', icon: <FaFileInvoiceDollar /> },

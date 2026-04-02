@@ -22,6 +22,9 @@ public interface ProfileService {
      PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status);
      PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status);
 
+     PageResponse<ProfileDTO> getInternalProfiles(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Boolean status);
+     PageResponse<ProfileDTO> searchInternalProfiles(String keyword,Integer pageNumber,Integer pageSize,String sortBy,String sortOrder,Boolean status);
+
      ProfileDetailDTO getProfileById (Long profileId);
      String deleteProfile(Long profileId);
 

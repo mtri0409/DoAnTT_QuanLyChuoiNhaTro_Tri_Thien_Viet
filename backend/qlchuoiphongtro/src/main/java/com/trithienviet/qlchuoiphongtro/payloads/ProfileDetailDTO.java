@@ -33,5 +33,5 @@ public class ProfileDetailDTO {
     private String branchName;
     private Long activeContractId; 
     private LocalDate contractEndDate;
-
+    private String roleName;
 }

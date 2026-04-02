@@ -26,6 +26,7 @@ const ListProfile = () => {
   const [sortBy, setSortBy] = useState('profileId');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  const [viewType,setViewType] = useState("TENANT")
   
   // Hàm gọi API chung cho cả Load All và Search
   const fetchProfiles = async () => {
@@ -47,11 +48,29 @@ const ListProfile = () => {
       setLoading(false);
     }
   };
-
+   const fetchInternalProfile = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiProfile.searchInternalProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,true);
+      } else {
+        // Gọi API GetAll bình thường
+        response = await apiProfile.getInternalProfile(currentPage, 10, sortBy, sortOrder,true);
+        console.log(response);
+      }
+      console.log(response);
+      setData(response);
+    } catch (err) {
+      console.error("Lỗi:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Gọi lại API khi: Trang đổi, Tiêu chí Sort đổi, hoặc khi bấm nút Search (appliedSearch đổi)
   useEffect(() => {
-    fetchProfiles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch]);
+    viewType == "TENANT" ? fetchProfiles() : fetchInternalProfile();
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch,viewType]);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -127,16 +146,46 @@ const ListProfile = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">QUẢN LÝ KHÁCH THUÊ</h4>
-          <p className="text-muted small mb-0">Hệ thống quản lý cư dân</p>
-        </div>
-        <Link to="/profile/create" className="btn btn-primary shadow-sm"><FaPlus /> Thêm mới</Link>
-        <Link to="/profile/restore" className="btn btn-danger shadow-sm"><FaTrash /> Danh sách đã xóa</Link>
-
+   {/* Header: Tiêu đề và Nút hành động chính */}
+    <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+      <div>
+        <h4 className="fw-bold text-dark mb-1">
+          {viewType === 'TENANT' ? 'QUẢN LÝ KHÁCH THUÊ' : 'QUẢN LÝ NHÂN SỰ NỘI BỘ'}
+        </h4>
+        <p className="text-muted small mb-0">
+          {viewType === 'TENANT' ? 'Hệ thống quản lý cư dân và khách thuê' : 'Hệ thống quản lý nhân viên và admin'}
+        </p>
       </div>
+      
+      <div className="d-flex gap-2">
+        <Link to="/profile/restore" className="btn btn-outline-danger shadow-sm d-flex align-items-center gap-2">
+          <FaTrash size={14}/> <span className="d-none d-md-inline">Danh sách đã xóa</span>
+        </Link>
+        <Link to="/profile/create" className="btn btn-primary shadow-sm d-flex align-items-center gap-2">
+          <FaPlus size={14}/> <span>Thêm mới</span>
+        </Link>
+      </div>
+    </div>
+
+    {/* Nav Tabs: Chuyển đổi đối tượng quản lý */}
+    <ul className="nav nav-pills mb-4 bg-white p-1 rounded-3 shadow-sm d-inline-flex border">
+      <li className="nav-item">
+        <button 
+          className={`nav-link px-4 py-2 fw-semibold ${viewType === 'TENANT' ? 'active' : 'text-muted'}`}
+          onClick={() => { setViewType('TENANT'); setCurrentPage(1); }}
+        >
+          Khách thuê phòng
+        </button>
+      </li>
+      <li className="nav-item">
+        <button 
+          className={`nav-link px-4 py-2 fw-semibold ${viewType === 'SYSTEM' ? 'active' : 'text-muted'}`}
+          onClick={() => { setViewType('SYSTEM'); setCurrentPage(1); }}
+        >
+          Nhân sự hệ thống
+        </button>
+      </li>
+    </ul>
 
       <div className="card border-0 shadow-sm rounded-3">
         {/* TOOLBAR: SEARCH & SORT */}
@@ -203,9 +252,9 @@ const ListProfile = () => {
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
               <tr className="text-muted small text-uppercase">
-                <th className="ps-4 py-3">Khách hàng</th>
+                <th className="ps-4 py-3">Hồ sơ</th>
                 <th>Điện thoại</th>
-                <th>Eamil</th>
+                <th>Email</th>
                 <th>CCCD</th>
                 <th className="text-center">Trạng thái</th>
                 <th>Địa chỉ</th>
@@ -281,7 +330,7 @@ const ListProfile = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="6" className="text-center py-5 text-muted">Không tìm thấy khách hàng nào.</td></tr>
+                <tr><td colSpan="6" className="text-center py-5 text-muted">Không tìm thấy hồ sơ nào.</td></tr>
               )}
             </tbody>
           </table>

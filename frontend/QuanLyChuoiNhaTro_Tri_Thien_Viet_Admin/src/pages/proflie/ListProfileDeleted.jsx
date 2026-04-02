@@ -29,7 +29,7 @@ const ListProfileDeleted = () => {
   const [sortBy, setSortBy] = useState('profileId');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  
+    const [viewType,setViewType] = useState("TENANT")
   // Hàm gọi API chung cho cả Load All và Search
   const fetchDeletedProfiles = async () => {
     setLoading(true);
@@ -51,10 +51,30 @@ const ListProfileDeleted = () => {
     }
   };
 
+    const fetchDeletedInternalProfiles = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiProfile.searchInternalProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,false);
+      } else {
+        // Gọi API GetAll bình thường
+        response = await apiProfile.getInternalProfile(currentPage, 10, sortBy, sortOrder,false);
+        console.log(response);
+      }
+      console.log(response);
+      setData(response);
+    } catch (err) {
+      console.error("Lỗi:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // Gọi lại API khi: Trang đổi, Tiêu chí Sort đổi, hoặc khi bấm nút Search (appliedSearch đổi)
   useEffect(() => {
-    fetchDeletedProfiles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch]);
+    viewType == "TENANT" ? fetchDeletedProfiles() : fetchDeletedInternalProfiles();
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch,viewType]);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -109,22 +129,51 @@ const ListProfileDeleted = () => {
   };
 
   return (
-    <div className="container-fluid py-4 bg-light min-vh-100">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="container-fluid py-4 bg-light min-vh-100">
+        {/* Header: Tiêu đề và Nút hành động chính */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 p-3 bg-white rounded-4 shadow-sm border-0">
+        {/* Nhóm trái: Nút quay lại + Tiêu đề */}
         <div className="d-flex align-items-center gap-3">
           <button 
             onClick={() => navigate(-1)} 
-            className="btn btn-white shadow-sm rounded-circle p-2 border-0"
+            className="btn btn-light shadow-sm rounded-circle p-2 border-0 transition-all"
+            style={{ width: '40px', height: '40px' }}
+            title="Quay lại"
           >
-            <FaArrowLeft className="text-muted" />
+            <FaArrowLeft className="text-secondary" />
           </button>
+          
           <div>
-            <h4 className="fw-bold text-secondary mb-0 text-uppercase">Kho lưu trữ hồ sơ</h4>
-            <p className="text-muted small mb-0">Danh sách khách thuê đã ngừng hợp đồng hoặc bị ẩn</p>
+            <h5 className="fw-bold text-dark mb-0 letter-spacing-tight">
+              {viewType === 'TENANT' ? 'LƯU TRỮ KHÁCH THUÊ' : 'LƯU TRỮ NHÂN SỰ'}
+            </h5>
+            <p className="text-muted small mb-0 d-none d-sm-block">
+              {viewType === 'TENANT' ? 'Quản lý hồ sơ cư dân đã xóa' : 'Quản lý nhân viên/admin đã ẩn'}
+            </p>
           </div>
         </div>
-      </div>
+
+        {/* Nhóm phải: Bộ Tabs tinh tế hơn */}
+        <div className="bg-light p-1 rounded-pill d-flex border shadow-inner">
+          <button 
+            className={`btn btn-sm px-4 py-2 rounded-pill transition-all fw-bold ${
+              viewType === 'TENANT' ? 'btn-white shadow-sm text-primary' : 'btn-transparent text-muted'
+            }`}
+            onClick={() => { setViewType('TENANT'); setCurrentPage(1); }}
+          >
+            Khách thuê
+          </button>
+          <button 
+            className={`btn btn-sm px-4 py-2 rounded-pill transition-all fw-bold ${
+              viewType === 'SYSTEM' ? 'btn-white shadow-sm text-primary' : 'btn-transparent text-muted'
+            }`}
+            onClick={() => { setViewType('SYSTEM'); setCurrentPage(1); }}
+          >
+            Nhân sự
+          </button>
+        </div>
+    </div>
+
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         {/* Toolbar */}
