@@ -2,6 +2,9 @@ package com.trithienviet.qlchuoiphongtro.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
@@ -10,7 +13,9 @@ public interface ContractService {
 
     ContractDTO createContract(ContractDTO dto);
 
-    List<ContractDTO> getAllContracts();
+    Page<ContractDTO> getAllContracts(Pageable pageable);
+
+    Page<ContractDTO> searchContracts(String keyword, Pageable pageable);
 
     ContractDTO getContractById(Long id);
 
@@ -22,7 +27,7 @@ public interface ContractService {
 
     List<ContractDTO> autoUpdateStatus();
 
-    List<ContractDTO> getContractsByStatus(ContractStatus status);
+    Page<ContractDTO> getContractsByStatus(ContractStatus status, Pageable pageable);
 
     void terminateContract(Long contractId);
 
