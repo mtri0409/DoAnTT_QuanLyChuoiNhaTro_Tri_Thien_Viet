@@ -36,6 +36,7 @@ import UpdateService from "../pages/service/UpdateService";
 
 import ContractDetail from "../pages/contract/ContractDetail";
 import ContractMember from "../pages/contract/ContractMember";
+import CreateNotification from "../pages/notification/CreateNotify";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -87,6 +88,8 @@ const AdminRoute = [
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
 
-  {path:"/notify",component:ListNotification}
+  {path:"/notifications",component:ListNotification},
+    {path:"/notifications/create",component:CreateNotification}
+
 ];
 export default AdminRoute;

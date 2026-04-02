@@ -3,12 +3,13 @@ import QuickActions from '../components/QuickAction';
 import HeaderGrid from '../components/HeaderGird'; // Nhớ check lại tên file HeaderGird hay Grid nhé ní
 import { useAuth } from '../context/AuthContext';
 import apiProfile from '../api/apiProfile';
+import apiNotification from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiNotification';
 
 const Home = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null); // Đổi thành profile (số ít) vì mỗi user chỉ có 1 profile
   const [loading, setLoading] = useState(true);
-
+  const [notifications,setNotifications] = useState([]);
   useEffect(() => {
     // Chỉ fetch khi có user và có profileId
     if (user && user.profileId) {
@@ -25,6 +26,12 @@ const Home = () => {
         }
       };
       fetchProfileData();
+      const fetchNotifications = async () =>{
+        const response = await apiNotification.getNotificationById(user.userId);
+        console.log(response);
+        setNotifications(response);
+      }
+      fetchNotifications();
     } else {
       setLoading(false);
     }
@@ -61,7 +68,7 @@ const Home = () => {
       </div>
 
       {/* Dải phía trên - TRUYỀN DỮ LIỆU VÀO ĐÂY */}
-      <HeaderGrid profileData={profile} userData={user} />
+      <HeaderGrid profileData={profile} notifications={notifications} />
 
       {/* Dải phía dưới (Chức năng nhanh) */}
       <h5 className="fw-bold text-dark mt-5 mb-3 border-bottom pb-2">Chức năng thường dùng</h5>

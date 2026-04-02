@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class NotificationDTO {
+public class NotificationLoadDTO {
+    private Long notificationId;
+    private String userName;
+    private Integer userId;
     private String title;
     private String content;
     private Boolean isRead;

@@ -2,6 +2,7 @@ package com.trithienviet.qlchuoiphongtro.controller;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.NotificationDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.NotificationLoadDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleLoadDTO;
 import com.trithienviet.qlchuoiphongtro.service.NotificationService;
@@ -20,33 +21,35 @@ public class NotificationController {
     private NotificationService notificationService;
 
     @GetMapping("/admin/notification")
-    public ResponseEntity<PageResponse<NotificationDTO>> getAll( 
+    public ResponseEntity<PageResponse<NotificationLoadDTO>> getAll( 
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
         @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_NOTIFICATION_BY, required = false) String sortBy,
         @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
-            PageResponse<NotificationDTO> notificationResponse = notificationService.getAllNoti(
+            PageResponse<NotificationLoadDTO> notificationResponse = notificationService.getAllNoti(
                 Math.max(0,pageNumber-1),
                         pageSize, "id".equals(sortBy) ? "notifi":sortBy,
                         sortOrder) ;
         return new ResponseEntity<>(notificationResponse, HttpStatus.OK);     
     }
     // 1. API dành cho Admin gửi thông báo thủ công
-    @PostMapping("/admin/send/{userId}")
+    @PostMapping("/admin/notification/send-manual")
     public ResponseEntity<String> sendManualNotification(
-            @PathVariable Long userId, 
+            @RequestParam(name = "profileId", defaultValue = "0") Long profileId,
+            @RequestParam(name = "branchId", defaultValue = "0") Integer branchId,
             @RequestBody NotificationDTO notificationDTO) {
-        if(notificationDTO == null) throw new RuntimeException("NOTI null");
-        notificationService.sendNotification(userId, notificationDTO);
-        return ResponseEntity.ok("Đã gửi thông báo thành công!");
+        
+        notificationService.sendNotification(profileId, branchId, notificationDTO);
+        
+        return new ResponseEntity<>("Gửi thông báo thành công!", HttpStatus.OK);
     }
 
     // 2. API lấy danh sách thông báo cho User (để hiện ở cái chuông)
-    @GetMapping("public/user/{userId}")
-    public ResponseEntity<List<NotificationDTO>> getNotificationsByUser(@PathVariable Long userId) {
+    @GetMapping("public/notification/user/{userId}")
+    public ResponseEntity<List<NotificationLoadDTO>> getNotificationsByUser(@PathVariable Long userId) {
         // Tri cần viết thêm hàm này trong Service để lấy từ Repository nhé
-        List<NotificationDTO> notifications = notificationService.getNotificationsByUserId(userId);
+        List<NotificationLoadDTO> notifications = notificationService.getNotificationsByUserId(userId);
         return ResponseEntity.ok(notifications);
     }
 

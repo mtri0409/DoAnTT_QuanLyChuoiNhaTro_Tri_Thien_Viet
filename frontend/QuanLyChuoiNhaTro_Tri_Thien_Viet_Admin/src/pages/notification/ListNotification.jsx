@@ -69,6 +69,8 @@ const ListNotification = () => {
     switch (type) {
       case 'MAINTENANCE': return <span className="badge bg-warning-subtle text-warning"><FaTools /> Bảo trì</span>;
       case 'INVOICE': return <span className="badge bg-primary-subtle text-primary"><FaFileInvoiceDollar /> Hóa đơn</span>;
+      case 'CONTRACT': return <span className="badge bg-primary-subtle text-primary"><FaFileInvoiceDollar /> Họp đồng</span>;
+      
       default: return <span className="badge bg-info-subtle text-info"><FaBell /> Chung</span>;
     }
   };

@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { title: 'Quản lý hồ sơ',     path: '/profiles',  icon: <FaUsers /> },
   { title: 'Quản lý xe',  path: '/vehicles',    icon: <FaMotorcycle /> },
   { title: 'Tài khoản',     path: '/users',  icon: <FaUsers /> },
-  { title: 'Thông báo',     path: '/notify',  icon: <FaBell /> },
+  { title: 'Thông báo',     path: '/notifications',  icon: <FaBell /> },
   { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract /> },
 
   { title: 'Cài đặt',        path: '/admin/settings', icon: <FaCog /> },

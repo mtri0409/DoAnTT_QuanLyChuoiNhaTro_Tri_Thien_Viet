@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.trithienviet.qlchuoiphongtro.config.EmailTemplate;
+import com.trithienviet.qlchuoiphongtro.config.NotificationConstant;
 import com.trithienviet.qlchuoiphongtro.entity.Contract;
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.entity.Deposit;
@@ -28,6 +30,8 @@ import com.trithienviet.qlchuoiphongtro.repo.RoomMemberRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ServiceItemRepo;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
+import com.trithienviet.qlchuoiphongtro.service.EmailService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,7 +47,8 @@ public class ContractServiceImpl implements ContractService {
     private final ContractServiceRepo contractServiceRepo;
     private final ServiceItemRepo serviceItemRepo;
     private final DepositRepo depositRepo;
-
+    private final EmailService emailService;
+    private final NotificationService notificationService;
     // ==================== terminateContract ====================
     @Override
     public void terminateContract(Long contractId) {
@@ -230,6 +235,29 @@ public class ContractServiceImpl implements ContractService {
 
         ContractDTO response = mapToDTO(savedContract);
         response.setContractServices(savedContractServices);
+        String template = EmailTemplate.
+                                getContractCreatedSuccess(
+                                representative.getFullName(),
+                                room.getRoomName(),
+                                response.getStartDate().toString(),
+                                response.getEndDate().toString(),
+                                roomDeposit.getAmount().toString()
+                            );
+        emailService.sendHtmlEmail(representative.getEmail(), "THÔNG BÁO TẠO HỌP ĐỒNG THÀNH CÔNG", template);
+       
+        String title = NotificationConstant.CONTRACT_CREATED_TITLE;
+        String content = String.format(
+            NotificationConstant.CONTRACT_CREATED_CONTENT, 
+            representative.getFullName(), 
+            room.getRoomName()
+        );
+
+        notificationService.sendSystemNotification(
+            representative.getProfileId(), 
+            title, 
+            content, 
+            NotificationConstant.TYPE_CONTRACT
+        );
         return response;
     }
 
@@ -314,6 +342,8 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.ACTIVE);
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.ACTIVE);
                 updatedContracts.add(contract);
+                
+                sendNotificationActiveContract(contract);
 
             } else if (contract.getStatus() == ContractStatus.ACTIVE
                     && contract.getEndDate().isBefore(today)) {
@@ -321,6 +351,8 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.EXPIRED);
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.EXPIRED);
                 updatedContracts.add(contract);
+
+                  sendNotificationExpiredContract(contract);
             }
         }
 
@@ -566,5 +598,60 @@ public class ContractServiceImpl implements ContractService {
 
         room.setStatus(RoomStatus.OCCUPIED);
         roomRepo.save(room);
+    }
+
+    private void sendNotificationActiveContract(Contract contract) {
+        // 1. Lấy dữ liệu từ object contract
+        String email = contract.getRepresentative().getEmail();
+        String fullName = contract.getRepresentative().getFullName();
+        String roomName = contract.getRoom().getRoomName();
+        
+        // 2. Build nội dung dùng Constant (Gom logic vào một chỗ)
+        String template = EmailTemplate.getContractActivated(
+            fullName, roomName, 
+            contract.getStartDate().toString(), 
+            contract.getEndDate().toString()
+        );
+        
+        String title = NotificationConstant.CONTRACT_ACTIVE_TITLE;
+        String content = String.format(
+            NotificationConstant.CONTRACT_ACTIVE_CONTENT, 
+            fullName, roomName
+        );
+
+            emailService.sendHtmlEmail(email, "HỢP ĐỒNG ĐÃ ĐƯỢC KÍCH HOẠT", template);
+            notificationService.sendSystemNotification(
+            contract.getRepresentative().getProfileId(), 
+            title, 
+            content, 
+            NotificationConstant.TYPE_CONTRACT
+        );
+    }
+
+    private void sendNotificationExpiredContract(Contract contract) {
+    
+        String email = contract.getRepresentative().getEmail();
+        String fullName = contract.getRepresentative().getFullName();
+        String roomName = contract.getRoom().getRoomName();
+        
+      
+        String template = EmailTemplate.getContractExpired(
+            fullName, roomName, 
+            contract.getEndDate().toString()
+        );
+        
+        String title = NotificationConstant.CONTRACT_ACTIVE_TITLE;
+        String content = String.format(
+            NotificationConstant.CONTRACT_ACTIVE_CONTENT, 
+            fullName, roomName
+        );
+
+            emailService.sendHtmlEmail(email, "HỢP ĐỒNG ĐÃ HẾT HẠN", template);
+            notificationService.sendSystemNotification(
+            contract.getRepresentative().getProfileId(), 
+            title, 
+            content, 
+            NotificationConstant.TYPE_CONTRACT
+        );
     }
 }
