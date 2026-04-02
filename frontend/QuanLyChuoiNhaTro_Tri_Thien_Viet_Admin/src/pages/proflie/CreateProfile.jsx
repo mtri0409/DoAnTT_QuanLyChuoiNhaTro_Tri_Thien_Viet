@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt, 
-  FaCalendarAlt, FaArrowLeft, FaSave, FaExclamationCircle 
+  FaCalendarAlt, FaArrowLeft, FaSave, FaExclamationCircle,
+  FaEnvelope // Thêm icon email
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
+import apiUser from '../../api/apiUser';
 
 const CreateProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // 1. State lưu dữ liệu Form
+  // 1. Thêm email vào formData
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
+    email: '', // Trường mới
     address: '',
     identityNumber: '',
     idExpirationDate: '',
@@ -21,14 +24,12 @@ const CreateProfile = () => {
     idIssuePlace: ''
   });
 
-  // 2. State lưu thông báo lỗi (Hứng từ Backend)
   const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Xóa lỗi của trường đó ngay khi người dùng bắt đầu nhập lại
     if (errors[name]) {
       const newErrors = { ...errors };
       delete newErrors[name];
@@ -39,33 +40,30 @@ const CreateProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrors({}); // Reset lỗi cũ trước khi gọi API
+    setErrors({});
 
     try {
-     const response = await apiProfile.createProfile(formData);
-      console.log(response);
+      const response = await apiProfile.createProfile(formData);
+      await apiUser.generareAcount(response.profileId);
       alert("Tạo hồ sơ khách thuê thành công!");
       navigate('/profiles'); 
     } catch (err) {
-      console.error("Lỗi API:", err);
-
+      console.error("Lỗi API:", err.response);
       if (err.response && err.response.status === 400) {
-        const backendErrors = err.response.data;
-        
+        const backendErrors = err.response.data.message;
         if (backendErrors) {
           setErrors(backendErrors);
         } else {
-          alert(err.response.data.message || "Dữ liệu không hợp lệ, vui lòng kiểm tra lại.");
+          alert(err.response.data.message || "Dữ liệu không hợp lệ.");
         }
       } else {
-        alert(" Lỗi hệ thống hoặc mất kết nối Server.");
+        alert("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm Helper để hiển thị giao diện lỗi dưới mỗi ô Input
   const renderError = (fieldName) => {
     if (!errors[fieldName]) return null;
     return (
@@ -77,7 +75,6 @@ const CreateProfile = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* Header Điều hướng */}
       <div className="d-flex align-items-center gap-3 mb-4">
         <button 
           onClick={() => navigate(-1)} 
@@ -134,10 +131,28 @@ const CreateProfile = () => {
                 {renderError('phone')}
               </div>
 
+              {/* TRƯỜNG EMAIL MỚI THÊM */}
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-muted">EMAIL LIÊN HỆ</label>
+                <div className="input-group">
+                  <span className={`input-group-text bg-light border-0 ${errors.email ? 'border border-danger border-end-0' : ''}`}>
+                    <FaEnvelope className="text-primary" size={12}/>
+                  </span>
+                  <input 
+                    type="email" name="email"
+                    className={`form-control bg-light border-0 py-2 ${errors.email ? 'is-invalid border border-danger border-start-0' : ''}`} 
+                    placeholder="example@gmail.com" 
+                    value={formData.email}
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                {renderError('email')}
+              </div>
+
               <div className="mb-0">
                 <label className="form-label small fw-bold text-muted">ĐỊA CHỈ THƯỜNG TRÚ</label>
                 <textarea 
-                  name="address" rows="5" 
+                  name="address" rows="4" 
                   className={`form-control bg-light border-0 ${errors.address ? 'is-invalid' : ''}`} 
                   placeholder="Địa chỉ chi tiết..." 
                   value={formData.address}
@@ -150,6 +165,7 @@ const CreateProfile = () => {
 
           {/* CỘT PHẢI: GIẤY TỜ ĐỊNH DANH */}
           <div className="col-lg-7">
+            {/* Giữ nguyên code cũ của Tri */}
             <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
               <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
                 <div className="bg-info-subtle p-2 rounded-3 text-info">
@@ -206,7 +222,6 @@ const CreateProfile = () => {
                   {renderError('idExpirationDate')}
                 </div>
 
-                {/* NÚT THAO TÁC */}
                 <div className="col-12 mt-auto pt-5 text-end">
                   <hr className="text-muted opacity-25 mb-4" />
                   <button 

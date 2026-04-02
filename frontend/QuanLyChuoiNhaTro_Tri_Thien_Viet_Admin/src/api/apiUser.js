@@ -20,7 +20,7 @@ const apiUser = {
     });
   },
   createAccount:(profileId,data)=> axiosInstance.post(`/auth/create-account/${profileId}`,data),
-  generareAcount:(profileId)=> axiosInstance.post(`/auth/create-account/${profileId}`),
+  generareAcount:(profileId)=> axiosInstance.post(`/auth/generare-account/${profileId}`),
 
    deleteUser: (id) => axiosInstance.delete(`/admin/users/${id}`),
   // Cập nhật Role cho User

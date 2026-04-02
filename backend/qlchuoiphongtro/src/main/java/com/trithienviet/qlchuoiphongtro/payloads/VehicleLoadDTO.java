@@ -18,4 +18,6 @@ public class VehicleLoadDTO {
     private String ownerName;
     private String licensePlate;
     private Boolean status;
+    private Integer branchId;
+    private String branchName;
 }

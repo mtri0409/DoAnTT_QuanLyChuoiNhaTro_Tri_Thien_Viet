@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class RoomMediaDTO {
-    private Integer meadiaId;
-    private Integer roomId;
+    private Long mediaId;
+    private Long roomId;
     private String url;
-    private String meadiaType;
+    private String mediaType;
     private boolean isThumbnail;
 }

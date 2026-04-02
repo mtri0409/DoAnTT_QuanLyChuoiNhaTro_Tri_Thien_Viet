@@ -44,8 +44,8 @@ public class SecurityConfig {
                 // Cho phép các URL công khai (Login, Register) vào tự do
                 .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
                 // CẤU HÌNH QUYỀN TRUY CẬP: 
-                .requestMatchers(AppConstants.USER_URLS).hasAnyRole("USER", "ADMIN")
-                .requestMatchers(AppConstants.ADMIN_URLS).hasRole("ADMIN")
+                .requestMatchers(AppConstants.USER_URLS).hasAnyRole("TENANT", "ADMIN")
+                .requestMatchers(AppConstants.ADMIN_URLS).hasAnyRole("ADMIN","STAFF")
                 // Tất cả các request còn lại đều phải đăng nhập mới được vào
                 .anyRequest().authenticated()
             )
