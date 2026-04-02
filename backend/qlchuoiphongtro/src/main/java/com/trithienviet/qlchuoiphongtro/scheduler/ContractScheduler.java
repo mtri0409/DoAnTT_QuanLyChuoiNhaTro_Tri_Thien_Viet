@@ -14,7 +14,7 @@ public class ContractScheduler {
     private ContractService contractService;
 
     // Cron chạy vào 00:01 sáng mỗi ngày
-    @Scheduled(cron = "0 41 21 * * *")
+    @Scheduled(cron = "0 18 22 * * *")
     public void runAutoUpdateStatus() {
         log.info("--- BẮT ĐẦU QUÉT VÀ CẬP NHẬT TRẠNG THÁI HỢP ĐỒNG TỰ ĐỘNG ---");
         
