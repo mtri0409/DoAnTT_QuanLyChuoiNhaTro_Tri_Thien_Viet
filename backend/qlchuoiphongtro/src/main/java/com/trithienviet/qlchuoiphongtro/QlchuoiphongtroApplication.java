@@ -13,8 +13,7 @@ public class QlchuoiphongtroApplication {
 	}
 
 	@Bean
-    public ModelMapper modelMapper() {
-        return new ModelMapper();
-    }
-
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
 }
