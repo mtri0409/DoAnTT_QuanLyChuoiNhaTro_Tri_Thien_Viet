@@ -10,16 +10,16 @@ import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 
 @Repository
 public interface ContractRepo extends JpaRepository<Contract, Long> {
-    boolean existsByRoom_RoomIdAndStatusAndIsDeletedFalse(
-            Long roomId,
-            ContractStatus status);
 
-    List<Contract> findByStatusAndIsDeletedFalse(ContractStatus status);
+        boolean existsByRoom_RoomIdAndStatusAndIsDeletedFalse(
+                        Long roomId, ContractStatus status);
 
-    List<Contract> findByStatusInAndIsDeletedFalse(
-            List<ContractStatus> statuses);
+        List<Contract> findByStatusAndIsDeletedFalse(ContractStatus status);
 
-    boolean existsByRoom_RoomIdAndStatusInAndIsDeletedFalse(
-            Long roomId,
-            List<ContractStatus> statuses);
+        List<Contract> findByStatusInAndIsDeletedFalse(List<ContractStatus> statuses);
+
+        boolean existsByRoom_RoomIdAndStatusInAndIsDeletedFalse(
+                        Long roomId, List<ContractStatus> statuses);
+
+        List<Contract> findByRoom_RoomIdAndIsDeletedFalse(Long roomId);
 }
