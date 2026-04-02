@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 
 public class LoginCredentials {
-    
     private String userName;
     private String password;
 }

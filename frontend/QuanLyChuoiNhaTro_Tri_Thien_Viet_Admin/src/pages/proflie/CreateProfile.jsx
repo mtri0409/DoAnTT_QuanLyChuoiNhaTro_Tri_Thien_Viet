@@ -51,6 +51,7 @@ const CreateProfile = () => {
       console.error("Lỗi API:", err.response);
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data.message;
+        console.log(backendErrors);
         if (backendErrors) {
           setErrors(backendErrors);
         } else {

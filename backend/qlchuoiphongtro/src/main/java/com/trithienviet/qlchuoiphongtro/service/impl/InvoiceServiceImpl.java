@@ -1,10 +1,14 @@
 package com.trithienviet.qlchuoiphongtro.service.impl;
 
+import com.trithienviet.qlchuoiphongtro.config.EmailTemplate;
 import com.trithienviet.qlchuoiphongtro.entity.*;
 import com.trithienviet.qlchuoiphongtro.payloads.InvoiceDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.repo.*;
+import com.trithienviet.qlchuoiphongtro.service.EmailService;
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,16 +47,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final MeterReadingRepo meterReadingRepo;
     private final DepositRepo depositRepo; // <-- inject thêm
 
-    // ────────────────────────────────────────────────────────────────────────
-    // SCHEDULER
-    // ────────────────────────────────────────────────────────────────────────
-
-    @Scheduled(cron = "0 0 8 * * *")
-    public void scheduledAutoGenerate() {
-        LocalDate today = LocalDate.now();
-        autoGenerateInvoices(today.getMonthValue(), today.getYear());
-    }
-
+   private final EmailService emailService;
+    private final NotificationService notificationService;
     // ────────────────────────────────────────────────────────────────────────
     // TẠO HÓA ĐƠN MONTHLY
     // ────────────────────────────────────────────────────────────────────────
@@ -72,6 +68,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = buildDraftInvoice(contract, month, year);
         invoiceRepo.save(invoice);
+
+        
         return toDTO(invoice);
     }
 
