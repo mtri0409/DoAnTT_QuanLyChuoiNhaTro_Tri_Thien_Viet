@@ -1,0 +1,394 @@
+import React, { useState, useEffect } from "react";
+import {
+  FaFileContract,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaPlus,
+  FaTimesCircle,
+  FaEye,
+  FaSyncAlt,
+  FaUsers,
+} from "react-icons/fa";
+import apiContract from "../../api/apiContract";
+import Pagination from "../../components/Pagination";
+import { Link, useNavigate } from "react-router-dom";
+
+// Mapping trạng thái sang màu badge Bootstrap
+const STATUS_BADGE = {
+  ACTIVE: { cls: "bg-success-subtle text-success", label: "Đang hiệu lực" },
+  EXPIRED: { cls: "bg-danger-subtle text-danger", label: "Hết hạn" },
+  PENDING: { cls: "bg-warning-subtle text-warning", label: "Chờ duyệt" },
+  CANCELLED: { cls: "bg-secondary-subtle text-secondary", label: "Đã hủy" },
+};
+
+const getStatusBadge = (status) =>
+  STATUS_BADGE[status] || { cls: "bg-light text-dark", label: status || "N/A" };
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  return new Date(dateStr).toLocaleDateString("vi-VN");
+};
+
+const formatCurrency = (amount) => {
+  if (amount == null) return "N/A";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount);
+};
+
+const ListContract = () => {
+  const [data, setData] = useState({
+    content: [],
+    pageNumber: 0,
+    totalPages: 0,
+    totalElements: 0,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [autoUpdating, setAutoUpdating] = useState(false);
+  const navigate = useNavigate();
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+
+  // Filter trạng thái
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Sort
+  const [sortBy, setSortBy] = useState("contractId");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  // Hàm gọi API chung — server-side pagination + search + filter
+  const fetchContracts = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiContract.searchContracts(
+          appliedSearch,
+          currentPage,
+          10,
+          sortBy,
+          sortOrder,
+        );
+      } else if (filterStatus) {
+        response = await apiContract.getContractsByStatus(
+          filterStatus,
+          currentPage,
+          10,
+          sortBy,
+          sortOrder,
+        );
+      } else {
+        response = await apiContract.getAllContracts(
+          currentPage,
+          10,
+          sortBy,
+          sortOrder,
+        );
+      }
+      setData(response);
+    } catch (err) {
+      console.error("Lỗi tải hợp đồng:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchContracts();
+  }, [currentPage, sortBy, sortOrder, appliedSearch, filterStatus]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setAppliedSearch(searchTerm);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setAppliedSearch("");
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page + 1);
+  };
+
+  const handleDelete = async (id) => {
+    if (
+      !window.confirm(
+        "Bạn có chắc chắn muốn xóa hợp đồng này? Hành động này không thể hoàn tác!",
+      )
+    )
+      return;
+    try {
+      setLoading(true);
+      await apiContract.deleteContract(id);
+      alert("Xóa hợp đồng thành công!");
+      if (data.content.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        fetchContracts();
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+      const msg =
+        err.response?.data?.message || "Lỗi ràng buộc dữ liệu, không thể xóa!";
+      alert(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoUpdate = async () => {
+    if (!window.confirm("Tự động cập nhật trạng thái tất cả hợp đồng?")) return;
+    try {
+      setAutoUpdating(true);
+      const res = await apiContract.autoUpdateStatus();
+      alert(`Đã cập nhật ${res.updatedCount} hợp đồng!`);
+      fetchContracts();
+    } catch (err) {
+      console.error("Lỗi auto-update:", err);
+      alert("Có lỗi xảy ra khi tự động cập nhật!");
+    } finally {
+      setAutoUpdating(false);
+    }
+  };
+
+  return (
+    <div className="container-fluid py-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 className="fw-bold text-dark mb-1">QUẢN LÝ HỢP ĐỒNG</h4>
+          <p className="text-muted small mb-0">Danh sách hợp đồng thuê phòng</p>
+        </div>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary shadow-sm"
+            onClick={handleAutoUpdate}
+            disabled={autoUpdating}
+            title="Tự động cập nhật trạng thái hợp đồng hết hạn"
+          >
+            <FaSyncAlt className={autoUpdating ? "spin-icon" : ""} /> Cập nhật
+            tự động
+          </button>
+          <Link to="/contracts/create" className="btn btn-primary shadow-sm">
+            <FaPlus /> Thêm mới
+          </Link>
+        </div>
+      </div>
+
+      <div className="card border-0 shadow-sm rounded-3">
+        {/* TOOLBAR: SEARCH, FILTER & SORT */}
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center gap-3">
+          {/* Ô Search có nút bấm */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="d-flex gap-2"
+            style={{ maxWidth: "400px", flex: 1 }}
+          >
+            <div className="input-group">
+              <span className="input-group-text bg-light border-0">
+                <FaSearch />
+              </span>
+              <input
+                type="text"
+                className="form-control bg-light border-0 small"
+                placeholder="Tìm theo ID, phòng, trạng thái..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {appliedSearch && (
+                <button
+                  type="button"
+                  className="btn btn-light border-0"
+                  onClick={handleClearSearch}
+                >
+                  <FaTimesCircle className="text-muted" />
+                </button>
+              )}
+            </div>
+            <button type="submit" className="btn btn-dark shadow-sm">
+              Tìm
+            </button>
+          </form>
+
+          {/* Filter + Sort */}
+          <div className="d-flex gap-2 flex-nowrap align-items-center">
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ minWidth: "150px" }}
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang hiệu lực</option>
+              <option value="EXPIRED">Hết hạn</option>
+              <option value="PENDING">Chờ duyệt</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ minWidth: "190px" }}
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="contractId">Sắp xếp theo ID</option>
+              <option value="startDate">Sắp xếp theo Ngày bắt đầu</option>
+              <option value="endDate">Sắp xếp theo Ngày kết thúc</option>
+              <option value="rentPrice">Sắp xếp theo Giá thuê</option>
+              <option value="status">Sắp xếp theo Trạng thái</option>
+            </select>
+
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ minWidth: "110px" }}
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="asc">Tăng dần</option>
+              <option value="desc">Giảm dần</option>
+            </select>
+          </div>
+        </div>
+
+        {/* BẢNG DỮ LIỆU */}
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr className="text-muted small text-uppercase">
+                <th className="ps-4 py-3">Hợp đồng</th>
+                <th>Phòng</th>
+                <th>Ngày bắt đầu</th>
+                <th>Ngày kết thúc</th>
+                <th>Giá thuê</th>
+                <th>Tiền cọc</th>
+                <th className="text-center">Trạng thái</th>
+                <th className="text-end pe-4">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-5">
+                    Đang tải...
+                  </td>
+                </tr>
+              ) : data.content?.length > 0 ? (
+                data.content.map((item) => {
+                  const badge = getStatusBadge(item.status);
+                  return (
+                    <tr key={item.contractId}>
+                      <td className="ps-4">
+                        <div className="d-flex align-items-center">
+                          <FaFileContract className="fs-5 text-secondary me-2" />
+                          <span className="fw-bold">#{item.contractId}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge bg-light text-dark border fw-normal">
+                          Phòng {item.roomId || "N/A"}
+                        </span>
+                      </td>
+                      <td className="small">{formatDate(item.startDate)}</td>
+                      <td className="small">{formatDate(item.endDate)}</td>
+                      <td className="small fw-semibold text-dark">
+                        {formatCurrency(item.rentPrice)}
+                      </td>
+                      <td className="small">
+                        {formatCurrency(item.depositAmount)}
+                      </td>
+                      <td className="text-center">
+                        <span className={`badge rounded-pill ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="text-end pe-4">
+                        <div className="d-flex justify-content-end gap-1">
+                          <button
+                            className="btn btn-sm btn-light border-0"
+                            title="Xem thành viên"
+                            onClick={() =>
+                              navigate(`/contracts/${item.contractId}/members`)
+                            }
+                          >
+                            <FaUsers className="text-success" />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-light border-0"
+                            title="Xem chi tiết"
+                            onClick={() =>
+                              navigate(`/contracts/${item.contractId}/detail`)
+                            }
+                          >
+                            <FaEye className="text-info" />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-light border-0"
+                            title="Sửa"
+                            onClick={() =>
+                              navigate(`/contracts/${item.contractId}/update`)
+                            }
+                          >
+                            <FaEdit className="text-primary" />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-light border-0"
+                            title="Xóa"
+                            onClick={() => handleDelete(item.contractId)}
+                          >
+                            <FaTrash className="text-danger" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center py-5 text-muted">
+                    Không tìm thấy hợp đồng nào.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PHÂN TRANG */}
+        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
+          <small className="text-muted">
+            Tổng: {data.totalElements} hợp đồng
+          </small>
+          <Pagination
+            currentPage={data.pageNumber}
+            totalPages={data.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin-icon { animation: spin 1s linear infinite; }
+      `}</style>
+    </div>
+  );
+};
+
+export default ListContract;
