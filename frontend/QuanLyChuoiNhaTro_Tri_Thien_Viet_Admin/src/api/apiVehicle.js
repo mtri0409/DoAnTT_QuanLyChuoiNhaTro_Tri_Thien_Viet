@@ -2,10 +2,15 @@ import CreateVehicle from "../pages/proflie/CreateVehicle";
 import axiosInstance from "./axios";
 const apiVehicle = {
   // Lấy tất cả có phân trang & sort
-  getAllVehicles: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => 
+  getAllVehicles: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc",branchId="",status) => 
     axiosInstance.get(`/admin/vehicles`, { 
         params: {
-           pageNumber,pageSize,sortBy,sortOrder
+           pageNumber :pageNumber,
+           pageSize:pageSize,
+           sortBy:sortBy,
+           sortOrder :sortOrder,
+           branchId:branchId,
+           status:status
         }
      }),
    getAllVehiclesDeleted: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => 
@@ -16,14 +21,16 @@ const apiVehicle = {
      }),
 
   // Tìm kiếm theo keyword
-  searchVehicles: (keyword,pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => 
+  searchVehicles: (keyword,pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc",branchId="",status) => 
     axiosInstance.get(`/admin/vehicles/search`, { 
         params: {
-            keyword,
+         keyword,
            pageNumber,
            pageSize,
            sortBy,
-           sortOrder
+           sortOrder,
+           branchId,
+           status
         }
      }),
    getVehicleById : (id) => axiosInstance.get(`/public/vehice/${id}`),

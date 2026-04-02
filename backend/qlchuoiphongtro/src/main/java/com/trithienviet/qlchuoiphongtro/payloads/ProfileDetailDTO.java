@@ -30,7 +30,8 @@ public class ProfileDetailDTO {
     private List<VehicleLoadDTO> vehicles;
 
     private String roomName; // Chỉ lấy số phòng để hiển thị nhanh
+    private String branchName;
     private Long activeContractId; 
     private LocalDate contractEndDate;
-
+    private String roleName;
 }

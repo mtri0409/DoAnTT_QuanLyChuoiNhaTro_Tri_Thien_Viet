@@ -12,63 +12,100 @@ import {
 import apiProfile from "../../api/apiProfile";
 import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";
+import apiBranches from "../../api/apiBranches";
 
 const ListProfileDeleted = () => {
-  const [data, setData] = useState({
-    content: [],
-    pageNumber: 0,
-    totalPages: 0,
-    totalElements: 0,
-  });
+  const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState([]);
+  // --- STATE QUẢN LÝ SEARCH ---
+  const [searchTerm, setSearchTerm] = useState('');      
+  const [appliedSearch, setAppliedSearch] = useState(''); 
 
-  // --- STATE FILTER & SORT ---
-  const [searchTerm, setSearchTerm] = useState(""); 
-  const [appliedSearch, setAppliedSearch] = useState(""); 
-  const [sortBy, setSortBy] = useState("profileId");
-  const [sortOrder, setSortOrder] = useState("desc");
+  // State Sort
+  const [sortBy, setSortBy] = useState('profileId');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  // 1. Fetch danh sách Hồ sơ đã bị ẩn (isActive = false)
+    const [viewType,setViewType] = useState("TENANT")
+  // Hàm gọi API chung cho cả Load All và Search
   const fetchDeletedProfiles = async () => {
     setLoading(true);
     try {
-      // Đảm bảo Tri đã định nghĩa hàm này trong apiProfile.js
-      // API sẽ gọi đến endpoint: /api/admin/profiles/deleted (hoặc tương tự)
-      const response = await apiProfile.getAllProfilesDeleted(
-        currentPage,
-        10,
-        sortBy,
-        sortOrder,
-        appliedSearch
-      );
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiProfile.searchProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,selectedBranch,false);
+      } else {
+        // Gọi API GetAll bình thường
+        response = await apiProfile.getAllProfiles(currentPage, 10, sortBy, sortOrder,selectedBranch,false);
+        console.log(response);
+      }
+      console.log(response);
       setData(response);
-      console.log("data profile was deleted",response)
     } catch (err) {
-      console.error("Lỗi tải kho lưu trữ hồ sơ:", err);
+      console.error("Lỗi:", err);
     } finally {
       setLoading(false);
     }
   };
 
+    const fetchDeletedInternalProfiles = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (appliedSearch.trim()) {
+        response = await apiProfile.searchInternalProfiles(appliedSearch, currentPage, 10, sortBy, sortOrder,false);
+      } else {
+        // Gọi API GetAll bình thường
+        response = await apiProfile.getInternalProfile(currentPage, 10, sortBy, sortOrder,false);
+        console.log(response);
+      }
+      console.log(response);
+      setData(response);
+    } catch (err) {
+      console.error("Lỗi:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Gọi lại API khi: Trang đổi, Tiêu chí Sort đổi, hoặc khi bấm nút Search (appliedSearch đổi)
   useEffect(() => {
-    fetchDeletedProfiles();
-  }, [currentPage, sortBy, sortOrder, appliedSearch]);
+    viewType == "TENANT" ? fetchDeletedProfiles() : fetchDeletedInternalProfiles();
+  }, [currentPage, sortBy, sortOrder, appliedSearch,selectedBranch,viewType]);
 
-  // 2. Xử lý Tìm kiếm
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await apiBranches.getAllBranches(0,10); 
+        console.log("branch",response.content);
+        setBranches(response.content);
+      } catch (err) {
+        console.error("Lỗi lấy chi nhánh:", err);
+      }
+    };
+    fetchBranches();
+  }, []);
+  
+  // Xử lý khi bấm nút Search hoặc Enter
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset về trang 1 khi search mới
     setAppliedSearch(searchTerm);
   };
 
+  // Xử lý khi bấm nút X để xóa search
   const handleClearSearch = () => {
-    setSearchTerm("");
-    setAppliedSearch("");
+    setSearchTerm('');
+    setAppliedSearch('');
     setCurrentPage(1);
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page + 1);
+  };
   // 3. Hàm Khôi phục hồ sơ (Restore)
   const handleRestore = async (id, fullName) => {
     if (window.confirm(`Bạn có chắc muốn khôi phục hồ sơ của khách: ${fullName}?`)) {
@@ -92,22 +129,51 @@ const ListProfileDeleted = () => {
   };
 
   return (
-    <div className="container-fluid py-4 bg-light min-vh-100">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="container-fluid py-4 bg-light min-vh-100">
+        {/* Header: Tiêu đề và Nút hành động chính */}
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 p-3 bg-white rounded-4 shadow-sm border-0">
+        {/* Nhóm trái: Nút quay lại + Tiêu đề */}
         <div className="d-flex align-items-center gap-3">
           <button 
             onClick={() => navigate(-1)} 
-            className="btn btn-white shadow-sm rounded-circle p-2 border-0"
+            className="btn btn-light shadow-sm rounded-circle p-2 border-0 transition-all"
+            style={{ width: '40px', height: '40px' }}
+            title="Quay lại"
           >
-            <FaArrowLeft className="text-muted" />
+            <FaArrowLeft className="text-secondary" />
           </button>
+          
           <div>
-            <h4 className="fw-bold text-secondary mb-0 text-uppercase">Kho lưu trữ hồ sơ</h4>
-            <p className="text-muted small mb-0">Danh sách khách thuê đã ngừng hợp đồng hoặc bị ẩn</p>
+            <h5 className="fw-bold text-dark mb-0 letter-spacing-tight">
+              {viewType === 'TENANT' ? 'LƯU TRỮ KHÁCH THUÊ' : 'LƯU TRỮ NHÂN SỰ'}
+            </h5>
+            <p className="text-muted small mb-0 d-none d-sm-block">
+              {viewType === 'TENANT' ? 'Quản lý hồ sơ cư dân đã xóa' : 'Quản lý nhân viên/admin đã ẩn'}
+            </p>
           </div>
         </div>
-      </div>
+
+        {/* Nhóm phải: Bộ Tabs tinh tế hơn */}
+        <div className="bg-light p-1 rounded-pill d-flex border shadow-inner">
+          <button 
+            className={`btn btn-sm px-4 py-2 rounded-pill transition-all fw-bold ${
+              viewType === 'TENANT' ? 'btn-white shadow-sm text-primary' : 'btn-transparent text-muted'
+            }`}
+            onClick={() => { setViewType('TENANT'); setCurrentPage(1); }}
+          >
+            Khách thuê
+          </button>
+          <button 
+            className={`btn btn-sm px-4 py-2 rounded-pill transition-all fw-bold ${
+              viewType === 'SYSTEM' ? 'btn-white shadow-sm text-primary' : 'btn-transparent text-muted'
+            }`}
+            onClick={() => { setViewType('SYSTEM'); setCurrentPage(1); }}
+          >
+            Nhân sự
+          </button>
+        </div>
+    </div>
+
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         {/* Toolbar */}
@@ -139,6 +205,19 @@ const ListProfileDeleted = () => {
             <select className="form-select form-select-sm border-0 bg-light" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
               <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
+            </select>
+
+             <select 
+                className="form-select form-select-sm border-0 bg-primary-subtle text-primary fw-bold" 
+                style={{ width: '180px' }}
+                value={selectedBranch} 
+                onChange={(e) => { setSelectedBranch(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                
+                {branches.length > 0 ? branches.map(b => (
+                  <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
+              )) : <option value="">Chưa có chi nhánh nào</option>}
             </select>
           </div>
         </div>
@@ -208,7 +287,7 @@ const ListProfileDeleted = () => {
           <Pagination
             currentPage={data.pageNumber}
             totalPages={data.totalPages}
-            onPageChange={(p) => setCurrentPage(p + 1)}
+            onPageChange={handlePageChange}
           />
         </div>
       </div>
