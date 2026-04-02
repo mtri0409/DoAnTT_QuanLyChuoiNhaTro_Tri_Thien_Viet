@@ -12,10 +12,11 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class ContractServiceDTO {
-    private Integer contractServiceId;
-    private Integer contractId;
+    private Integer contractServiceId; 
+    private Long contractId;
     private Integer serviceId;
-    private BigDecimal pirceAtSigning;
+    private String serviceName; 
+    private BigDecimal priceAtSigning;
     private String unitAtSigning;
     private String note;
 }

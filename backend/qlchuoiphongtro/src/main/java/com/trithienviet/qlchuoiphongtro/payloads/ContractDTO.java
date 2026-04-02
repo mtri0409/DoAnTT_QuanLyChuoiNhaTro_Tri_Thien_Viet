@@ -2,6 +2,7 @@ package com.trithienviet.qlchuoiphongtro.payloads;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 
@@ -23,5 +24,7 @@ public class ContractDTO {
     private LocalDate endDate;
     private Integer billingDay;
     private Long representativeId;
+    private List<Long> memberIds;
     private ContractStatus status;
+    private List<ContractServiceDTO> contractServices;
 }
