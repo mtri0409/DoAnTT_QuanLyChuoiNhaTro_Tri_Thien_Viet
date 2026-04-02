@@ -38,7 +38,7 @@ const ProfileDetail = () => {
             <FaArrowLeft className="text-muted" />
           </button>
           <div>
-            <h4 className="fw-bold text-dark mb-0">CHI TIẾT KHÁCH THUÊ</h4>
+            <h4 className="fw-bold text-dark mb-0">CHI TIẾT HỒ SƠ</h4>
             <span className="badge bg-primary-subtle text-primary mt-1">ID: #PR-{profile.profileId}</span>
           </div>
         </div>
@@ -57,20 +57,30 @@ const ProfileDetail = () => {
               <p className="text-white-50 small mb-0">{profile.phone}</p>
             </div>
             <div className="card-body p-4">
+              {profile.roleName == "TENANT" &&
               <div className="mb-3 d-flex align-items-center gap-3">
-                <div className="bg-light p-2 rounded-3 text-success"><FaHome /></div>
+                
+                
                 <div>
                   <div className="small text-muted">Phòng đang thuê</div>
                   <div className="fw-bold text-dark">{profile.roomName || 'Chưa nhận phòng'}</div>
                 </div>
               </div>
+              }
               <div className="mb-3 d-flex align-items-center gap-3">
                 <div className="bg-light p-2 rounded-3 text-danger"><FaFileContract /></div>
-                <div>
-                  <div className="small text-muted">Hợp đồng hiện tại</div>
-                  <div className="fw-bold text-dark">#{profile.activeContractId || 'N/A'}</div>
-                  <div className="small text-muted">Hết hạn: {profile.contractEndDate || 'N/A'}</div>
-                </div>
+                  {profile.roleName =="TENANT" ? 
+                  <div>
+                      <div className="small text-muted">Hợp đồng hiện tại</div> 
+                      <div className="fw-bold text-dark">#{profile.activeContractId || 'N/A'}</div>
+                      <div className="small text-muted">Hết hạn: {profile.contractEndDate || 'N/A'}</div>
+                  </div>
+                    :
+                  <div> 
+                      <div className="small text-muted">Chức vụ</div> 
+                      <div className="fw-bold text-dark">#{profile.roleName || 'N/A'}</div>  
+                  </div> 
+                  }
               </div>
               <hr className="text-muted opacity-25" />
               <div className="small text-muted mb-1"><FaMapMarkerAlt className="me-2"/>Địa chỉ thường trú:</div>

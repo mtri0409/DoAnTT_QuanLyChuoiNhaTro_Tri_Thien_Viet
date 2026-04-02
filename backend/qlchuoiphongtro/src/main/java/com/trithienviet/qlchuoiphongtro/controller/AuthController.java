@@ -89,12 +89,10 @@ public class AuthController {
     }
      @PostMapping("/auth/generare-account/{profileId}")
     public ResponseEntity<UserDTO> generateAccount(@PathVariable Long profileId) {
-        
-        
+            
         UserDTO newUser = userService.generateAccountForFile(
             profileId
         );
-
         return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 }

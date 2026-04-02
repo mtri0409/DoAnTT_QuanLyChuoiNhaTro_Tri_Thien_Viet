@@ -37,8 +37,20 @@ temp/
 bin/
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #--- image
 **/images/**
 =======
 .vite/
 >>>>>>> ee57d37636e4387a4029c95a9c2ca81fc43fd468
+=======
+
+#--- image
+**/images/**
+
+.vite/
+
+=======
+.vite/**
+
+>>>>>>> dev-tri

@@ -1,18 +1,20 @@
 import axiosInstance from "./axios";
 const apiProfile = {
  
-   getAllProfiles: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+   getAllProfiles: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",branchId="",status = true) => {
     const url = `/admin/profiles`;
     return axiosInstance.get(url, {
       params: {
         pageNumber: pageNumber, // Gửi 1, 2, 3...
         pageSize: pageSize,
         sortBy: sortBy,
-        sortOrder: sortOrder
+        sortOrder: sortOrder,
+        branchId:branchId,
+        status:status
       }
     });
   },
-    searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc") => {
+    searchProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",branchId,status) => {
     const url = `/admin/profiles/search`;
     return axiosInstance.get(url, {
       params: {
@@ -20,7 +22,35 @@ const apiProfile = {
         pageNumber: pageNumber, 
         pageSize: pageSize,
         sortBy: sortBy,
-        sortOrder: sortOrder
+        sortOrder: sortOrder,
+        branchId:branchId,
+        status:status
+      }
+    });
+  },
+  getInternalProfile: (pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",status = true) => {
+    const url = `/admin/profiles/internal`;
+    return axiosInstance.get(url, {
+      params: {
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        status:status
+      }
+    });
+  }
+  ,
+  searchInternalProfiles: (keyword,pageNumber, pageSize = 10,sortBy="id",sortOrder="asc",status) => {
+    const url = `/admin/profiles/internal/search`;
+    return axiosInstance.get(url, {
+      params: {
+        keyword,
+        pageNumber: pageNumber, 
+        pageSize: pageSize,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        status:status
       }
     });
   },
@@ -33,6 +63,7 @@ const apiProfile = {
 
   getProfileById: (id) => {
     return axiosInstance.get(`/public/profiles/${id}`);
-  }
+  },
+  restoreProfile :(id) => axiosInstance.patch( `/admin/profile/restore/${id}`)
 };
 export default apiProfile;

@@ -9,19 +9,25 @@ const apiUser = {
       params: { pageNumber, pageSize, sortBy, sortOrder }
     });
   },
+  getAllUsersDeleted: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
+    return axiosInstance.get(`/admin/users/history`, {
+      params: { pageNumber, pageSize, sortBy, sortOrder }
+    });
+  },
    searchUsers: (pageNumber = 1, pageSize = 10, sortBy = "userId", sortOrder = "asc") => {
     return axiosInstance.get(`/admin/users/search`, {
       params: { pageNumber, pageSize, sortBy, sortOrder }
     });
   },
   createAccount:(profileId,data)=> axiosInstance.post(`/auth/create-account/${profileId}`,data),
-  generareAcount:(profileId)=> axiosInstance.post(`/auth/create-account/${profileId}`),
+  generareAcount:(profileId)=> axiosInstance.post(`/auth/generare-account/${profileId}`),
 
    deleteUser: (id) => axiosInstance.delete(`/admin/users/${id}`),
   // Cập nhật Role cho User
   updateRole: (id, role) => axiosInstance.patch(`/admin/users/${id}/role`, { role }),
   changeStatus:(id)=>axiosInstance.patch(`/admin/user/${id}/changeStatus`),
-  resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`)
+  resetPassword:(id)=>axiosInstance.patch(`/admin/user/${id}/reset-password`),
+  
 
   
 };

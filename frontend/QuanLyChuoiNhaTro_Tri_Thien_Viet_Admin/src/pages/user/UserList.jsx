@@ -40,6 +40,7 @@ const ListUser = () => {
         sortOrder,
       );
       setData(response);
+      console.log("Data user",response)
     } catch (err) {
       console.error("Lỗi tải danh sách user:", err);
     } finally {
@@ -137,6 +138,12 @@ const ListUser = () => {
           className="btn btn-primary shadow-sm px-4"
         >
           <FaPlus size={14} className="me-2" /> Tạo tài khoản
+        </Link>
+         <Link
+          to="/users/restore"
+          className="btn btn-danger shadow-sm px-4"
+        >
+          <FaTrash size={14} className="me-2" /> Danh sách tài khoản đã xóa
         </Link>
       </div>
 
@@ -264,7 +271,7 @@ const ListUser = () => {
                         className="cursor-pointer d-flex flex-column align-items-center"
                         onClick={() => handleToggleStatus(user.userId)}
                       >
-                        {user.isActice ? (
+                        {user.actice ? (
                           <>
                             <FaToggleOn size={24} className="text-success" />
                             <small

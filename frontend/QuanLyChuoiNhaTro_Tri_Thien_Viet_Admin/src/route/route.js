@@ -5,6 +5,7 @@ import BranchList from "../pages/branch/BranchList";
 import CreateBranch from "../pages/branch/CreateBranch";
 import UpdateBranch from "../pages/branch/UpdateBranch";
 import Dashboard from "../pages/Dashboard";
+
 import ListVehicle from "../pages/vehicle/ListVehicle";
 import CreateProfile from "../pages/proflie/CreateProfile";
 import ListProfile from "../pages/proflie/ListProfile";
@@ -14,9 +15,15 @@ import CreateAccount from "../pages/user/CreateAccount";
 import ListUser from "../pages/user/UserList";
 import CreateVehicle from "../pages/proflie/CreateVehicle";
 import UpdateVehicle from "../pages/vehicle/updateVehicle";
+
 import ListContract from "../pages/contract/ListContract";
 import CreateContract from "../pages/contract/CreateContract";
 import UpdateContract from "../pages/contract/UpdateContract";
+
+import ListUserDeleted from "../pages/user/ListUserDeleted";
+import ListProfileDeleted from "../pages/proflie/ListProfileDeleted";
+import ListVehicleDeleted from "../pages/vehicle/ListVehicleDeleted";
+
 
 import CreateRoom from "../pages/room/CreateRoom";
 import RoomDetail from "../pages/room/RoomDetail";
@@ -25,14 +32,17 @@ import UpdateRoom from "../pages/room/UpdateRoom";
 import CreateService from "../pages/service/CreateService";
 import ServiceList from "../pages/service/ServiceList";
 import UpdateService from "../pages/service/UpdateService";
+
 import ContractDetail from "../pages/contract/ContractDetail";
 import ContractMember from "../pages/contract/ContractMember";
+
 const AdminRoute = [
   { path: "/", component: Dashboard },
   { path: "/profiles", component: ListProfile },
   { path: "/profile/create", component: CreateProfile },
   { path: "/profile/:id/detail", component: ProfileDetail },
   { path: "/profile/:id/update", component: UpdateProfile },
+
   { path: "/profile/:profileId/vehicle", component: CreateVehicle },
   { path: "/users", component: ListUser },
   { path: "/users/create", component: CreateAccount },
@@ -46,6 +56,17 @@ const AdminRoute = [
   { path: "/contracts/create", component: CreateContract },
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
+
+
+  {path:"/profile/:profileId/vehicle",component:CreateVehicle},
+  { path: "/profile/restore", component: ListProfileDeleted },
+  { path: "/users", component: ListUser },
+  { path: "/users/create", component: CreateAccount },
+  { path: "/users/restore", component: ListUserDeleted },
+
+  { path: "/vehicles", component: ListVehicle },
+  {path:"/vehicle/:vehicleId/update",component:UpdateVehicle},
+  { path: "/vehicle/restore", component: ListVehicleDeleted },
 
   //branch
   { path: "/branches/:page", component: BranchList },
@@ -64,5 +85,6 @@ const AdminRoute = [
   { path: "/services/:page", component: ServiceList },
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
+
 ];
 export default AdminRoute;

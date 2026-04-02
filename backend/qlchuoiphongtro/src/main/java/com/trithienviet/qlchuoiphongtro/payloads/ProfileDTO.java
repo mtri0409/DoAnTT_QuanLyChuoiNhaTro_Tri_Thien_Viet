@@ -17,4 +17,7 @@ public class ProfileDTO {
     private String address;
     private String identityNumber;
     private Boolean isActive;
+    private Integer branchId;
+    private String branchName;
+    private String roomName;
 }
