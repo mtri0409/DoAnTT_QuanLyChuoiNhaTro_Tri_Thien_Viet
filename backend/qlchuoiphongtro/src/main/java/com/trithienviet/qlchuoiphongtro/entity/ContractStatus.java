@@ -6,5 +6,5 @@ public enum ContractStatus {
     EXPIRED, // Hết hạn tự nhiên
     TERMINATED, // Chấm dứt sớm
     CANCELLED, // Hủy trước khi active
-    DEPOSITED // Đã cọc (nếu business dùng trạng thái này)
+    DEPOSITED // Đã cọc
 }

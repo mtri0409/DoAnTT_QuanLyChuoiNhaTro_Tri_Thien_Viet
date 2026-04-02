@@ -64,10 +64,10 @@ public class Contract {
     @Max(value = 31, message = "Billing day cannot be greater than 31")
     private Integer billingDay; // lưu ngày sẽ tính tiền
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomMember> roomMembers;
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContractService> contractServices;// danh sách dịch vụ của hợp đồng
 
     @Column(nullable = false)
