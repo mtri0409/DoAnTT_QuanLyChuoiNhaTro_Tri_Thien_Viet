@@ -4,6 +4,8 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomMediaDTO;
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public interface RoomMediaService {
 
     PageResponse<RoomMediaDTO> getAllRoomMedias(
@@ -17,9 +19,9 @@ public interface RoomMediaService {
 
     List<RoomMediaDTO> getMediaByRoomId(Integer roomId);
 
-    RoomMediaDTO createRoomMedia(RoomMediaDTO roomMediaDTO);
+    RoomMediaDTO createRoomMedia(MultipartFile file, Long roomId, boolean isThumbnail);
 
-    RoomMediaDTO updateRoomMedia(Integer mediaId, RoomMediaDTO roomMediaDTO);
+    RoomMediaDTO updateRoomMedia(Integer mediaId, MultipartFile file);
 
     String deleteRoomMedia(Integer mediaId);
 }

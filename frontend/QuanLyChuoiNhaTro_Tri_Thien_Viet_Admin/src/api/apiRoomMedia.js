@@ -1,41 +1,23 @@
 import axiosInstance from "./axios";
 
 const apiRoomMedia = {
-    getAllRoomMedias: (pageNumber = 0, pageSize = 10, sortBy = 'mediaId', sortOrder = 'asc') => {
-        const url = `/admin/room-medias`;
-        return axiosInstance.get(url, {
-            params: {
-                pageNumber: pageNumber,
-                pageSize: pageSize,
-                sortBy: sortBy,
-                sortOrder: sortOrder
-            }
+    createRoomMedia: (file, roomId, isThumbnail = false) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('roomId', roomId);
+        formData.append('isThumbnail', isThumbnail);
+
+        return axiosInstance.post('/admin/room-media', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
 
-    getRoomMediaById: (mediaId) => {
-        const url = `/public/room-medias/${mediaId}`;
-        return axiosInstance.get(url);
-    },
-
     getMediaByRoomId: (roomId) => {
-        const url = `/public/rooms/${roomId}/medias`;
-        return axiosInstance.get(url);
-    },
-
-    createRoomMedia: (roomMediaDTO) => {
-        const url = `/admin/room-medias`;
-        return axiosInstance.post(url, roomMediaDTO);
-    },
-
-    updateRoomMedia: (mediaId, roomMediaDTO) => {
-        const url = `/admin/room-medias/${mediaId}`;
-        return axiosInstance.put(url, roomMediaDTO);
+        return axiosInstance.get(`/public/room-media/room/${roomId}`);
     },
 
     deleteRoomMedia: (mediaId) => {
-        const url = `/admin/room-medias/${mediaId}`;
-        return axiosInstance.delete(url);
+        return axiosInstance.delete(`/admin/room-media/${mediaId}`);
     }
 };
 

@@ -7,6 +7,7 @@ import UpdateBranch from "../pages/branch/UpdateBranch";
 import Dashboard from "../pages/Dashboard";
 import ProfileList from "../pages/proflie/ProfileList";
 import CreateRoom from "../pages/room/CreateRoom";
+import RoomDetail from "../pages/room/RoomDetail";
 import RoomList from "../pages/room/RoomList";
 import UpdateRoom from "../pages/room/UpdateRoom";
 import CreateService from "../pages/service/CreateService";
@@ -24,6 +25,7 @@ const AdminRoute = [
   { path: "/rooms/:page", component: RoomList },
   { path: "/rooms/create", component: CreateRoom },
   { path: "/rooms/:roomId/update", component: UpdateRoom },
+  { path: "/rooms/:roomId/detail", component: RoomDetail },
   //amenity
   { path: "/amenities/:page", component: AmenityList },
   { path: "/amenities/create", component: CreateAmenity  },

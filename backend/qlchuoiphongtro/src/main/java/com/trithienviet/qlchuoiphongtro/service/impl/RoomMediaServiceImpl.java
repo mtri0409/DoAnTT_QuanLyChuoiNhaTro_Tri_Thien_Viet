@@ -21,6 +21,12 @@ import com.trithienviet.qlchuoiphongtro.repo.RoomMediaRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
 import com.trithienviet.qlchuoiphongtro.service.RoomMediaService;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.*;
+
 @Service
 public class RoomMediaServiceImpl implements RoomMediaService {
 
@@ -33,8 +39,49 @@ public class RoomMediaServiceImpl implements RoomMediaService {
     @Autowired
     private ModelMapper modelMapper;
 
-    // ========== GET ALL WITH PAGINATION ==========
-    
+    // ← Thư mục lưu ảnh trên máy
+    @Value("${file.upload-dir:uploads/room-images}")
+    private String uploadDir;
+
+    // ========== HELPER: Lưu file vào folder ==========
+    private String saveFile(MultipartFile file) {
+        try {
+            // Tạo folder nếu chưa có
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Tạo tên file unique
+            String originalName = StringUtils.cleanPath(file.getOriginalFilename());
+            String fileName = System.currentTimeMillis() + "_" + originalName;
+
+            // Lưu file
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Trả về URL path
+            // → http://localhost:8080/images/1718000001_photo.jpg
+            return "/images/" + fileName;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi lưu file: " + e.getMessage());
+        }
+    }
+
+    // ========== HELPER: Xóa file cũ khỏi folder ==========
+    private void deleteFile(String url) {
+        if (url == null || !url.startsWith("/images/")) return;
+        try {
+            String fileName = url.replace("/images/", "");
+            Path filePath = Paths.get(uploadDir).resolve(fileName);
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            System.err.println("Không thể xóa file: " + e.getMessage());
+        }
+    }
+
+    // ========== GET ALL WITH PAGINATION (GIỮA NGUYÊN) ==========
     @Override
     public PageResponse<RoomMediaDTO> getAllRoomMedias(
             Integer pageNumber,
@@ -42,18 +89,13 @@ public class RoomMediaServiceImpl implements RoomMediaService {
             String sortBy,
             String sortOrder) {
 
-        // ← Tạo Sort
         Sort sort = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
-        // ← Tạo Pageable (0-indexed)
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
-
-        // ← Query database
         Page<RoomMedia> page = roomMediaRepo.findAll(pageable);
 
-        // ← Map sang DTO
         List<RoomMediaDTO> dtos = page.getContent().stream()
                 .map(media -> {
                     RoomMediaDTO dto = modelMapper.map(media, RoomMediaDTO.class);
@@ -64,7 +106,6 @@ public class RoomMediaServiceImpl implements RoomMediaService {
                 })
                 .collect(Collectors.toList());
 
-        // ← Build response
         PageResponse<RoomMediaDTO> response = new PageResponse<>();
         response.setContent(dtos);
         response.setPageNumber(page.getNumber());
@@ -76,7 +117,7 @@ public class RoomMediaServiceImpl implements RoomMediaService {
         return response;
     }
 
-    // ========== GET BY ID ==========
+    // ========== GET BY ID (GIỮA NGUYÊN) ==========
     @Override
     public RoomMediaDTO getRoomMediaById(Integer mediaId) {
         RoomMedia media = roomMediaRepo.findById(mediaId)
@@ -89,14 +130,12 @@ public class RoomMediaServiceImpl implements RoomMediaService {
         return dto;
     }
 
-    // ========== GET BY ROOM ID ==========
+    // ========== GET BY ROOM ID (GIỮA NGUYÊN) ==========
     @Override
     public List<RoomMediaDTO> getMediaByRoomId(Integer roomId) {
-        // Verify room exists
         Room room = roomRepo.findById(roomId.longValue())
                 .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId.longValue()));
 
-        // Get all media for this room
         List<RoomMedia> medias = roomMediaRepo.findByRoom_RoomId(roomId);
 
         return medias.stream()
@@ -108,47 +147,52 @@ public class RoomMediaServiceImpl implements RoomMediaService {
                 .collect(Collectors.toList());
     }
 
-    // ========== CREATE ==========
+    // ========== CREATE - SỬA ĐỂ NHẬN FILE ==========
     @Override
     @Transactional
-    public RoomMediaDTO createRoomMedia(RoomMediaDTO roomMediaDTO) {
-        // ← Map DTO → Entity
-        RoomMedia media = modelMapper.map(roomMediaDTO, RoomMedia.class);
+    public RoomMediaDTO createRoomMedia(MultipartFile file, Long roomId, boolean isThumbnail) {
+        // ← Lưu file vào folder, nhận lại URL
+        String fileUrl = saveFile(file);
 
-        // ← Set Room from roomId
-        if (roomMediaDTO.getRoomId() != null) {
-            Room room = roomRepo.findById(roomMediaDTO.getRoomId().longValue())
-                    .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomMediaDTO.getRoomId()));
-            media.setRoom(room);
-        }
+        // ← Tìm Room
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
 
-        // ← Save
+        // ← Tạo entity
+        RoomMedia media = new RoomMedia();
+        media.setUrl(fileUrl);                              // "/images/1718000001_photo.jpg"
+        media.setMediaType(file.getContentType());          // "image/jpeg"
+        media.setThumbnail(isThumbnail);
+        media.setRoom(room);
+
+        // ← Lưu DB
         RoomMedia saved = roomMediaRepo.save(media);
 
-        // ← Map lại Entity → DTO để return
+        // ← Map sang DTO trả về
         RoomMediaDTO dto = modelMapper.map(saved, RoomMediaDTO.class);
-        if (saved.getRoom() != null) {
-            dto.setRoomId(saved.getRoom().getRoomId());
-        }
+        dto.setRoomId(saved.getRoom().getRoomId());
         return dto;
     }
 
-    // ========== UPDATE ==========
+    // ========== UPDATE - SỬA ĐỂ NHẬN FILE MỚI ==========
     @Override
     @Transactional
-    public RoomMediaDTO updateRoomMedia(Integer mediaId, RoomMediaDTO roomMediaDTO) {
-        // ← Find entity
+    public RoomMediaDTO updateRoomMedia(Integer mediaId, MultipartFile file) {
+        // ← Tìm entity cũ
         RoomMedia media = roomMediaRepo.findById(mediaId)
                 .orElseThrow(() -> new ResourceNotFoundException("RoomMedia", "mediaId", mediaId.longValue()));
 
-        // ← Update fields
-        media.setUrl(roomMediaDTO.getUrl());
-        media.setMediaType(roomMediaDTO.getMediaType());
+        // ← Xóa file cũ khỏi folder
+        deleteFile(media.getUrl());
+
+        // ← Lưu file mới
+        String newUrl = saveFile(file);
+        media.setUrl(newUrl);
+        media.setMediaType(file.getContentType());
 
         // ← Save
         RoomMedia updated = roomMediaRepo.save(media);
 
-        // ← Return DTO
         RoomMediaDTO dto = modelMapper.map(updated, RoomMediaDTO.class);
         if (updated.getRoom() != null) {
             dto.setRoomId(updated.getRoom().getRoomId());
@@ -156,18 +200,19 @@ public class RoomMediaServiceImpl implements RoomMediaService {
         return dto;
     }
 
-    // ========== DELETE ==========
+    // ========== DELETE - THÊM XÓA FILE ==========
     @Override
     @Transactional
     public String deleteRoomMedia(Integer mediaId) {
-        // ← Find entity
         RoomMedia media = roomMediaRepo.findById(mediaId)
                 .orElseThrow(() -> new ResourceNotFoundException("RoomMedia", "mediaId", mediaId.longValue()));
 
-        // ← Delete
+        // ← Xóa file khỏi folder
+        deleteFile(media.getUrl());
+
+        // ← Xóa record DB
         roomMediaRepo.delete(media);
 
-        // ← Return message
         return "Xóa media phòng thành công với id: " + mediaId;
     }
 }

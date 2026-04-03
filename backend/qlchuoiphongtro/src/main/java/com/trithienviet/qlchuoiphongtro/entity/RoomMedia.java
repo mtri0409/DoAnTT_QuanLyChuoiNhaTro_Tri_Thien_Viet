@@ -38,4 +38,9 @@ public class RoomMedia {
     @JoinColumn(name="room_id")
     @JsonIgnore
     private Room room;
+
+    public void setThumbnail(boolean isThumbnail) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setThumbnail'");
+    }
 }

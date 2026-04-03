@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaBed, FaDollarSign, FaFileAlt, FaUsers, FaBuilding,
-  FaArrowLeft, FaSave, FaExclamationCircle, FaToggleOn
+  FaArrowLeft, FaSave, FaExclamationCircle, FaToggleOn,
+  FaImage, FaTimes, FaPlus, FaCheck
 } from 'react-icons/fa';
 import apiRoom from '../../api/apiRoom';
 import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
+import apiAmenity from '../../api/apiAmenity';
+import apiRoomMedia from '../../api/apiRoomMedia';
 
 const CreateRoom = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [floors, setFloors] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [allAmenities, setAllAmenities] = useState([]);
   
-  // 1. State lưu dữ liệu Form
   const [formData, setFormData] = useState({
     roomName: '',
     price: '',
@@ -22,35 +26,46 @@ const CreateRoom = () => {
     currentPeople: 0,
     maxPeople: 1,
     floorId: '',
-    Status: 'AVAILABLE'
+    Status: 'AVAILABLE',
+    amenities: []
   });
 
-  // 2. State lưu thông báo lỗi (Hứng từ Backend)
+  // ← Tách riêng: lưu file thật (File object) để upload sau
+  const [mediaFiles, setMediaFiles] = useState([]);
+  // mediaFiles = [{ file: File, preview: 'blob:...', mediaType: 'image/jpeg' }, ...]
+
   const [errors, setErrors] = useState({});
 
-  // Fetch floors & branches khi component mount
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        // ===== FLOORS =====
         const floorRes = await apiFloor.getAllFloors();
         const floorData = floorRes.data || floorRes;
         setFloors(Array.isArray(floorData) ? floorData : []);
-        console.log(' Floors loaded:', floorData);
 
-        // ===== BRANCHES =====
         const branchRes = await apiBranches.getAllBranches(1, 100);
         const branchData = branchRes.data || branchRes;
         const branchList = branchData?.content || [];
         setBranches(branchList);
-        console.log(' Branches loaded:', branchList);
+
+        const amenityRes = await apiAmenity.getAllAmenities(0, 100);
+        const amenityData = amenityRes.data || amenityRes;
+        const amenityList = amenityData?.content || [];
+        setAllAmenities(amenityList);
       } catch (err) {
-        console.error(' Fetch filters error:', err);
+        console.error('Fetch filters error:', err);
         alert('Lỗi khi tải dữ liệu!');
       }
     };
     fetchFilters();
   }, []);
+
+  // ← Cleanup blob URLs khi unmount
+  useEffect(() => {
+    return () => {
+      mediaFiles.forEach(m => URL.revokeObjectURL(m.preview));
+    };
+  }, [mediaFiles]);
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -60,7 +75,6 @@ const CreateRoom = () => {
       [name]: type === 'number' ? (value === '' ? '' : parseInt(value)) : value
     });
     
-    // Xóa lỗi của trường đó ngay khi người dùng bắt đầu nhập lại
     if (errors[name]) {
       const newErrors = { ...errors };
       delete newErrors[name];
@@ -68,12 +82,51 @@ const CreateRoom = () => {
     }
   };
 
+  // ← SỬA: Lưu File object thật, tạo preview bằng URL.createObjectURL
+  const handleFileUpload = (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newMediaFiles = Array.from(files).map(file => ({
+      file: file,                            // ← File thật để upload sau
+      preview: URL.createObjectURL(file),    // ← Preview tạm cho UI
+      mediaType: file.type || 'image/jpeg'
+    }));
+
+    setMediaFiles(prev => [...prev, ...newMediaFiles]);
+  };
+
+  // ← SỬA: Xóa file khỏi danh sách
+  const handleRemoveMedia = (index) => {
+    setMediaFiles(prev => {
+      const removed = prev[index];
+      URL.revokeObjectURL(removed.preview); // cleanup
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleAmenityChange = (amenityId) => {
+    const isSelected = formData.amenities.some(a => a.amenityId === amenityId);
+    
+    if (isSelected) {
+      setFormData({
+        ...formData,
+        amenities: formData.amenities.filter(a => a.amenityId !== amenityId)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        amenities: [...formData.amenities, { amenityId: amenityId }]
+      });
+    }
+  };
+
+  // ← SỬA: Tạo phòng trước → upload ảnh sau
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrors({}); // Reset lỗi cũ trước khi gọi API
+    setErrors({});
 
-    // Validation client-side
     if (!formData.roomName.trim()) {
       alert('Vui lòng nhập tên phòng!');
       setLoading(false);
@@ -87,17 +140,44 @@ const CreateRoom = () => {
     }
 
     try {
-      const response = await apiRoom.createRoom(formData);
-      console.log(' Response:', response);
+      // ======= BƯỚC 1: Tạo phòng (không có ảnh) =======
+      console.log('Bước 1: Tạo phòng...');
+      const roomResponse = await apiRoom.createRoom(formData);
+      const createdRoom = roomResponse.data || roomResponse;
+      const newRoomId = createdRoom.roomId;
+      console.log('Tạo phòng OK, roomId:', newRoomId);
+
+      // ======= BƯỚC 2: Upload ảnh cho phòng vừa tạo =======
+      if (mediaFiles.length > 0) {
+        console.log(`Bước 2: Upload ${mediaFiles.length} ảnh...`);
+        setUploading(true);
+
+        for (let i = 0; i < mediaFiles.length; i++) {
+          try {
+            await apiRoomMedia.createRoomMedia(
+              mediaFiles[i].file,  // File thật
+              newRoomId,           // roomId vừa tạo
+              false                // isThumbnail
+            );
+            console.log(`Upload ảnh ${i + 1}/${mediaFiles.length} OK`);
+          } catch (uploadErr) {
+            console.error(`Lỗi upload ảnh ${i + 1}:`, uploadErr);
+            // Không dừng lại, tiếp tục upload ảnh tiếp theo
+          }
+        }
+        setUploading(false);
+      }
+
       alert("Tạo phòng thành công!");
       navigate('/rooms/1');
+
     } catch (err) {
-      console.error(" Lỗi API:", err);
+      console.error("Lỗi API:", err);
+      console.error("Response data:", err.response?.data);
 
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
         
-        // Nếu backend trả về object errors từng field
         if (typeof backendErrors === 'object' && !Array.isArray(backendErrors)) {
           setErrors(backendErrors);
         } else {
@@ -108,10 +188,10 @@ const CreateRoom = () => {
       }
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
-  // Hàm Helper để hiển thị giao diện lỗi dưới mỗi ô Input
   const renderError = (fieldName) => {
     if (!errors[fieldName]) return null;
     return (
@@ -121,40 +201,27 @@ const CreateRoom = () => {
     );
   };
 
-  // Helper: lấy tên tầng từ floorId
   const getFloorName = (floorId) => {
     if (!floorId) return 'Chọn tầng';
     const floor = floors.find(f => f.floorId === parseInt(floorId));
     return floor ? `Tầng ${floor.floorNumber}` : 'Chọn tầng';
   };
 
-  // Helper: lấy tên chi nhánh từ floorId
   const getBranchName = (floorId) => {
-    console.log(' getBranchName called with floorId:', floorId);
-    console.log(' Floors:', floors);
-    console.log(' Branches:', branches);
-    
-    if (!floorId || !Array.isArray(floors)) {
-        console.log('⚠️ No floorId or floors');
-        return '-';
-    }
-    
+    if (!floorId || !Array.isArray(floors)) return '-';
     const floor = floors.find(f => f.floorId === parseInt(floorId));
-    console.log(' Found floor:', floor);
-    
-    if (!floor || !floor.branchId) {
-        console.log('⚠️ No floor or floor.branchId:', floor?.branchId);
-        return '-';
-    }
-    
+    if (!floor || !floor.branchId) return '-';
     const branch = branches.find(b => b.branchId === floor.branchId);
-    console.log(' Found branch:', branch);
-    
     return branch ? branch.branchName : '-';
-};
+  };
+
+  const getAmenityName = (amenityId) => {
+    const amenity = allAmenities.find(a => a.amenityId === amenityId);
+    return amenity ? amenity.amenityName : 'Không xác định';
+  };
+
   return (
     <div className="container-fluid py-4">
-      {/* Header Điều hướng */}
       <div className="d-flex align-items-center gap-3 mb-4">
         <button 
           onClick={() => navigate(-1)} 
@@ -172,7 +239,6 @@ const CreateRoom = () => {
       <form onSubmit={handleSubmit} noValidate>
         <div className="row g-4">
           
-          {/* CỘT TRÁI: THÔNG TIN CƠ BẢN */}
           <div className="col-lg-5">
             <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
               <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
@@ -182,7 +248,6 @@ const CreateRoom = () => {
                 <h6 className="fw-bold mb-0 text-primary">Thông tin cơ bản</h6>
               </div>
 
-              {/* TÊN PHÒNG */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">TÊN PHÒNG <span className="text-danger">*</span></label>
                 <input 
@@ -197,7 +262,6 @@ const CreateRoom = () => {
                 {renderError('roomName')}
               </div>
 
-              {/* GIÁ TIỀN */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">GIÁ TIỀN (VNĐ) <span className="text-danger">*</span></label>
                 <div className="input-group">
@@ -218,7 +282,6 @@ const CreateRoom = () => {
                 {renderError('price')}
               </div>
 
-              {/* SỐ NGƯỜI HIỆN TẠI */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI HIỆN TẠI</label>
                 <input 
@@ -233,7 +296,6 @@ const CreateRoom = () => {
                 {renderError('currentPeople')}
               </div>
 
-              {/* SỐ NGƯỜI TỐI ĐA */}
               <div className="mb-0">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI TỐI ĐA <span className="text-danger">*</span></label>
                 <input 
@@ -251,7 +313,6 @@ const CreateRoom = () => {
             </div>
           </div>
 
-          {/* CỘT PHẢI: THÔNG TIN THÊM */}
           <div className="col-lg-7">
             <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
               <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
@@ -263,12 +324,11 @@ const CreateRoom = () => {
 
               <div className="row g-3">
                 
-                {/* MÔ TẢ */}
                 <div className="col-12">
                   <label className="form-label small fw-bold text-muted">MÔ TẢ CHI TIẾT <span className="text-danger">*</span></label>
                   <textarea 
                     name="description" 
-                    rows="4" 
+                    rows="3" 
                     className={`form-control bg-light border-0 ${errors.description ? 'is-invalid border-danger' : ''}`} 
                     placeholder="Mô tả phòng, tiện ích, điều kiện, v.v..." 
                     value={formData.description}
@@ -281,7 +341,6 @@ const CreateRoom = () => {
                   </small>
                 </div>
 
-                {/* TẦNG */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
                     <FaBuilding className="me-1 text-muted"/> TẦNG <span className="text-danger">*</span>
@@ -303,7 +362,6 @@ const CreateRoom = () => {
                   {renderError('floorId')}
                 </div>
 
-                {/* TRẠNG THÁI */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
                     <FaToggleOn className="me-1 text-muted"/> TRẠNG THÁI
@@ -321,7 +379,93 @@ const CreateRoom = () => {
                   {renderError('Status')}
                 </div>
 
-                {/* TÓMLẠI */}
+                <div className="col-12 mt-3">
+                  <label className="form-label small fw-bold text-muted">TIỆN ÍCH</label>
+                  <div className="bg-light rounded-3 p-3" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                    {Array.isArray(allAmenities) && allAmenities.length > 0 ? (
+                      allAmenities.map(amenity => (
+                        <div key={amenity.amenityId} className="form-check mb-2">
+                          <input 
+                            className="form-check-input" 
+                            type="checkbox" 
+                            id={`amenity-${amenity.amenityId}`}
+                            checked={formData.amenities.some(a => a.amenityId === amenity.amenityId)}
+                            onChange={() => handleAmenityChange(amenity.amenityId)}
+                          />
+                          <label className="form-check-label small" htmlFor={`amenity-${amenity.amenityId}`}>
+                            {amenity.amenityName}
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <small className="text-muted">Chưa có tiện ích nào</small>
+                    )}
+                  </div>
+                </div>
+
+                {/* ========== PHẦN HÌNH ẢNH - ĐÃ SỬA ========== */}
+                <div className="col-12 mt-3">
+                  <label className="form-label small fw-bold text-muted">
+                    <FaImage className="me-1 text-muted"/> HÌNH ẢNH PHÒNG
+                  </label>
+                  
+                  <div className="bg-light rounded-3 p-3 mb-3">
+
+                    {/* Chọn file từ máy */}
+                    <div className="mb-3">
+                      <label className="form-label small fw-bold text-muted">Chọn file từ máy</label>
+                      <input 
+                        type="file" 
+                        multiple
+                        accept="image/*,video/*"
+                        className="form-control bg-white border-0 py-2 small"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                      />
+                      {uploading && (
+                        <div className="d-flex align-items-center gap-2 mt-2">
+                          <span className="spinner-border spinner-border-sm text-primary"></span>
+                          <small className="text-muted">Đang upload ảnh...</small>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Preview ảnh đã chọn */}
+                    {mediaFiles.length > 0 && (
+                      <div className="mt-3">
+                        <small className="text-muted fw-bold d-block mb-2">
+                          Ảnh/Video đã chọn ({mediaFiles.length})
+                        </small>
+                        <div className="row g-2">
+                          {mediaFiles.map((media, idx) => (
+                            <div key={idx} className="col-6 col-md-4">
+                              <div className="bg-white rounded-2 p-2 position-relative">
+                                <img 
+                                  src={media.preview} 
+                                  alt="preview" 
+                                  className="img-fluid rounded-2" 
+                                  style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} 
+                                />
+                                <button 
+                                  type="button"
+                                  className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1"
+                                  onClick={() => handleRemoveMedia(idx)}
+                                >
+                                  <FaTimes size={10} />
+                                </button>
+                                <small className="text-muted d-block text-center mt-1" style={{ fontSize: '10px' }}>
+                                  {media.file.name}
+                                </small>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* TÓM TẮT */}
                 <div className="col-12 mt-3">
                   <div className="alert alert-light border-1 border-secondary-subtle">
                     <small className="text-muted fw-bold d-block mb-2">TÓM LẠI</small>
@@ -340,31 +484,50 @@ const CreateRoom = () => {
                           {formData.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(formData.price) : '(chưa nhập)'}
                         </strong>
                       </div>
-                      <div>
+                      <div className="mb-2">
                         <span className="text-muted">Sức chứa:</span> <strong className="text-dark">{formData.currentPeople}/{formData.maxPeople} người</strong>
                       </div>
+                      {formData.amenities.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-muted">Tiện ích:</span>
+                          <div className="mt-1">
+                            {formData.amenities.map((a, idx) => (
+                              <span key={idx} className="badge bg-primary me-1 mb-1">
+                                <FaCheck size={10} className="me-1" /> {getAmenityName(a.amenityId)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {mediaFiles.length > 0 && (
+                        <div>
+                          <span className="text-muted">Ảnh/Video:</span> <strong className="text-dark">{mediaFiles.length} file</strong>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* NÚT THAO TÁC */}
                 <div className="col-12 mt-auto pt-3 text-end">
                   <hr className="text-muted opacity-25 mb-4" />
                   <button 
                     type="button" 
-                    onClick={() => navigate('/admin/rooms')}
+                    onClick={() => navigate('/rooms/1')}
                     className="btn btn-light px-4 me-2 border-0 fw-bold"
-                    disabled={loading}
+                    disabled={loading || uploading}
                   >
                     Hủy bỏ
                   </button>
                   <button 
                     type="submit" 
-                    disabled={loading}
+                    disabled={loading || uploading}
                     className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2"
                   >
                     {loading ? (
-                      <><span className="spinner-border spinner-border-sm"></span> Đang lưu...</>
+                      <>
+                        <span className="spinner-border spinner-border-sm"></span> 
+                        {uploading ? 'Đang upload ảnh...' : 'Đang lưu...'}
+                      </>
                     ) : (
                       <><FaSave size={14}/> Lưu phòng</>
                     )}

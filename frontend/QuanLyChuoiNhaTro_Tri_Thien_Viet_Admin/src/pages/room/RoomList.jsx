@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaBed, FaSearch, FaPlus, FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
+import { FaBed, FaSearch, FaPlus, FaEdit, FaTrash, FaTimes, FaEye } from 'react-icons/fa';
 import apiRoom from '../../api/apiRoom';
 import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
@@ -534,6 +534,13 @@ const RoomList = () => {
                                         </td>
                                         <td className="text-end pe-4">
                                             <div className="d-flex justify-content-end gap-1">
+                                                <Link
+                                                    to={`/rooms/${item.roomId}/detail`}
+                                                    className="btn btn-sm btn-light border-0"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <FaEye className="text-primary" />
+                                                </Link>
                                                 <Link
                                                     to={`/rooms/${item.roomId}/update`}
                                                     className="btn btn-sm btn-light border-0"
