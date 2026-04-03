@@ -58,25 +58,10 @@ public class AmenityServiceImpl implements AmenityService {
         return response;
     }
 
-    public class ResourceNotFoundException extends RuntimeException {
-
-        private String resourceName;
-        private String fieldName;
-        private Object fieldValue;
-
-        public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
-            super(String.format("%s not found with %s : '%s'",
-                    resourceName, fieldName, fieldValue));
-            this.resourceName = resourceName;
-            this.fieldName = fieldName;
-            this.fieldValue = fieldValue;
-        }
-    }
-
     @Override
     public AmenityDTO getAmenityById(Integer amenityId) {
         Amenity amenity = amenityRepo.findById(amenityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId));
+                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId.longValue()));
 
         return modelMapper.map(amenity, AmenityDTO.class);
     }
@@ -95,7 +80,7 @@ public class AmenityServiceImpl implements AmenityService {
     @Transactional
     public AmenityDTO updateAmenity(Integer amenityId, AmenityDTO amenityDTO) {
         Amenity amenity = amenityRepo.findById(amenityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId));
+                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId.longValue()));
 
         amenity.setAmenityName(amenityDTO.getAmenityName());
         amenity.setIcon(amenityDTO.getIcon());
@@ -109,7 +94,7 @@ public class AmenityServiceImpl implements AmenityService {
     @Transactional
     public String deleteAmenity(Integer amenityId) {
         Amenity amenity = amenityRepo.findById(amenityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId));
+                .orElseThrow(() -> new ResourceNotFoundException("Amenity", "amenityId", amenityId.longValue()));
 
         amenityRepo.delete(amenity);
 
