@@ -33,11 +33,10 @@ public interface ContractRepo extends JpaRepository<Contract, Long> {
         List<Contract> findByRoom_RoomIdAndIsDeletedFalse(Long roomId);
 
         @Query("SELECT c FROM Contract c WHERE c.isDeleted = false AND (" +
-                        "(:keyword IS NULL OR LOWER(c.representative.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR "
-                        +
-                        "(:keyword IS NULL OR LOWER(c.room.roomName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
-                        "(:keyword IS NULL OR LOWER(c.representative.phone) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR "
-                        +
-                        "(:keyword IS NULL OR LOWER(c.representative.identityNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
+                        "LOWER(c.representative.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(c.room.roomName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(c.representative.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(c.representative.identityNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "CAST(c.contractId AS string) LIKE CONCAT('%', :keyword, '%'))")
         Page<Contract> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
