@@ -60,14 +60,18 @@ public class ContractServiceImpl implements ContractService {
     // ==================== searchContracts (phân trang) ====================
     @Override
     public Page<ContractDTO> searchContracts(String keyword, Pageable pageable) {
-        String normalizedKeyword = keyword;
-        if (keyword != null) {
-            // Strip prefix "HD-" nếu có
-            normalizedKeyword = keyword.replaceAll("(?i)^HD-0*", "").replaceAll("^0+", "");
-            if (normalizedKeyword.isEmpty())
-                normalizedKeyword = keyword; // fallback
+        if (keyword == null || keyword.isBlank()) {
+            return contractRepo.findByIsDeletedFalse(pageable).map(this::mapToDTO);
         }
-        return contractRepo.searchByKeyword(normalizedKeyword, pageable)
+
+        String trimmed = keyword.trim();
+
+        // "HD-00002" → "2", "00002" → "2", "A202" → "A202" (giữ nguyên)
+        String rawId = trimmed
+                .replaceAll("(?i)^HD-", "") // bỏ prefix HD-
+                .replaceAll("^0*(\\d+)$", "$1"); // bỏ leading zeros
+
+        return contractRepo.searchByKeyword(trimmed, rawId, pageable)
                 .map(this::mapToDTO);
     }
 
