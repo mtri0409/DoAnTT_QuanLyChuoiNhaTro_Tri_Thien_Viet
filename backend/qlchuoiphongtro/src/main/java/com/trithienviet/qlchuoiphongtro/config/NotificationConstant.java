@@ -22,7 +22,7 @@ public class NotificationConstant {
 
     // --- MẪU THÔNG BÁO HÓA ĐƠN ---
     public static final String BILL_NEW_TITLE = "Hóa đơn tiền phòng mới";
-    public static final String BILL_NEW_CONTENT = "Hóa đơn tháng %s cho phòng %s đã có. Tổng tiền: %s VNĐ. Hạn thanh toán: %s.";
+    public static final String BILL_NEW_CONTENT = "Hóa đơn tháng %s cho phòng %s đã có. Tổng tiền: %s VNĐ. Hạn thanh toán: .";
 
     public static final String BILL_REMIND_TITLE = "Nhắc nhở thanh toán hóa đơn";
     public static final String BILL_REMIND_CONTENT = "Bạn có hóa đơn chưa thanh toán với số tiền %s VNĐ. Vui lòng hoàn tất để tránh bị gián đoạn dịch vụ.";

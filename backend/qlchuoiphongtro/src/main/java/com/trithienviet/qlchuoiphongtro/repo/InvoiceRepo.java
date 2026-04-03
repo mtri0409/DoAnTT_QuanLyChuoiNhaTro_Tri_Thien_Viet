@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,4 +59,7 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
                         @Param("contractId") Long contractId,
                         @Param("branchId") Long branchId,
                         Pageable pageable);
+        List<Invoice> findByStatus(String status);
+        List<Invoice> findByStatusAndPeriodMonthAndPeriodYear(String status, int month, int year);
+        List<Invoice> findByStatusInAndDueDateBefore(List<String> statuses, LocalDate date);
 }

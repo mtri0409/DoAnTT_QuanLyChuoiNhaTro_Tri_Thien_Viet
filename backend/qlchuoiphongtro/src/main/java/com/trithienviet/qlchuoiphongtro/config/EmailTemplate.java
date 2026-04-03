@@ -32,17 +32,46 @@ public class EmailTemplate {
                "</div>";
     }
 
-    // 3. Mẫu Có hóa đơn cần thanh toán
-    public static String getNewBill(String userName, String month, String amount) {
-        return "<div style='max-width: 600px;'>" +
-               "  <div style='" + HEADER_STYLE + "'><h2>HÓA ĐƠN MỚI THÁNG " + month + "</h2></div>" +
-               "  <div style='" + BODY_STYLE + "'>" +
-               "    <p>Chào <b>" + userName + "</b>,</p>" +
-               "    <p>Hệ thống vừa khởi tạo hóa đơn thanh toán cho phòng của bạn.</p>" +
-               "    <p>Số tiền cần thanh toán: <span style='color: #d32f2f; font-weight: bold;'>" + amount + " VNĐ</span></p>" +
-               "    <a href='http://localhost:3000/billing' style='" + BUTTON_STYLE + "'>Thanh toán ngay</a>" +
-               "  </div>" +
-               "</div>";
+    // 3. Mẫu Thông báo Hóa đơn (Gọn gàng + Hạn chót)
+    public static String getNewBill(String userName, String month, String year, String amount, 
+                                    String roomFee, String serviceTotal, String deadline) {
+        return "<div style='max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; font-family: Arial, sans-serif; border-radius: 8px; overflow: hidden;'>" +
+            "  <div style='background-color: #2e7d32; " + HEADER_STYLE + " text-align: center;'>" +
+            "    <h2 style='margin:0; color: white;'>THÔNG BÁO HÓA ĐƠN THÁNG " + month + "/" + year + "</h2>" +
+            "  </div>" +
+            "  <div style='" + BODY_STYLE + "'>" +
+            "    <p>Chào <b>" + userName + "</b>,</p>" +
+            "    <p>Hệ thống vừa cập nhật hóa đơn tiền phòng tháng " + month + ". Vui lòng kiểm tra tổng chi phí cần thanh toán dưới đây:</p>" +
+            "    " +
+            "    <div style='background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #eee;'>" +
+            "      <div style='display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;'>" +
+            "        <span style='color: #555;'>Tiền phòng:</span>" +
+            "        <b style='float: right;'>" + roomFee + " VNĐ</b>" +
+            "      </div>" +
+            "      <div style='display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px;'>" +
+            "        <span style='color: #555;'>Tổng điện, nước & dịch vụ:</span>" +
+            "        <b style='float: right;'>" + serviceTotal + " VNĐ</b>" +
+            "      </div>" +
+            "      <div style='display: flex; justify-content: space-between; padding-top: 5px; margin-bottom: 10px;'>" +
+            "        <span style='font-size: 16px; font-weight: bold;'>TỔNG THANH TOÁN:</span>" +
+            "        <span style='float: right; font-size: 18px; color: #d32f2f; font-weight: bold;'>" + amount + " VNĐ</span>" +
+            "      </div>" +
+            "      <div style='border-top: 2px dashed #ff9800; margin-top: 10px; padding-top: 10px; color: #e65100; font-weight: bold; font-size: 14px; text-align: center;'>" +
+            "        📅 HẠN CHÓT THANH TOÁN: " + deadline + "" +
+            "      </div>" +
+            "    </div>" +
+            "    " +
+            "    <p style='background-color: #fff3e0; padding: 10px; border-left: 4px solid #ff9800; font-size: 13px; color: #666;'>" +
+            "      💡 <b>Lưu ý:</b> Các chỉ số điện, nước chi tiết và hình ảnh đồng hồ thực tế đã được cập nhật đầy đủ trên hệ thống. Vui lòng truy cập để xem chi tiết." +
+            "    </p>" +
+            "    " +
+            "    <div style='text-align: center; margin-top: 25px;'>" +
+            "      <a href='http://localhost:3000/billing' style='" + BUTTON_STYLE + "'>Xem chi tiết & Thanh toán</a>" +
+            "    </div>" +
+            "    " +
+            "    <p style='margin-top: 25px; font-size: 12px; color: #999; text-align: center;'>Trân trọng,<br>Ban quản lý hệ thống</p>" +
+            "  </div>" +
+            "</div>";
     }
 
     // 4. Mẫu Hóa đơn quá hạn

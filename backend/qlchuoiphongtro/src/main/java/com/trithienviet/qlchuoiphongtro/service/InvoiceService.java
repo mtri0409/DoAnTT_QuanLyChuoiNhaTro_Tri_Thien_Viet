@@ -82,7 +82,7 @@ public interface InvoiceService {
 
         /** Gửi hóa đơn cho khách: tính lại total, DRAFT → PENDING, set dueDate */
         InvoiceDTO sendInvoice(Long invoiceId);
-
+        List<InvoiceDTO> sendAllInvoices(Integer month, Integer year) ;
         /** Xác nhận thanh toán 1 lần (MONTHLY): PENDING → PAID */
         InvoiceDTO markAsPaid(Long invoiceId);
 
@@ -91,4 +91,6 @@ public interface InvoiceService {
 
         /** Tính lại totalAmount từ các InvoiceDetail hiện có */
         InvoiceDTO recalculate(Long invoiceId);
+
+        void remindInvoice();
 }

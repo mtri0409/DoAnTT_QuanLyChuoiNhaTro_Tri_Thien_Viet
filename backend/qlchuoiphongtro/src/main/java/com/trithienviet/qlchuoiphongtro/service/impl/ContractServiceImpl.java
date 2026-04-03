@@ -20,6 +20,7 @@ import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomMember;
 import com.trithienviet.qlchuoiphongtro.entity.RoomStatus;
 import com.trithienviet.qlchuoiphongtro.entity.ServiceItem;
+import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ContractRepo;
@@ -57,6 +58,7 @@ public class ContractServiceImpl implements ContractService {
 
     private final InvoiceService invoiceService;
 
+    private final NotificationHelper notificationHelper;
     // ==================== terminateContract ====================
     @Override
     public void terminateContract(Long contractId) {
@@ -362,7 +364,7 @@ public class ContractServiceImpl implements ContractService {
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.ACTIVE);
                 updatedContracts.add(contract);
                 
-                sendNotificationActiveContract(contract);
+               notificationHelper.sendNotificationActiveContract(contract);
 
             } else if (contract.getStatus() == ContractStatus.ACTIVE
                     && contract.getEndDate().isBefore(today)) {
@@ -371,7 +373,7 @@ public class ContractServiceImpl implements ContractService {
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.EXPIRED);
                 updatedContracts.add(contract);
 
-                  sendNotificationExpiredContract(contract);
+                  notificationHelper.sendNotificationExpiredContract(contract);
             }
         }
 
@@ -619,58 +621,5 @@ public class ContractServiceImpl implements ContractService {
         roomRepo.save(room);
     }
 
-    private void sendNotificationActiveContract(Contract contract) {
-        // 1. Lấy dữ liệu từ object contract
-        String email = contract.getRepresentative().getEmail();
-        String fullName = contract.getRepresentative().getFullName();
-        String roomName = contract.getRoom().getRoomName();
-        
-        // 2. Build nội dung dùng Constant (Gom logic vào một chỗ)
-        String template = EmailTemplate.getContractActivated(
-            fullName, roomName, 
-            contract.getStartDate().toString(), 
-            contract.getEndDate().toString()
-        );
-        
-        String title = NotificationConstant.CONTRACT_ACTIVE_TITLE;
-        String content = String.format(
-            NotificationConstant.CONTRACT_ACTIVE_CONTENT, 
-            fullName, roomName
-        );
-
-            emailService.sendHtmlEmail(email, "HỢP ĐỒNG ĐÃ ĐƯỢC KÍCH HOẠT", template);
-            notificationService.sendSystemNotification(
-            contract.getRepresentative().getProfileId(), 
-            title, 
-            content, 
-            NotificationConstant.TYPE_CONTRACT
-        );
-    }
-
-    private void sendNotificationExpiredContract(Contract contract) {
-    
-        String email = contract.getRepresentative().getEmail();
-        String fullName = contract.getRepresentative().getFullName();
-        String roomName = contract.getRoom().getRoomName();
-        
-      
-        String template = EmailTemplate.getContractExpired(
-            fullName, roomName, 
-            contract.getEndDate().toString()
-        );
-        
-        String title = NotificationConstant.CONTRACT_ACTIVE_TITLE;
-        String content = String.format(
-            NotificationConstant.CONTRACT_ACTIVE_CONTENT, 
-            fullName, roomName
-        );
-
-            emailService.sendHtmlEmail(email, "HỢP ĐỒNG ĐÃ HẾT HẠN", template);
-            notificationService.sendSystemNotification(
-            contract.getRepresentative().getProfileId(), 
-            title, 
-            content, 
-            NotificationConstant.TYPE_CONTRACT
-        );
-    }
+   
 }
