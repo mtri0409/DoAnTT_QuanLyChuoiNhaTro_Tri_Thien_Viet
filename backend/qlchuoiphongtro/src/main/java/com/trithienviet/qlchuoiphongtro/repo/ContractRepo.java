@@ -37,6 +37,6 @@ public interface ContractRepo extends JpaRepository<Contract, Long> {
                         "LOWER(c.room.roomName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                         "LOWER(c.representative.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                         "LOWER(c.representative.identityNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-                        "CAST(c.contractId AS string) LIKE CONCAT('%', :keyword, '%'))")
+                        "CAST(c.contractId AS char) LIKE CONCAT('%', :keyword, '%'))")
         Page<Contract> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

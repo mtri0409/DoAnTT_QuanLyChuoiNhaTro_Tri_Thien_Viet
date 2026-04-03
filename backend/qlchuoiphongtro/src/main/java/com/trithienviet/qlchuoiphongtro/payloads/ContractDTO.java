@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class ContractDTO {
     private Long contractId;
     private Long roomId;
+    private String roomName;
     private BigDecimal rentPrice;
     private BigDecimal depositAmount;
     private LocalDate startDate;

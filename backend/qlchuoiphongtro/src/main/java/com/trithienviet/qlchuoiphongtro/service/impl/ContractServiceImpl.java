@@ -60,7 +60,14 @@ public class ContractServiceImpl implements ContractService {
     // ==================== searchContracts (phân trang) ====================
     @Override
     public Page<ContractDTO> searchContracts(String keyword, Pageable pageable) {
-        return contractRepo.searchByKeyword(keyword, pageable)
+        String normalizedKeyword = keyword;
+        if (keyword != null) {
+            // Strip prefix "HD-" nếu có
+            normalizedKeyword = keyword.replaceAll("(?i)^HD-0*", "").replaceAll("^0+", "");
+            if (normalizedKeyword.isEmpty())
+                normalizedKeyword = keyword; // fallback
+        }
+        return contractRepo.searchByKeyword(normalizedKeyword, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -503,6 +510,7 @@ public class ContractServiceImpl implements ContractService {
         return ContractDTO.builder()
                 .contractId(contract.getContractId())
                 .roomId(contract.getRoom().getRoomId())
+                .roomName(contract.getRoom().getRoomName())
                 .rentPrice(contract.getRentPrice())
                 .depositAmount(contract.getDepositAmount())
                 .startDate(contract.getStartDate())
