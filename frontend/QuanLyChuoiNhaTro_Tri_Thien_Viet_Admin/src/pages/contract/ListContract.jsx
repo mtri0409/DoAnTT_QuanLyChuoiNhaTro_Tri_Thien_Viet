@@ -14,7 +14,7 @@ import apiContract from "../../api/apiContract";
 import Pagination from "../../components/Pagination";
 import { Link, useNavigate } from "react-router-dom";
 
-// Mapping trạng thái sang màu badge Bootstrap
+// Mapping trạng thái sang màu badge
 const STATUS_BADGE = {
   ACTIVE: { cls: "bg-success-subtle text-success", label: "Đang hiệu lực" },
   EXPIRED: { cls: "bg-danger-subtle text-danger", label: "Hết hạn" },
@@ -38,6 +38,12 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+// Format mã hợp đồng: HD-00001 (tránh trùng dạng số thuần)
+const formatContractCode = (id) => {
+  if (!id) return "N/A";
+  return `HD-${String(id).padStart(5, "0")}`;
+};
+
 const ListContract = () => {
   const [data, setData] = useState({
     content: [],
@@ -45,7 +51,8 @@ const ListContract = () => {
     totalPages: 0,
     totalElements: 0,
   });
-  const [currentPage, setCurrentPage] = useState(1);
+
+  const [currentPage, setCurrentPage] = useState(1); // UI dùng 1-based
   const [loading, setLoading] = useState(false);
   const [autoUpdating, setAutoUpdating] = useState(false);
   const navigate = useNavigate();
@@ -61,15 +68,18 @@ const ListContract = () => {
   const [sortBy, setSortBy] = useState("contractId");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // Hàm gọi API chung — server-side pagination + search + filter
+  // ====================== FETCH DATA ======================
   const fetchContracts = async () => {
     setLoading(true);
     try {
+      const pageForBackend = currentPage - 1; // Backend dùng 0-based
+
       let response;
+
       if (appliedSearch.trim()) {
         response = await apiContract.searchContracts(
-          appliedSearch,
-          currentPage,
+          appliedSearch.trim(),
+          pageForBackend,
           10,
           sortBy,
           sortOrder,
@@ -77,35 +87,45 @@ const ListContract = () => {
       } else if (filterStatus) {
         response = await apiContract.getContractsByStatus(
           filterStatus,
-          currentPage,
+          pageForBackend,
           10,
           sortBy,
           sortOrder,
         );
       } else {
         response = await apiContract.getAllContracts(
-          currentPage,
+          pageForBackend,
           10,
           sortBy,
           sortOrder,
         );
       }
+
       setData(response);
     } catch (err) {
       console.error("Lỗi tải hợp đồng:", err);
+      setData({
+        content: [],
+        pageNumber: 0,
+        totalPages: 0,
+        totalElements: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  // ====================== EFFECTS ======================
   useEffect(() => {
     fetchContracts();
-  }, [currentPage, sortBy, sortOrder, appliedSearch, filterStatus]);
+  }, [currentPage, appliedSearch, filterStatus, sortBy, sortOrder]);
 
+  // ====================== HANDLERS ======================
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setCurrentPage(1);
     setAppliedSearch(searchTerm);
+    setFilterStatus(""); // Tắt filter khi search
   };
 
   const handleClearSearch = () => {
@@ -114,6 +134,14 @@ const ListContract = () => {
     setCurrentPage(1);
   };
 
+  const handleFilterChange = (e) => {
+    setFilterStatus(e.target.value);
+    setAppliedSearch(""); // Tắt search khi filter
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
+  // Nhất quán với ListProfile: nhận page (0-based từ Pagination) → +1 để lưu
   const handlePageChange = (page) => {
     setCurrentPage(page + 1);
   };
@@ -125,10 +153,12 @@ const ListContract = () => {
       )
     )
       return;
+
     try {
       setLoading(true);
       await apiContract.deleteContract(id);
       alert("Xóa hợp đồng thành công!");
+
       if (data.content.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       } else {
@@ -136,8 +166,7 @@ const ListContract = () => {
       }
     } catch (err) {
       console.error("Lỗi khi xóa:", err);
-      const msg =
-        err.response?.data?.message || "Lỗi ràng buộc dữ liệu, không thể xóa!";
+      const msg = err.response?.data?.message || "Không thể xóa hợp đồng!";
       alert(msg);
     } finally {
       setLoading(false);
@@ -148,8 +177,8 @@ const ListContract = () => {
     if (!window.confirm("Tự động cập nhật trạng thái tất cả hợp đồng?")) return;
     try {
       setAutoUpdating(true);
-      const res = await apiContract.autoUpdateStatus();
-      alert(`Đã cập nhật ${res.updatedCount} hợp đồng!`);
+      await apiContract.autoUpdateStatus();
+      alert("Đã cập nhật trạng thái hợp đồng thành công!");
       fetchContracts();
     } catch (err) {
       console.error("Lỗi auto-update:", err);
@@ -184,13 +213,13 @@ const ListContract = () => {
       </div>
 
       <div className="card border-0 shadow-sm rounded-3">
-        {/* TOOLBAR: SEARCH, FILTER & SORT */}
-        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center gap-3">
-          {/* Ô Search có nút bấm */}
+        {/* TOOLBAR: SEARCH + FILTER + SORT */}
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+          {/* Search Form */}
           <form
             onSubmit={handleSearchSubmit}
             className="d-flex gap-2"
-            style={{ maxWidth: "400px", flex: 1 }}
+            style={{ maxWidth: "420px", flex: 1 }}
           >
             <div className="input-group">
               <span className="input-group-text bg-light border-0">
@@ -199,7 +228,7 @@ const ListContract = () => {
               <input
                 type="text"
                 className="form-control bg-light border-0 small"
-                placeholder="Tìm theo ID, phòng, trạng thái..."
+                placeholder="Tìm theo mã hợp đồng, số phòng..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -218,16 +247,13 @@ const ListContract = () => {
             </button>
           </form>
 
-          {/* Filter + Sort */}
+          {/* Filter & Sort */}
           <div className="d-flex gap-2 flex-nowrap align-items-center">
             <select
               className="form-select form-select-sm border-0 bg-light"
-              style={{ minWidth: "150px" }}
+              style={{ minWidth: "160px" }}
               value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={handleFilterChange}
             >
               <option value="">Tất cả trạng thái</option>
               <option value="ACTIVE">Đang hiệu lực</option>
@@ -261,8 +287,8 @@ const ListContract = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
+              <option value="asc">Tăng dần</option>
             </select>
           </div>
         </div>
@@ -272,7 +298,7 @@ const ListContract = () => {
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
               <tr className="text-muted small text-uppercase">
-                <th className="ps-4 py-3">Hợp đồng</th>
+                <th className="ps-4 py-3">Mã HĐ</th>
                 <th>Phòng</th>
                 <th>Ngày bắt đầu</th>
                 <th>Ngày kết thúc</th>
@@ -289,7 +315,7 @@ const ListContract = () => {
                     Đang tải...
                   </td>
                 </tr>
-              ) : data.content?.length > 0 ? (
+              ) : data.content && data.content.length > 0 ? (
                 data.content.map((item) => {
                   const badge = getStatusBadge(item.status);
                   return (
@@ -297,12 +323,15 @@ const ListContract = () => {
                       <td className="ps-4">
                         <div className="d-flex align-items-center">
                           <FaFileContract className="fs-5 text-secondary me-2" />
-                          <span className="fw-bold">#{item.contractId}</span>
+                          <span className="fw-bold">
+                            {formatContractCode(item.contractId)}
+                          </span>
                         </div>
                       </td>
                       <td>
                         <span className="badge bg-light text-dark border fw-normal">
-                          Phòng {item.roomId || "N/A"}
+                          {item.roomName ||
+                            (item.roomId ? `Phòng #${item.roomId}` : "N/A")}
                         </span>
                       </td>
                       <td className="small">{formatDate(item.startDate)}</td>
@@ -370,7 +399,7 @@ const ListContract = () => {
           </table>
         </div>
 
-        {/* PHÂN TRANG */}
+        {/* PHÂN TRANG - nhất quán với ListProfile */}
         <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
           <small className="text-muted">
             Tổng: {data.totalElements} hợp đồng

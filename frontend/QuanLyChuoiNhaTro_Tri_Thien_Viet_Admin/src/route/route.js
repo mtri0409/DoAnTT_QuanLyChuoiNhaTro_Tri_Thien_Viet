@@ -15,6 +15,7 @@ import ListUser from "../pages/user/UserList";
 import CreateVehicle from "../pages/proflie/CreateVehicle";
 import UpdateVehicle from "../pages/vehicle/updateVehicle";
 import ListContract from "../pages/contract/ListContract";
+import CreateContract from "../pages/contract/CreateContract";
 
 import CreateRoom from "../pages/room/CreateRoom";
 import RoomDetail from "../pages/room/RoomDetail";
@@ -55,5 +56,7 @@ const AdminRoute = [
   { path: "/services/:page", component: ServiceList },
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
+
+  { path: "/contracts/create", component: CreateContract },
 ];
 export default AdminRoute;

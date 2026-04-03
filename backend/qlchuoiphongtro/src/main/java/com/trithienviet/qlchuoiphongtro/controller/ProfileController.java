@@ -26,7 +26,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 
-
 @RestController
 @RequestMapping("/api")
 @SecurityRequirement(name = "Manager Room Application")
@@ -39,30 +38,32 @@ public class ProfileController {
     public ResponseEntity<ProfileRequestDTO> createProfile(@Valid @RequestBody ProfileRequestDTO profile) {
         // Gọi Service để lưu vào DB
         ProfileRequestDTO createdProfile = profileService.createProfile(profile);
-        
+
         // Trả về kèm mã 201 Created (Đúng chuẩn RESTful)
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
-       @PutMapping("/public/profiles/{profileId}") 
-    public ResponseEntity<ProfileRequestDTO> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,@PathVariable Long profileId) {
+
+    @PutMapping("/public/profiles/{profileId}")
+    public ResponseEntity<ProfileRequestDTO> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,
+            @PathVariable Long profileId) {
         // Gọi Service để lưu vào DB
-        ProfileRequestDTO updateProfile = profileService.updateProfile(profile,profileId);
-        
+        ProfileRequestDTO updateProfile = profileService.updateProfile(profile, profileId);
+
         return new ResponseEntity<>(updateProfile, HttpStatus.OK);
     }
-    
-    @GetMapping("/admin/profiles")
-    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles( 
-        @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-        @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-        @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
-        @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
-            PageResponse<ProfileDTO> profileResponse = profileService.getAllProfiles(
-                Math.max(0,pageNumber-1),
-                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
-                        sortOrder) ;
-        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);     
+    @GetMapping("/admin/profiles")
+    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles(
+            @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
+            @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
+
+        PageResponse<ProfileDTO> profileResponse = profileService.getAllProfiles(
+                Math.max(0, pageNumber - 1),
+                pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
+                sortOrder);
+        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);
     }
 
     @GetMapping("/admin/profiles/search")
@@ -72,12 +73,12 @@ public class ProfileController {
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
             @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
-        
-       PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
-                    keyword,
-                Math.max(0,pageNumber-1),
-                        pageSize, "id".equals(sortBy) ? "profileId":sortBy,
-                        sortOrder) ;
+
+        PageResponse<ProfileDTO> profileResponse = profileService.searchProfiles(
+                keyword,
+                Math.max(0, pageNumber - 1),
+                pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
+                sortOrder);
         return ResponseEntity.ok(profileResponse);
     }
 
@@ -88,9 +89,9 @@ public class ProfileController {
 
     @GetMapping("/public/profiles/{profileId}")
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
-        
+
         ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
-        return new ResponseEntity<>(profileDTO,HttpStatus.OK);
+        return new ResponseEntity<>(profileDTO, HttpStatus.OK);
     }
 
     @DeleteMapping("/admin/profiles/{profileId}")
@@ -101,18 +102,18 @@ public class ProfileController {
 
     @PutMapping("/public/profiles/{profileId}/idfrontimage")
     public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
-            @PathVariable Long profileId, 
+            @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
-            
+
         ProfileImageDTO updatedProfile = profileService.updateIdFrontImage(profileId, image);
         return ResponseEntity.ok(updatedProfile);
     }
 
     @PutMapping("/public/profiles/{profileId}/idbackimage")
     public ResponseEntity<ProfileImageDTO> updateIdBackImage(
-            @PathVariable Long profileId, 
+            @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
-            
+
         ProfileImageDTO updatedProfile = profileService.updateIdBackImage(profileId, image);
         return ResponseEntity.ok(updatedProfile);
     }
@@ -127,7 +128,7 @@ public class ProfileController {
             mediaType = MediaType.IMAGE_PNG;
         }
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(mediaType); 
+        headers.setContentType(mediaType);
         // "inline" giúp ảnh hiện trực tiếp trên trình duyệt thay vì bị bắt tải về
         headers.setContentDisposition(ContentDisposition.inline().filename(fileName).build());
         return ResponseEntity.ok()
