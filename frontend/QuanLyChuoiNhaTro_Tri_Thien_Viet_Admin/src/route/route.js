@@ -16,6 +16,7 @@ import CreateVehicle from "../pages/proflie/CreateVehicle";
 import UpdateVehicle from "../pages/vehicle/updateVehicle";
 import ListContract from "../pages/contract/ListContract";
 import CreateContract from "../pages/contract/CreateContract";
+import UpdateContract from "../pages/contract/UpdateContract";
 
 import CreateRoom from "../pages/room/CreateRoom";
 import RoomDetail from "../pages/room/RoomDetail";
@@ -24,6 +25,8 @@ import UpdateRoom from "../pages/room/UpdateRoom";
 import CreateService from "../pages/service/CreateService";
 import ServiceList from "../pages/service/ServiceList";
 import UpdateService from "../pages/service/UpdateService";
+import ContractDetail from "../pages/contract/ContractDetail";
+import ContractMember from "../pages/contract/ContractMember";
 const AdminRoute = [
   { path: "/", component: Dashboard },
   { path: "/profiles", component: ListProfile },
@@ -37,7 +40,12 @@ const AdminRoute = [
   { path: "/vehicles", component: ListVehicle },
   { path: "/vehicle/:vehicleId/update", component: UpdateVehicle },
 
+  //contract
   { path: "/contracts", component: ListContract },
+  { path: "/contracts/:id/update", component: UpdateContract },
+  { path: "/contracts/create", component: CreateContract },
+  { path: "/contracts/:id/detail", component: ContractDetail },
+  { path: "/contracts/:id/members", component: ContractMember },
 
   //branch
   { path: "/branches/:page", component: BranchList },
@@ -56,7 +64,5 @@ const AdminRoute = [
   { path: "/services/:page", component: ServiceList },
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
-
-  { path: "/contracts/create", component: CreateContract },
 ];
 export default AdminRoute;

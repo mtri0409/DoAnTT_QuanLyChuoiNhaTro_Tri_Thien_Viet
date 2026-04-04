@@ -376,13 +376,13 @@ const ListContract = () => {
                           >
                             <FaEdit className="text-primary" />
                           </button>
-                          <button
+                          {/* <button
                             className="btn btn-sm btn-light border-0"
                             title="Xóa"
                             onClick={() => handleDelete(item.contractId)}
                           >
                             <FaTrash className="text-danger" />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
