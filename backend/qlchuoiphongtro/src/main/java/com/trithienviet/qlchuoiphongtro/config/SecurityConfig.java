@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -34,37 +35,42 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsServiceImpl userDetailsServiceImpl;
+
     // --- 1. CẤU HÌNH BỘ LỌC BẢO MẬT (Security Filter Chain) ---
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Tắt CSRF vì JWT không cần (chống tấn công giả mạo yêu cầu)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Cấu hình chia sẻ tài nguyên (CORS) cho React gọi API
-            .authorizeHttpRequests(requests -> requests
-                // Cho phép các URL công khai (Login, Register) vào tự do
-                .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
-                // CẤU HÌNH QUYỀN TRUY CẬP: 
-                .requestMatchers(AppConstants.USER_URLS).hasAnyRole("USER", "ADMIN")
-                .requestMatchers(AppConstants.ADMIN_URLS).hasRole("ADMIN")
-                // Tất cả các request còn lại đều phải đăng nhập mới được vào
-                .anyRequest().authenticated()
-            )
-            // Cấu hình xử lý lỗi khi chưa đăng nhập (Unauthorized)
-            .exceptionHandling(handling -> handling
-                .authenticationEntryPoint((request, response, authException) -> 
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
-            // CHẾ ĐỘ STATELESS: Không tạo Session trên Server (Dành riêng cho JWT)
-            .sessionManagement(management -> management
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // THỨ TỰ CHẠY: Chạy bộ lọc JWT trước khi kiểm tra Username/Password mặc định của Spring
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-            .authenticationProvider(daoAuthenticationProvider());
+                .csrf(csrf -> csrf.disable()) // Tắt CSRF vì JWT không cần (chống tấn công giả mạo yêu cầu)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Cấu hình chia sẻ tài nguyên (CORS)
+                                                                                   // cho React gọi API
+                .authorizeHttpRequests(requests -> requests
+                        // Cho phép các URL công khai (Login, Register) vào tự do
+                        .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/branches/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/amenities/**").permitAll()
+                        // CẤU HÌNH QUYỀN TRUY CẬP:
+                        .requestMatchers(AppConstants.USER_URLS).hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(AppConstants.ADMIN_URLS).hasRole("ADMIN")
+                        // Tất cả các request còn lại đều phải đăng nhập mới được vào
+                        .anyRequest().authenticated())
+                // Cấu hình xử lý lỗi khi chưa đăng nhập (Unauthorized)
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint((request, response, authException) -> response
+                                .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+                // CHẾ ĐỘ STATELESS: Không tạo Session trên Server (Dành riêng cho JWT)
+                .sessionManagement(management -> management
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // THỨ TỰ CHẠY: Chạy bộ lọc JWT trước khi kiểm tra Username/Password mặc định
+                // của Spring
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .authenticationProvider(daoAuthenticationProvider());
 
         return http.build();
     }
 
-       @Bean
+    @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
         // provider.setUserDetailsService(userDetailsService);
@@ -92,9 +98,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Liệt kê các địa chỉ của Frontend được phép gọi đến Backend
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:3000",
-            "http://localhost:5173" 
-        ));
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:5174"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true); // Cho phép gửi Token/Cookie kèm theo

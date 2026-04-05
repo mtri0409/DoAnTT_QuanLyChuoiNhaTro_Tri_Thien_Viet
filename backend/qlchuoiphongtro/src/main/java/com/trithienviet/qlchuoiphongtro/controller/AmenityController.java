@@ -18,7 +18,7 @@ public class AmenityController {
     @Autowired
     private AmenityService amenityService;
 
-    @GetMapping("/admin/amenities")
+    @GetMapping("/amenities")
     public ResponseEntity<PageResponse<AmenityDTO>> getAllAmenities(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,

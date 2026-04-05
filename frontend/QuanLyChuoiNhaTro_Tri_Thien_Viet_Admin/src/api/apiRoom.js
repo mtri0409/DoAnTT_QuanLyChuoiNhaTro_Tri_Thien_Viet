@@ -10,7 +10,7 @@ const apiRoom = {
         branchId = null,
         search = ''
     ) => {
-        const url = `/admin/rooms`;
+        const url = `/rooms`;
         return axiosInstance.get(url, {
             params: {
                 pageNumber: pageNumber,

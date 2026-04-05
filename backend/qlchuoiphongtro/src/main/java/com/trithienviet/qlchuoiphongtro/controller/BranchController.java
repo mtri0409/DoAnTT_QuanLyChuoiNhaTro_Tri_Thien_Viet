@@ -21,7 +21,7 @@ public class BranchController {
     @Autowired
     private BranchService branchService;
 
-    @GetMapping("/admin/branches")
+    @GetMapping("/branches")
     public ResponseEntity<PageResponse<BranchDTO>> getAllBranches(
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,

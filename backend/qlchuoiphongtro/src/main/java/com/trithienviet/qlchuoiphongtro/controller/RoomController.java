@@ -40,7 +40,7 @@ public class RoomController {
         return ResponseEntity.ok(room);
     }
 
-    @GetMapping("/admin/rooms")
+    @GetMapping("/rooms")
     public ResponseEntity<PageResponse<RoomDTO>> getAllRooms(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,

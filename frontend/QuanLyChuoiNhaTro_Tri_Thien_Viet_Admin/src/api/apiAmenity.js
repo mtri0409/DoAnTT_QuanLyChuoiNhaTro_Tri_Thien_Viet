@@ -2,7 +2,7 @@ import axiosInstance from "./axios";
 
 const apiAmenity = {
     getAllAmenities: (pageNumber = 0, pageSize = 10, sortBy = 'amenityName', sortOrder = 'asc') => {
-        const url = `/admin/amenities`;
+        const url = `/amenities`;
         return axiosInstance.get(url, {
             params: {
                 pageNumber: pageNumber,
