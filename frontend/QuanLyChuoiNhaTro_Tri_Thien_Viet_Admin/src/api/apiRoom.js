@@ -25,7 +25,7 @@ const apiRoom = {
     },
 
     getRoomById: (roomId) => {
-        const url = `/public/rooms/${roomId}`;
+        const url = `/rooms/${roomId}`;
         return axiosInstance.get(url);
     },
 

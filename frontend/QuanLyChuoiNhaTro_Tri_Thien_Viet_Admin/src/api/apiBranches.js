@@ -15,7 +15,7 @@ const apiBranches = {
     },
 
     getBranchById: (id) => {
-        const url = `/public/branches/${id}`;
+        const url = `/branches/${id}`;
         return axiosInstance.get(url);
     },
 

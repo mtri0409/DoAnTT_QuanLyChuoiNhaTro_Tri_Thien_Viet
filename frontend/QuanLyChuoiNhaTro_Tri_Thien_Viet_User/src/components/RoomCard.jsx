@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 
 
 const amenityIcons = {
@@ -26,7 +27,7 @@ const badgeColors = {
 
 export default function RoomCard({ room }) {
   const [imgIdx, setImgIdx] = useState(0);
-
+const navigate = useNavigate();
   // fallback nếu không có ảnh
   const images = room.images?.length
     ? room.images
@@ -154,7 +155,7 @@ export default function RoomCard({ room }) {
           <span style={{ fontSize: 12, color: '#64748b', background: '#f1f4f9', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>
             🏘 {room.floor?.branch?.branchName ?? '—'}
           </span>
-          <button style={{
+          <button onClick={() => navigate(`/rooms/${room.roomId}`)} style={{
             background: '#1d6cf0', color: '#fff', border: 'none',
             borderRadius: 8, padding: '8px 18px',
             fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
