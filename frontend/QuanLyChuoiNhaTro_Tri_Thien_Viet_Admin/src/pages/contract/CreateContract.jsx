@@ -19,6 +19,7 @@ import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
 import apiServices from "../../api/apiService";
 import apiRoom from "../../api/apiRoom";
+import apiBranches from "../../api/apiBranches";
 
 // ====================== PROFILE SEARCH MODAL ======================
 const ProfileSearchModal = ({ onSelect, onClose }) => {
@@ -150,16 +151,41 @@ const ProfileSearchModal = ({ onSelect, onClose }) => {
   );
 };
 
-// ====================== ROOM SEARCH INPUT ======================
-const RoomSearchInput = ({ value, onSelect, error }) => {
-  const [keyword, setKeyword] = useState(value?.roomName ?? "");
+// ====================== ROOM PICKER (branch select + room search) ======================
+const RoomPicker = ({ value, onSelect, error }) => {
+  const [branches, setBranches] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingRooms, setLoadingRooms] = useState(false);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const fetchBranches = async () => {
+      setLoadingBranches(true);
+      try {
+        const res = await apiBranches.getAllBranches(
+          1,
+          100,
+          "branchId",
+          "asc",
+          "",
+        );
+        const list =
+          res?.data?.content ?? res?.data ?? res?.content ?? res ?? [];
+        setBranches(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error("Loi tai chi nhanh:", err);
+      } finally {
+        setLoadingBranches(false);
+      }
+    };
+    fetchBranches();
+  }, []);
+
   useEffect(() => {
     const handler = (e) => {
       if (!wrapperRef.current?.contains(e.target)) setOpen(false);
@@ -168,46 +194,57 @@ const RoomSearchInput = ({ value, onSelect, error }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Đồng bộ khi value bị xóa từ ngoài
   useEffect(() => {
     if (!value) setKeyword("");
   }, [value]);
 
-  const fetchRooms = async (kw) => {
-    if (!kw.trim()) {
+  const fetchRooms = async (kw, branchId) => {
+    if (!branchId) {
       setResults([]);
       setOpen(false);
       return;
     }
-    setLoading(true);
+    setLoadingRooms(true);
     try {
       const res = await apiRoom.getAllRooms(
         0,
-        10,
+        20,
         "roomName",
         "asc",
         null,
-        null,
+        branchId,
         kw,
       );
-      // Tuỳ response trả về dạng Page hay Array
       const list = res?.data?.content ?? res?.data ?? res?.content ?? res ?? [];
       setResults(Array.isArray(list) ? list : []);
       setOpen(true);
     } catch (err) {
-      console.error("Lỗi tìm phòng:", err);
+      console.error("Loi tim phong:", err);
       setResults([]);
     } finally {
-      setLoading(false);
+      setLoadingRooms(false);
     }
   };
 
-  const handleInput = (e) => {
+  const handleBranchChange = (e) => {
+    const branchId = e.target.value;
+    setSelectedBranchId(branchId);
+    onSelect(null);
+    setKeyword("");
+    setResults([]);
+    setOpen(false);
+    if (branchId) fetchRooms("", branchId);
+  };
+
+  const handleKeywordInput = (e) => {
     const val = e.target.value;
     setKeyword(val);
-    if (value) onSelect(null); // reset selection khi nhập lại
+    if (value) onSelect(null);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchRooms(val), 350);
+    debounceRef.current = setTimeout(
+      () => fetchRooms(val, selectedBranchId),
+      350,
+    );
   };
 
   const handleSelect = (room) => {
@@ -217,72 +254,108 @@ const RoomSearchInput = ({ value, onSelect, error }) => {
   };
 
   return (
-    <div ref={wrapperRef} className="position-relative">
-      <div className="input-group">
-        <span
-          className={`input-group-text bg-light border-0 ${error ? "border border-danger border-end-0" : ""}`}
-        >
-          {loading ? (
-            <span
-              className="spinner-border spinner-border-sm text-muted"
-              style={{ width: 14, height: 14 }}
-            />
-          ) : (
-            <FaDoorOpen className="text-primary" size={13} />
-          )}
-        </span>
-        <input
-          type="text"
-          autoComplete="off"
-          className={`form-control bg-light border-0 py-2 ${error ? "is-invalid border border-danger border-start-0" : ""}`}
-          placeholder="Gõ tên phòng để tìm kiếm..."
-          value={keyword}
-          onChange={handleInput}
-          onFocus={() => results.length > 0 && setOpen(true)}
-        />
+    <div>
+      {/* Step 1: Chon chi nhanh */}
+      <div className="mb-2">
+        <div className="input-group">
+          <span className="input-group-text bg-light border-0">
+            {loadingBranches ? (
+              <span
+                className="spinner-border spinner-border-sm text-muted"
+                style={{ width: 14, height: 14 }}
+              />
+            ) : (
+              <FaSearch className="text-muted" size={13} />
+            )}
+          </span>
+          <select
+            className="form-select bg-light border-0 py-2"
+            value={selectedBranchId}
+            onChange={handleBranchChange}
+            disabled={loadingBranches}
+          >
+            <option value="">-- Chon chi nhanh --</option>
+            {branches.map((b) => (
+              <option key={b.branchId} value={b.branchId}>
+                {b.branchName}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Dropdown results */}
-      {open && results.length > 0 && (
-        <div
-          className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3"
-          style={{ maxHeight: 220, overflowY: "auto" }}
-        >
-          {results.map((room) => (
-            <button
-              key={room.roomId}
-              type="button"
-              className="d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent hover-bg-light"
-              style={{ cursor: "pointer" }}
-              onMouseDown={() => handleSelect(room)}
-            >
-              <FaDoorOpen className="text-primary flex-shrink-0" size={13} />
-              <div>
-                <div className="fw-semibold small text-dark">
-                  {room.roomName}
-                </div>
-                {room.roomPrice && (
-                  <div className="text-muted" style={{ fontSize: "0.75rem" }}>
-                    {Number(room.roomPrice).toLocaleString("vi-VN")} đ/tháng
-                  </div>
-                )}
-              </div>
+      {/* Step 2: Tim phong trong chi nhanh */}
+      <div ref={wrapperRef} className="position-relative">
+        <div className="input-group">
+          <span
+            className={`input-group-text bg-light border-0 ${error ? "border border-danger border-end-0" : ""}`}
+          >
+            {loadingRooms ? (
               <span
-                className="ms-auto badge bg-light text-muted border"
-                style={{ fontSize: "0.7rem" }}
-              >
-                #{room.roomId}
-              </span>
-            </button>
-          ))}
+                className="spinner-border spinner-border-sm text-muted"
+                style={{ width: 14, height: 14 }}
+              />
+            ) : (
+              <FaDoorOpen className="text-primary" size={13} />
+            )}
+          </span>
+          <input
+            type="text"
+            autoComplete="off"
+            className={`form-control bg-light border-0 py-2 ${error ? "is-invalid border border-danger border-start-0" : ""}`}
+            placeholder={
+              selectedBranchId
+                ? "Gõ tên phòng để tìm kiếm..."
+                : "Vui lòng chọn chi nhánh trước..."
+            }
+            value={keyword}
+            onChange={handleKeywordInput}
+            onFocus={() => results.length > 0 && setOpen(true)}
+            disabled={!selectedBranchId}
+          />
         </div>
-      )}
 
-      {open && !loading && results.length === 0 && keyword.trim() && (
-        <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 p-3 text-center text-muted small z-3">
-          Không tìm thấy phòng phù hợp
-        </div>
-      )}
+        {open && results.length > 0 && (
+          <div
+            className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3"
+            style={{ maxHeight: 220, overflowY: "auto" }}
+          >
+            {results.map((room) => (
+              <button
+                key={room.roomId}
+                type="button"
+                className="d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
+                style={{ cursor: "pointer" }}
+                onMouseDown={() => handleSelect(room)}
+              >
+                <FaDoorOpen className="text-primary flex-shrink-0" size={13} />
+                <div>
+                  <div className="fw-semibold small text-dark">
+                    {room.roomName}
+                  </div>
+                  {room.roomPrice && (
+                    <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                      {Number(room.roomPrice).toLocaleString("vi-VN")} d/thang
+                    </div>
+                  )}
+                </div>
+                <span
+                  className="ms-auto badge bg-light text-muted border"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  #{room.roomId}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {open && !loadingRooms && results.length === 0 && selectedBranchId && (
+          <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 p-3 text-center text-muted small z-3">
+            Khong tim thay phong phu hop
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -503,9 +576,9 @@ const CreateContract = () => {
                 {/* Chọn phòng */}
                 <div className="mb-3">
                   <label className="form-label small fw-bold text-muted">
-                    TÊN PHÒNG <span className="text-danger">*</span>
+                    CHI NHÁNH & PHÒNG <span className="text-danger">*</span>
                   </label>
-                  <RoomSearchInput
+                  <RoomPicker
                     value={selectedRoom}
                     onSelect={(room) => {
                       setSelectedRoom(room);
