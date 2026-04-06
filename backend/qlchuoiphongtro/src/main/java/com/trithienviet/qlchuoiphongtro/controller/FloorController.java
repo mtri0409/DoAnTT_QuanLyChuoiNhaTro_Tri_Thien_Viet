@@ -40,7 +40,7 @@ public class FloorController {
         return ResponseEntity.ok(floor);
     }
 
-    @GetMapping("/public/floors")
+    @GetMapping("/floors")
     public ResponseEntity<List<FloorDTO>> getAllFloors(){
         List<FloorDTO> floors = floorService.getAllFloors();
         return ResponseEntity.ok(floors);

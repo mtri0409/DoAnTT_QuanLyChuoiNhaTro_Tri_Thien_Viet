@@ -47,6 +47,7 @@ public class SecurityConfig {
                         // Cho phép các URL công khai (Login, Register) vào tự do
                         .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/room-medias/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/branches/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/amenities/**").permitAll()
                         // CẤU HÌNH QUYỀN TRUY CẬP:

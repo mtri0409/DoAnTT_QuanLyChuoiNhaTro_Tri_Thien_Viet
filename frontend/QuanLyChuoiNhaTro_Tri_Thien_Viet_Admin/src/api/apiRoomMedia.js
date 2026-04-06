@@ -13,7 +13,7 @@ const apiRoomMedia = {
     },
 
     getMediaByRoomId: (roomId) => {
-        return axiosInstance.get(`/public/room-media/room/${roomId}`);
+        return axiosInstance.get(`/room-medias/room/${roomId}`);
     },
 
     deleteRoomMedia: (mediaId) => {
