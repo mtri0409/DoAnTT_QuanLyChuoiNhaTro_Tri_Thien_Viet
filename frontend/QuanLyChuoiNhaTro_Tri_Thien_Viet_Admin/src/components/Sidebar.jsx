@@ -12,6 +12,7 @@ import {
   FaFileContract,
   FaServicestack,
   FaWifi,
+  FaCalculator,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
@@ -21,7 +22,9 @@ const NAV_ITEMS = [
   { title: "Người thuê", path: "/profiles", icon: <FaUsers /> },
   { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract /> },
   { title: "Tài khoản", path: "/users", icon: <FaUsers /> },
-  { title: "Hóa đơn", path: "/admin/invoices", icon: <FaFileInvoiceDollar /> },
+  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator /> },
+  { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar /> },
+
   { title: "Cài đặt", path: "/admin/settings", icon: <FaCog /> },
   { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding /> },
   { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },

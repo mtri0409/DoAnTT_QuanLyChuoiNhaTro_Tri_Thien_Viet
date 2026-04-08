@@ -27,6 +27,9 @@ import ServiceList from "../pages/service/ServiceList";
 import UpdateService from "../pages/service/UpdateService";
 import ContractDetail from "../pages/contract/ContractDetail";
 import ContractMember from "../pages/contract/ContractMember";
+import MeterReadingPage from "../pages/meter-reading/MeterReadingPage";
+import ListInvoice from "../pages/invoice/ListInvoice";
+import InvoiceDetail from "../pages/invoice/InvoiceDetail";
 const AdminRoute = [
   { path: "/", component: Dashboard },
   { path: "/profiles", component: ListProfile },
@@ -46,6 +49,11 @@ const AdminRoute = [
   { path: "/contracts/create", component: CreateContract },
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
+
+  //meter-reading
+  { path: "/meter-reading", component: MeterReadingPage },
+  { path: "/invoice", component: ListInvoice },
+  { path: "/invoice/:invoiceId", component: InvoiceDetail },
 
   //branch
   { path: "/branches/:page", component: BranchList },
