@@ -53,7 +53,7 @@ export default function Home() {
     setError(null);
     apiRoom.getAllRooms(page, 5, 'roomName', 'asc', activeBranchId)
       .then((res) => {
-        const data = res.data?.content ?? res.data ?? res.data ?? [];
+        const data = res.content;
         const tp   = res.data?.totalPages ?? 1;
         setRooms(Array.isArray(data) ? data : []);
         setTotalPages(tp);
