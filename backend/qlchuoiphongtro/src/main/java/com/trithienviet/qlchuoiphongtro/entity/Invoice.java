@@ -25,24 +25,52 @@ public class Invoice {
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
-    @Column(nullable = false)
-    private Integer periodMonth; // tính tiền tại tháng nào ?
+    /**
+     * Phân loại hóa đơn: MONTHLY | DEPOSIT | REPAIR
+     * MONTHLY : tiền phòng hàng tháng (mặc định)
+     * DEPOSIT : tiền đặt cọc
+     * REPAIR : tiền sửa chữa (làm sau)
+     */
+    @Column(length = 20, nullable = false)
+    private String type = "MONTHLY";
 
     @Column(nullable = false)
-    private Integer periodYear; // tính tiền tại năm nào ?
-    
-        //
-    private BigDecimal roomPrice; // giá phòng tại thời điểm/hợp đồng
-    private BigDecimal roomServiceAmount;
+    private Integer periodMonth; // kỳ tháng
+
+    @Column(nullable = false)
+    private Integer periodYear; // kỳ năm
+
+    private BigDecimal roomPrice; // snapshot giá phòng
+    private BigDecimal roomServiceAmount; // tổng dịch vụ
+
     @Column(precision = 15, scale = 2)
-    private BigDecimal totalAmount; // room + services
+    private BigDecimal totalAmount; // tổng phải trả (room + services)
 
+    /**
+     * DEPOSIT only: tổng tiền đã nộp (từng phần hoặc đủ).
+     * MONTHLY: luôn null (thanh toán 1 lần qua Payment).
+     */
+    @Column(precision = 15, scale = 2)
+    private BigDecimal paidAmount;
 
-    // @Enumerated(EnumType.STRING)
+    /**
+     * DEPOSIT only: liên kết tới bản ghi Deposit tương ứng.
+     * Cho phép tra cứu ngược (deposit → invoice).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deposit_id", nullable = true)
+    private Deposit deposit;
+
+    /**
+     * Status theo type:
+     * MONTHLY : DRAFT → PENDING → PAID | CANCELLED
+     * DEPOSIT : DRAFT → PENDING → PARTIAL → PAID | CANCELLED | REFUNDED
+     * REPAIR : (giống MONTHLY, làm sau)
+     */
     @Column(length = 20)
     private String status;
 
-    private LocalDate dueDate;// Hạn chót
+    private LocalDate dueDate; // hạn chót thanh toán
 
     @CreationTimestamp
     @Column(updatable = false)

@@ -19,6 +19,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomMediaDTO;
 import com.trithienviet.qlchuoiphongtro.repo.RoomMediaRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
+import com.trithienviet.qlchuoiphongtro.service.FileService;
 import com.trithienviet.qlchuoiphongtro.service.RoomMediaService;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -39,49 +40,15 @@ public class RoomMediaServiceImpl implements RoomMediaService {
     @Autowired
     private ModelMapper modelMapper;
 
-    // ← Thư mục lưu ảnh trên máy
+    // ← THÊM: inject FileService thay vì tự xử lý file
+    @Autowired
+    private FileService fileService;
+
+    // ← Thư mục lưu ảnh — dùng chung với FileService
     @Value("${file.upload-dir:uploads/room-images}")
     private String uploadDir;
 
-    // ========== HELPER: Lưu file vào folder ==========
-    private String saveFile(MultipartFile file) {
-        try {
-            // Tạo folder nếu chưa có
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Tạo tên file unique
-            String originalName = StringUtils.cleanPath(file.getOriginalFilename());
-            String fileName = System.currentTimeMillis() + "_" + originalName;
-
-            // Lưu file
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Trả về URL path
-            // → http://localhost:8080/images/1718000001_photo.jpg
-            return "/images/" + fileName;
-
-        } catch (IOException e) {
-            throw new RuntimeException("Lỗi lưu file: " + e.getMessage());
-        }
-    }
-
-    // ========== HELPER: Xóa file cũ khỏi folder ==========
-    private void deleteFile(String url) {
-        if (url == null || !url.startsWith("/images/")) return;
-        try {
-            String fileName = url.replace("/images/", "");
-            Path filePath = Paths.get(uploadDir).resolve(fileName);
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            System.err.println("Không thể xóa file: " + e.getMessage());
-        }
-    }
-
-    // ========== GET ALL WITH PAGINATION (GIỮA NGUYÊN) ==========
+    // ========== GET ALL WITH PAGINATION ==========
     @Override
     public PageResponse<RoomMediaDTO> getAllRoomMedias(
             Integer pageNumber,
@@ -117,7 +84,7 @@ public class RoomMediaServiceImpl implements RoomMediaService {
         return response;
     }
 
-    // ========== GET BY ID (GIỮA NGUYÊN) ==========
+    // ========== GET BY ID ==========
     @Override
     public RoomMediaDTO getRoomMediaById(Integer mediaId) {
         RoomMedia media = roomMediaRepo.findById(mediaId)
@@ -130,7 +97,7 @@ public class RoomMediaServiceImpl implements RoomMediaService {
         return dto;
     }
 
-    // ========== GET BY ROOM ID (GIỮA NGUYÊN) ==========
+    // ========== GET BY ROOM ID ==========
     @Override
     public List<RoomMediaDTO> getMediaByRoomId(Integer roomId) {
         Room room = roomRepo.findById(roomId.longValue())
@@ -147,60 +114,72 @@ public class RoomMediaServiceImpl implements RoomMediaService {
                 .collect(Collectors.toList());
     }
 
-    // ========== CREATE - SỬA ĐỂ NHẬN FILE ==========
+    // ========== CREATE ==========
     @Override
     @Transactional
     public RoomMediaDTO createRoomMedia(MultipartFile file, Long roomId, boolean isThumbnail) {
-        // ← Lưu file vào folder, nhận lại URL
-        String fileUrl = saveFile(file);
+        try {
+            // ← Dùng FileService để lưu file, nhận lại tên file (không phải full path)
+            String fileName = fileService.uploadImage(uploadDir, file);
 
-        // ← Tìm Room
-        Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
+            // ← Build URL để lưu vào DB: /images/<fileName>
+            String fileUrl = "/images/" + fileName;
 
-        // ← Tạo entity
-        RoomMedia media = new RoomMedia();
-        media.setUrl(fileUrl);                              // "/images/1718000001_photo.jpg"
-        media.setMediaType(file.getContentType());          // "image/jpeg"
-        media.setThumbnail(isThumbnail);
-        media.setRoom(room);
+            // ← Tìm Room
+            Room room = roomRepo.findById(roomId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
 
-        // ← Lưu DB
-        RoomMedia saved = roomMediaRepo.save(media);
+            // ← Tạo và lưu entity
+            RoomMedia media = new RoomMedia();
+            media.setUrl(fileUrl);
+            media.setMediaType(file.getContentType());
+            media.setThumbnail(isThumbnail);
+            media.setRoom(room);
 
-        // ← Map sang DTO trả về
-        RoomMediaDTO dto = modelMapper.map(saved, RoomMediaDTO.class);
-        dto.setRoomId(saved.getRoom().getRoomId());
-        return dto;
+            RoomMedia saved = roomMediaRepo.save(media);
+
+            RoomMediaDTO dto = modelMapper.map(saved, RoomMediaDTO.class);
+            dto.setRoomId(saved.getRoom().getRoomId());
+            return dto;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi khi upload file: " + e.getMessage());
+        }
     }
 
-    // ========== UPDATE - SỬA ĐỂ NHẬN FILE MỚI ==========
+    // ========== UPDATE ==========
     @Override
     @Transactional
     public RoomMediaDTO updateRoomMedia(Integer mediaId, MultipartFile file) {
-        // ← Tìm entity cũ
-        RoomMedia media = roomMediaRepo.findById(mediaId)
-                .orElseThrow(() -> new ResourceNotFoundException("RoomMedia", "mediaId", mediaId.longValue()));
+        try {
+            // ← Tìm entity cũ
+            RoomMedia media = roomMediaRepo.findById(mediaId)
+                    .orElseThrow(() -> new ResourceNotFoundException("RoomMedia", "mediaId", mediaId.longValue()));
 
-        // ← Xóa file cũ khỏi folder
-        deleteFile(media.getUrl());
+            // ← Xóa file cũ khỏi folder (tách fileName từ URL)
+            deleteOldFile(media.getUrl());
 
-        // ← Lưu file mới
-        String newUrl = saveFile(file);
-        media.setUrl(newUrl);
-        media.setMediaType(file.getContentType());
+            // ← Dùng FileService lưu file mới
+            String fileName = fileService.uploadImage(uploadDir, file);
+            String newUrl = "/images/" + fileName;
 
-        // ← Save
-        RoomMedia updated = roomMediaRepo.save(media);
+            media.setUrl(newUrl);
+            media.setMediaType(file.getContentType());
 
-        RoomMediaDTO dto = modelMapper.map(updated, RoomMediaDTO.class);
-        if (updated.getRoom() != null) {
-            dto.setRoomId(updated.getRoom().getRoomId());
+            RoomMedia updated = roomMediaRepo.save(media);
+
+            RoomMediaDTO dto = modelMapper.map(updated, RoomMediaDTO.class);
+            if (updated.getRoom() != null) {
+                dto.setRoomId(updated.getRoom().getRoomId());
+            }
+            return dto;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi khi upload file mới: " + e.getMessage());
         }
-        return dto;
     }
 
-    // ========== DELETE - THÊM XÓA FILE ==========
+    // ========== DELETE ==========
     @Override
     @Transactional
     public String deleteRoomMedia(Integer mediaId) {
@@ -208,11 +187,25 @@ public class RoomMediaServiceImpl implements RoomMediaService {
                 .orElseThrow(() -> new ResourceNotFoundException("RoomMedia", "mediaId", mediaId.longValue()));
 
         // ← Xóa file khỏi folder
-        deleteFile(media.getUrl());
+        deleteOldFile(media.getUrl());
 
         // ← Xóa record DB
         roomMediaRepo.delete(media);
 
         return "Xóa media phòng thành công với id: " + mediaId;
+    }
+
+    // ========== HELPER: Xóa file cũ ==========
+    // FileService không có method xóa nên vẫn tự xử lý
+    // nhưng tách ra helper để gọn
+    private void deleteOldFile(String url) {
+        if (url == null || !url.startsWith("/images/")) return;
+        try {
+            String fileName = url.replace("/images/", "");
+            Path filePath = Paths.get(uploadDir).resolve(fileName);
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            System.err.println("Không thể xóa file cũ: " + e.getMessage());
+        }
     }
 }

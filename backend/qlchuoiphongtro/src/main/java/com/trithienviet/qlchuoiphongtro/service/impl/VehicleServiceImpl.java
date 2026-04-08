@@ -1,14 +1,28 @@
 package com.trithienviet.qlchuoiphongtro.service.impl;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.SortOrder;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.trithienviet.qlchuoiphongtro.entity.Contract;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.Room;
+import com.trithienviet.qlchuoiphongtro.entity.RoomMember;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.VehicleLoadDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.VehicleRepo;
 import com.trithienviet.qlchuoiphongtro.service.VehicleService;
@@ -27,6 +41,101 @@ public class VehicleServiceImpl implements VehicleService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Override
+    public PageResponse<VehicleLoadDTO> getAll(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Vehicle> vehiclePages ;
+        if(branchId != null){
+            vehiclePages = vehicleRepo.findVehiclesByBranch(branchId,status,pageable);
+        }else
+            {
+            vehiclePages = vehicleRepo.findVehicles(pageable,status);
+        }
+        
+        // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
+        List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
+            .map((Vehicle v) -> { // Khai báo rõ (Vehicle v) để tránh lỗi infer
+                return VehicleLoadDTO.builder()
+                    // Kiểm tra null để tránh lỗi khi xe chưa gán vào phòng/chủ
+                    .vehicleId(v.getVehicleId())
+                    .brand(v.getBrand())
+                    .licensePlate(v.getLicensePlate())
+                    .roomId(v.getRoom() != null ? v.getRoom().getRoomId() : null)
+                    .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
+                    .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
+                    .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
+                    .status(v.getStatus()!=null ? v.getStatus() :false)
+                    .branchId(v.getRoom() != null ? v.getRoom().getFloor().getBranch().getBranchId():null)
+                    .build();
+            })
+            .collect(Collectors.toList());
+
+        PageResponse<VehicleLoadDTO> response = new PageResponse<>();
+        response.setContent(vehicleLoadDTOs);
+        response.setPageNumber(vehiclePages.getNumber());
+        response.setPageSize(vehiclePages.getSize());
+        response.setTotalElements(vehiclePages.getTotalElements());
+        response.setTotalPages(vehiclePages.getTotalPages());
+        response.setLastPage(vehiclePages.isLast());
+        return response;
+    }
+    
+     @Override
+    public PageResponse<VehicleLoadDTO> searchVehicles(String keyword,Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Vehicle> vehiclePages = vehicleRepo.searchVehicles(keyword,pageable,branchId,status);
+        
+        // Lấy content ra trước để Stream xác định rõ kiểu T là Vehicle
+        List<VehicleLoadDTO> vehicleLoadDTOs = vehiclePages.getContent().stream()
+            .map((Vehicle v) -> { 
+                return VehicleLoadDTO.builder()
+                    .vehicleId(v.getVehicleId())
+                    .brand(v.getBrand())
+                    .licensePlate(v.getLicensePlate())
+                    .roomId(v.getRoom() != null ? v.getRoom().getRoomId() : null)
+                    .brand(v.getBrand())
+                    .roomName(v.getRoom() != null ? v.getRoom().getRoomName() :null)
+                    .ownerId(v.getOwner() != null ? v.getOwner().getProfileId() : null)
+                    .ownerName(v.getOwner() != null ? v.getOwner().getFullName() : "Khách vãng lai")
+                    .status(v.getStatus()!=null ? v.getStatus() :false)
+
+                    .build();
+            })
+            .collect(Collectors.toList());
+
+        PageResponse<VehicleLoadDTO> response = new PageResponse<>();
+        response.setContent(vehicleLoadDTOs);
+        response.setPageNumber(vehiclePages.getNumber());
+        response.setPageSize(vehiclePages.getSize());
+        response.setTotalElements(vehiclePages.getTotalElements());
+        response.setTotalPages(vehiclePages.getTotalPages());
+        response.setLastPage(vehiclePages.isLast());
+
+        return response;
+    }
+
+    public VehicleLoadDTO  getVehicleById(Long vehicleId) {
+        Vehicle vehicle = vehicleRepo.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy xe với Id: " + vehicleId));
+        
+        VehicleLoadDTO vehicleLoadDTO = modelMapper.map(vehicle, VehicleLoadDTO.class);
+
+        // 3. Xử lý lấy tên chủ xe (Owner) an toàn
+        if (vehicle.getOwner() != null) {
+            vehicleLoadDTO.setOwnerName(vehicle.getOwner().getFullName());
+        }
+
+        return vehicleLoadDTO;
+    }
+
     @Transactional
     @Override
     public VehicleDTO addVehicleForTenant(Long profileId, VehicleDTO vehicleDTO) {
@@ -35,7 +144,12 @@ public class VehicleServiceImpl implements VehicleService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Profile với id: " + profileId));
         Vehicle vehicle = modelMapper.map(vehicleDTO, Vehicle.class);
         vehicle.setOwner(profile);
-        vehicle.setRoom(profile.getRoomMember().getContract().getRoom());
+        vehicle.getBrand();
+        vehicle.setRoom(Optional.ofNullable(profile)
+            .map(Profile::getRoomMember)
+            .map(RoomMember::getContract)
+            .map(Contract::getRoom)
+            .orElse(null));      
         vehicle.setLicensePlate(vehicleDTO.getLicensePlate());
         Vehicle savedVehicle = vehicleRepo.save(vehicle);
         return modelMapper.map(savedVehicle, VehicleDTO.class);        
@@ -67,8 +181,7 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = vehicleRepo.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle", "vehicleID", vehicleId));
 
-        // 2. THỰC HIỆN XÓA MỀM
-        vehicle.setStatus(true);
+        vehicle.setStatus(false);
         
         Profile owner = vehicle.getOwner();
         if (owner != null) {
@@ -77,5 +190,20 @@ public class VehicleServiceImpl implements VehicleService {
         vehicleRepo.save(vehicle);
 
         return "Đã xóa thành công";
+    }
+    
+     @Override
+    @Transactional 
+    public String restoreVehilcle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepo.findById(vehicleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Xe", "xe id", vehicleId));
+        if(vehicle.getStatus() == true){
+            throw new RuntimeException("Xe chưa bị xóa !");
+        }
+        
+        vehicle.setStatus(true);
+        vehicleRepo.save(vehicle);
+        
+        return "Đã khôi phục xe" + vehicleId;
     }
 }

@@ -7,17 +7,17 @@ const apiRoomMedia = {
         formData.append('roomId', roomId);
         formData.append('isThumbnail', isThumbnail);
 
-        return axiosInstance.post('/admin/room-media', formData, {
+        return axiosInstance.post('/admin/room-medias', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
 
     getMediaByRoomId: (roomId) => {
-        return axiosInstance.get(`/room-medias/room/${roomId}`);
+        return axiosInstance.get(`/public/rooms/${roomId}/medias`);
     },
 
     deleteRoomMedia: (mediaId) => {
-        return axiosInstance.delete(`/admin/room-media/${mediaId}`);
+        return axiosInstance.delete(`/admin/room-medias/${mediaId}`);
     }
 };
 

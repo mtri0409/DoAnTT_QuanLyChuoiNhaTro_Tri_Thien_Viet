@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import RoomCard from '../components/RoomCard';
-import apiBranches from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiBranches';
-import apiAmenity from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiAmenity';
-import apiRoom from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiRoom';
+import userService from '../services/userService';
 
 const MAX_PRICE = 20; // triệu — ceiling của slider
 
@@ -29,7 +27,7 @@ export default function Home() {
   // Fetch branches & amenities 1 lần khi mount
   // ─────────────────────────────────────────────
   useEffect(() => {
-    apiBranches.getAllBranches(1, 50)
+    userService.getAllBranches(1, 50)
       .then((res) => {
         // tuỳ backend trả về: res.data.content || res.data.data || res.data
         const list = res.content ?? res.data ?? res.data ?? [];
@@ -37,7 +35,7 @@ export default function Home() {
       })
       .catch(() => setBranches([]));
 
-    apiAmenity.getAllAmenities(0, 100)
+    userService.getAllAmenities(0, 100)
       .then((res) => {
         const list = res.content ?? res.data ?? res.data ?? [];
         setAmenities(Array.isArray(list) ? list : []);
@@ -51,7 +49,7 @@ export default function Home() {
   const fetchRooms = useCallback(() => {
     setLoadingRooms(true);
     setError(null);
-    apiRoom.getAllRooms(page, 5, 'roomName', 'asc', activeBranchId)
+    userService.getAllRooms(page, 5, 'roomName', 'asc', activeBranchId)
       .then((res) => {
         const data = res.content;
         const tp   = res.data?.totalPages ?? 1;

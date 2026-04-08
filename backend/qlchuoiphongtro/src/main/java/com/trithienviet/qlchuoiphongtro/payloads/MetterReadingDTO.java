@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MetterReadingDTO {
     private Long readingId;
-    private Integer roomId;
+    private Long roomId;
     private String roomName;
     private Integer serviceId;
     private String serviceName;
