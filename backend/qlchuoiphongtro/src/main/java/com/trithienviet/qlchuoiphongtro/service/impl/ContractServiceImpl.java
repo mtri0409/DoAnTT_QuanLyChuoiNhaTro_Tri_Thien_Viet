@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.trithienviet.qlchuoiphongtro.entity.Contract;
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.entity.Deposit;
+import com.trithienviet.qlchuoiphongtro.entity.Invoice;
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomMember;
@@ -154,9 +155,21 @@ public class ContractServiceImpl implements ContractService {
         }
 
         // 6. Lấy thông tin tiền cọc từ bảng deposit
-        Deposit roomDeposit = depositRepo.findByRoom_RoomId(contractRequest.getRoomId())
-                .orElseThrow(() -> new RuntimeException("No deposit found for room: " + contractRequest.getRoomId()));
+        Deposit roomDeposit = depositRepo
+                .findTopByRoom_RoomIdAndStatus(contractRequest.getRoomId(), "PENDING")
+                .orElseThrow(() -> new RuntimeException(
+                        "No PENDING deposit found for room: " + contractRequest.getRoomId()));
 
+        if (roomDeposit.getInvoice() != null) {
+            String oldStatus = roomDeposit.getInvoice().getStatus();
+            if ("PAID".equals(oldStatus) || "REFUNDED".equals(oldStatus) || "CANCELLED".equals(oldStatus)) {
+                Invoice oldInvoice = roomDeposit.getInvoice();
+                oldInvoice.setDeposit(null);
+                // save oldInvoice nếu cần — bỏ qua nếu cascade
+            } else {
+                throw new RuntimeException("Deposit already has an active invoice");
+            }
+        }
         // 7. Tạo hợp đồng
         Contract newContract = new Contract();
         newContract.setRoom(room);
@@ -234,14 +247,9 @@ public class ContractServiceImpl implements ContractService {
         response.setContractServices(savedContractServices);
 
         // 15. Tự động tạo hóa đơn tiền cọc → status DRAFT
-        try {
-            invoiceService.createDepositInvoice(
-                    savedContract.getContractId(),
-                    roomDeposit.getDepositId());
-        } catch (Exception ex) {
-            System.err.println("[ContractService] Cảnh báo: Tạo hóa đơn cọc thất bại cho hợp đồng "
-                    + savedContract.getContractId() + " — " + ex.getMessage());
-        }
+        invoiceService.createDepositInvoice(
+                savedContract.getContractId(),
+                roomDeposit.getDepositId());
         return response;
     }
 
