@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,11 +38,16 @@ public class InvoiceServiceImpl implements InvoiceService {
     private static final String STATUS_CANCELLED = "CANCELLED";
     private static final String STATUS_REFUNDED = "REFUNDED";
 
+    private static final String PAYMENT_METHOD_VNPAY = "VNPAY";
+    private static final String PAYMENT_METHOD_CASH = "CASH";
+
     private final InvoiceRepo invoiceRepo;
     private final InvoiceDetailRepo invoiceDetailRepo;
     private final ContractRepo contractRepo;
     private final MeterReadingRepo meterReadingRepo;
     private final DepositRepo depositRepo; // <-- inject thêm
+    private final UserRepo userRepo;
+    private final PaymentRepo paymentRepo;
 
     // ────────────────────────────────────────────────────────────────────────
     // SCHEDULER
@@ -209,6 +215,77 @@ public class InvoiceServiceImpl implements InvoiceService {
         return toDTO(invoice);
     }
 
+    // vnpay
+    @Override
+    @Transactional
+    public InvoiceDTO confirmVNPayPayment(Long invoiceId, BigDecimal amount, String transactionCode) {
+        Invoice invoice = invoiceRepo.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceId));
+
+        // Idempotent
+        if (STATUS_PAID.equals(invoice.getStatus())) {
+            return toDTO(invoice);
+        }
+
+        if (!STATUS_PENDING.equals(invoice.getStatus()) && !STATUS_PARTIAL.equals(invoice.getStatus())) {
+            throw new RuntimeException("Cannot confirm payment for invoice with status: " + invoice.getStatus());
+        }
+
+        // Cập nhật invoice TRƯỚC
+        invoice.setPaidAmount(invoice.getTotalAmount());
+        invoice.setStatus(STATUS_PAID);
+        invoice = invoiceRepo.saveAndFlush(invoice); // flush để có invoiceId chắc chắn
+
+        // Tạo Payment SAU khi invoice đã được flush
+        Payment payment = new Payment();
+        payment.setInvoice(invoice);
+        payment.setAmount(amount);
+        payment.setPaymentDate(LocalDateTime.now());
+        payment.setPaymentMethod(PAYMENT_METHOD_VNPAY);
+        payment.setStatus(STATUS_PAID);
+        payment.setNote("VNPay transaction: " + transactionCode);
+        payment = paymentRepo.saveAndFlush(payment); // ✅ INSERT vào DB
+
+        // Gắn payment vào invoice
+        invoice.setPayment(payment);
+        invoiceRepo.save(invoice);
+
+        return toDTO(invoice);
+    }
+
+    /**
+     * Admin xác nhận thu tiền mặt (CASH).
+     * Chỉ dùng cho luồng thu tiền mặt — VNPay dùng confirmVNPayPayment().
+     */
+    @Override
+    public InvoiceDTO markAsPaid(Long invoiceId) {
+        Invoice invoice = findInvoice(invoiceId);
+
+        if (TYPE_DEPOSIT.equals(invoice.getType())) {
+            throw new RuntimeException("Use recordDepositPayment() for DEPOSIT invoices");
+        }
+        if (!STATUS_PENDING.equals(invoice.getStatus())) {
+            throw new RuntimeException("Only PENDING invoices can be marked as PAID");
+        }
+
+        // Tạo bản ghi Payment cho tiền mặt
+        Payment payment = new Payment();
+        payment.setInvoice(invoice);
+        payment.setAmount(invoice.getTotalAmount());
+        payment.setPaymentDate(LocalDateTime.now());
+        payment.setPaymentMethod(PAYMENT_METHOD_CASH);
+        payment.setStatus(STATUS_PAID);
+        payment.setNote("Cash payment confirmed by admin");
+        paymentRepo.save(payment);
+
+        invoice.setPaidAmount(invoice.getTotalAmount());
+        invoice.setStatus(STATUS_PAID);
+        invoice.setPayment(payment);
+        invoiceRepo.save(invoice);
+
+        return toDTO(invoice);
+    }
+
     // ────────────────────────────────────────────────────────────────────────
     // CHỈ SỐ ĐỒNG HỒ
     // ────────────────────────────────────────────────────────────────────────
@@ -294,6 +371,48 @@ public class InvoiceServiceImpl implements InvoiceService {
         return toPageResponse(invoiceRepo.filterInvoices(status, type, month, year, contractId, branchId, pageable));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<InvoiceDTO> getInvoicesByUser(
+            String username,
+            String status, String type,
+            Integer month, Integer year,
+            Integer pageNumber, Integer pageSize,
+            String sortBy, String sortOrder) {
+
+        // 1. Tìm user → lấy profileId
+        User user = userRepo.findByUserName(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Long profileId = user.getProfile().getProfileId();
+        System.out.println("=== DEBUG username: " + username);
+        System.out.println("=== DEBUG profileId: " + profileId);
+
+        // 2. Tìm các contract mà profile này là representative
+        List<Long> contractIds = contractRepo
+                .findByRepresentative_ProfileIdAndIsDeletedFalse(profileId)
+                .stream()
+                .map(Contract::getContractId)
+                .collect(Collectors.toList());
+        System.out.println("=== DEBUG contractIds: " + contractIds);
+        if (contractIds.isEmpty()) {
+            return PageResponse.<InvoiceDTO>builder()
+                    .content(List.of())
+                    .pageNumber(pageNumber)
+                    .pageSize(pageSize)
+                    .totalElements(0L)
+                    .totalPages(0)
+                    .lastPage(true)
+                    .build();
+        }
+
+        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
+
+        String effectiveStatus = (status == null) ? "NOT_DRAFT" : status;
+        Page<Invoice> page = invoiceRepo.filterByContractIds(
+                contractIds, effectiveStatus, type, month, year, pageable);
+        return toPageResponse(page);
+    }
     // ────────────────────────────────────────────────────────────────────────
     // WORKFLOW MONTHLY: DRAFT → PENDING → PAID
     // ────────────────────────────────────────────────────────────────────────
@@ -313,25 +432,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         invoice.setStatus(STATUS_PENDING);
         invoice.setDueDate(LocalDate.now().plusDays(7));
-        invoiceRepo.save(invoice);
-        return toDTO(invoice);
-    }
-
-    /**
-     * markAsPaid chỉ dùng cho MONTHLY (thanh toán 1 lần). DEPOSIT dùng
-     * recordDepositPayment.
-     */
-    @Override
-    public InvoiceDTO markAsPaid(Long invoiceId) {
-        Invoice invoice = findInvoice(invoiceId);
-
-        if (TYPE_DEPOSIT.equals(invoice.getType())) {
-            throw new RuntimeException("Use recordDepositPayment() for DEPOSIT invoices");
-        }
-        if (!STATUS_PENDING.equals(invoice.getStatus())) {
-            throw new RuntimeException("Only PENDING invoices can be marked as PAID");
-        }
-        invoice.setStatus(STATUS_PAID);
         invoiceRepo.save(invoice);
         return toDTO(invoice);
     }
@@ -477,6 +577,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                     .collect(Collectors.toList());
         }
 
+        // Thêm paymentMethod vào DTO để frontend biết VNPay hay CASH
+        String paymentMethod = invoice.getPayment() != null ? invoice.getPayment().getPaymentMethod() : null;
+
         LocalDateTime paidAt = null;
         if (STATUS_PAID.equals(invoice.getStatus()) && invoice.getPayment() != null) {
             paidAt = invoice.getPayment().getPaymentDate();
@@ -501,6 +604,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .contractStatus(invoice.getContract().getStatus().name())
                 .createdAt(invoice.getCreatedAt())
                 .paidAt(paidAt)
+                .paymentMethod(paymentMethod) // THÊM field này vào InvoiceDTO
                 .invoiceDetails(details)
                 .build();
     }
@@ -519,5 +623,24 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .oldValue(mr != null ? mr.getOldValue() : null)
                 .newValue(mr != null ? mr.getNewValue() : null)
                 .build();
+    }
+
+    public InvoiceDTO getInvoiceByIdForUser(Long invoiceId, String username) {
+        Invoice invoice = findInvoice(invoiceId);
+
+        User user = userRepo.findByUserName(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Long profileId = user.getProfile().getProfileId();
+
+        boolean belongs = contractRepo
+                .findByRepresentative_ProfileIdAndIsDeletedFalse(profileId)
+                .stream()
+                .anyMatch(c -> c.getContractId().equals(invoice.getContract().getContractId()));
+
+        if (!belongs)
+            throw new RuntimeException("Access denied");
+
+        return toDTO(invoice);
     }
 }
