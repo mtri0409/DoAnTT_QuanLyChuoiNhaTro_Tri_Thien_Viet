@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
@@ -126,5 +128,47 @@ public class InvoiceController {
     @PutMapping("/admin/invoices/{invoiceId}/recalculate")
     public ResponseEntity<InvoiceDTO> recalculate(@PathVariable Long invoiceId) {
         return new ResponseEntity<>(invoiceService.recalculate(invoiceId), HttpStatus.OK);
+    }
+
+    // UserInvoiceController.java
+    @GetMapping("/user/invoices/my")
+    public ResponseEntity<PageResponse<InvoiceDTO>> getMyInvoices(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(defaultValue = "1") Integer pageNumber,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+
+        return ResponseEntity.ok(
+                invoiceService.getInvoicesByUser(
+                        userDetails.getUsername(), // hoặc userId từ JWT
+                        status, type, month, year,
+                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
+    }
+
+    @GetMapping("/user/invoices/{invoiceId}")
+    public ResponseEntity<InvoiceDTO> getMyInvoiceById(
+            @PathVariable Long invoiceId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(
+                invoiceService.getInvoiceByIdForUser(invoiceId, userDetails.getUsername()));
+    }
+
+    @PutMapping("/user/invoices/{invoiceId}/confirm-vnpay")
+    public ResponseEntity<InvoiceDTO> confirmVNPay(
+            @PathVariable Long invoiceId,
+            @RequestParam BigDecimal amount,
+            @RequestParam String transactionCode,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // Validate invoice thuộc về user trước khi confirm
+        invoiceService.getInvoiceByIdForUser(invoiceId, userDetails.getUsername());
+
+        return ResponseEntity.ok(
+                invoiceService.confirmVNPayPayment(invoiceId, amount, transactionCode));
     }
 }
