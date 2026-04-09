@@ -7,6 +7,9 @@ node_modules/
 # Logs
 *.log
 
+# Upload directory
+uploads/
+
 # System files
 .DS_Store
 Thumbs.db
