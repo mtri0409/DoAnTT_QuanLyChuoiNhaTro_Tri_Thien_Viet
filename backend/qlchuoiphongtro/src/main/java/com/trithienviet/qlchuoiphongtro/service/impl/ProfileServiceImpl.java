@@ -28,6 +28,7 @@ import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 import com.trithienviet.qlchuoiphongtro.exceptions.APIException;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
+import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
@@ -38,11 +39,14 @@ import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.repo.VehicleRepo;
 import com.trithienviet.qlchuoiphongtro.service.FileService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
     @Autowired
@@ -59,6 +63,11 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Autowired
     private FileService fileService;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired NotificationHelper notificationHelper;
 
     @Value("${path.images.identification}")
     private String path;
@@ -427,5 +436,17 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setIsActive(true);
         profileRepo.save(profile);
         return "Khôi phục hồ sơ thành công !";
+    }
+
+    public void remidUpdateIdentification(){
+        List<Profile> profiles = profileRepo.findIncompleteProfiles();
+
+        if(profiles!=null)
+        {
+            for(Profile profile : profiles)
+            {
+                notificationHelper.sendIncompleteProfileReminders(profile);
+            }
+        }
     }
 }

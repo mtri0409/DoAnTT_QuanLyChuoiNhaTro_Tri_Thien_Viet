@@ -98,7 +98,11 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setIsRead(true);
         notificationRepo.save(notification);
     }
-
+    public long countUnread(Long userId)
+    {
+        Long total = notificationRepo.countByUser_UserIdAndIsReadFalse(userId);
+        return total;
+    }
     @Override
     public PageResponse<NotificationLoadDTO> getAllNoti(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder){
          Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
@@ -155,4 +159,5 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepo.save(notification);
 
     }
+
 }

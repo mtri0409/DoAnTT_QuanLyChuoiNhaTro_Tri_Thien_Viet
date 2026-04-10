@@ -9,4 +9,6 @@ import com.trithienviet.qlchuoiphongtro.entity.Notification;
 public interface NotificationRepo extends JpaRepository<Notification,Long> {
 
     List<Notification> findByUserUserIdOrderByCreatedAtDesc(Long userId);
+
+    long countByUser_UserIdAndIsReadFalse(Long userId);
 } 

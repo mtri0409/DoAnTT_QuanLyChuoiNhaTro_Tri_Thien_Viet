@@ -53,8 +53,12 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
+    @GetMapping("public/notification/unread-count/{userId}")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable Long userId) {
+        return ResponseEntity.ok(notificationService.countUnread(userId));
+    }
     // 3. API đánh dấu đã đọc
-    @PutMapping("/{notiId}/read")
+    @PutMapping("/public/notification/{notiId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long notiId) {
         notificationService.markAsRead(notiId);
         return ResponseEntity.ok().build();

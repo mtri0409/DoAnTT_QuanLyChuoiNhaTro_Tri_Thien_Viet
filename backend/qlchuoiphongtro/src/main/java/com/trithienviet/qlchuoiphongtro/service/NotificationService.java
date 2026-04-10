@@ -12,4 +12,5 @@ public interface NotificationService {
     void markAsRead(Long notiId);
     PageResponse<NotificationLoadDTO> getAllNoti(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
     void sendSystemNotification(Long profileId, String title, String content, String type);
+    long countUnread(Long userId);
 }

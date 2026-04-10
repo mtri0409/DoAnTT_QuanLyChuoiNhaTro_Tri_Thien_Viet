@@ -61,5 +61,13 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
                         Pageable pageable);
         List<Invoice> findByStatus(String status);
         List<Invoice> findByStatusAndPeriodMonthAndPeriodYear(String status, int month, int year);
-        List<Invoice> findByStatusInAndDueDateBefore(List<String> statuses, LocalDate date);
+       @Query("SELECT i FROM Invoice i " +
+       "JOIN FETCH i.contract c " +
+       "JOIN FETCH c.roomMembers rm " +
+       "JOIN FETCH rm.profile p " +
+       "WHERE i.status = :status AND i.dueDate < :date")
+        List<Invoice> findOverdueInvoices(
+                @Param("status") String status, 
+                @Param("date") LocalDate date
+        );       
 }

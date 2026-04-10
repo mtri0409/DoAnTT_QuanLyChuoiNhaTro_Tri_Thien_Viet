@@ -6,9 +6,10 @@ public class NotificationConstant {
     public static final String TYPE_SYSTEM = "SYSTEM";
     public static final String TYPE_CONTRACT = "CONTRACT";
     public static final String TYPE_BILL = "BILL";
+     public static final String TYPE_OVER_BILL = "Over BILL";
     public static final String TYPE_ACCOUNT = "ACCOUNT";
     public static final String TYPE_MAINTENANCE = "MAINTENANCE";
-
+    public static final String TYPE_PROFILE_UPDATE = "PROFILE_UPDATE";
     // --- MẪU THÔNG BÁO HỢP ĐỒNG ---
     public static final String CONTRACT_CREATED_TITLE = "Hợp đồng thuê phòng mới";
     public static final String CONTRACT_CREATED_CONTENT = "Chào %s! Hợp đồng thuê phòng %s của bạn đã được khởi tạo thành công. Vui lòng kiểm tra lại thông tin.";
@@ -34,4 +35,7 @@ public class NotificationConstant {
     // --- MẪU THÔNG BÁO XE ---
     public static final String VEHICLE_ADDED_TITLE = "Đăng ký phương tiện thành công";
     public static final String VEHICLE_ADDED_CONTENT = "Xe biển số %s đã được thêm vào hồ sơ của bạn thành công.";
+
+    public static final String PROFILE_INCOMPLETE_TITLE = "Cập nhật thông tin hồ sơ";
+    public static final String PROFILE_INCOMPLETE_CONTENT = "Chào %s! Hồ sơ của bạn hiện đang thiếu thông tin quan trọng (CCCD/Ảnh định danh). Vui lòng cập nhật trước ngày %s để đảm bảo quyền lợi lưu trú.";
 }

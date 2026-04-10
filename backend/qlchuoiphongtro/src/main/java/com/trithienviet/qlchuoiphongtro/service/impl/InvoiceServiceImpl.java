@@ -8,6 +8,8 @@ import com.trithienviet.qlchuoiphongtro.repo.*;
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class InvoiceServiceImpl implements InvoiceService {
 
     private static final String TYPE_MONTHLY = "MONTHLY";
@@ -206,9 +209,32 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional
     public void remindInvoice() {
-      
+        LocalDate today = LocalDate.now();
+        
+        List<Invoice> overdueInvoices = invoiceRepo.findOverdueInvoices(STATUS_PENDING, today);
+
+       
+        if (overdueInvoices.isEmpty()) {
+            log.info("Không có hóa đơn nào quá hạn hôm nay: {}", today);
+            return;
+        }
+
+        for (Invoice invoice : overdueInvoices) {
+            try {
+             log.info(">> EMAIL : ",invoice.getContract().getRepresentative().getEmail());
+                log.info("Đã gửi nhắc nợ cho hóa đơn: {} - Khách hàng: {}", 
+                        invoice.getInvoiceId(), invoice.getContract().getRepresentative().getFullName());
+                
+            notificationHelper.sendOVerBillToAllMembers(invoice);
+            
+            } catch (Exception e) {
+                log.error("Lỗi khi gửi thông báo cho hóa đơn {}: {}", invoice.getInvoiceId(), e.getMessage());
+            }
+        }
     }
+
     // ────────────────────────────────────────────────────────────────────────
     // CHỈ SỐ ĐỒNG HỒ
     // ────────────────────────────────────────────────────────────────────────

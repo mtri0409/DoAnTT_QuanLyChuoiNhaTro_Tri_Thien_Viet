@@ -22,4 +22,10 @@ public class InvoiceScheduler {
         LocalDate today = LocalDate.now();
         invoiceService.autoGenerateInvoices(today.getMonthValue(), today.getYear());
     }
+
+    @Scheduled(cron = "0 49 14 * * *")
+    public void scheduleRemidOverBill(){
+        invoiceService.remindInvoice();
+    }
+    
 }
