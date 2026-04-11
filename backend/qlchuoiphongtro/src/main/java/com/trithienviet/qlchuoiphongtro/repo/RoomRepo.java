@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomStatus;
+import com.trithienviet.qlchuoiphongtro.payloads.BranchDashboardStatsDTO;
 
 @Repository
 public interface RoomRepo extends JpaRepository<Room, Long> {
@@ -62,4 +63,8 @@ public interface RoomRepo extends JpaRepository<Room, Long> {
         
         
         List<Room> findByStatus(@Param("status") RoomStatus roomStatus);
+
+        // Long countByBranchId(Long branchId);
+
+        // Long countByStatusAndBranchId(String status, Long branchId);
 }

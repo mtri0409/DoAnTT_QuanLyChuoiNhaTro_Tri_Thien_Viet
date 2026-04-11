@@ -1,6 +1,8 @@
 package com.trithienviet.qlchuoiphongtro.repo;
 
 import com.trithienviet.qlchuoiphongtro.entity.MeterReading;
+import com.trithienviet.qlchuoiphongtro.payloads.UtilityProjection;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,4 +39,23 @@ public interface MeterReadingRepo extends JpaRepository<MeterReading, Long> {
                         @Param("serviceId") Integer serviceId,
                         @Param("month") Integer month,
                         @Param("year") Integer year);
+       @Query(value = "SELECT " +
+                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value ELSE 0 END), 0) as totalElectricUsage, " +
+                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalElectricMoney, " +
+                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value ELSE 0 END), 0) as totalWaterUsage, " +
+                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalWaterMoney " +
+                "FROM meter_readings m " +
+                "JOIN services s ON m.service_id = s.service_id " +
+                "JOIN rooms r ON m.room_id = r.room_id " +
+                "JOIN floors f ON r.floor_id = f.floor_id " +
+                "WHERE (:branchId IS NULL OR f.branch_id = :branchId) " +
+                "AND (:month IS NULL OR m.period_month = :month) " +
+                "AND (:year IS NULL OR m.period_year = :year)", nativeQuery = true)
+        UtilityProjection getUtilityAnalytics(
+        @Param("branchId") Long branchId, 
+        @Param("month") Integer month, 
+        @Param("year") Integer year,
+        @Param("elecName") String elecName, 
+        @Param("waterName") String waterName
+        );
 }

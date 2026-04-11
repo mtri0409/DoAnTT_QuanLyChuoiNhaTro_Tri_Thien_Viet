@@ -502,7 +502,7 @@ const CreateContract = () => {
       alert("Tạo hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
-      console.error("Lỗi tạo hợp đồng:", err);
+      console.error("Lỗi tạo hợp đồng:", err.response);
       const msg =
         err.response?.data?.message ||
         err.response?.data ||
