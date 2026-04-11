@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class FileServiceImpl implements FileService {
             folder.mkdirs();
         }
 
-        Files.copy(file.getInputStream(), Paths.get(filePath));
+        Files.copy(file.getInputStream(), Paths.get(filePath), StandardCopyOption.REPLACE_EXISTING);;
 
         return fileName;
     }

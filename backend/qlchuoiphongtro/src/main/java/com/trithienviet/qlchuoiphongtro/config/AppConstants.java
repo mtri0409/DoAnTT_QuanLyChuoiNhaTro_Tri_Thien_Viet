@@ -22,9 +22,9 @@ public class AppConstants {
             "/api/rooms",
             "/api/rooms/**",
             "/api/room-medias",
+            "/images/**",
             "/api/floors",
             "/api/floors/**",
-            
             "/api/branches",
             "/api/branches/**",
             "/api/amenities",

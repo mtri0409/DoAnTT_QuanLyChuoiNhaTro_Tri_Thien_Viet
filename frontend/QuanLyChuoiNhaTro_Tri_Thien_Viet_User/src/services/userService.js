@@ -13,18 +13,28 @@ const userService = {
     });
   },
 
-  getAllRooms: (pageNumber = 0, pageSize = 10, sortBy = 'roomName', sortOrder = 'asc', branchId = null, search = '') => {
-    return axiosClient.get('/rooms', {
-      params: {
-        pageNumber,
-        pageSize,
-        sortBy,
-        sortOrder,
-        ...(branchId && { branchId }),
-        ...(search && { search }),
-      },
-    });
-  },
+  getAllRooms: (
+        pageNumber = 0,
+        pageSize = 10,
+        sortBy = 'roomName',
+        sortOrder = 'asc',
+        floorId = null,
+        branchId = null,
+        search = ''
+    ) => {
+        const url = `/rooms`;
+        return axiosClient.get(url, {
+            params: {
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                ...(floorId && { floorId: floorId }),      // ← Chỉ thêm nếu có
+                ...(branchId && { branchId: branchId }),   // ← Chỉ thêm nếu có
+                ...(search && { search: search })           // ← Chỉ thêm nếu có
+            }
+        });
+    },
 
   getRoomById: (roomId) => {
     return axiosClient.get(`/rooms/${roomId}`);
@@ -33,6 +43,7 @@ const userService = {
   getMediaByRoomId: (roomId) => {
     return axiosClient.get(`/room-media/room/${roomId}`);
   },
+  
 };
 
 export default userService;

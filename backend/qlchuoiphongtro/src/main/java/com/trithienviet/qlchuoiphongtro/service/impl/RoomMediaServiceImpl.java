@@ -116,36 +116,44 @@ public class RoomMediaServiceImpl implements RoomMediaService {
 
     // ========== CREATE ==========
     @Override
-    @Transactional
-    public RoomMediaDTO createRoomMedia(MultipartFile file, Long roomId, boolean isThumbnail) {
-        try {
-            // ← Dùng FileService để lưu file, nhận lại tên file (không phải full path)
-            String fileName = fileService.uploadImage(uploadDir, file);
+@Transactional
+public RoomMediaDTO createRoomMedia(MultipartFile file, Long roomId, boolean isThumbnail) {
+    try {
+        System.out.println("=== START createRoomMedia ===");
+        System.out.println("File name: " + file.getOriginalFilename());
+        System.out.println("File size: " + file.getSize());
+        System.out.println("RoomId: " + roomId);
+        System.out.println("Upload dir: " + uploadDir); // ← xem path thật
 
-            // ← Build URL để lưu vào DB: /images/<fileName>
-            String fileUrl = "/images/" + fileName;
+        String fileName = fileService.uploadImage(uploadDir, file);
+        System.out.println("File saved: " + fileName); // ← nếu không in ra đây thì lỗi ở FileService
 
-            // ← Tìm Room
-            Room room = roomRepo.findById(roomId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
+        String fileUrl = "/images/" + fileName;
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
+        System.out.println("Room found: " + room.getRoomId()); // ← nếu không in ra đây thì lỗi ở DB
 
-            // ← Tạo và lưu entity
-            RoomMedia media = new RoomMedia();
-            media.setUrl(fileUrl);
-            media.setMediaType(file.getContentType());
-            media.setThumbnail(isThumbnail);
-            media.setRoom(room);
+        RoomMedia media = new RoomMedia();
+        media.setUrl(fileUrl);
+        media.setMediaType(file.getContentType());
+        media.setThumbnail(isThumbnail);
+        media.setRoom(room);
 
-            RoomMedia saved = roomMediaRepo.save(media);
+        RoomMedia saved = roomMediaRepo.save(media);
+        System.out.println("=== DONE, mediaId: " + saved.getMediaId() + " ===");
 
-            RoomMediaDTO dto = modelMapper.map(saved, RoomMediaDTO.class);
-            dto.setRoomId(saved.getRoom().getRoomId());
-            return dto;
+        RoomMediaDTO dto = modelMapper.map(saved, RoomMediaDTO.class);
+        dto.setRoomId(saved.getRoom().getRoomId());
+        return dto;
 
-        } catch (IOException e) {
-            throw new RuntimeException("Lỗi khi upload file: " + e.getMessage());
-        }
+    } catch (IOException e) {
+        System.out.println("IOException: " + e.getMessage());
+        throw new RuntimeException("Lỗi khi upload file: " + e.getMessage());
+    } catch (Exception e) {
+        System.out.println("Exception: " + e.getClass().getName() + " - " + e.getMessage());
+        throw e;
     }
+}
 
     // ========== UPDATE ==========
     @Override
