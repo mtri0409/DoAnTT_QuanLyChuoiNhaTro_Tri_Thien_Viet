@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -16,6 +15,7 @@ import {
   FaCalculator,
   FaGoodreadsG,
   FaCogs,
+  FaBell,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
@@ -31,7 +31,10 @@ const NAV_ITEMS = [
   { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },
   { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi /> },
   { title: "Cài đặt", path: "/admin/settings", icon: <FaCogs /> },
+  { title: 'Thông báo',     path: '/notifications',  icon: <FaBell /> },
+
 ]
+
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
 

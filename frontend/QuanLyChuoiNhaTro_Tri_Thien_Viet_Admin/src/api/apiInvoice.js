@@ -63,7 +63,7 @@ const apiInvoice = {
 
   /** DRAFT → PENDING: tính lại total, set dueDate */
   send: (invoiceId) => axiosInstance.put(`/admin/invoices/${invoiceId}/send`),
-
+  sendAll :() => axiosInstance.put(`/admin/invoices/send`),
   /** PENDING → PAID (chỉ MONTHLY / REPAIR) */
   markPaid: (invoiceId) =>
     axiosInstance.put(`/admin/invoices/${invoiceId}/mark-paid`),

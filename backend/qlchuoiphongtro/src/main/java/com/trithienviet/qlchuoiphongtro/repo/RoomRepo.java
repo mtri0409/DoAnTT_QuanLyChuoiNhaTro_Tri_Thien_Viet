@@ -3,6 +3,8 @@ package com.trithienviet.qlchuoiphongtro.repo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.trithienviet.qlchuoiphongtro.entity.Room;
+import com.trithienviet.qlchuoiphongtro.entity.RoomStatus;
+import com.trithienviet.qlchuoiphongtro.payloads.BranchDashboardStatsDTO;
 
 @Repository
 public interface RoomRepo extends JpaRepository<Room, Long> {
@@ -56,4 +60,11 @@ public interface RoomRepo extends JpaRepository<Room, Long> {
                         @Param("floorId") Long floorId,
                         @Param("branchId") Long branchId,
                         Pageable pageable);
+        
+        
+        List<Room> findByStatus(@Param("status") RoomStatus roomStatus);
+
+        // Long countByBranchId(Long branchId);
+
+        // Long countByStatusAndBranchId(String status, Long branchId);
 }

@@ -72,5 +72,16 @@ public interface ProfileRepo extends JpaRepository<Profile, Long> {
        "OR p.phone LIKE CONCAT('%', :keyword, '%') " +
        "OR p.identityNumber LIKE CONCAT('%', :keyword, '%'))")
        Page<Profile> searchInternalProfiles(@Param("keyword") String keyword, @Param("status") Boolean status, Pageable page);
-   
+   @Query("SELECT p FROM Profile p WHERE " +
+           "p.phone IS NULL OR p.phone = '' OR " +
+           "p.email IS NULL OR p.email = '' OR " +
+           "p.identityNumber IS NULL OR p.identityNumber = '' OR " +
+           "p.address IS NULL OR p.address = '' OR " +
+           "p.idFrontImage IS NULL OR p.idBackImage IS NULL OR " +
+           "p.idIssueDate IS NULL OR p.idExpirationDate IS NULL")
+    List<Profile> findIncompleteProfiles();
+    
+    // Nếu bạn muốn đếm số lượng để hiển thị cảnh báo trên Dashboard
+    @Query("SELECT COUNT(p) FROM Profile p WHERE p.phone IS NULL OR p.identityNumber IS NULL")
+    long countIncompleteProfiles();
 }

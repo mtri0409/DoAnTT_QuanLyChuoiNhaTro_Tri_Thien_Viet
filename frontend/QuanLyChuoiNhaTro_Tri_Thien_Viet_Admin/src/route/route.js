@@ -23,6 +23,9 @@ import UpdateContract from "../pages/contract/UpdateContract";
 import ListUserDeleted from "../pages/user/ListUserDeleted";
 import ListProfileDeleted from "../pages/proflie/ListProfileDeleted";
 import ListVehicleDeleted from "../pages/vehicle/ListVehicleDeleted";
+import ListNotification from "../pages/notification/ListNotification";
+
+
 
 
 import CreateRoom from "../pages/room/CreateRoom";
@@ -35,9 +38,13 @@ import UpdateService from "../pages/service/UpdateService";
 
 import ContractDetail from "../pages/contract/ContractDetail";
 import ContractMember from "../pages/contract/ContractMember";
+
+import CreateNotification from "../pages/notification/CreateNotify";
+
 import MeterReadingPage from "../pages/meter-reading/MeterReadingPage";
 import ListInvoice from "../pages/invoice/ListInvoice";
 import InvoiceDetail from "../pages/invoice/InvoiceDetail";
+
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -59,10 +66,12 @@ const AdminRoute = [
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
 
+
   //meter-reading
   { path: "/meter-reading", component: MeterReadingPage },
   { path: "/invoice", component: ListInvoice },
   { path: "/invoice/:invoiceId", component: InvoiceDetail },
+
 
   {path:"/profile/:profileId/vehicle",component:CreateVehicle},
   { path: "/profile/restore", component: ListProfileDeleted },
@@ -73,6 +82,7 @@ const AdminRoute = [
   { path: "/vehicles", component: ListVehicle },
   {path:"/vehicle/:vehicleId/update",component:UpdateVehicle},
   { path: "/vehicle/restore", component: ListVehicleDeleted },
+
   //branch
   { path: "/branches/:page", component: BranchList },
   { path: "/branches/create", component: CreateBranch },
@@ -90,6 +100,9 @@ const AdminRoute = [
   { path: "/services/:page", component: ServiceList },
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
+
+  {path:"/notifications",component:ListNotification},
+  {path:"/notifications/create",component:CreateNotification}
 
 ];
 export default AdminRoute;

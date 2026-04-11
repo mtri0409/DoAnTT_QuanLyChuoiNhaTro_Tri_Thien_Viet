@@ -36,11 +36,21 @@ Thumbs.db
 temp/
 bin/
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
 
+>>>>>>> dev-tri
 #--- image
 **/images/**
 .vite/
+<<<<<<< HEAD
+>>>>>>> ee57d37636e4387a4029c95a9c2ca81fc43fd468
+=======
+=======
 
+>>>>>>> dev-tri
 
 #--- image
 **/images/**
@@ -49,3 +59,7 @@ bin/
 
 .vite/**
 
+<<<<<<< HEAD
+>>>>>>> dev-tri
+=======
+>>>>>>> dev-tri
