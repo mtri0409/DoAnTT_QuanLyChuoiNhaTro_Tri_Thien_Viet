@@ -40,6 +40,7 @@ export default function Home() {
     userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', activeBranchId)
       .then(res => {
         const data = res.content;
+        console.log(data);
         setAllRooms(Array.isArray(data) ? data : []);
 
       })
