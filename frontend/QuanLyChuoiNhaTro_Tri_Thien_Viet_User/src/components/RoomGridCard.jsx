@@ -31,7 +31,6 @@ export default function RoomGridCard({ room }) {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
 
-  // ── Images ──
   const getImages = () => {
     if (room.roomMedia?.length) {
       const urls = room.roomMedia
@@ -67,9 +66,7 @@ export default function RoomGridCard({ room }) {
 
   const url = media[0].url;
 
-  // ❌ domain chết
   if (url.includes("storage.troapp.vn")) {
-    // tìm ảnh local fallback
     const local = media.find(m => m.url.startsWith("/images"));
     if (local) {
       return `http://localhost:8080${local.url}`;
@@ -77,7 +74,6 @@ export default function RoomGridCard({ room }) {
     return "http://localhost:8080/images/default.jpg";
   }
 
-  // local
   if (url.startsWith("/images")) {
     return `http://localhost:8080${url}`;
   }

@@ -56,7 +56,6 @@ const RoomDetail = () => {
           const contractRes = await apiContract.getContractsByRoom(roomId);
           const contracts = contractRes.content;
           const list = Array.isArray(contracts) ? contracts : [contracts];
-          // Ưu tiên hợp đồng ACTIVE, nếu không lấy cái đầu
           const activeContract = list.find(c =>
             c.status?.toUpperCase() === 'ACTIVE'
           ) ?? list[0] ?? null;

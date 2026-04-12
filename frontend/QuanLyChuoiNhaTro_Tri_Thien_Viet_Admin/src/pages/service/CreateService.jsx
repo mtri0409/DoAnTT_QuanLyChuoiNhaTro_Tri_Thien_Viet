@@ -25,7 +25,6 @@ const CreateService = () => {
 
     let newValue = value;
 
-    // convert status -> boolean
     if (name === 'isActive') {
       newValue = value === 'true';
     }

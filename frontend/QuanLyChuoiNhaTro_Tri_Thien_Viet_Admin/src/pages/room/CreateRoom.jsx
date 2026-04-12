@@ -33,7 +33,7 @@ const CreateRoom = () => {
     floorId: '',
     Status: 'AVAILABLE',
     amenities: [],
-    depositAmount: '', // ← THÊM: tiền cọc
+    depositAmount: '', 
   });
 
   const [mediaFiles, setMediaFiles] = useState([]);

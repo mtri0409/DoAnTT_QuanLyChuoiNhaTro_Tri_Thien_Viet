@@ -35,14 +35,12 @@ const formatPrice = (price) =>
 export default function RoomCard({ room, tag }) {
   const navigate = useNavigate();
 
-  // Breadcrumb: branch → floor → room
   const branchName = room.branch?.branchName ?? room.branchName ?? null;
   const floorName  = room.floor?.floorName
     ?? (room.floor?.floorNumber != null ? `Tầng ${room.floor.floorNumber}` : null)
     ?? room.floorName
     ?? null;
 
-  // Badge: ưu tiên prop tag (từ SearchRoom), fallback theo status
   const statusMap = {
     available:   { bg: '#16a34a', label: 'Còn phòng' },
     occupied:    { bg: '#dc2626', label: 'Đã thuê' },

@@ -3,8 +3,8 @@ import RoomCard from '../components/RoomCard';
 import userService from '../services/userService';
 
 const MAX_PRICE  = 20;
-const PAGE_SIZE  = 5;   // số phòng hiển thị mỗi trang (client-side)
-const FETCH_SIZE = 100; // fetch nhiều lên để filter client-side không bị lệch trang
+const PAGE_SIZE  = 5;  
+const FETCH_SIZE = 100; 
 
 const isRoomVisible = (room) => {
   const s = (room.status ?? room.Status ?? '').toUpperCase();
@@ -21,25 +21,21 @@ const getRoomTag = (room) => {
 };
 
 export default function SearchRoom() {
-  const [allRooms,    setAllRooms]    = useState([]); // toàn bộ phòng fetch về
+  const [allRooms,    setAllRooms]    = useState([]); 
   const [branches,    setBranches]    = useState([]);
   const [amenities,   setAmenities]   = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
 
-  // Server-side filter (gọi lại API)
   const [activeBranchId, setActiveBranchId] = useState(null);
 
-  // Client-side filters
   const [maxPrice,        setMaxPrice]        = useState(MAX_PRICE);
   const [activeAmenities, setActiveAmenities] = useState([]);
   const [searchText,      setSearchText]      = useState('');
   const [statusFilter,    setStatusFilter]    = useState('ALL');
 
-  // Client-side pagination
   const [page, setPage] = useState(0);
 
-  // Fetch branches & amenities
   useEffect(() => {
     userService.getAllBranches(1, 50)
       .then(res => { const l = res.content; setBranches(Array.isArray(l) ? l : []); })
@@ -53,7 +49,7 @@ export default function SearchRoom() {
   const fetchRooms = useCallback(() => {
     setLoading(true);
     setError(null);
-    setPage(0); // reset page về 0 khi fetch mới
+    setPage(0); 
     userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', activeBranchId)
       .then(res => {
         const data = res.content;
@@ -66,7 +62,6 @@ export default function SearchRoom() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchRooms(); }, [fetchRooms]);
 
-  // Client-side filter → đây là source of truth cho pagination
   const filtered = useMemo(() => allRooms.filter(room => {
     if (!isRoomVisible(room)) return false;
     if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
@@ -78,15 +73,13 @@ export default function SearchRoom() {
     return true;
   }), [allRooms, maxPrice, activeAmenities, searchText, statusFilter]);
 
-  // Pagination tính trên filtered
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages - 1); // tránh page vượt quá
+  const currentPage = Math.min(page, totalPages - 1); 
   const pageRooms   = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
 
-  // Reset page về 0 khi client filter thay đổi
   const setFilter = (fn) => { fn(); setPage(0); };
 
-  const handleBranch   = (id) => { setActiveBranchId(id); }; // fetchRooms tự reset page
+  const handleBranch   = (id) => { setActiveBranchId(id); }; 
   const toggleAmenity  = (id) => setFilter(() => setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
   const resetAll       = () => { setActiveBranchId(null); setMaxPrice(MAX_PRICE); setActiveAmenities([]); setSearchText(''); setStatusFilter('ALL'); };
 

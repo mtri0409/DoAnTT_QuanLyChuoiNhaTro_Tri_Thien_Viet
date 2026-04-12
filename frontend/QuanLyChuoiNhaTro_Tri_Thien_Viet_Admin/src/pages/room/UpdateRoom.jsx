@@ -49,7 +49,6 @@ const UpdateRoom = () => {
   const getFullImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    // Đảm bảo không bị lặp dấu /
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     const cleanBase = imgURL.endsWith('/') ? imgURL : `${imgURL}/`;
     return `${cleanBase}${cleanUrl}`;
@@ -68,11 +67,8 @@ const UpdateRoom = () => {
           apiAmenity.getAllAmenities(0, 100),
         ]);
 
-        // 1. Xử lý dữ liệu phòng
         const roomData = roomRes.data || roomRes;
         
-        // 2. Xử lý dữ liệu Media (Sửa lỗi load hình ảnh cũ tại đây)
-        // Kiểm tra kỹ cấu trúc trả về của mediaRes
         let mediaData = [];
         if (mediaRes && mediaRes.data) {
           // Nếu API trả về { data: [...] } hoặc { data: { data: [...] } }
@@ -82,25 +78,20 @@ const UpdateRoom = () => {
         }
         setExistingMedia(mediaData);
 
-        // 3. Xử lý danh sách tầng
         const floorList = Array.isArray(floorRes.data || floorRes) ? (floorRes.data || floorRes) : [];
         setFloors(floorList);
 
-        // 4. Xử lý danh sách chi nhánh
         const branchList = (branchRes.data || branchRes)?.content || (Array.isArray(branchRes.data) ? branchRes.data : []);
         setBranches(branchList);
 
-        // 5. Xử lý danh sách tiện ích
         const amenityList = (amenityRes.data || amenityRes)?.content || (Array.isArray(amenityRes.data) ? amenityRes.data : []);
         setAllAmenities(amenityList);
 
-        // 6. Thiết lập chi nhánh đã chọn dựa trên tầng của phòng
         const selectedFloor = floorList.find(f => String(f.floorId) === String(roomData.floorId));
         if (selectedFloor) {
           setSelectedBranchId(String(selectedFloor.branchId));
         }
 
-        // 7. Cập nhật form data
         setFormData({
           roomName: roomData.roomName || '',
           price: roomData.price || '',
