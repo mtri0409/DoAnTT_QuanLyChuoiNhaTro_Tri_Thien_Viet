@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaHome, FaBell, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 import NavLinks from './NavLinks';
 import { useAuth } from '../context/AuthContext';
+import apiNotification from '../api/apiNotification';
 
 /* ─── Navbar ────────────────────────────────────────────────── */
 const Navbar = () => {
   const navigate = useNavigate();
   const {logout , user} =useAuth();
+  const [unreadCount,setUnreadCount] = useState(0);
+  useEffect(() => {
+    const fetchCount = async () => {
+        const count = await apiNotification.getUnreadCount(user.userId);
+        setUnreadCount(count);
+    };
+    fetchCount();
+}, []);
   if(!user){
     return null;
   }
@@ -50,7 +59,7 @@ const Navbar = () => {
 
           {/* User actions */}
           <div className="d-flex align-items-center gap-2 mt-3 mt-lg-0 pt-3 pt-lg-0 border-top border-lg-0 ms-lg-auto">
-            <NotificationBell count={3} />
+            <NotificationBell count={unreadCount} onNavigate={()=> navigate(`/user/notifications/`)} />
             <UserProfileDropdown user={user} onLogout={() => {
                 logout();
                 navigate('/login')}} />
@@ -71,8 +80,9 @@ const Navbar = () => {
 };
 
 /* ─── Notification Bell ─────────────────────────────────────── */
-const NotificationBell = ({ count }) => (
+const NotificationBell = ({ count,onNavigate }) => (
   <button
+  onClick={onNavigate}
     className="btn btn-light rounded-circle p-0 position-relative text-secondary border-0"
     style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
   >

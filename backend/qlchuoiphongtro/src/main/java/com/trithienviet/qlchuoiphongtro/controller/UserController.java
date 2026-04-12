@@ -78,7 +78,6 @@ public class UserController {
 
     @GetMapping("/public/users/username/{username}") 
 
- 
     public ResponseEntity<UserDTO> getUserUserName(@PathVariable String username) {
         
         UserDTO userDTO = userService.getUserByUsername(username);

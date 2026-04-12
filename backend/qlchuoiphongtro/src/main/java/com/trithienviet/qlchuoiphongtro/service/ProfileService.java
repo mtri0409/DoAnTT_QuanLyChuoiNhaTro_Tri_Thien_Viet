@@ -36,4 +36,6 @@ public interface ProfileService {
      List<ProfileDTO> getProfilesWithoutAccount();
 
      String restoreProfile(Long profileId);
+
+      void remidUpdateIdentification();
 }

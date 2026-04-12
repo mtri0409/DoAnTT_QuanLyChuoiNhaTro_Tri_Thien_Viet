@@ -28,16 +28,16 @@ public class Notification {
     private Long notificationId;
 
     @Column(nullable = false)
-    private String tilte;
+    private String title;
     
     @Column(columnDefinition = "TEXT")
     private String content;
 
     private String type;
-
+    private Boolean isRead;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="user_id",nullable = false)
+    @JoinColumn(name="user_id")
     private User user;
 }

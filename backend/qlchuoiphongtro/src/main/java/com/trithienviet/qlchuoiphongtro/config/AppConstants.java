@@ -8,6 +8,8 @@ public class AppConstants {
     public static final String SORT_PROFILE_BY = "profileId";
     public static final String SORT_USERS_BY = "userId";
     public static final String SORT_VEHICEL_BY = "vehicleId";
+    public static final String SORT_NOTIFICATION_BY = "notificationId";
+
     public static final String SORT_DIR = "asc";
     public static final Long ADMIN_ID = 101L;
     public static final Long USER_ID = 102L;
@@ -20,7 +22,6 @@ public class AppConstants {
             "/api/auth/login",
             "/api/auth/create-account/**",
             "/api/contracts",
-
             "/error"
     };
 
