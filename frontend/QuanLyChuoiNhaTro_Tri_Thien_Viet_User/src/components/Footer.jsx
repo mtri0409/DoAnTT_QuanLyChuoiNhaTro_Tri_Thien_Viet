@@ -169,7 +169,7 @@ export default function Footer() {
             {[
               { ic: "📱", text: <>Hotline: <strong style={{ color: "#e2e8f0" }}>0901 234 567</strong></> },
               { ic: "💬", text: <>Zalo OA: <strong style={{ color: "#e2e8f0" }}>Phòng Trọ Rẻ</strong></> },
-              { ic: "📧", text: "phongtroke@gmail.com" },
+              { ic: "📧", text: "lbin373@gmail.com" },
               { ic: "🏢", text: "123 Nguyễn Huệ, Q.1, TP.HCM" },
               { ic: "🕐", text: "7:00 – 22:00, Thứ 2 – Chủ nhật" },
             ].map((item, i) => (

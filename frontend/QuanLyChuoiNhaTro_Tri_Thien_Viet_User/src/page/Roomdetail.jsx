@@ -4,8 +4,8 @@ import apiRoom from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/api
 import apiFloor from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiFloor';
 import RoomGridCard from '../components/RoomGridCard';
 
-const CONTACT_PHONE = '0901 234 567';
-const ZALO_PHONE = '0901234567';
+const CONTACT_PHONE = '0385018194';
+const ZALO_PHONE = '0385018194';
 
 const amenityIconMap = {
   wifi: '📶', 'wi-fi': '📶', internet: '📶',
@@ -166,22 +166,39 @@ export default function RoomDetail() {
   }, [room?.floorId, room?.roomId]);
 
   const getImages = () => {
-    if (!room?.roomMedia?.length) {
-      return ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80'];
-    }
-    const urls = room.roomMedia
-      .filter((m) => {
-        if (!m.mediaType) return true;
-        const t = m.mediaType.toLowerCase();
-        return t === 'image' || t.startsWith('image/');
-      })
-      .map((m) => m.url ?? m.mediaUrl)
-      .filter(Boolean);
-    return urls.length
-      ? urls
-      : ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80'];
-  };
+  if (!room?.roomMedia?.length) {
+    return ['http://localhost:8080/images/default.jpg'];
+  }
 
+  const urls = room.roomMedia
+    .filter((m) => {
+      if (!m.mediaType) return true;
+      const t = m.mediaType.toLowerCase();
+      return t === 'image' || t.startsWith('image/');
+    })
+    .map((m) => {
+      let url = m.url ?? m.mediaUrl;
+
+      if (!url) return null;
+
+      // ❌ domain chết → bỏ
+      if (url.includes("storage.troapp.vn")) {
+        return null;
+      }
+
+      // ✅ local image
+      if (url.startsWith("/images")) {
+        return `http://localhost:8080${url}`;
+      }
+
+      return url;
+    })
+    .filter(Boolean);
+
+  return urls.length
+    ? urls
+    : ['http://localhost:8080/images/default.jpg'];
+};
   const images = getImages();
 
   const copyPhone = () => {

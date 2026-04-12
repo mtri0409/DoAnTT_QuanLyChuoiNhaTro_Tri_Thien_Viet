@@ -2,7 +2,13 @@ package com.trithienviet.qlchuoiphongtro.repo;
 
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 
 public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
@@ -20,4 +26,44 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
 
     // 4. Kiểm tra biển số chưa xóa
     boolean existsByLicensePlateAndStatusFalse(String licensePlate);
+
+    @Query("SELECT v FROM Vehicle v " +
+       "JOIN v.owner p " + 
+       "LEFT JOIN p.roomMember rm " +
+       "LEFT JOIN rm.contract c " +
+       "LEFT JOIN c.room r " +
+       "LEFT JOIN r.floor f " +
+       "WHERE v.status = :status " + // Lưu ý: dùng isActive hay status tùy thuộc Entity của bạn
+       "AND (:branchId IS NULL OR f.branch.branchId = :branchId) " +
+       "AND (:keyword IS NULL OR (" +
+          "LOWER(v.licensePlate) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+          "LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+          "LOWER(r.roomName) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+       "))")
+    Page<Vehicle> searchVehicles(  @Param("keyword") String keyword,
+                                    Pageable pageable,
+                                    @Param("branchId") Integer branchId,
+                                    @Param("status") Boolean status
+                               );
+
+    @Query ("SELECT v FROM Vehicle v " + 
+            "LEFT JOIN v.owner u " + 
+            "LEFT JOIN v.room r " +
+            "WHERE v.status = :status" )
+    Page<Vehicle> findVehicles(Pageable pageable,@Param("status") Boolean status);
+
+    @Query("SELECT v FROM Vehicle v " +
+           "JOIN v.owner p " + 
+           "JOIN p.roomMember rm " +
+           "JOIN rm.contract c " +
+           "JOIN c.room r " +
+           "JOIN r.floor f " +
+           "WHERE v.status = :status " +
+           "AND (:branchId IS NULL OR f.branch.branchId = :branchId)")
+    Page<Vehicle> findVehiclesByBranch(
+        @Param("branchId") Integer branchId, 
+        @Param("status") Boolean status, 
+        Pageable pageable
+    );
+
 }

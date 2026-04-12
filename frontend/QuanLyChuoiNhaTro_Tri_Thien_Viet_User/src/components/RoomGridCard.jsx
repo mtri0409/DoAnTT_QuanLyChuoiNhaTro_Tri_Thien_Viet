@@ -58,6 +58,32 @@ export default function RoomGridCard({ room }) {
     e.stopPropagation();
     setImgIdx((i) => (i + 1) % images.length);
   };
+  const getImage = (room) => {
+  const media = room.roomMedia;
+
+  if (!media || media.length === 0) {
+    return "http://localhost:8080/images/default.jpg";
+  }
+
+  const url = media[0].url;
+
+  // ❌ domain chết
+  if (url.includes("storage.troapp.vn")) {
+    // tìm ảnh local fallback
+    const local = media.find(m => m.url.startsWith("/images"));
+    if (local) {
+      return `http://localhost:8080${local.url}`;
+    }
+    return "http://localhost:8080/images/default.jpg";
+  }
+
+  // local
+  if (url.startsWith("/images")) {
+    return `http://localhost:8080${url}`;
+  }
+
+  return url;
+};
 
   const statusKey = (room.Status ?? room.status ?? '').toLowerCase();
   const statusInfo = badgeColors[statusKey] ?? null;
@@ -90,7 +116,7 @@ export default function RoomGridCard({ room }) {
         overflow: 'hidden', background: '#e2e8f0',
       }}>
         <img
-          src={images[imgIdx]}
+          src={getImage(room)}
           alt={room.roomName}
           style={{
             width: '100%', height: '100%', objectFit: 'cover',

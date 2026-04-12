@@ -59,9 +59,6 @@ const RoomDetail = () => {
   const getFullImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
-    // url = "/images/room-media/xxx.jpg"
-    // imgURL = "http://localhost:8080"
-    // → "http://localhost:8080/images/room-media/xxx.jpg"
     return `${imgURL}${url}`;
   };
 
@@ -152,15 +149,17 @@ const RoomDetail = () => {
     return floor ? `Tầng ${floor.floorNumber}` : '—';
   };
 
-  const getImageMedia = () => {
-    if (!room?.roomMedia || room.roomMedia.length === 0) return [];
-    return room.roomMedia.filter(m => m.mediaType?.startsWith('image'));
-  };
+  // Sửa getImageMedia()
+const getImageMedia = () => {
+  // ← đổi roomMedia thành đúng tên field
+  if (!room?.roomMedia || room.roomMedia.length === 0) return [];
+  return room.roomMedia.filter(m => m.mediaType?.startsWith('image'));
+};
 
-  const getAllMedia = () => {
-    return room?.roomMedia || [];
-  };
-
+// Sửa getAllMedia()
+const getAllMedia = () => {
+  return room?.roomMedia || []; // ← đổi roomMedia
+};
   const images = room ? getImageMedia() : [];
 
   const handlePrevImage = () => {
