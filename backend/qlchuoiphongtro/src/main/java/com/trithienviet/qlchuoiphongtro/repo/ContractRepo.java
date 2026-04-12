@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.repo;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -42,4 +43,14 @@ public interface ContractRepo extends JpaRepository<Contract, Long> {
                         @Param("keyword") String keyword,
                         @Param("rawId") String rawId,
                         Pageable pageable);
+        @Query("SELECT c FROM Contract c " +
+       "WHERE c.status = 'ACTIVE' " +
+       "AND c.endDate <= :limitDate " +
+       "AND (:branchId IS NULL OR c.room.floor.branch.branchId = :branchId) " +
+       "ORDER BY c.endDate ASC")
+        List<Contract> findTopExpiringContracts(
+        @Param("limitDate") LocalDate limitDate, 
+        @Param("branchId") Long branchId, 
+        Pageable pageable
+        );
 }

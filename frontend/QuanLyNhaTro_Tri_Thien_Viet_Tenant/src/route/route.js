@@ -1,4 +1,5 @@
 import Home from "../pages/Home";
+import NotificationPage from "../pages/notification/NotificationPage";
 import ChangePassword from "../pages/profile/ChangePassword";
 import CreateVehicle from "../pages/profile/CreateVehicleProfile";
 import VehicleGridLayout from "../pages/profile/ManagerVehicle";
@@ -14,6 +15,7 @@ const AdminRoute = [
   {path: "user/change-password",component:ChangePassword},
   {path: "user/manager-vehicle/:id",component:VehicleGridLayout},
   {path: "user/vehicle/:id/create",component:CreateVehicle},
-  {path: "user/vehicle/:id/update",component:UpdateVehicle}
+  {path: "user/vehicle/:id/update",component:UpdateVehicle},
+  {path :"user/notifications/",component:NotificationPage}
 ];
 export default AdminRoute;            

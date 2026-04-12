@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt, 
   FaCalendarAlt, FaArrowLeft, FaSave, FaExclamationCircle,
-  FaEnvelope // Thêm icon email
+  FaEnvelope 
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import apiUser from '../../api/apiUser';
@@ -12,11 +12,10 @@ const CreateProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // 1. Thêm email vào formData
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    email: '', // Trường mới
+    email: '', 
     address: '',
     identityNumber: '',
     idExpirationDate: '',
@@ -30,31 +29,70 @@ const CreateProfile = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
+    // Xóa lỗi của field đó khi người dùng bắt đầu nhập lại
     if (errors[name]) {
-      const newErrors = { ...errors };
-      delete newErrors[name];
-      setErrors(newErrors);
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{10}$/;
+
+    if (!formData.fullName || formData.fullName.length < 8) {
+      newErrors.fullName = "Họ tên phải có ít nhất 8 ký tự";
+    }
+    if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Số điện thoại phải đúng 10 chữ số";
+    }
+    if (!formData.email) {
+      newErrors.email = "Email là bắt buộc để gửi thông báo";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Định dạng email không hợp lệ (vd: abc@gmail.com)";
+    }
+    if (formData.identityNumber && formData.identityNumber.length !== 12) {
+      newErrors.identityNumber = "Số CCCD phải đúng 12 chữ số";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErrors({});
+    if (!validateForm()) return;
 
+    setLoading(true);
     try {
       const response = await apiProfile.createProfile(formData);
       await apiUser.generareAcount(response.profileId);
-      alert("Tạo hồ sơ khách thuê thành công!");
+      alert("Tạo hồ sơ và tài khoản khách thuê thành công!");
       navigate('/profiles'); 
     } catch (err) {
       console.error("Lỗi API:", err.response);
-      if (err.response && err.response.status === 400) {
-        const backendErrors = err.response.data;
-        if (backendErrors) {
-          setErrors(backendErrors);
+      const res = err.response;
+
+      if (res && res.status === 400) {
+        const errorData = res.data;
+        
+        // 1. Xử lý lỗi Duplicate Entry (như cái log Tri gửi)
+        if (errorData.message && errorData.message.includes("Duplicate entry")) {
+          if (errorData.message.includes("email")) {
+            setErrors({ email: "Email này đã tồn tại trên hệ thống!" });
+          } else if (errorData.message.includes("identity_number")) {
+            setErrors({ identityNumber: "Số CCCD này đã tồn tại trên hệ thống!" });
+          }
+        } 
+        // 2. Xử lý lỗi Validation từ Backend trả về dạng Map
+        else if (typeof errorData === 'object') {
+          setErrors(errorData);
         } else {
-          alert(err.response.data || "Dữ liệu không hợp lệ.");
+          alert(errorData.message || "Dữ liệu không hợp lệ.");
         }
       } else {
         alert("Lỗi hệ thống hoặc mất kết nối Server.");
@@ -67,7 +105,7 @@ const CreateProfile = () => {
   const renderError = (fieldName) => {
     if (!errors[fieldName]) return null;
     return (
-      <div className="text-danger small mt-1 d-flex align-items-center gap-1 animate__animated animate__fadeIn">
+      <div className="text-danger small mt-1 d-flex align-items-center gap-1 animate__animated animate__shakeX">
         <FaExclamationCircle size={12}/> {errors[fieldName]}
       </div>
     );
@@ -75,17 +113,14 @@ const CreateProfile = () => {
 
   return (
     <div className="container-fluid py-4">
+      {/* Header */}
       <div className="d-flex align-items-center gap-3 mb-4">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="btn btn-light border-0 shadow-sm rounded-circle p-2"
-          title="Quay lại"
-        >
+        <button onClick={() => navigate(-1)} className="btn btn-light border-0 shadow-sm rounded-circle p-2">
           <FaArrowLeft className="text-muted" />
         </button>
         <div>
           <h4 className="fw-bold text-dark mb-0 text-uppercase">Thêm khách thuê mới</h4>
-          <p className="text-muted small mb-0">Thông tin sẽ được lưu vào hệ thống quản lý chuỗi nhà trọ</p>
+          <p className="text-muted small mb-0">Thông tin sẽ được dùng để gửi thông báo hóa đơn và nhắc nợ</p>
         </div>
       </div>
 
@@ -117,12 +152,12 @@ const CreateProfile = () => {
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">SỐ ĐIỆN THOẠI <span className="text-danger">*</span></label>
                 <div className="input-group">
-                  <span className={`input-group-text bg-light border-0 ${errors.phone ? 'border border-danger border-end-0' : ''}`}>
+                  <span className={`input-group-text bg-light border-0 ${errors.phone ? 'border-danger border-end-0' : ''}`}>
                     <FaPhoneAlt className="text-success" size={12}/>
                   </span>
                   <input 
                     type="text" name="phone"
-                    className={`form-control bg-light border-0 py-2 ${errors.phone ? 'is-invalid border border-danger border-start-0' : ''}`} 
+                    className={`form-control bg-light border-0 py-2 ${errors.phone ? 'is-invalid border-danger border-start-0' : ''}`} 
                     placeholder="09xx xxx xxx" 
                     value={formData.phone}
                     onChange={handleInputChange} 
@@ -131,16 +166,15 @@ const CreateProfile = () => {
                 {renderError('phone')}
               </div>
 
-              {/* TRƯỜNG EMAIL MỚI THÊM */}
               <div className="mb-3">
-                <label className="form-label small fw-bold text-muted">EMAIL LIÊN HỆ</label>
+                <label className="form-label small fw-bold text-muted">EMAIL LIÊN HỆ <span className="text-danger">*</span></label>
                 <div className="input-group">
-                  <span className={`input-group-text bg-light border-0 ${errors.email ? 'border border-danger border-end-0' : ''}`}>
+                  <span className={`input-group-text bg-light border-0 ${errors.email ? 'border-danger border-end-0' : ''}`}>
                     <FaEnvelope className="text-primary" size={12}/>
                   </span>
                   <input 
                     type="email" name="email"
-                    className={`form-control bg-light border-0 py-2 ${errors.email ? 'is-invalid border border-danger border-start-0' : ''}`} 
+                    className={`form-control bg-light border-0 py-2 ${errors.email ? 'is-invalid border-danger border-start-0' : ''}`} 
                     placeholder="example@gmail.com" 
                     value={formData.email}
                     onChange={handleInputChange} 
@@ -165,7 +199,6 @@ const CreateProfile = () => {
 
           {/* CỘT PHẢI: GIẤY TỜ ĐỊNH DANH */}
           <div className="col-lg-7">
-            {/* Giữ nguyên code cũ của Tri */}
             <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
               <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
                 <div className="bg-info-subtle p-2 rounded-3 text-info">
@@ -224,18 +257,10 @@ const CreateProfile = () => {
 
                 <div className="col-12 mt-auto pt-5 text-end">
                   <hr className="text-muted opacity-25 mb-4" />
-                  <button 
-                    type="button" 
-                    onClick={() => navigate('/profiles')}
-                    className="btn btn-light px-4 me-2 border-0 fw-bold"
-                  >
+                  <button type="button" onClick={() => navigate('/profiles')} className="btn btn-light px-4 me-2 border-0 fw-bold">
                     Hủy bỏ
                   </button>
-                  <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2"
-                  >
+                  <button type="submit" disabled={loading} className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2">
                     {loading ? (
                       <><span className="spinner-border spinner-border-sm"></span> Đang lưu...</>
                     ) : (

@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.trithienviet.qlchuoiphongtro.config.EmailTemplate;
+import com.trithienviet.qlchuoiphongtro.config.NotificationConstant;
 import com.trithienviet.qlchuoiphongtro.entity.Contract;
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.entity.Deposit;
@@ -18,6 +20,7 @@ import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomMember;
 import com.trithienviet.qlchuoiphongtro.entity.RoomStatus;
 import com.trithienviet.qlchuoiphongtro.entity.ServiceItem;
+import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ContractRepo;
@@ -28,7 +31,12 @@ import com.trithienviet.qlchuoiphongtro.repo.RoomMemberRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ServiceItemRepo;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
+
+import com.trithienviet.qlchuoiphongtro.service.EmailService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
+
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,8 +52,13 @@ public class ContractServiceImpl implements ContractService {
     private final ContractServiceRepo contractServiceRepo;
     private final ServiceItemRepo serviceItemRepo;
     private final DepositRepo depositRepo;
+
+    private final EmailService emailService;
+    private final NotificationService notificationService;
+
     private final InvoiceService invoiceService;
 
+    private final NotificationHelper notificationHelper;
     // ==================== terminateContract ====================
     @Override
     public void terminateContract(Long contractId) {
@@ -233,6 +246,24 @@ public class ContractServiceImpl implements ContractService {
         ContractDTO response = mapToDTO(savedContract);
         response.setContractServices(savedContractServices);
 
+        String template = EmailTemplate.
+                                getContractCreatedSuccess(
+                                representative.getFullName(),
+                                room.getRoomName(),
+                                response.getStartDate().toString(),
+                                response.getEndDate().toString(),
+                                roomDeposit.getAmount().toString()
+                            );
+        emailService.sendHtmlEmail(representative.getEmail(), "THÔNG BÁO TẠO HỌP ĐỒNG THÀNH CÔNG", template);
+       
+        String title = NotificationConstant.CONTRACT_CREATED_TITLE;
+        String content = String.format(
+            NotificationConstant.CONTRACT_CREATED_CONTENT, 
+            representative.getFullName(), 
+            room.getRoomName()
+        );
+
+
         // 15. Tự động tạo hóa đơn tiền cọc → status DRAFT
         try {
             invoiceService.createDepositInvoice(
@@ -242,6 +273,12 @@ public class ContractServiceImpl implements ContractService {
             System.err.println("[ContractService] Cảnh báo: Tạo hóa đơn cọc thất bại cho hợp đồng "
                     + savedContract.getContractId() + " — " + ex.getMessage());
         }
+        notificationService.sendSystemNotification(
+            representative.getProfileId(), 
+            title, 
+            content, 
+            NotificationConstant.TYPE_CONTRACT
+        );
         return response;
     }
 
@@ -326,6 +363,8 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.ACTIVE);
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.ACTIVE);
                 updatedContracts.add(contract);
+                
+               notificationHelper.sendNotificationActiveContract(contract);
 
             } else if (contract.getStatus() == ContractStatus.ACTIVE
                     && contract.getEndDate().isBefore(today)) {
@@ -333,6 +372,8 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.EXPIRED);
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.EXPIRED);
                 updatedContracts.add(contract);
+
+                  notificationHelper.sendNotificationExpiredContract(contract);
             }
         }
 
@@ -579,4 +620,6 @@ public class ContractServiceImpl implements ContractService {
         room.setStatus(RoomStatus.OCCUPIED);
         roomRepo.save(room);
     }
+
+   
 }

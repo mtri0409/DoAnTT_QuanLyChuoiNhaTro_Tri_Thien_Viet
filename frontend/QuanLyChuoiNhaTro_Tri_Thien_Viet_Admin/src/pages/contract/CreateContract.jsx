@@ -208,7 +208,7 @@ const RoomPicker = ({ value, onSelect, error }) => {
     try {
       const res = await apiRoom.getAllRooms(
         0,
-        20,
+        100,
         "roomName",
         "asc",
         null,
@@ -320,7 +320,9 @@ const RoomPicker = ({ value, onSelect, error }) => {
             className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3"
             style={{ maxHeight: 220, overflowY: "auto" }}
           >
-            {results.map((room) => (
+            {results.filter((room) => room.Status === "AVAILABLE")
+                    .map((room) => (
+
               <button
                 key={room.roomId}
                 type="button"
@@ -500,7 +502,7 @@ const CreateContract = () => {
       alert("Tạo hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
-      console.error("Lỗi tạo hợp đồng:", err);
+      console.error("Lỗi tạo hợp đồng:", err.response);
       const msg =
         err.response?.data?.message ||
         err.response?.data ||

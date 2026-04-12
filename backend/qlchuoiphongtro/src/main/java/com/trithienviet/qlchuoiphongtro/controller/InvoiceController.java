@@ -111,7 +111,15 @@ public class InvoiceController {
     public ResponseEntity<InvoiceDTO> send(@PathVariable Long invoiceId) {
         return new ResponseEntity<>(invoiceService.sendInvoice(invoiceId), HttpStatus.OK);
     }
-
+      @PutMapping("/admin/invoices/send")
+  @PostMapping("/send-all")
+    public ResponseEntity<List<InvoiceDTO>> sendAll(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(invoiceService.sendAllInvoices(month, year));
+    }
+    
+    
     @PutMapping("/admin/invoices/{invoiceId}/mark-paid")
     public ResponseEntity<InvoiceDTO> markPaid(@PathVariable Long invoiceId) {
         return new ResponseEntity<>(invoiceService.markAsPaid(invoiceId), HttpStatus.OK);
