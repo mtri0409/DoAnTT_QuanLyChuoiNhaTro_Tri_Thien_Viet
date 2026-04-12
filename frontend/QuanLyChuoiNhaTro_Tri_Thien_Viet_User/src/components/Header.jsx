@@ -210,7 +210,7 @@ export default function Header() {
                     cursor: "pointer",
                   }}
                   onClick={() =>
-                    (window.location.href = `/rooms/${room.roomId}/detail`)
+                    (window.location.href = `/phong/${room.roomId}/chi-tiet`)
                   }
                 >
                   <img

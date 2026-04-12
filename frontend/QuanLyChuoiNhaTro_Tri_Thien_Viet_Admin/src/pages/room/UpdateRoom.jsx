@@ -37,7 +37,8 @@ const UpdateRoom = () => {
     maxPeople: 1,
     floorId: '',
     Status: 'AVAILABLE',
-    amenities: []
+    amenities: [],
+    depositAmount: '', 
   });
 
   const [existingMedia, setExistingMedia] = useState([]);
@@ -48,10 +49,12 @@ const UpdateRoom = () => {
   const getFullImageUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    return `${imgURL}${url}`;
+    // Đảm bảo không bị lặp dấu /
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    const cleanBase = imgURL.endsWith('/') ? imgURL : `${imgURL}/`;
+    return `${cleanBase}${cleanUrl}`;
   };
 
-  // ── Fetch tất cả song song bằng Promise.all ──
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -59,39 +62,45 @@ const UpdateRoom = () => {
 
         const [roomRes, mediaRes, floorRes, branchRes, amenityRes] = await Promise.all([
           apiRoom.getRoomById(roomId),
-          apiRoomMedia.getMediaByRoomId(roomId),  // ← fetch media riêng
+          apiRoomMedia.getMediaByRoomId(roomId),
           apiFloor.getAllFloors(),
           apiBranches.getAllBranches(1, 100),
           apiAmenity.getAllAmenities(0, 100),
         ]);
 
-        // Room
+        // 1. Xử lý dữ liệu phòng
         const roomData = roomRes.data || roomRes;
+        
+        // 2. Xử lý dữ liệu Media (Sửa lỗi load hình ảnh cũ tại đây)
+        // Kiểm tra kỹ cấu trúc trả về của mediaRes
+        let mediaData = [];
+        if (mediaRes && mediaRes.data) {
+          // Nếu API trả về { data: [...] } hoặc { data: { data: [...] } }
+          mediaData = Array.isArray(mediaRes.data) ? mediaRes.data : (mediaRes.data.data || []);
+        } else if (Array.isArray(mediaRes)) {
+          mediaData = mediaRes;
+        }
+        setExistingMedia(mediaData);
 
-        // Media — parse đúng cấu trúc
-        const mediaData = mediaRes.data?.data ?? mediaRes.data ?? [];
-        setExistingMedia(Array.isArray(mediaData) ? mediaData : []);
-
-        // Floors
-        const floorData = floorRes.data || floorRes;
-        const floorList = Array.isArray(floorData) ? floorData : [];
+        // 3. Xử lý danh sách tầng
+        const floorList = Array.isArray(floorRes.data || floorRes) ? (floorRes.data || floorRes) : [];
         setFloors(floorList);
 
-        // Branches
-        const branchData = branchRes.data || branchRes;
-        const branchList = branchData?.content || [];
+        // 4. Xử lý danh sách chi nhánh
+        const branchList = (branchRes.data || branchRes)?.content || (Array.isArray(branchRes.data) ? branchRes.data : []);
         setBranches(branchList);
 
-        // Amenities
-        const amenityData = amenityRes.data || amenityRes;
-        const amenityList = amenityData?.content || [];
+        // 5. Xử lý danh sách tiện ích
+        const amenityList = (amenityRes.data || amenityRes)?.content || (Array.isArray(amenityRes.data) ? amenityRes.data : []);
         setAllAmenities(amenityList);
 
-        // Tìm branchId từ floor của phòng để set cascade
-        const selectedFloor = floorList.find(f => f.floorId === roomData.floorId);
-        setSelectedBranchId(selectedFloor?.branchId ? String(selectedFloor.branchId) : '');
+        // 6. Thiết lập chi nhánh đã chọn dựa trên tầng của phòng
+        const selectedFloor = floorList.find(f => String(f.floorId) === String(roomData.floorId));
+        if (selectedFloor) {
+          setSelectedBranchId(String(selectedFloor.branchId));
+        }
 
-        // Form data
+        // 7. Cập nhật form data
         setFormData({
           roomName: roomData.roomName || '',
           price: roomData.price || '',
@@ -100,7 +109,8 @@ const UpdateRoom = () => {
           maxPeople: roomData.maxPeople || 1,
           floorId: roomData.floorId || '',
           Status: roomData.Status || roomData.status || 'AVAILABLE',
-          amenities: roomData.amenities || []
+          amenities: roomData.amenities || [],
+          depositAmount: roomData.depositAmount || '', 
         });
 
       } catch (err) {
@@ -112,15 +122,21 @@ const UpdateRoom = () => {
       }
     };
 
-    fetchAllData();
+    if (roomId) {
+      fetchAllData();
+    }
   }, [roomId, navigate]);
 
-  // Cleanup blob URLs khi unmount
   useEffect(() => {
-    return () => { newMediaFiles.forEach(m => URL.revokeObjectURL(m.preview)); };
+    return () => { 
+      if (newMediaFiles.length > 0) {
+        newMediaFiles.forEach(m => {
+          if (m.preview) URL.revokeObjectURL(m.preview);
+        });
+      }
+    };
   }, [newMediaFiles]);
 
-  // ── Handlers ──
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -150,13 +166,18 @@ const UpdateRoom = () => {
 
   const handleRemoveExistingMedia = (index) => {
     const media = existingMedia[index];
-    if (media.mediaId) setMediaToDelete(prev => [...prev, media.mediaId]);
+    if (media && media.mediaId) {
+      setMediaToDelete(prev => [...prev, media.mediaId]);
+    }
     setExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleRemoveNewMedia = (index) => {
     setNewMediaFiles(prev => {
-      URL.revokeObjectURL(prev[index].preview);
+      const target = prev[index];
+      if (target && target.preview) {
+        URL.revokeObjectURL(target.preview);
+      }
       return prev.filter((_, i) => i !== index);
     });
   };
@@ -181,40 +202,41 @@ const UpdateRoom = () => {
     if (!formData.floorId) { alert('Vui lòng chọn tầng!'); setLoading(false); return; }
 
     try {
-      // Bước 1: Cập nhật thông tin phòng
       console.log('Bước 1: Cập nhật phòng...');
       await apiRoom.updateRoom(roomId, formData);
 
-      // Bước 2: Xóa ảnh cũ đã đánh dấu
+      // Xóa các ảnh cũ đã chọn xóa
       if (mediaToDelete.length > 0) {
-        console.log(`Bước 2: Xóa ${mediaToDelete.length} ảnh cũ...`);
         for (const mediaId of mediaToDelete) {
-          try { await apiRoomMedia.deleteRoomMedia(mediaId); console.log(`Xóa ${mediaId} OK`); }
-          catch (e) { console.error(`Lỗi xóa ${mediaId}:`, e); }
+          try { 
+            await apiRoomMedia.deleteRoomMedia(mediaId); 
+          } catch (e) { 
+            console.error(`Lỗi xóa ảnh ${mediaId}:`, e); 
+          }
         }
       }
 
-      // Bước 3: Upload ảnh mới
+      // Upload các ảnh mới
       if (newMediaFiles.length > 0) {
-        console.log(`Bước 3: Upload ${newMediaFiles.length} ảnh mới...`);
         setUploading(true);
         for (let i = 0; i < newMediaFiles.length; i++) {
-          try { await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); }
-          catch (e) { console.error(`Lỗi upload ảnh ${i + 1}:`, e); }
+          try { 
+            await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); 
+          }
+          catch (e) { 
+            console.error(`Lỗi upload ảnh ${i + 1}:`, e); 
+          }
         }
         setUploading(false);
       }
 
       alert('Cập nhật phòng thành công!');
       navigate('/rooms/1');
-
     } catch (err) {
       console.error('Lỗi API:', err);
       if (err.response?.status === 400) {
         const be = err.response.data;
-        typeof be === 'object' && !Array.isArray(be)
-          ? setErrors(be)
-          : alert(be?.message || 'Dữ liệu không hợp lệ.');
+        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : alert(be?.message || 'Dữ liệu không hợp lệ.');
       } else {
         alert('Lỗi hệ thống hoặc mất kết nối Server.');
       }
@@ -224,17 +246,17 @@ const UpdateRoom = () => {
     }
   };
 
-  // ── Render helpers ──
-  const renderError = (field) => errors[field]
-    ? <div className="text-danger small mt-1 d-flex align-items-center gap-1"><FaExclamationCircle size={12} /> {errors[field]}</div>
+  const renderError = (f) => errors[f]
+    ? <div className="text-danger small mt-1 d-flex align-items-center gap-1"><FaExclamationCircle size={12}/> {errors[f]}</div>
     : null;
 
   const getFloorName = (fId) => {
-    const f = floors.find(f => f.floorId === parseInt(fId));
+    const f = floors.find(f => String(f.floorId) === String(fId));
     return f ? `Tầng ${f.floorNumber}` : 'Chọn tầng';
   };
   const getBranchName = (bId) => branches.find(b => String(b.branchId) === String(bId))?.branchName || '-';
   const getAmenityName = (aId) => allAmenities.find(a => a.amenityId === aId)?.amenityName || 'Không xác định';
+  const fmtVND = (val) => val ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val) : '(chưa nhập)';
 
   if (initialLoading) return (
     <div className="container-fluid py-4">
@@ -248,7 +270,7 @@ const UpdateRoom = () => {
   return (
     <div className="container-fluid py-4">
       <div className="d-flex align-items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="btn btn-light border-0 shadow-sm rounded-circle p-2" title="Quay lại">
+        <button onClick={() => navigate(-1)} className="btn btn-light border-0 shadow-sm rounded-circle p-2">
           <FaArrowLeft className="text-muted" />
         </button>
         <div>
@@ -279,12 +301,24 @@ const UpdateRoom = () => {
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">GIÁ TIỀN (VNĐ) <span className="text-danger">*</span></label>
                 <div className="input-group">
-                  <span className="input-group-text bg-light border-0"><FaDollarSign className="text-success" size={12} /></span>
+                  <span className="input-group-text bg-light border-0"><FaDollarSign className="text-success" size={12}/></span>
                   <input type="number" name="price"
-                    className={`form-control bg-light border-0 py-2 ${errors.price ? 'is-invalid border-danger' : ''}`}
+                    className={`form-control bg-light border-0 py-2 ${errors.price ? 'is-invalid' : ''}`}
                     placeholder="VD: 3000000" value={formData.price} onChange={handleInputChange} min="0" required />
                 </div>
                 {renderError('price')}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-muted">TIỀN CỌC (VNĐ)</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border-0"><FaDollarSign className="text-warning" size={12}/></span>
+                  <input type="number" name="depositAmount"
+                    className="form-control bg-light border-0 py-2"
+                    placeholder="VD: 1000000 (để trống nếu không có)"
+                    value={formData.depositAmount} onChange={handleInputChange} min="0" />
+                </div>
+                <small className="text-muted d-block mt-1">Tiền cọc giữ chỗ phòng (tuỳ chọn)</small>
               </div>
 
               <div className="mb-3">
@@ -316,17 +350,16 @@ const UpdateRoom = () => {
                 <div className="col-12">
                   <label className="form-label small fw-bold text-muted">MÔ TẢ CHI TIẾT <span className="text-danger">*</span></label>
                   <textarea name="description" rows="3"
-                    className={`form-control bg-light border-0 ${errors.description ? 'is-invalid border-danger' : ''}`}
+                    className={`form-control bg-light border-0 ${errors.description ? 'is-invalid' : ''}`}
                     placeholder="Mô tả phòng, tiện ích, điều kiện, v.v..."
                     value={formData.description} onChange={handleInputChange} required />
                   {renderError('description')}
                   <small className="text-muted d-block mt-2">{formData.description.length}/500 ký tự</small>
                 </div>
 
-                {/* Chi nhánh */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
-                    <FaBuilding className="me-1 text-muted" /> CHI NHÁNH <span className="text-danger">*</span>
+                    <FaBuilding className="me-1"/> CHI NHÁNH <span className="text-danger">*</span>
                   </label>
                   <select className="form-select bg-light border-0 py-2" value={selectedBranchId} onChange={handleBranchChange} required>
                     <option value="">-- Chọn chi nhánh --</option>
@@ -334,13 +367,12 @@ const UpdateRoom = () => {
                   </select>
                 </div>
 
-                {/* Tầng */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
-                    <FaBuilding className="me-1 text-muted" /> TẦNG <span className="text-danger">*</span>
+                    <FaBuilding className="me-1"/> TẦNG <span className="text-danger">*</span>
                   </label>
                   <select name="floorId"
-                    className={`form-select bg-light border-0 py-2 ${errors.floorId ? 'is-invalid border-danger' : ''}`}
+                    className={`form-select bg-light border-0 py-2 ${errors.floorId ? 'is-invalid' : ''}`}
                     value={formData.floorId} onChange={handleInputChange} disabled={!selectedBranchId} required>
                     <option value="">{!selectedBranchId ? '-- Chọn chi nhánh trước --' : '-- Chọn tầng --'}</option>
                     {filteredFloors.map(f => <option key={f.floorId} value={f.floorId}>Tầng {f.floorNumber}</option>)}
@@ -350,10 +382,9 @@ const UpdateRoom = () => {
                   {renderError('floorId')}
                 </div>
 
-                {/* Trạng thái */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
-                    <FaToggleOn className="me-1 text-muted" /> TRẠNG THÁI
+                    <FaToggleOn className="me-1"/> TRẠNG THÁI
                   </label>
                   <select name="Status" className="form-select bg-light border-0 py-2" value={formData.Status} onChange={handleInputChange}>
                     <option value="AVAILABLE">✓ Có sẵn</option>
@@ -362,7 +393,6 @@ const UpdateRoom = () => {
                   </select>
                 </div>
 
-                {/* Tiện ích */}
                 <div className="col-12 mt-3">
                   <label className="form-label small fw-bold text-muted">TIỆN ÍCH</label>
                   <div className="bg-light rounded-3 p-3" style={{ maxHeight: '180px', overflowY: 'auto' }}>
@@ -380,10 +410,9 @@ const UpdateRoom = () => {
                 {/* Hình ảnh */}
                 <div className="col-12 mt-3">
                   <label className="form-label small fw-bold text-muted">
-                    <FaImage className="me-1 text-muted" /> HÌNH ẢNH PHÒNG
+                    <FaImage className="me-1"/> HÌNH ẢNH PHÒNG
                   </label>
                   <div className="bg-light rounded-3 p-3 mb-3">
-
                     <div className="mb-3">
                       <label className="form-label small fw-bold text-muted">Thêm ảnh mới từ máy</label>
                       <input type="file" multiple accept="image/*,video/*"
@@ -391,13 +420,12 @@ const UpdateRoom = () => {
                         onChange={handleFileUpload} disabled={uploading} />
                       {uploading && (
                         <div className="d-flex align-items-center gap-2 mt-2">
-                          <span className="spinner-border spinner-border-sm text-primary" />
+                          <span className="spinner-border spinner-border-sm text-primary"/>
                           <small className="text-muted">Đang upload ảnh...</small>
                         </div>
                       )}
                     </div>
 
-                    {/* Ảnh CŨ */}
                     {existingMedia.length > 0 && (
                       <div className="mt-3">
                         <small className="text-muted fw-bold d-block mb-2">Ảnh hiện tại ({existingMedia.length})</small>
@@ -409,7 +437,7 @@ const UpdateRoom = () => {
                                   className="img-fluid rounded-2"
                                   style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
                                 <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1"
-                                  onClick={() => handleRemoveExistingMedia(idx)} title="Xóa ảnh này">
+                                  onClick={() => handleRemoveExistingMedia(idx)}>
                                   <FaTimes size={10} />
                                 </button>
                                 <span className="badge bg-secondary position-absolute bottom-0 start-0 m-1 rounded-pill" style={{ fontSize: '9px' }}>Đã lưu</span>
@@ -420,7 +448,6 @@ const UpdateRoom = () => {
                       </div>
                     )}
 
-                    {/* Ảnh MỚI */}
                     {newMediaFiles.length > 0 && (
                       <div className="mt-3">
                         <small className="text-muted fw-bold d-block mb-2">Ảnh mới thêm ({newMediaFiles.length})</small>
@@ -432,7 +459,7 @@ const UpdateRoom = () => {
                                   className="img-fluid rounded-2"
                                   style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
                                 <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1"
-                                  onClick={() => handleRemoveNewMedia(idx)} title="Bỏ ảnh này">
+                                  onClick={() => handleRemoveNewMedia(idx)}>
                                   <FaTimes size={10} />
                                 </button>
                                 <span className="badge bg-primary position-absolute bottom-0 start-0 m-1 rounded-pill" style={{ fontSize: '9px' }}>Mới</span>
@@ -446,7 +473,7 @@ const UpdateRoom = () => {
 
                     {mediaToDelete.length > 0 && (
                       <div className="alert alert-warning small mt-3 mb-0 py-2">
-                        <FaTrash size={12} className="me-1" /> {mediaToDelete.length} ảnh sẽ bị xóa khi lưu
+                        <FaTrash size={12} className="me-1"/> {mediaToDelete.length} ảnh sẽ bị xóa khi lưu
                       </div>
                     )}
                   </div>
@@ -457,26 +484,21 @@ const UpdateRoom = () => {
                   <div className="alert alert-light border-1 border-secondary-subtle">
                     <small className="text-muted fw-bold d-block mb-2">TÓM LẠI</small>
                     <div className="small">
-                      <div className="mb-2"><span className="text-muted">Phòng:</span> <strong className="text-dark">{formData.roomName || '(chưa nhập)'}</strong></div>
-                      <div className="mb-2"><span className="text-muted">Chi nhánh:</span> <strong className="text-dark">{getBranchName(selectedBranchId)}</strong></div>
-                      <div className="mb-2"><span className="text-muted">Tầng:</span> <strong className="text-dark">{getFloorName(formData.floorId)}</strong></div>
-                      <div className="mb-2">
-                        <span className="text-muted">Giá:</span>{' '}
-                        <strong className="text-dark">
-                          {formData.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(formData.price) : '(chưa nhập)'}
-                        </strong>
-                      </div>
-                      <div className="mb-2">
-                        <span className="text-muted">Sức chứa:</span>{' '}
-                        <strong className="text-dark">{formData.currentPeople}/{formData.maxPeople} người</strong>
-                      </div>
+                      <div className="mb-2"><span className="text-muted">Phòng:</span> <strong>{formData.roomName || '(chưa nhập)'}</strong></div>
+                      <div className="mb-2"><span className="text-muted">Chi nhánh:</span> <strong>{getBranchName(selectedBranchId)}</strong></div>
+                      <div className="mb-2"><span className="text-muted">Tầng:</span> <strong>{getFloorName(formData.floorId)}</strong></div>
+                      <div className="mb-2"><span className="text-muted">Giá:</span> <strong>{fmtVND(formData.price)}</strong></div>
+                      {formData.depositAmount && (
+                        <div className="mb-2"><span className="text-muted">Tiền cọc:</span> <strong className="text-warning">{fmtVND(formData.depositAmount)}</strong></div>
+                      )}
+                      <div className="mb-2"><span className="text-muted">Sức chứa:</span> <strong>{formData.currentPeople}/{formData.maxPeople} người</strong></div>
                       {formData.amenities.length > 0 && (
                         <div className="mb-2">
                           <span className="text-muted">Tiện ích:</span>
                           <div className="mt-1">
                             {formData.amenities.map((a, i) => (
                               <span key={i} className="badge bg-primary me-1 mb-1">
-                                <FaCheck size={10} className="me-1" /> {getAmenityName(a.amenityId)}
+                                <FaCheck size={10} className="me-1"/> {getAmenityName(a.amenityId)}
                               </span>
                             ))}
                           </div>
@@ -484,7 +506,7 @@ const UpdateRoom = () => {
                       )}
                       <div>
                         <span className="text-muted">Ảnh/Video:</span>
-                        <strong className="text-dark"> {existingMedia.length} hiện tại</strong>
+                        <strong> {existingMedia.length} hiện tại</strong>
                         {newMediaFiles.length > 0 && <span className="text-primary"> + {newMediaFiles.length} mới</span>}
                         {mediaToDelete.length > 0 && <span className="text-danger"> - {mediaToDelete.length} xóa</span>}
                       </div>
@@ -492,7 +514,6 @@ const UpdateRoom = () => {
                   </div>
                 </div>
 
-                {/* Buttons */}
                 <div className="col-12 mt-auto pt-3 text-end">
                   <hr className="text-muted opacity-25 mb-4" />
                   <button type="button" onClick={() => navigate('/rooms/1')}
@@ -502,16 +523,12 @@ const UpdateRoom = () => {
                   <button type="submit" disabled={loading || uploading}
                     className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2">
                     {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm" />
-                        {uploading ? 'Đang upload ảnh...' : 'Đang lưu...'}
-                      </>
+                      <><span className="spinner-border spinner-border-sm"/> {uploading ? 'Đang upload ảnh...' : 'Đang lưu...'}</>
                     ) : (
-                      <><FaSave size={14} /> Cập nhật phòng</>
+                      <><FaSave size={14}/> Cập nhật phòng</>
                     )}
                   </button>
                 </div>
-
               </div>
             </div>
           </div>

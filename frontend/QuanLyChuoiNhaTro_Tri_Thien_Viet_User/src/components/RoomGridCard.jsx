@@ -92,7 +92,7 @@ export default function RoomGridCard({ room }) {
 
   return (
     <div
-      onClick={() => navigate(`/rooms/${room.roomId}/detail`)}
+      onClick={() => navigate(`/phong/${room.roomId}/chi-tiet`)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
