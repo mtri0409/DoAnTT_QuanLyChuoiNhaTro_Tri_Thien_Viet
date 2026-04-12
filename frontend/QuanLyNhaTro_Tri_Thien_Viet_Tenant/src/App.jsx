@@ -4,14 +4,15 @@ import AdminRoute from "./route/route";
 import TenantLayout from "./layout/TenantLayout";
 import { AuthProvider } from "./context/AuthProvider";
 import Login from "./pages/auth/Login";
-
+import PaymentPage from "./pages/payment/PaymentPage";
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-           <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/payment/:invoiceId" element={<PaymentPage />} />
           <Route path="/" element={<TenantLayout />}>
             {AdminRoute.map((route, index) => {
               const Page = route.component;
@@ -21,7 +22,6 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-
   );
 }
 
