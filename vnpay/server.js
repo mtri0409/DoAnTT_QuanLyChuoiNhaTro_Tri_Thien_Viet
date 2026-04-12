@@ -27,8 +27,9 @@ app.get("/payment", (req, res) => {
   const amount = Number(req.query.amount || 0);
   const invoiceId = req.query.invoiceId || "unknown";
   // Ưu tiên URL đã đăng ký với VNPay (trong .env), append invoiceId để redirect đúng trang
-  const baseReturn = process.env.VNP_RETURN_URL || "http://localhost:3000";
-  const returnUrl = `${baseReturn}/payment/${invoiceId}`;
+  const returnUrl = req.query.returnUrl
+    ? decodeURIComponent(req.query.returnUrl)
+    : `http://localhost:5173/payment/${invoiceId}`;
 
   console.log(`>>> VNPay request: invoiceId=${invoiceId} amount=${amount}`);
 
