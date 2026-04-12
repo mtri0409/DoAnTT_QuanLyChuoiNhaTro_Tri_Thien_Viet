@@ -1,6 +1,5 @@
 package com.trithienviet.qlchuoiphongtro.repo;
 
-
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,23 +14,30 @@ import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 
 @Repository
-public interface UserRepo extends JpaRepository<User,Long> {
-  
+public interface UserRepo extends JpaRepository<User, Long> {
+
     Optional<User> findByUserName(String user);
+
     boolean existsByProfile(Profile profile);
+
     boolean existsByUserName(String userName);
 
     @Query("SELECT u.profile.email FROM User u WHERE u.profile.id = :profileId")
     Optional<String> findEmailByProfileId(@Param("profileId") Long profileId);
+
+    @Query("SELECT u.profile.profileId FROM User u WHERE u.userName = :username")
+    Optional<Long> findProfileIdByUsername(@Param("username") String username);
+
     Optional<User> findByProfileProfileId(Long profileId);
 
     Optional<String> findByResetToken(String resetToken);
 
     @Query("SELECT u FROM User u WHERE " +
-        "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
-    
+
     Page<User> findByIsActiceTrue(Pageable pageable);
+
     Page<User> findByIsActiceFalse(Pageable pageable);
 
 }
