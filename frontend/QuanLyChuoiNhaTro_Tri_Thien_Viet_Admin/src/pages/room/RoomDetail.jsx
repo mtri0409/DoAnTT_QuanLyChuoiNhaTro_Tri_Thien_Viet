@@ -15,7 +15,8 @@ import { imgURL } from '../../api/config';
 import apiRoom from '../../api/apiRoom';
 import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
-import apiContract from '../../api/apiContract'; 
+import apiContract from '../../api/apiContract';
+import apiProfile from '../../api/apiProfile';
 
 const RoomDetail = () => {
   const navigate = useNavigate();
@@ -53,18 +54,36 @@ const RoomDetail = () => {
 
         try {
           setLoadingMembers(true);
+
           const contractRes = await apiContract.getContractsByRoom(roomId);
-          const contracts = contractRes.content;
-          const list = Array.isArray(contracts) ? contracts : [contracts];
+          const rawContracts = contractRes?.data?.content
+            ?? contractRes?.data
+            ?? contractRes
+            ?? [];
+          const list = Array.isArray(rawContracts) ? rawContracts : [rawContracts].filter(Boolean);
+
           const activeContract = list.find(c =>
             c.status?.toUpperCase() === 'ACTIVE'
           ) ?? list[0] ?? null;
 
           if (activeContract?.contractId) {
             setContract(activeContract);
-            const membersRes = await apiContract.getMembers(activeContract.contractId);
-            const memberList = membersRes.content;
-            setMembers(Array.isArray(memberList) ? memberList : []);
+
+            const memberIdsRes = await apiContract.getMembers(activeContract.contractId);
+            const memberIds = Array.isArray(memberIdsRes) ? memberIdsRes : [];
+
+            if (memberIds.length > 0) {
+              const results = await Promise.allSettled(
+                memberIds.map(pid => apiProfile.getProfileById(pid))
+              );
+              setMembers(
+                results
+                  .filter(r => r.status === 'fulfilled')
+                  .map(r => r.value)
+              );
+            } else {
+              setMembers([]);
+            }
           }
         } catch {
           setContract(null);
@@ -127,7 +146,7 @@ const RoomDetail = () => {
   const getStatusConfig = (status) => {
     switch (status) {
       case 'AVAILABLE': return { label: 'Có sẵn', bg: 'bg-success', icon: <FaCheck size={10} /> };
-      case 'OCCUPIED':  return { label: 'Đã cho thuê', bg: 'bg-warning', icon: <FaUsers size={10} /> };
+      case 'OCCUPIED': return { label: 'Đã cho thuê', bg: 'bg-warning', icon: <FaUsers size={10} /> };
       case 'MAINTENANCE': return { label: 'Bảo trì', bg: 'bg-danger', icon: <FaExclamationTriangle size={10} /> };
       default: return { label: status || 'Không rõ', bg: 'bg-secondary', icon: <FaInfoCircle size={10} /> };
     }
@@ -183,7 +202,7 @@ const RoomDetail = () => {
   if (loading) return (
     <div className="container-fluid py-5">
       <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '400px' }}>
-        <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }} role="status"/>
+        <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }} role="status" />
         <p className="text-muted fw-semibold">Đang tải thông tin phòng...</p>
       </div>
     </div>
@@ -337,8 +356,8 @@ const RoomDetail = () => {
                 <span className="fw-bold">{room.maxPeople ? Math.round(((room.currentPeople || 0) / room.maxPeople) * 100) : 0}%</span>
               </div>
               <div className="progress" style={{ height: '8px', borderRadius: '4px' }}>
-                <div className={`progress-bar ${((room.currentPeople||0)/(room.maxPeople||1))>=1?'bg-danger':((room.currentPeople||0)/(room.maxPeople||1))>=0.7?'bg-warning':'bg-success'}`}
-                  style={{ width: `${Math.min(((room.currentPeople||0)/(room.maxPeople||1))*100,100)}%`, borderRadius:'4px', transition:'width 0.5s ease' }} />
+                <div className={`progress-bar ${((room.currentPeople || 0) / (room.maxPeople || 1)) >= 1 ? 'bg-danger' : ((room.currentPeople || 0) / (room.maxPeople || 1)) >= 0.7 ? 'bg-warning' : 'bg-success'}`}
+                  style={{ width: `${Math.min(((room.currentPeople || 0) / (room.maxPeople || 1)) * 100, 100)}%`, borderRadius: '4px', transition: 'width 0.5s ease' }} />
               </div>
             </div>
           </div>
@@ -367,26 +386,26 @@ const RoomDetail = () => {
             <div className="row g-3">
               <div className="col-md-4">
                 <div className="bg-light rounded-3 p-3">
-                  <small className="text-muted fw-bold d-block mb-1"><FaBuilding size={11} className="me-1"/> CHI NHÁNH</small>
+                  <small className="text-muted fw-bold d-block mb-1"><FaBuilding size={11} className="me-1" /> CHI NHÁNH</small>
                   <span className="fw-bold text-dark">{getBranchName(room.floorId)}</span>
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="bg-light rounded-3 p-3">
-                  <small className="text-muted fw-bold d-block mb-1"><FaLayerGroup size={11} className="me-1"/> TẦNG</small>
+                  <small className="text-muted fw-bold d-block mb-1"><FaLayerGroup size={11} className="me-1" /> TẦNG</small>
                   <span className="fw-bold text-dark">{getFloorNumber(room.floorId)}</span>
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="bg-light rounded-3 p-3">
-                  <small className="text-muted fw-bold d-block mb-1"><FaToggleOn size={11} className="me-1"/> TRẠNG THÁI</small>
+                  <small className="text-muted fw-bold d-block mb-1"><FaToggleOn size={11} className="me-1" /> TRẠNG THÁI</small>
                   <span className={`badge ${statusConfig.bg} px-2 py-1 rounded-pill`}>{statusConfig.icon} {statusConfig.label}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── THÊM: Deposit card ── */}
+          {/* ── Deposit card ── */}
           <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
             <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
               <div className="bg-warning-subtle p-2 rounded-3 text-warning"><FaDollarSign size={20} /></div>
@@ -403,17 +422,16 @@ const RoomDetail = () => {
                 <div className="col-6">
                   <div className="bg-light rounded-3 p-3 text-center">
                     <small className="text-muted fw-bold d-block mb-1">TRẠNG THÁI</small>
-                    <span className={`badge rounded-pill px-3 py-2 ${
-                      room.depositStatus === 'ACTIVE'       ? 'bg-success text-white' :
-                      room.depositStatus === 'REFUNDED'     ? 'bg-info text-white' :
-                      room.depositStatus === 'COMPENSATED'  ? 'bg-danger text-white' :
-                      'bg-warning text-dark'
-                    }`}>
-                      {room.depositStatus === 'BOOKED'      ? '📌 Giữ chỗ' :
-                       room.depositStatus === 'ACTIVE'      ? '✅ Đang giữ' :
-                       room.depositStatus === 'REFUNDED'    ? '↩️ Hoàn cọc' :
-                       room.depositStatus === 'COMPENSATED' ? '⚠️ Bồi thường' :
-                       room.depositStatus ?? '—'}
+                    <span className={`badge rounded-pill px-3 py-2 ${room.depositStatus === 'ACTIVE' ? 'bg-success text-white' :
+                        room.depositStatus === 'REFUNDED' ? 'bg-info text-white' :
+                          room.depositStatus === 'COMPENSATED' ? 'bg-danger text-white' :
+                            'bg-warning text-dark'
+                      }`}>
+                      {room.depositStatus === 'BOOKED' ? '📌 Giữ chỗ' :
+                        room.depositStatus === 'ACTIVE' ? '✅ Đang giữ' :
+                          room.depositStatus === 'REFUNDED' ? '↩️ Hoàn cọc' :
+                            room.depositStatus === 'COMPENSATED' ? '⚠️ Bồi thường' :
+                              room.depositStatus ?? '—'}
                     </span>
                   </div>
                 </div>
@@ -426,7 +444,7 @@ const RoomDetail = () => {
             )}
           </div>
 
-          {/* ── THÊM: Members / Contract card ── */}
+          {/* ── Members / Contract card ── */}
           <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
             <div className="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
               <div className="d-flex align-items-center gap-2">
@@ -436,19 +454,27 @@ const RoomDetail = () => {
                 <h6 className="fw-bold mb-0 text-primary">Hợp đồng & Thành viên</h6>
               </div>
               {contract && members.length > 0 && (
-                <span className="badge bg-primary-subtle text-primary rounded-pill px-3">
-                  {members.length} thành viên
-                </span>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge bg-primary-subtle text-primary rounded-pill px-3">
+                    {members.length} thành viên
+                  </span>
+                  <button
+                    className="btn btn-sm btn-outline-primary border-0 fw-semibold"
+                    onClick={() => navigate(`/contracts/${contract.contractId}/detail`)}
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    <FaFileContract size={11} className="me-1" /> Xem hợp đồng
+                  </button>
+                </div>
               )}
             </div>
 
             {loadingMembers ? (
               <div className="text-center py-3">
-                <div className="spinner-border spinner-border-sm text-primary" role="status"/>
+                <div className="spinner-border spinner-border-sm text-primary" role="status" />
                 <span className="ms-2 small text-muted">Đang tải...</span>
               </div>
             ) : !contract ? (
-              // ── Phòng chưa có hợp đồng ──
               <div className="bg-light rounded-3 p-4 text-center">
                 <FaFileContract size={28} className="text-muted opacity-25 mb-2" />
                 <p className="text-muted small fw-semibold mb-1">Phòng chưa ký hợp đồng</p>
@@ -456,7 +482,6 @@ const RoomDetail = () => {
               </div>
             ) : (
               <>
-                {/* Contract info bar */}
                 <div className="alert alert-light border-0 py-2 px-3 mb-3 rounded-3 d-flex align-items-center gap-2 flex-wrap small">
                   <FaFileContract className="text-primary" size={13} />
                   <span className="text-muted">Hợp đồng</span>
@@ -468,9 +493,8 @@ const RoomDetail = () => {
                     </span>
                   )}
                   {contract.status && (
-                    <span className={`badge ms-2 ${
-                      contract.status?.toUpperCase() === 'ACTIVE' ? 'bg-success' : 'bg-secondary'
-                    }`} style={{ fontSize: 10 }}>
+                    <span className={`badge ms-2 ${contract.status?.toUpperCase() === 'ACTIVE' ? 'bg-success' : 'bg-secondary'
+                      }`} style={{ fontSize: 10 }}>
                       {contract.status}
                     </span>
                   )}
@@ -479,15 +503,13 @@ const RoomDetail = () => {
                 {members.length > 0 ? (
                   <div className="d-flex flex-column gap-2">
                     {members.map((member, idx) => {
-                      const profile = member.profile ?? member;
-                      const fullName = profile.fullName ?? '—';
-                      const phone    = profile.phone ?? '';
-                      const idNum    = profile.identityNumber ?? '';
-                      const initial  = fullName[0]?.toUpperCase() ?? '?';
-                      const isStaying = member.isStaying;
+                      const fullName = member.fullName ?? '—';
+                      const phone = member.phone ?? '';
+                      const idNum = member.identityNumber ?? '';
+                      const initial = fullName[0]?.toUpperCase() ?? '?';
 
                       return (
-                        <div key={member.memberId ?? member.profileId ?? idx}
+                        <div key={member.profileId ?? idx}
                           className="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
                           <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0"
                             style={{ width: 40, height: 40 }}>
@@ -500,12 +522,6 @@ const RoomDetail = () => {
                               {idNum && <span>🪪 {idNum}</span>}
                             </div>
                           </div>
-                          {isStaying !== undefined && (
-                            <span className={`badge rounded-pill flex-shrink-0 ${isStaying ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`}
-                              style={{ fontSize: 10 }}>
-                              {isStaying ? 'Đang ở' : 'Đã rời'}
-                            </span>
-                          )}
                         </div>
                       );
                     })}
@@ -540,13 +556,13 @@ const RoomDetail = () => {
                     <div key={idx} className="col-6 col-md-4 col-xl-3">
                       <div className="rounded-3 p-3 d-flex flex-column align-items-center text-center h-100"
                         style={{ backgroundColor: color.bg, border: `1px solid ${color.border}`, cursor: 'default' }}
-                        onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
                         <div className="rounded-circle d-flex align-items-center justify-content-center mb-2"
-                          style={{ width:'36px', height:'36px', backgroundColor:'rgba(255,255,255,0.7)', color: color.text }}>
+                          style={{ width: '36px', height: '36px', backgroundColor: 'rgba(255,255,255,0.7)', color: color.text }}>
                           {getAmenityIcon(amenityName)}
                         </div>
-                        <span className="small fw-semibold" style={{ color: color.text, fontSize:'12px', lineHeight:'1.3' }}>{amenityName}</span>
+                        <span className="small fw-semibold" style={{ color: color.text, fontSize: '12px', lineHeight: '1.3' }}>{amenityName}</span>
                       </div>
                     </div>
                   );
@@ -593,9 +609,9 @@ const RoomDetail = () => {
                         </div>
                       )}
                       <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                        style={{ background:'rgba(0,0,0,0.3)', opacity:0, transition:'opacity 0.2s' }}
-                        onMouseEnter={e => (e.currentTarget.style.opacity=1)}
-                        onMouseLeave={e => (e.currentTarget.style.opacity=0)}>
+                        style={{ background: 'rgba(0,0,0,0.3)', opacity: 0, transition: 'opacity 0.2s' }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = 1)}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = 0)}>
                         <FaExpand size={20} className="text-white" />
                       </div>
                       {media.isThumbnail && (
@@ -619,7 +635,7 @@ const RoomDetail = () => {
           {/* Summary */}
           <div className="card border-0 shadow-sm rounded-4 p-4 mt-4">
             <div className="alert alert-light border-1 border-secondary-subtle mb-0">
-              <small className="text-muted fw-bold d-block mb-3"><FaInfoCircle className="me-1"/> TÓM TẮT THÔNG TIN</small>
+              <small className="text-muted fw-bold d-block mb-3"><FaInfoCircle className="me-1" /> TÓM TẮT THÔNG TIN</small>
               <div className="row g-3 small">
                 <div className="col-md-6">
                   <div className="d-flex justify-content-between py-2 border-bottom">
@@ -639,7 +655,6 @@ const RoomDetail = () => {
                   <div className="d-flex justify-content-between py-2 border-bottom">
                     <span className="text-muted">Giá thuê:</span><strong className="text-success">{formatPrice(room.price)}</strong>
                   </div>
-                  {/* ── THÊM: tiền cọc trong tóm tắt ── */}
                   <div className="d-flex justify-content-between py-2 border-bottom">
                     <span className="text-muted">Tiền cọc:</span>
                     <strong className="text-warning">{room.depositAmount ? formatPrice(room.depositAmount) : '—'}</strong>
@@ -677,7 +692,7 @@ const RoomDetail = () => {
           </div>
           {images.length > 1 && (
             <button onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
-              className="btn btn-outline-light position-absolute start-0 ms-4 rounded-circle" style={{ width:'50px', height:'50px' }}>
+              className="btn btn-outline-light position-absolute start-0 ms-4 rounded-circle" style={{ width: '50px', height: '50px' }}>
               <FaChevronLeft size={18} />
             </button>
           )}
@@ -686,7 +701,7 @@ const RoomDetail = () => {
             onClick={(e) => e.stopPropagation()} />
           {images.length > 1 && (
             <button onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
-              className="btn btn-outline-light position-absolute end-0 me-4 rounded-circle" style={{ width:'50px', height:'50px' }}>
+              className="btn btn-outline-light position-absolute end-0 me-4 rounded-circle" style={{ width: '50px', height: '50px' }}>
               <FaChevronRight size={18} />
             </button>
           )}
@@ -696,7 +711,7 @@ const RoomDetail = () => {
               {images.map((img, idx) => (
                 <img key={idx} src={getFullImageUrl(img.url)} alt={`Thumb ${idx + 1}`}
                   className={`rounded-2 ${idx === currentImageIndex ? 'border border-2 border-white shadow' : 'opacity-50'}`}
-                  style={{ width:'60px', height:'45px', objectFit:'cover', cursor:'pointer' }}
+                  style={{ width: '60px', height: '45px', objectFit: 'cover', cursor: 'pointer' }}
                   onClick={() => handleThumbnailClick(idx)} />
               ))}
             </div>
