@@ -33,13 +33,15 @@ const UpdateRoom = () => {
     roomName: '',
     price: '',
     description: '',
-    currentPeople: 0,
+    currentPeople: 0,   
     maxPeople: 1,
     floorId: '',
     Status: 'AVAILABLE',
     amenities: [],
-    depositAmount: '', 
+    depositAmount: '',
   });
+
+  const [currentPeopleDisplay, setCurrentPeopleDisplay] = useState(0);
 
   const [existingMedia, setExistingMedia] = useState([]);
   const [newMediaFiles, setNewMediaFiles] = useState([]);
@@ -68,10 +70,9 @@ const UpdateRoom = () => {
         ]);
 
         const roomData = roomRes.data || roomRes;
-        
+
         let mediaData = [];
         if (mediaRes && mediaRes.data) {
-          // Nếu API trả về { data: [...] } hoặc { data: { data: [...] } }
           mediaData = Array.isArray(mediaRes.data) ? mediaRes.data : (mediaRes.data.data || []);
         } else if (Array.isArray(mediaRes)) {
           mediaData = mediaRes;
@@ -88,20 +89,21 @@ const UpdateRoom = () => {
         setAllAmenities(amenityList);
 
         const selectedFloor = floorList.find(f => String(f.floorId) === String(roomData.floorId));
-        if (selectedFloor) {
-          setSelectedBranchId(String(selectedFloor.branchId));
-        }
+        if (selectedFloor) setSelectedBranchId(String(selectedFloor.branchId));
+
+        const currentPeople = roomData.currentPeople || 0;
+        setCurrentPeopleDisplay(currentPeople);
 
         setFormData({
           roomName: roomData.roomName || '',
           price: roomData.price || '',
           description: roomData.description || '',
-          currentPeople: roomData.currentPeople || 0,
+          currentPeople: currentPeople, // giữ giá trị thực từ server
           maxPeople: roomData.maxPeople || 1,
           floorId: roomData.floorId || '',
           Status: roomData.Status || roomData.status || 'AVAILABLE',
           amenities: roomData.amenities || [],
-          depositAmount: roomData.depositAmount || '', 
+          depositAmount: roomData.depositAmount || '',
         });
 
       } catch (err) {
@@ -113,17 +115,13 @@ const UpdateRoom = () => {
       }
     };
 
-    if (roomId) {
-      fetchAllData();
-    }
+    if (roomId) fetchAllData();
   }, [roomId, navigate]);
 
   useEffect(() => {
-    return () => { 
+    return () => {
       if (newMediaFiles.length > 0) {
-        newMediaFiles.forEach(m => {
-          if (m.preview) URL.revokeObjectURL(m.preview);
-        });
+        newMediaFiles.forEach(m => { if (m.preview) URL.revokeObjectURL(m.preview); });
       }
     };
   }, [newMediaFiles]);
@@ -157,18 +155,14 @@ const UpdateRoom = () => {
 
   const handleRemoveExistingMedia = (index) => {
     const media = existingMedia[index];
-    if (media && media.mediaId) {
-      setMediaToDelete(prev => [...prev, media.mediaId]);
-    }
+    if (media && media.mediaId) setMediaToDelete(prev => [...prev, media.mediaId]);
     setExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleRemoveNewMedia = (index) => {
     setNewMediaFiles(prev => {
       const target = prev[index];
-      if (target && target.preview) {
-        URL.revokeObjectURL(target.preview);
-      }
+      if (target && target.preview) URL.revokeObjectURL(target.preview);
       return prev.filter((_, i) => i !== index);
     });
   };
@@ -196,27 +190,18 @@ const UpdateRoom = () => {
       console.log('Bước 1: Cập nhật phòng...');
       await apiRoom.updateRoom(roomId, formData);
 
-      // Xóa các ảnh cũ đã chọn xóa
       if (mediaToDelete.length > 0) {
         for (const mediaId of mediaToDelete) {
-          try { 
-            await apiRoomMedia.deleteRoomMedia(mediaId); 
-          } catch (e) { 
-            console.error(`Lỗi xóa ảnh ${mediaId}:`, e); 
-          }
+          try { await apiRoomMedia.deleteRoomMedia(mediaId); }
+          catch (e) { console.error(`Lỗi xóa ảnh ${mediaId}:`, e); }
         }
       }
 
-      // Upload các ảnh mới
       if (newMediaFiles.length > 0) {
         setUploading(true);
         for (let i = 0; i < newMediaFiles.length; i++) {
-          try { 
-            await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); 
-          }
-          catch (e) { 
-            console.error(`Lỗi upload ảnh ${i + 1}:`, e); 
-          }
+          try { await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); }
+          catch (e) { console.error(`Lỗi upload ảnh ${i + 1}:`, e); }
         }
         setUploading(false);
       }
@@ -313,17 +298,27 @@ const UpdateRoom = () => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-bold text-muted">SỐ NGƯỜI HIỆN TẠI</label>
-                <input type="number" name="currentPeople"
-                  className="form-control bg-light border-0 py-2"
-                  value={formData.currentPeople} onChange={handleInputChange} min="0" />
-              </div>
-
-              <div className="mb-0">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI TỐI ĐA <span className="text-danger">*</span></label>
                 <input type="number" name="maxPeople"
                   className="form-control bg-light border-0 py-2"
                   value={formData.maxPeople} onChange={handleInputChange} min="1" required />
+              </div>
+
+              {/* ── Số người hiện tại — chỉ đọc ── */}
+              <div className="mb-0">
+                <label className="form-label small fw-bold text-muted">SỐ NGƯỜI HIỆN TẠI</label>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 py-2 text-muted"
+                    value={`${currentPeopleDisplay} người (tự động theo hợp đồng)`}
+                    readOnly
+                    disabled
+                  />
+                </div>
+                <small className="text-muted d-block mt-1">
+                  Cập nhật tự động dựa trên thành viên trong hợp đồng
+                </small>
               </div>
             </div>
           </div>
@@ -379,8 +374,9 @@ const UpdateRoom = () => {
                   </label>
                   <select name="Status" className="form-select bg-light border-0 py-2" value={formData.Status} onChange={handleInputChange}>
                     <option value="AVAILABLE">✓ Có sẵn</option>
-                    <option value="OCCUPIED">Đã cho thuê</option>
-                    <option value="MAINTENANCE">Bảo trì</option>
+                    <option value="DEPOSITED">💰 Đã cọc</option>
+                    <option value="OCCUPIED">📌 Đã cho thuê</option>
+                    <option value="MAINTENANCE">🔧 Bảo trì</option>
                   </select>
                 </div>
 
@@ -482,7 +478,11 @@ const UpdateRoom = () => {
                       {formData.depositAmount && (
                         <div className="mb-2"><span className="text-muted">Tiền cọc:</span> <strong className="text-warning">{fmtVND(formData.depositAmount)}</strong></div>
                       )}
-                      <div className="mb-2"><span className="text-muted">Sức chứa:</span> <strong>{formData.currentPeople}/{formData.maxPeople} người</strong></div>
+                      <div className="mb-2">
+                        <span className="text-muted">Sức chứa:</span>{' '}
+                        <strong>{currentPeopleDisplay}/{formData.maxPeople} người</strong>
+                        <span className="text-muted ms-1">(hiện tại/tối đa)</span>
+                      </div>
                       {formData.amenities.length > 0 && (
                         <div className="mb-2">
                           <span className="text-muted">Tiện ích:</span>

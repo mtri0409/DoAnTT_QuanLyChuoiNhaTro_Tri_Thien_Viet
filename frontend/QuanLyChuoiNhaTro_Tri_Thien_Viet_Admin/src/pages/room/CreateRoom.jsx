@@ -28,12 +28,12 @@ const CreateRoom = () => {
     roomName: '',
     price: '',
     description: '',
-    currentPeople: 0,
+    currentPeople: 0,  
     maxPeople: 1,
     floorId: '',
     Status: 'AVAILABLE',
     amenities: [],
-    depositAmount: '', 
+    depositAmount: '',
   });
 
   const [mediaFiles, setMediaFiles] = useState([]);
@@ -206,7 +206,6 @@ const CreateRoom = () => {
                 {renderError('price')}
               </div>
 
-              {/* ── THÊM: Tiền cọc ── */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">TIỀN CỌC (VNĐ)</label>
                 <div className="input-group">
@@ -219,18 +218,23 @@ const CreateRoom = () => {
                 <small className="text-muted d-block mt-1">Tiền cọc giữ chỗ phòng (tuỳ chọn)</small>
               </div>
 
+              {/* ── SỐ NGƯỜI TỐI ĐA (bỏ currentPeople) ── */}
               <div className="mb-3">
-                <label className="form-label small fw-bold text-muted">SỐ NGƯỜI HIỆN TẠI</label>
-                <input type="number" name="currentPeople"
-                  className="form-control bg-light border-0 py-2"
-                  placeholder="0" value={formData.currentPeople} onChange={handleInputChange} min="0" />
-              </div>
-
-              <div className="mb-0">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI TỐI ĐA <span className="text-danger">*</span></label>
                 <input type="number" name="maxPeople"
                   className="form-control bg-light border-0 py-2"
                   placeholder="1" value={formData.maxPeople} onChange={handleInputChange} min="1" required />
+                <small className="text-muted d-block mt-1">
+                  Số người hiện tại sẽ tự động cập nhật theo hợp đồng
+                </small>
+              </div>
+
+              {/* ── Thông tin chỉ đọc ── */}
+              <div className="alert alert-light border-0 rounded-3 py-2 px-3 mb-0">
+                <small className="text-muted d-flex align-items-center gap-2">
+                  <span>👥</span>
+                  <span>Số người hiện tại mặc định <strong>0</strong> — tự động cập nhật khi có hợp đồng</span>
+                </small>
               </div>
             </div>
           </div>
@@ -286,8 +290,9 @@ const CreateRoom = () => {
                   </label>
                   <select name="Status" className="form-select bg-light border-0 py-2" value={formData.Status} onChange={handleInputChange}>
                     <option value="AVAILABLE">✓ Có sẵn</option>
-                    <option value="OCCUPIED">Đã cho thuê</option>
-                    <option value="MAINTENANCE">Bảo trì</option>
+                    <option value="DEPOSITED">💰 Đã cọc</option>
+                    <option value="OCCUPIED">📌 Đã cho thuê</option>
+                    <option value="MAINTENANCE">🔧 Bảo trì</option>
                   </select>
                 </div>
 
@@ -353,11 +358,10 @@ const CreateRoom = () => {
                       <div className="mb-2"><span className="text-muted">Chi nhánh:</span> <strong>{getBranchName(selectedBranchId)}</strong></div>
                       <div className="mb-2"><span className="text-muted">Tầng:</span> <strong>{getFloorName(formData.floorId)}</strong></div>
                       <div className="mb-2"><span className="text-muted">Giá:</span> <strong>{fmtVND(formData.price)}</strong></div>
-                      {/* ── THÊM: tiền cọc trong tóm lại ── */}
                       {formData.depositAmount && (
                         <div className="mb-2"><span className="text-muted">Tiền cọc:</span> <strong className="text-warning">{fmtVND(formData.depositAmount)}</strong></div>
                       )}
-                      <div className="mb-2"><span className="text-muted">Sức chứa:</span> <strong>{formData.currentPeople}/{formData.maxPeople} người</strong></div>
+                      <div className="mb-2"><span className="text-muted">Sức chứa tối đa:</span> <strong>{formData.maxPeople} người</strong></div>
                       {formData.amenities.length > 0 && (
                         <div className="mb-2">
                           <span className="text-muted">Tiện ích:</span>
