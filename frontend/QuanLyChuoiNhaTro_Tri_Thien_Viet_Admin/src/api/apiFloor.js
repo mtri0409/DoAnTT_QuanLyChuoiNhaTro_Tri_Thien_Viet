@@ -2,7 +2,7 @@ import axiosInstance from "./axios";
 
 const apiFloor = {
     getAllFloors: () => {
-        const url = `/public/floors`;
+        const url = `/floors`;
         return axiosInstance.get(url);
     },
 

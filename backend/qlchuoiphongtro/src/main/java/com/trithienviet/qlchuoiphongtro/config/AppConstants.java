@@ -21,6 +21,16 @@ public class AppConstants {
             "/api/register/**",
             "/api/auth/login",
             "/api/auth/create-account/**",
+            "/api/rooms",
+            "/api/rooms/**",
+            "/api/room-medias",
+            "/images/**",
+            "/api/floors",
+            "/api/floors/**",
+            "/api/branches",
+            "/api/branches/**",
+            "/api/amenities",
+            "/api/amenities/**",
             "/api/contracts",
             "/error"
     };

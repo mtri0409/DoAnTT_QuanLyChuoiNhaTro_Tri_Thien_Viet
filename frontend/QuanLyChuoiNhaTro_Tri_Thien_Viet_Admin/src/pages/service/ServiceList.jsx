@@ -14,7 +14,6 @@ const ServiceList = () => {
     const [search, setSearch] = useState('');
     const [deletingService, setDeletingService] = useState(null);
 
-    // Fetch services
     const fetchServices = async () => {
         setLoading(true);
         try {
@@ -36,7 +35,6 @@ const ServiceList = () => {
         }
     };
 
-    // Delete
     const handleDeleteService = async (id, name) => {
         if (!window.confirm(`Bạn có chắc muốn xóa dịch vụ "${name}"?`)) return;
 
@@ -70,7 +68,6 @@ const ServiceList = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // ✅ convert is_active
     const renderStatus = (value) => {
         return value === 1 || value === true
             ? <span className="badge bg-success">Active</span>

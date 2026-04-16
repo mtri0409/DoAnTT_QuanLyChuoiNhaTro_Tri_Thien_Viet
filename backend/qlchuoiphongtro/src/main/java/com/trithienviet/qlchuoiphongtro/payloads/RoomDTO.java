@@ -31,4 +31,8 @@ public class RoomDTO {
 
     @Singular
     private List<AssetDTO> assets;
+
+    private BigDecimal depositAmount;  
+    
+    private String depositStatus;
 }

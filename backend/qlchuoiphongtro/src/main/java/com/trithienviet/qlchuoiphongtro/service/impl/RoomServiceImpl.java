@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.trithienviet.qlchuoiphongtro.entity.Amenity;
+import com.trithienviet.qlchuoiphongtro.entity.Deposit;
 import com.trithienviet.qlchuoiphongtro.entity.Floor;
 import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomMedia;
@@ -24,6 +26,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomMediaDTO;
 import com.trithienviet.qlchuoiphongtro.repo.AmenityRepo;
+import com.trithienviet.qlchuoiphongtro.repo.DepositRepo;
 import com.trithienviet.qlchuoiphongtro.repo.FloorRepo;
 import com.trithienviet.qlchuoiphongtro.repo.RoomRepo;
 import com.trithienviet.qlchuoiphongtro.service.RoomService;
@@ -31,70 +34,50 @@ import com.trithienviet.qlchuoiphongtro.service.RoomService;
 @Service
 public class RoomServiceImpl implements RoomService {
 
-    @Autowired
-    private RoomRepo roomRepo;
+    @Autowired private RoomRepo roomRepo;
+    @Autowired private FloorRepo floorRepo;
+    @Autowired private AmenityRepo amenityRepo;
+    @Autowired private ModelMapper modelMapper;
 
-    @Autowired
-    private FloorRepo floorRepo;
+    // ← THÊM: inject DepositRepo để xử lý deposit chung với room
+    @Autowired private DepositRepo depositRepo;
 
-    @Autowired
-    private AmenityRepo amenityRepo;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    // ========== GET ALL WITH FILTERS & PAGINATION ==========
+    // ========== GET ALL ==========
     @Override
     public PageResponse<RoomDTO> getAllRooms(
-            Integer pageNumber,
-            Integer pageSize,
-            String sortBy,
-            String sortOrder,
-            Long floorId,
-            Long branchId,
-            String search) {
+            Integer pageNumber, Integer pageSize,
+            String sortBy, String sortOrder,
+            Long floorId, Long branchId, String search) {
 
-        // Create Sort
         Sort sort = sortOrder.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        // Create Pageable
+                ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
 
-        // Query based on filters
         Page<Room> page;
-
         if (search != null && !search.isEmpty()) {
-            // Search with filters
-            if (floorId != null && branchId != null) {
+            if (floorId != null && branchId != null)
                 page = roomRepo.findBySearchFloorAndBranch(search, floorId, branchId, pageable);
-            } else if (floorId != null) {
+            else if (floorId != null)
                 page = roomRepo.findBySearchAndFloor(search, floorId, pageable);
-            } else if (branchId != null) {
+            else if (branchId != null)
                 page = roomRepo.findBySearchAndBranch(search, branchId, pageable);
-            } else {
+            else
                 page = roomRepo.findByRoomNameContainingIgnoreCase(search, pageable);
-            }
         } else {
-            // No search, just filters
-            if (floorId != null && branchId != null) {
+            if (floorId != null && branchId != null)
                 page = roomRepo.findByFloorAndBranch(floorId, branchId, pageable);
-            } else if (floorId != null) {
+            else if (floorId != null)
                 page = roomRepo.findByFloor_FloorId(floorId, pageable);
-            } else if (branchId != null) {
+            else if (branchId != null)
                 page = roomRepo.findByFloor_Branch_BranchId(branchId, pageable);
-            } else {
+            else
                 page = roomRepo.findAll(pageable);
-            }
         }
 
-        // Map entities to DTOs
         List<RoomDTO> roomDTOs = page.getContent().stream()
                 .map(this::mapRoomToDTO)
                 .collect(Collectors.toList());
 
-        // Build response
         PageResponse<RoomDTO> response = new PageResponse<>();
         response.setContent(roomDTOs);
         response.setPageNumber(page.getNumber());
@@ -102,7 +85,6 @@ public class RoomServiceImpl implements RoomService {
         response.setTotalElements(page.getTotalElements());
         response.setTotalPages(page.getTotalPages());
         response.setLastPage(page.isLast());
-
         return response;
     }
 
@@ -111,7 +93,6 @@ public class RoomServiceImpl implements RoomService {
     public RoomDTO getRoomById(Long roomId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
-
         return mapRoomToDTO(room);
     }
 
@@ -119,23 +100,20 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public RoomDTO createRoom(RoomDTO roomDTO) {
-        // Create new room entity
         Room room = new Room();
         room.setRoomName(roomDTO.getRoomName());
         room.setPrice(roomDTO.getPrice());
         room.setCurrentPeople(roomDTO.getCurrentPeople() != null ? roomDTO.getCurrentPeople() : 0);
         room.setMaxPeople(roomDTO.getMaxPeople());
         room.setDescription(roomDTO.getDescription());
-        room.setStatus(RoomStatus.valueOf(roomDTO.getStatus()));
+        room.setStatus(RoomStatus.valueOf(roomDTO.getStatus() != null ? roomDTO.getStatus() : "AVAILABLE"));
 
-        // Set floor
         if (roomDTO.getFloorId() != null) {
             Floor floor = floorRepo.findById(roomDTO.getFloorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Floor", "floorId", roomDTO.getFloorId()));
             room.setFloor(floor);
         }
 
-        // Set amenities if provided
         if (roomDTO.getAmenities() != null && !roomDTO.getAmenities().isEmpty()) {
             Set<Amenity> amenities = roomDTO.getAmenities().stream()
                     .map(dto -> amenityRepo.findById(dto.getAmenityId())
@@ -144,8 +122,17 @@ public class RoomServiceImpl implements RoomService {
             room.setAmenities(amenities);
         }
 
-        // Save room
         Room saved = roomRepo.save(room);
+
+        // ← Tạo deposit nếu có depositAmount
+        if (roomDTO.getDepositAmount() != null && roomDTO.getDepositAmount().compareTo(BigDecimal.ZERO) > 0) {
+            Deposit deposit = new Deposit();
+            deposit.setRoom(saved);
+            deposit.setAmount(roomDTO.getDepositAmount());
+            deposit.setStatus("BOOKED");
+            // profile, contract, invoice để null
+            depositRepo.save(deposit);
+        }
 
         return mapRoomToDTO(saved);
     }
@@ -154,11 +141,9 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public RoomDTO updateRoom(Long roomId, RoomDTO roomDTO) {
-        // Find room
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
 
-        // Update fields
         room.setRoomName(roomDTO.getRoomName());
         room.setPrice(roomDTO.getPrice());
         room.setCurrentPeople(roomDTO.getCurrentPeople());
@@ -166,14 +151,12 @@ public class RoomServiceImpl implements RoomService {
         room.setDescription(roomDTO.getDescription());
         room.setStatus(RoomStatus.valueOf(roomDTO.getStatus()));
 
-        // Update floor
         if (roomDTO.getFloorId() != null) {
             Floor floor = floorRepo.findById(roomDTO.getFloorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Floor", "floorId", roomDTO.getFloorId()));
             room.setFloor(floor);
         }
 
-        // Update amenities
         if (roomDTO.getAmenities() != null) {
             Set<Amenity> amenities = roomDTO.getAmenities().stream()
                     .map(dto -> amenityRepo.findById(dto.getAmenityId())
@@ -182,8 +165,20 @@ public class RoomServiceImpl implements RoomService {
             room.setAmenities(amenities);
         }
 
-        // Save
         Room updated = roomRepo.save(room);
+
+        // ← Cập nhật / tạo deposit nếu có depositAmount
+        if (roomDTO.getDepositAmount() != null) {
+            Deposit deposit = depositRepo.findByRoom_RoomId(roomId)
+                    .orElseGet(() -> {
+                        Deposit d = new Deposit();
+                        d.setRoom(updated);
+                        d.setStatus("BOOKED");
+                        return d;
+                    });
+            deposit.setAmount(roomDTO.getDepositAmount());
+            depositRepo.save(deposit);
+        }
 
         return mapRoomToDTO(updated);
     }
@@ -192,17 +187,15 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional
     public String deleteRoom(Long roomId) {
-        // Find room
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", roomId));
-
-        // Delete
+        // Deposit sẽ bị xóa cascade nếu có @OnDelete hoặc xóa tay
+        depositRepo.findByRoom_RoomId(roomId).ifPresent(depositRepo::delete);
         roomRepo.delete(room);
-
         return "Xóa phòng thành công với id: " + roomId;
     }
 
-    // ========== HELPER: Map Room Entity to RoomDTO ==========
+    // ========== HELPER: Map Room → RoomDTO (bao gồm deposit) ==========
     private RoomDTO mapRoomToDTO(Room room) {
         RoomDTO dto = new RoomDTO();
         dto.setRoomId(room.getRoomId());
@@ -213,9 +206,13 @@ public class RoomServiceImpl implements RoomService {
         dto.setDescription(room.getDescription());
         dto.setStatus(room.getStatus() != null ? room.getStatus().toString() : null);
 
-        // Set floorId
         if (room.getFloor() != null) {
             dto.setFloorId(room.getFloor().getFloorId().longValue());
+
+            // ← Thêm thông tin floor và branch vào DTO nếu DTO có field
+            // dto.setFloorNumber(room.getFloor().getFloorNumber());
+            // if (room.getFloor().getBranch() != null)
+            //     dto.setBranchName(room.getFloor().getBranch().getBranchName());
         }
 
         // Map roomMedia
@@ -223,9 +220,8 @@ public class RoomServiceImpl implements RoomService {
             List<RoomMediaDTO> mediaDTOs = room.getRoomMedia().stream()
                     .map(media -> {
                         RoomMediaDTO mediaDTO = modelMapper.map(media, RoomMediaDTO.class);
-                        if (media.getRoom() != null) {
+                        if (media.getRoom() != null)
                             mediaDTO.setRoomId(media.getRoom().getRoomId().longValue());
-                        }
                         return mediaDTO;
                     })
                     .collect(Collectors.toList());
@@ -240,7 +236,11 @@ public class RoomServiceImpl implements RoomService {
             dto.setAmenities(amenityDTOs);
         }
 
-        //delete // Map assets
+        // ← Map deposit — tìm theo roomId
+        depositRepo.findByRoom_RoomId(room.getRoomId()).ifPresent(deposit -> {
+            dto.setDepositAmount(deposit.getAmount());
+            dto.setDepositStatus(deposit.getStatus());
+        });
 
         return dto;
     }

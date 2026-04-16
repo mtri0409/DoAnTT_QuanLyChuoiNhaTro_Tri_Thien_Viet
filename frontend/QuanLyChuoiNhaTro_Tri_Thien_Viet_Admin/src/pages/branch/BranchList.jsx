@@ -16,26 +16,24 @@ const BranchList = () => {
     totalElements: 0
   });
 
-  const [currentPage, setCurrentPage] = useState(0); // 0-indexed
+  const [currentPage, setCurrentPage] = useState(0); 
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState(null); 
 
-  // Fetch branches
   const fetchBranches = async (page = 0, searchText = '') => {
     setLoading(true);
     try {
       const response = await apiBranches.getAllBranches(
-        page + 1,  // Convert 0-indexed to 1-indexed for backend
+        page + 1, 
         PAGE_SIZE,
         'branchName',
         'asc',
         searchText
       );
       
-      console.log('🏢 Response:', response);
+      console.log('Response:', response);
       
-      // Extract data from axios response
       const branchData = response.data || response;
       setData(branchData || {
         content: [],
@@ -58,23 +56,19 @@ const BranchList = () => {
     }
   };
 
-  // Reset to page 0 when search changes
   useEffect(() => {
     setCurrentPage(0);
   }, [search]);
 
-  // Fetch when page or search changes
   useEffect(() => {
     fetchBranches(currentPage, search);
   }, [currentPage, search]);
 
-  // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle delete
   const handleDelete = async (branchId, branchName) => {
     if (!window.confirm(`Bạn có chắc muốn xóa chi nhánh "${branchName}"?`)) {
       return;
@@ -85,7 +79,6 @@ const BranchList = () => {
       const response = await apiBranches.deleteBranch(branchId);
       console.log(' Delete response:', response);
       
-      // Refresh list
       fetchBranches(currentPage, search);
       alert('Xóa chi nhánh thành công!');
     } catch (err) {

@@ -10,7 +10,7 @@ const apiRoom = {
         branchId = null,
         search = ''
     ) => {
-        const url = `/admin/rooms`;
+        const url = `/rooms`;
         return axiosInstance.get(url, {
             params: {
                 pageNumber: pageNumber,
@@ -25,7 +25,7 @@ const apiRoom = {
     },
 
     getRoomById: (roomId) => {
-        const url = `/public/rooms/${roomId}`;
+        const url = `/rooms/${roomId}`;
         return axiosInstance.get(url);
     },
 

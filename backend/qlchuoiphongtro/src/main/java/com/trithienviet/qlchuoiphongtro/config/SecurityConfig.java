@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -34,10 +35,12 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsServiceImpl userDetailsServiceImpl;
+
     // --- 1. CẤU HÌNH BỘ LỌC BẢO MẬT (Security Filter Chain) ---
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+
             .csrf(csrf -> csrf.disable()) // Tắt CSRF vì JWT không cần (chống tấn công giả mạo yêu cầu)
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Cấu hình chia sẻ tài nguyên (CORS) cho React gọi API
             .authorizeHttpRequests(requests -> requests
@@ -61,10 +64,11 @@ public class SecurityConfig {
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .authenticationProvider(daoAuthenticationProvider());
 
+
         return http.build();
     }
 
-       @Bean
+    @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
         // provider.setUserDetailsService(userDetailsService);
@@ -92,11 +96,15 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Liệt kê các địa chỉ của Frontend được phép gọi đến Backend
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:5174" 
-        ));
+
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:5174"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+    
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
+
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true); // Cho phép gửi Token/Cookie kèm theo
 
