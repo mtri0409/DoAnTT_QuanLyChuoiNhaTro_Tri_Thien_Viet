@@ -32,11 +32,14 @@ export default function Home() {
   const fetchRooms = useCallback(() => {
     setLoadingRooms(true);
     setError(null);
+
     setPage(0);
     userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', activeBranchId)
       .then(res => {
         const data = res.content;
+        console.log(data);
         setAllRooms(Array.isArray(data) ? data : []);
+
       })
       .catch(() => setError('Không thể tải danh sách phòng. Vui lòng thử lại.'))
       .finally(() => setLoadingRooms(false));
