@@ -33,6 +33,8 @@ public interface ContractRepo extends JpaRepository<Contract, Long> {
 
         List<Contract> findByRoom_RoomIdAndIsDeletedFalse(Long roomId);
 
+        List<Contract> findByRepresentative_ProfileIdAndIsDeletedFalse(Long profileId);
+
         @Query("SELECT c FROM Contract c WHERE c.isDeleted = false AND (" +
                         "LOWER(c.representative.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                         "LOWER(c.room.roomName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

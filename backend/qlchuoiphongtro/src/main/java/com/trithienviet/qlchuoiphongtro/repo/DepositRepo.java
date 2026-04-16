@@ -11,4 +11,6 @@ import com.trithienviet.qlchuoiphongtro.entity.Deposit;
 public interface DepositRepo extends JpaRepository<Deposit, Long> {
 
     Optional<Deposit> findByRoom_RoomId(Long roomId);
+
+    Optional<Deposit> findTopByRoom_RoomIdAndStatus(Long roomId, String status);
 }

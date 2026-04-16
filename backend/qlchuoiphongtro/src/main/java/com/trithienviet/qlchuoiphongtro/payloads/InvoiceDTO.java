@@ -42,6 +42,7 @@ public class InvoiceDTO {
     private String contractStatus;
 
     private LocalDateTime createdAt;
+    private String paymentMethod;
     private LocalDateTime paidAt;
 
     @Builder.Default
