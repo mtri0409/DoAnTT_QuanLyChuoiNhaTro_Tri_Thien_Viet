@@ -42,7 +42,8 @@ public class RoomServiceImpl implements RoomService {
     // ← THÊM: inject DepositRepo để xử lý deposit chung với room
     @Autowired private DepositRepo depositRepo;
 
-     // ========== GET ALL ==========
+
+    // ========== GET ALL (test)==========
     @Override
     public PageResponse<RoomDTO> getAllRooms(
             Integer pageNumber, Integer pageSize,
