@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.service;
 
+import com.trithienviet.qlchuoiphongtro.entity.PostStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.RoommatePostDTO;
 
@@ -17,6 +18,10 @@ public interface RoommatePostService {
             Long roomId, Long branchId);
 
     PageResponse<RoommatePostDTO> getMyPosts(Long authorId, int pageNumber, int pageSize);
+
+    RoommatePostDTO repostFromExpired(Integer originalPostId, Long callerId);
+
+    PageResponse<RoommatePostDTO> getMyPosts(Long authorId, int pageNumber, int pageSize, PostStatus status);
 
     void expireOldPosts();
 }

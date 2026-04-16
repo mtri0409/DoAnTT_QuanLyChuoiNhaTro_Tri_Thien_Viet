@@ -231,4 +231,44 @@ public class RoommatePostServiceImpl implements RoommatePostService {
                 .lastPage(page.isLast())
                 .build();
     }
+
+    // RoommatePostServiceImpl.java
+    @Transactional
+    public RoommatePostDTO repostFromExpired(Integer originalPostId, Long callerId) {
+        RoommatePost original = findPostOrThrow(originalPostId);
+
+        // Chỉ repost bài của chính mình
+        if (!original.getProfile().getProfileId().equals(callerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền repost bài này.");
+        }
+        // Chỉ repost từ bài EXPIRED hoặc CLOSED
+        if (original.getStatus() == PostStatus.ACTIVE) {
+            throw new APIException("Bài đang ACTIVE, không cần repost.");
+        }
+
+        checkDailyLimit(callerId);
+
+        // Kiểm tra phòng đó có bài ACTIVE chưa
+        if (postRepo.countActivePostsByRoom(original.getRoom().getRoomId()) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Phòng này đã có bài đăng đang mở.");
+        }
+
+        // Tạo bài mới từ nội dung cũ
+        RoommatePost newPost = new RoommatePost();
+        newPost.setDescription(original.getDescription());
+        newPost.setStatus(PostStatus.ACTIVE);
+        newPost.setRoom(original.getRoom());
+        newPost.setProfile(original.getProfile());
+        newPost.setExpiresAt(LocalDateTime.now().plusDays(expireDays));
+
+        return mapToDTO(postRepo.save(newPost));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<RoommatePostDTO> getMyPosts(Long authorId, int pageNumber, int pageSize, PostStatus status) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+        return buildPageResponse(postRepo.findByAuthorAndStatus(authorId, status, pageable));
+    }
 }
