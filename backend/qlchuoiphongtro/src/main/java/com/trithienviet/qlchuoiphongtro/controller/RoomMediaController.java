@@ -21,7 +21,7 @@ public class RoomMediaController {
     private RoomMediaService roomMediaService;
 
     // ========== GET ALL (GIỮA NGUYÊN) ==========
-    @GetMapping("/admin/room-medias")
+    @GetMapping("/public/room-medias")
     public ResponseEntity<PageResponse<RoomMediaDTO>> getAllRoomMedias(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -33,7 +33,7 @@ public class RoomMediaController {
     }
 
     // ========== GET BY ID (GIỮA NGUYÊN) ==========
-    @GetMapping("/public/room-medias/{mediaId}")
+    @GetMapping("/room-medias/{mediaId}")
     public ResponseEntity<RoomMediaDTO> getRoomMediaById(@PathVariable Integer mediaId) {
         RoomMediaDTO media = roomMediaService.getRoomMediaById(mediaId);
         return ResponseEntity.ok(media);

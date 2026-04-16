@@ -30,7 +30,7 @@ public class RoomMedia {
 
     private String url;
     private String media;
-
+    private boolean thumbnail;
     @Size(min=5, message="Meadia type must contain at least 5 characters")
     private String mediaType;
     
@@ -39,8 +39,8 @@ public class RoomMedia {
     @JsonIgnore
     private Room room;
 
-    public void setThumbnail(boolean isThumbnail) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setThumbnail'");
-    }
+    // public void setThumbnail(boolean isThumbnail) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'setThumbnail'");
+    // }
 }

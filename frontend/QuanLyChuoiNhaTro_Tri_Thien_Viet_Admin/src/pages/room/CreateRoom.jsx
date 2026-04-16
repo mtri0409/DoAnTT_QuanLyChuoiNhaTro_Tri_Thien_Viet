@@ -18,6 +18,14 @@ const CreateRoom = () => {
   const [floors, setFloors] = useState([]);
   const [branches, setBranches] = useState([]);
   const [allAmenities, setAllAmenities] = useState([]);
+
+  // ← THÊM: branch được chọn để filter tầng
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+
+  // ← THÊM: floors đã lọc theo branch
+  const filteredFloors = selectedBranchId
+    ? floors.filter(f => String(f.branchId) === String(selectedBranchId))
+    : [];
   
   const [formData, setFormData] = useState({
     roomName: '',
@@ -30,10 +38,7 @@ const CreateRoom = () => {
     amenities: []
   });
 
-  // ← Tách riêng: lưu file thật (File object) để upload sau
   const [mediaFiles, setMediaFiles] = useState([]);
-  // mediaFiles = [{ file: File, preview: 'blob:...', mediaType: 'image/jpeg' }, ...]
-
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -60,7 +65,6 @@ const CreateRoom = () => {
     fetchFilters();
   }, []);
 
-  // ← Cleanup blob URLs khi unmount
   useEffect(() => {
     return () => {
       mediaFiles.forEach(m => URL.revokeObjectURL(m.preview));
@@ -69,12 +73,10 @@ const CreateRoom = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
-    
     setFormData({
       ...formData,
       [name]: type === 'number' ? (value === '' ? '' : parseInt(value)) : value
     });
-    
     if (errors[name]) {
       const newErrors = { ...errors };
       delete newErrors[name];
@@ -82,46 +84,41 @@ const CreateRoom = () => {
     }
   };
 
-  // ← SỬA: Lưu File object thật, tạo preview bằng URL.createObjectURL
+  // ← THÊM: khi đổi chi nhánh → reset floorId
+  const handleBranchChange = (e) => {
+    const branchId = e.target.value;
+    setSelectedBranchId(branchId);
+    setFormData(prev => ({ ...prev, floorId: '' }));
+  };
+
   const handleFileUpload = (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const newMediaFiles = Array.from(files).map(file => ({
-      file: file,                            // ← File thật để upload sau
-      preview: URL.createObjectURL(file),    // ← Preview tạm cho UI
+      file: file,
+      preview: URL.createObjectURL(file),
       mediaType: file.type || 'image/jpeg'
     }));
-
     setMediaFiles(prev => [...prev, ...newMediaFiles]);
   };
 
-  // ← SỬA: Xóa file khỏi danh sách
   const handleRemoveMedia = (index) => {
     setMediaFiles(prev => {
       const removed = prev[index];
-      URL.revokeObjectURL(removed.preview); // cleanup
+      URL.revokeObjectURL(removed.preview);
       return prev.filter((_, i) => i !== index);
     });
   };
 
   const handleAmenityChange = (amenityId) => {
     const isSelected = formData.amenities.some(a => a.amenityId === amenityId);
-    
     if (isSelected) {
-      setFormData({
-        ...formData,
-        amenities: formData.amenities.filter(a => a.amenityId !== amenityId)
-      });
+      setFormData({ ...formData, amenities: formData.amenities.filter(a => a.amenityId !== amenityId) });
     } else {
-      setFormData({
-        ...formData,
-        amenities: [...formData.amenities, { amenityId: amenityId }]
-      });
+      setFormData({ ...formData, amenities: [...formData.amenities, { amenityId: amenityId }] });
     }
   };
 
-  // ← SỬA: Tạo phòng trước → upload ảnh sau
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -132,7 +129,6 @@ const CreateRoom = () => {
       setLoading(false);
       return;
     }
-
     if (!formData.floorId) {
       alert('Vui lòng chọn tầng!');
       setLoading(false);
@@ -140,29 +136,21 @@ const CreateRoom = () => {
     }
 
     try {
-      // ======= BƯỚC 1: Tạo phòng (không có ảnh) =======
       console.log('Bước 1: Tạo phòng...');
       const roomResponse = await apiRoom.createRoom(formData);
       const createdRoom = roomResponse.data || roomResponse;
       const newRoomId = createdRoom.roomId;
       console.log('Tạo phòng OK, roomId:', newRoomId);
 
-      // ======= BƯỚC 2: Upload ảnh cho phòng vừa tạo =======
       if (mediaFiles.length > 0) {
         console.log(`Bước 2: Upload ${mediaFiles.length} ảnh...`);
         setUploading(true);
-
         for (let i = 0; i < mediaFiles.length; i++) {
           try {
-            await apiRoomMedia.createRoomMedia(
-              mediaFiles[i].file,  // File thật
-              newRoomId,           // roomId vừa tạo
-              false                // isThumbnail
-            );
+            await apiRoomMedia.createRoomMedia(mediaFiles[i].file, newRoomId, false);
             console.log(`Upload ảnh ${i + 1}/${mediaFiles.length} OK`);
           } catch (uploadErr) {
             console.error(`Lỗi upload ảnh ${i + 1}:`, uploadErr);
-            // Không dừng lại, tiếp tục upload ảnh tiếp theo
           }
         }
         setUploading(false);
@@ -170,14 +158,10 @@ const CreateRoom = () => {
 
       alert("Tạo phòng thành công!");
       navigate('/rooms/1');
-
     } catch (err) {
       console.error("Lỗi API:", err);
-      console.error("Response data:", err.response?.data);
-
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
-        
         if (typeof backendErrors === 'object' && !Array.isArray(backendErrors)) {
           setErrors(backendErrors);
         } else {
@@ -207,11 +191,9 @@ const CreateRoom = () => {
     return floor ? `Tầng ${floor.floorNumber}` : 'Chọn tầng';
   };
 
-  const getBranchName = (floorId) => {
-    if (!floorId || !Array.isArray(floors)) return '-';
-    const floor = floors.find(f => f.floorId === parseInt(floorId));
-    if (!floor || !floor.branchId) return '-';
-    const branch = branches.find(b => b.branchId === floor.branchId);
+  const getBranchName = (branchId) => {
+    if (!branchId) return '-';
+    const branch = branches.find(b => String(b.branchId) === String(branchId));
     return branch ? branch.branchName : '-';
   };
 
@@ -341,6 +323,27 @@ const CreateRoom = () => {
                   </small>
                 </div>
 
+                {/* ← THÊM: Chọn chi nhánh trước */}
+                <div className="col-md-6 mt-3">
+                  <label className="form-label small fw-bold text-muted">
+                    <FaBuilding className="me-1 text-muted"/> CHI NHÁNH <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    className="form-select bg-light border-0 py-2"
+                    value={selectedBranchId}
+                    onChange={handleBranchChange}
+                    required
+                  >
+                    <option value="">-- Chọn chi nhánh --</option>
+                    {branches.map(branch => (
+                      <option key={branch.branchId} value={branch.branchId}>
+                        {branch.branchName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ← SỬA: Tầng lọc theo chi nhánh đã chọn */}
                 <div className="col-md-6 mt-3">
                   <label className="form-label small fw-bold text-muted">
                     <FaBuilding className="me-1 text-muted"/> TẦNG <span className="text-danger">*</span>
@@ -350,15 +353,24 @@ const CreateRoom = () => {
                     className={`form-select bg-light border-0 py-2 ${errors.floorId ? 'is-invalid border-danger' : ''}`}
                     value={formData.floorId}
                     onChange={handleInputChange}
+                    disabled={!selectedBranchId}
                     required
                   >
-                    <option value="">-- Chọn tầng --</option>
-                    {Array.isArray(floors) && floors.map(floor => (
+                    <option value="">
+                      {!selectedBranchId ? '-- Chọn chi nhánh trước --' : '-- Chọn tầng --'}
+                    </option>
+                    {filteredFloors.map(floor => (
                       <option key={floor.floorId} value={floor.floorId}>
                         Tầng {floor.floorNumber}
                       </option>
                     ))}
                   </select>
+                  {!selectedBranchId && (
+                    <small className="text-muted">Vui lòng chọn chi nhánh trước</small>
+                  )}
+                  {selectedBranchId && filteredFloors.length === 0 && (
+                    <small className="text-warning">Chi nhánh này chưa có tầng nào</small>
+                  )}
                   {renderError('floorId')}
                 </div>
 
@@ -403,15 +415,11 @@ const CreateRoom = () => {
                   </div>
                 </div>
 
-                {/* ========== PHẦN HÌNH ẢNH - ĐÃ SỬA ========== */}
                 <div className="col-12 mt-3">
                   <label className="form-label small fw-bold text-muted">
                     <FaImage className="me-1 text-muted"/> HÌNH ẢNH PHÒNG
                   </label>
-                  
                   <div className="bg-light rounded-3 p-3 mb-3">
-
-                    {/* Chọn file từ máy */}
                     <div className="mb-3">
                       <label className="form-label small fw-bold text-muted">Chọn file từ máy</label>
                       <input 
@@ -429,8 +437,6 @@ const CreateRoom = () => {
                         </div>
                       )}
                     </div>
-
-                    {/* Preview ảnh đã chọn */}
                     {mediaFiles.length > 0 && (
                       <div className="mt-3">
                         <small className="text-muted fw-bold d-block mb-2">
@@ -465,7 +471,6 @@ const CreateRoom = () => {
                   </div>
                 </div>
 
-                {/* TÓM TẮT */}
                 <div className="col-12 mt-3">
                   <div className="alert alert-light border-1 border-secondary-subtle">
                     <small className="text-muted fw-bold d-block mb-2">TÓM LẠI</small>
@@ -474,7 +479,7 @@ const CreateRoom = () => {
                         <span className="text-muted">Phòng:</span> <strong className="text-dark">{formData.roomName || '(chưa nhập)'}</strong>
                       </div>
                       <div className="mb-2">
-                        <span className="text-muted">Chi nhánh:</span> <strong className="text-dark">{getBranchName(formData.floorId)}</strong>
+                        <span className="text-muted">Chi nhánh:</span> <strong className="text-dark">{getBranchName(selectedBranchId)}</strong>
                       </div>
                       <div className="mb-2">
                         <span className="text-muted">Tầng:</span> <strong className="text-dark">{getFloorName(formData.floorId)}</strong>

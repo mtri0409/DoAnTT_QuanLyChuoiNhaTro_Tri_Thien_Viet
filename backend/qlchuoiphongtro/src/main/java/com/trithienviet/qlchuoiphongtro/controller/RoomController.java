@@ -34,13 +34,13 @@ public class RoomController {
         return ResponseEntity.ok(msg);
     }
 
-    @GetMapping("/public/rooms/{roomId}")
+    @GetMapping("/rooms/{roomId}")
     public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long roomId) {
         RoomDTO room = roomService.getRoomById(roomId);
         return ResponseEntity.ok(room);
     }
 
-    @GetMapping("/admin/rooms")
+    @GetMapping("/rooms")
     public ResponseEntity<PageResponse<RoomDTO>> getAllRooms(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
