@@ -62,6 +62,19 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
                         @Param("contractId") Long contractId,
                         @Param("branchId") Long branchId,
                         Pageable pageable);
+
+        @Query("SELECT i FROM Invoice i WHERE i.contract.contractId IN :contractIds " +
+                        "AND (:status IS NULL OR i.status = :status) " +
+                        "AND (:type IS NULL OR i.type = :type) " +
+                        "AND (:month IS NULL OR i.periodMonth = :month) " +
+                        "AND (:year IS NULL OR i.periodYear = :year)")
+        Page<Invoice> filterByContractIds(
+                        @Param("contractIds") List<Long> contractIds,
+                        @Param("status") String status,
+                        @Param("type") String type,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year,
+                        Pageable pageable);
         List<Invoice> findByStatus(String status);
         List<Invoice> findByStatusAndPeriodMonthAndPeriodYear(String status, int month, int year);
        @Query("SELECT i FROM Invoice i " +

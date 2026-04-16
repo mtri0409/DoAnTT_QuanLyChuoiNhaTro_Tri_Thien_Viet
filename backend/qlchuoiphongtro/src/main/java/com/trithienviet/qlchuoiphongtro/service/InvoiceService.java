@@ -92,5 +92,16 @@ public interface InvoiceService {
         /** Tính lại totalAmount từ các InvoiceDetail hiện có */
         InvoiceDTO recalculate(Long invoiceId);
 
+        InvoiceDTO getInvoiceByIdForUser(Long invoiceId, String username);
+
+        InvoiceDTO confirmVNPayPayment(Long invoiceId, BigDecimal amount, String transactionCode);
+
+        PageResponse<InvoiceDTO> getInvoicesByUser(
+                        String username,
+                        String status, String type,
+                        Integer month, Integer year,
+                        Integer pageNumber, Integer pageSize,
+                        String sortBy, String sortOrder);
+
         void remindInvoice();
 }
