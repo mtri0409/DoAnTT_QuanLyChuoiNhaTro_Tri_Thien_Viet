@@ -28,7 +28,7 @@ const CreateRoom = () => {
     roomName: '',
     price: '',
     description: '',
-    currentPeople: 0,  
+    currentPeople: 0,
     maxPeople: 1,
     floorId: '',
     Status: 'AVAILABLE',
@@ -122,7 +122,6 @@ const CreateRoom = () => {
     if (!formData.floorId) { alert('Vui lòng chọn tầng!'); setLoading(false); return; }
 
     try {
-      console.log('Bước 1: Tạo phòng...');
       const roomResponse = await apiRoom.createRoom(formData);
       const createdRoom = roomResponse.data || roomResponse;
       const newRoomId = createdRoom.roomId;
@@ -218,7 +217,6 @@ const CreateRoom = () => {
                 <small className="text-muted d-block mt-1">Tiền cọc giữ chỗ phòng (tuỳ chọn)</small>
               </div>
 
-              {/* ── SỐ NGƯỜI TỐI ĐA (bỏ currentPeople) ── */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI TỐI ĐA <span className="text-danger">*</span></label>
                 <input type="number" name="maxPeople"
@@ -229,7 +227,6 @@ const CreateRoom = () => {
                 </small>
               </div>
 
-              {/* ── Thông tin chỉ đọc ── */}
               <div className="alert alert-light border-0 rounded-3 py-2 px-3 mb-0">
                 <small className="text-muted d-flex align-items-center gap-2">
                   <span>👥</span>
@@ -288,8 +285,10 @@ const CreateRoom = () => {
                   <label className="form-label small fw-bold text-muted">
                     <FaToggleOn className="me-1 text-muted"/> TRẠNG THÁI
                   </label>
+                  {/* ── 5 trạng thái ── */}
                   <select name="Status" className="form-select bg-light border-0 py-2" value={formData.Status} onChange={handleInputChange}>
                     <option value="AVAILABLE">✓ Có sẵn</option>
+                    <option value="SHARED">🤝 Ở ghép</option>
                     <option value="DEPOSITED">💰 Đã cọc</option>
                     <option value="OCCUPIED">📌 Đã cho thuê</option>
                     <option value="MAINTENANCE">🔧 Bảo trì</option>

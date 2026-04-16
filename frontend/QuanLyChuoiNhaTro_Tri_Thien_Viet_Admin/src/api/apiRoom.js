@@ -8,7 +8,8 @@ const apiRoom = {
         sortOrder = 'asc',
         floorId = null,
         branchId = null,
-        search = ''
+        search = '',
+        status     = null
     ) => {
         const url = `/rooms`;
         return axiosInstance.get(url, {
@@ -17,9 +18,10 @@ const apiRoom = {
                 pageSize: pageSize,
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                ...(floorId && { floorId: floorId }),      // ← Chỉ thêm nếu có
-                ...(branchId && { branchId: branchId }),   // ← Chỉ thêm nếu có
-                ...(search && { search: search })           // ← Chỉ thêm nếu có
+                ...(floorId && { floorId: floorId }),      
+                ...(branchId && { branchId: branchId }),   
+                ...(search && { search: search }),   
+                ...(status   && { status }),       
             }
         });
     },

@@ -20,7 +20,8 @@ const userService = {
         sortOrder = 'asc',
         floorId = null,
         branchId = null,
-        search = ''
+        search = '',
+        status     = null
     ) => {
         const url = `/rooms`;
         return axiosClient.get(url, {
@@ -29,9 +30,10 @@ const userService = {
                 pageSize: pageSize,
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                ...(floorId && { floorId: floorId }),      // ← Chỉ thêm nếu có
-                ...(branchId && { branchId: branchId }),   // ← Chỉ thêm nếu có
-                ...(search && { search: search })           // ← Chỉ thêm nếu có
+                ...(floorId && { floorId: floorId }),      
+                ...(branchId && { branchId: branchId }),   
+                ...(search && { search: search }),         
+                ...(status   && { status }),
             }
         });
     },
