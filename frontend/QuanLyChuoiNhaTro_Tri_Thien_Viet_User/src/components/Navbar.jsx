@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const navItems = [
   { label: "Trang chủ", path: "/" },
-  { label: "Tìm phòng", path: "/search-room" },
-  { label: "Tin tức", path: "/news" },
-  { label: "Hỗ trợ", path: "/supports" },
+  { label: "Tìm phòng", path: "/tim-phong" },
+  { label: "Tin tức", path: "/tin-tuc" },
+  { label: "Hỗ trợ", path: "/ho-tro" },
 ];
 
 export default function Navbar() {

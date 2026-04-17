@@ -14,7 +14,6 @@ const AmenityList = () => {
     const [search, setSearch] = useState('');
     const [deletingAmenity, setDeletingAmenity] = useState(null);
 
-    // Modal state
     const [showAddModal, setShowAddModal] = useState(false);
     const [newAmenityData, setNewAmenityData] = useState({
         amenityName: '',
@@ -22,7 +21,6 @@ const AmenityList = () => {
     });
     const [addingAmenity, setAddingAmenity] = useState(false);
 
-    // Fetch amenities
     const fetchAmenities = async () => {
         setLoading(true);
         try {
@@ -36,16 +34,15 @@ const AmenityList = () => {
 
             const amenityData = res.data || res;
             setData(amenityData || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-            console.log('✅ Set amenity data:', amenityData);
+            console.log('Set amenity data:', amenityData);
         } catch (err) {
-            console.error('❌ Fetch amenities error:', err);
+            console.error('Fetch amenities error:', err);
             setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
         } finally {
             setLoading(false);
         }
     };
 
-    // Handle thêm tiện ích
     const handleAddAmenity = async () => {
         if (!newAmenityData.amenityName.trim()) {
             alert('Vui lòng nhập tên tiện ích!');

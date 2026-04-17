@@ -1,5 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.repo;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -30,6 +31,9 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     Optional<User> findByProfileProfileId(Long profileId);
 
+    @Query("SELECT u from User u WHERE u.profile.id = :profileId")
+    Optional<User> findByProfileId(@Param("profileId") Long profileId);
+
     Optional<String> findByResetToken(String resetToken);
 
     @Query("SELECT u FROM User u WHERE " +
@@ -40,4 +44,13 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     Page<User> findByIsActiceFalse(Pageable pageable);
 
+    @Query("SELECT u FROM User u " +
+            "JOIN u.profile p " +
+            "JOIN p.roomMember rm " +
+            "JOIN rm.contract c " +
+            "JOIN c.room r " +
+            "JOIN r.floor f " +
+            "WHERE f.branch.branchId = :branchId " +
+            "AND u.isActice = true ") // Chỉ lấy những user đang hoạt động
+    List<User> findAllByBranchId(@Param("branchId") Integer BranchId);
 }

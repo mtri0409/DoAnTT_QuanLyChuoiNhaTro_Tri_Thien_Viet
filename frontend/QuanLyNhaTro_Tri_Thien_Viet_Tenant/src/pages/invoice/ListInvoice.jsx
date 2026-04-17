@@ -146,7 +146,9 @@ export default function ListInvoice() {
       const pd = p?.data ?? p;
       const pad = pa?.data ?? pa;
       setUrgentCount((pd?.totalElements || 0) + (pad?.totalElements || 0));
-    } catch (_) {}
+    } catch (e) {
+      console.log(e)
+    }
   }, []);
 
   useEffect(() => {

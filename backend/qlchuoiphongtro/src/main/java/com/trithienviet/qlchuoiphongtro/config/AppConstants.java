@@ -8,6 +8,8 @@ public class AppConstants {
     public static final String SORT_PROFILE_BY = "profileId";
     public static final String SORT_USERS_BY = "userId";
     public static final String SORT_VEHICEL_BY = "vehicleId";
+    public static final String SORT_NOTIFICATION_BY = "notificationId";
+
     public static final String SORT_DIR = "asc";
     public static final Long ADMIN_ID = 101L;
     public static final Long USER_ID = 102L;
@@ -19,6 +21,7 @@ public class AppConstants {
             "/api/register/**",
             "/api/auth/login",
             "/api/auth/create-account/**",
+            "/api/public/**", // để như này có được không:))
             "/api/rooms",
             "/api/rooms/**",
             "/api/room-medias",
@@ -32,8 +35,9 @@ public class AppConstants {
             "/api/contracts",
             "/error"
     };
+    public static final String[] USER_URLS = { "/api/user/**" };
 
-    public static final String[] USER_URLS = { "/api/public/**" };
+    // public static final String[] USER_URLS = { "/api/public/**" };
 
     public static final String[] ADMIN_URLS = { "/api/admin/**" };
 

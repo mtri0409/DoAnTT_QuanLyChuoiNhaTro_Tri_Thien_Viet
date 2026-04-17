@@ -8,7 +8,6 @@ export default function Header() {
   const [filtered, setFiltered] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // load rooms
   useEffect(() => {
     const fetchRooms = async () => {
       const res = await userService.getAllRooms(0, 50);
@@ -17,7 +16,6 @@ export default function Header() {
     fetchRooms();
   }, []);
 
-  // search
   const handleSearch = (value) => {
     setSearchQuery(value);
 
@@ -53,7 +51,6 @@ export default function Header() {
     return valid.url;
   };
 
-  // click ngoài
   useEffect(() => {
     const handleClick = () => setShowDropdown(false);
     window.addEventListener("click", handleClick);
@@ -75,20 +72,20 @@ export default function Header() {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center", // ✅ CHỈ SỬA DÒNG NÀY
+          justifyContent: "center", 
           maxWidth: 1200,
           margin: "0 auto",
           padding: "16px 24px",
           gap: 24,
           flexWrap: "wrap",
-          position: "relative", // để dropdown
+          position: "relative", 
         }}
       >
         {/* Logo */}
         <a
           href="/"
           style={{
-            position: "absolute", // ✅ để logo không đẩy layout
+            position: "absolute", 
             left: 24,
             display: "flex",
             alignItems: "center",
@@ -137,7 +134,7 @@ export default function Header() {
             gap: 10,
             border: "2px solid transparent",
             transition: "border-color 0.2s, background 0.2s",
-            position: "relative", // để dropdown
+            position: "relative", 
           }}
           onFocus={(e) =>
             (e.currentTarget.style.cssText +=
@@ -153,7 +150,7 @@ export default function Header() {
             type="text"
             placeholder="Tìm theo tên phòng, địa chỉ, khu vực..."
             value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)} // ✅ dùng search
+            onChange={(e) => handleSearch(e.target.value)} 
             onFocus={() => setShowDropdown(true)}
             style={{
               border: "none",
@@ -210,7 +207,7 @@ export default function Header() {
                     cursor: "pointer",
                   }}
                   onClick={() =>
-                    (window.location.href = `/rooms/${room.roomId}/detail`)
+                    (window.location.href = `/phong/${room.roomId}/chi-tiet`)
                   }
                 >
                   <img

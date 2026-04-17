@@ -1,16 +1,19 @@
 package com.trithienviet.qlchuoiphongtro.service.impl;
 
 import com.trithienviet.qlchuoiphongtro.entity.*;
+import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
 import com.trithienviet.qlchuoiphongtro.payloads.InvoiceDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.repo.*;
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -19,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class InvoiceServiceImpl implements InvoiceService {
 
     private static final String TYPE_MONTHLY = "MONTHLY";
@@ -49,16 +54,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final UserRepo userRepo;
     private final PaymentRepo paymentRepo;
 
-    // ────────────────────────────────────────────────────────────────────────
-    // SCHEDULER
-    // ────────────────────────────────────────────────────────────────────────
-
-    @Scheduled(cron = "0 0 8 * * *")
-    public void scheduledAutoGenerate() {
-        LocalDate today = LocalDate.now();
-        autoGenerateInvoices(today.getMonthValue(), today.getYear());
-    }
-
+    private final NotificationHelper notificationHelper;
     // ────────────────────────────────────────────────────────────────────────
     // TẠO HÓA ĐƠN MONTHLY
     // ────────────────────────────────────────────────────────────────────────
@@ -78,6 +74,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = buildDraftInvoice(contract, month, year);
         invoiceRepo.save(invoice);
+
+
         return toDTO(invoice);
     }
 
@@ -96,6 +94,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             Invoice invoice = buildDraftInvoice(contract, month, year);
             invoiceRepo.save(invoice);
+      
             result.add(toDTO(invoice));
         }
         return result;
@@ -285,6 +284,33 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         return toDTO(invoice);
     }
+    @Override
+    @Transactional
+    public void remindInvoice() {
+        LocalDate today = LocalDate.now();
+        
+        List<Invoice> overdueInvoices = invoiceRepo.findOverdueInvoices(STATUS_PENDING, today);
+
+       
+        if (overdueInvoices.isEmpty()) {
+            log.info("Không có hóa đơn nào quá hạn hôm nay: {}", today);
+            return;
+        }
+
+        for (Invoice invoice : overdueInvoices) {
+            try {
+             log.info(">> EMAIL : ",invoice.getContract().getRepresentative().getEmail());
+                log.info("Đã gửi nhắc nợ cho hóa đơn: {} - Khách hàng: {}", 
+                        invoice.getInvoiceId(), invoice.getContract().getRepresentative().getFullName());
+                
+            notificationHelper.sendOVerBillToAllMembers(invoice);
+            
+            } catch (Exception e) {
+                log.error("Lỗi khi gửi thông báo cho hóa đơn {}: {}", invoice.getInvoiceId(), e.getMessage());
+            }
+        }
+
+    }
 
     // ────────────────────────────────────────────────────────────────────────
     // CHỈ SỐ ĐỒNG HỒ
@@ -433,7 +459,45 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setStatus(STATUS_PENDING);
         invoice.setDueDate(LocalDate.now().plusDays(7));
         invoiceRepo.save(invoice);
+        notificationHelper.sendNotificationNewInvoid(invoice);
         return toDTO(invoice);
+    }
+
+
+   @Override
+    @Transactional // Đảm bảo tính toàn vẹn dữ liệu khi xử lý hàng loạt
+    public List<InvoiceDTO> sendAllInvoices(Integer month, Integer year) {
+        // 1. Tìm hóa đơn DRAFT theo Tháng và Năm (Nếu month/year null thì lấy toàn bộ DRAFT)
+        List<Invoice> draftInvoices;
+        
+        if (month != null && year != null) {
+            // Tri cần khai báo hàm này trong Repo (mình sẽ chỉ ở mục 3)
+            draftInvoices = invoiceRepo.findByStatusAndPeriodMonthAndPeriodYear(
+                STATUS_DRAFT, month, year
+            );
+        } else {
+            draftInvoices = invoiceRepo.findByStatus(STATUS_DRAFT);
+        }
+
+        if (draftInvoices.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<InvoiceDTO> updatedInvoices = new ArrayList<>();
+
+        for (Invoice invoice : draftInvoices) {
+            try {
+                // 2. Tận dụng hàm sendInvoice lẻ (đã có logic set PENDING, set DueDate, recalculate)
+                InvoiceDTO dto = sendInvoice(invoice.getInvoiceId());
+                notificationHelper.sendNotificationNewInvoid(invoice);
+                updatedInvoices.add(dto);
+            } catch (Exception e) {
+                // Nếu 1 cái lỗi (ví dụ khách chưa có email), vẫn tiếp tục gửi các cái khác
+                System.err.println("Lỗi gửi hóa đơn ID " + invoice.getInvoiceId() + ": " + e.getMessage());
+            }
+        }
+
+        return updatedInvoices;
     }
 
     @Override
@@ -476,6 +540,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepo.save(invoice);
         return toDTO(invoice);
     }
+
 
     // ────────────────────────────────────────────────────────────────────────
     // PRIVATE HELPERS

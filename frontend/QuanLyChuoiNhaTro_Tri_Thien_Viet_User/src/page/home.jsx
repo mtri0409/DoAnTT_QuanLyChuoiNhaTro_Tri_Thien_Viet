@@ -13,14 +13,11 @@ export default function Home() {
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [error,       setError]       = useState(null);
 
-  // Server filter
   const [activeBranchId, setActiveBranchId] = useState(null);
 
-  // Client filters
   const [maxPrice,        setMaxPrice]        = useState(MAX_PRICE);
   const [activeAmenities, setActiveAmenities] = useState([]);
 
-  // Client pagination
   const [page, setPage] = useState(0);
 
   useEffect(() => {

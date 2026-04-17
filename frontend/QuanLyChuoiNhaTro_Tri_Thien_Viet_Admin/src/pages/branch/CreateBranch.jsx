@@ -10,16 +10,13 @@ const CreateBranch = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // STATE FORM
   const [formData, setFormData] = useState({
     branchName: '',
     address: ''
   });
 
-  // STATE ERROR
   const [errors, setErrors] = useState({});
 
-  // HANDLE INPUT
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -31,7 +28,6 @@ const CreateBranch = () => {
     }
   };
 
-  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -64,7 +60,6 @@ const CreateBranch = () => {
     }
   };
 
-  // RENDER ERROR
   const renderError = (field) => {
     if (!errors[field]) return null;
 

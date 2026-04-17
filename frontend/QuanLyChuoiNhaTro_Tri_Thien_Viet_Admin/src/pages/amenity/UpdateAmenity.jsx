@@ -13,16 +13,13 @@ const UpdateAmenity = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-  // STATE FORM
   const [formData, setFormData] = useState({
     amenityName: '',
     icon: ''
   });
 
-  // STATE ERROR
   const [errors, setErrors] = useState({});
 
-  // 🔹 LOAD DATA
   const fetchAmenity = async () => {
     try {
       const res = await apiAmenity.getAmenityById(id);
@@ -46,7 +43,6 @@ const UpdateAmenity = () => {
     fetchAmenity();
   }, [id]);
 
-  // HANDLE INPUT
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -58,7 +54,6 @@ const UpdateAmenity = () => {
     }
   };
 
-  // SUBMIT UPDATE
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -91,7 +86,6 @@ const UpdateAmenity = () => {
     }
   };
 
-  // RENDER ERROR
   const renderError = (field) => {
     if (!errors[field]) return null;
 
@@ -102,7 +96,6 @@ const UpdateAmenity = () => {
     );
   };
 
-  // LOADING DATA
   if (loadingData) {
     return (
       <div className="container-fluid py-5 text-center">

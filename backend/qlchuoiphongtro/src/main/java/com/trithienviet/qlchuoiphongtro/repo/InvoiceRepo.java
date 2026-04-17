@@ -1,6 +1,8 @@
 package com.trithienviet.qlchuoiphongtro.repo;
 
 import com.trithienviet.qlchuoiphongtro.entity.Invoice;
+import com.trithienviet.qlchuoiphongtro.payloads.FinancialProjection;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,7 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -71,4 +75,52 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
                         @Param("month") Integer month,
                         @Param("year") Integer year,
                         Pageable pageable);
+        List<Invoice> findByStatus(String status);
+        List<Invoice> findByStatusAndPeriodMonthAndPeriodYear(String status, int month, int year);
+       @Query("SELECT i FROM Invoice i " +
+       "JOIN FETCH i.contract c " +
+       "JOIN FETCH c.roomMembers rm " +
+       "JOIN FETCH rm.profile p " +
+       "WHERE i.status = :status AND i.dueDate < :date")
+        List<Invoice> findOverdueInvoices(
+                @Param("status") String status, 
+                @Param("date") LocalDate date
+        );      
+        
+    @Query("SELECT " +
+           "COALESCE(SUM(CASE WHEN i.type = 'MONTHLY' AND i.status = 'PAID' THEN i.totalAmount ELSE 0 END), 0) as totalPaidMonthly, " +
+           "COALESCE(SUM(CASE WHEN i.type = 'DEPOSIT' THEN i.paidAmount ELSE 0 END), 0) as totalPaidDeposit, " +
+           "COALESCE(SUM(CASE WHEN i.status = 'REFUNDED' THEN i.totalAmount ELSE 0 END), 0) as totalRefunded, " +
+           "COALESCE(SUM(CASE WHEN i.status IN ('PENDING', 'PARTIAL') THEN (i.totalAmount - COALESCE(i.paidAmount, 0)) ELSE 0 END), 0) as totalPending, " +
+           "COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) as paidCount, " +
+           "COUNT(CASE WHEN i.status IN ('PENDING', 'PARTIAL') THEN 1 END) as pendingCount " +
+           "FROM Invoice i " +
+           "WHERE (:branchId IS NULL OR i.contract.room.floor.branch.branchId = :branchId)")
+        FinancialProjection getFinancialStatsInterface(@Param("branchId") Long branchId);
+
+       @Query("SELECT " +
+                "COALESCE(SUM(CASE WHEN i.type = 'MONTHLY' AND i.status = 'PAID' THEN i.totalAmount ELSE 0 END), 0) as totalPaidMonthly, " +
+                "COALESCE(SUM(CASE WHEN i.type = 'DEPOSIT' THEN i.paidAmount ELSE 0 END), 0) as totalPaidDeposit, " +
+                "COALESCE(SUM(CASE WHEN i.status = 'REFUNDED' THEN i.totalAmount ELSE 0 END), 0) as totalRefunded, " +
+                "COALESCE(SUM(CASE WHEN i.status IN ('PENDING', 'PARTIAL') THEN (i.totalAmount - COALESCE(i.paidAmount, 0)) ELSE 0 END), 0) as totalPending, " +
+                "COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) as paidCount, " +
+                "COUNT(CASE WHEN i.status IN ('PENDING', 'PARTIAL') THEN 1 END) as pendingCount " +
+                "FROM Invoice i " +
+                "WHERE (:branchId IS NULL OR i.contract.room.floor.branch.branchId = :branchId) " +
+                "AND (:month IS NULL OR i.periodMonth = :month) " +
+                "AND (:year IS NULL OR i.periodYear = :year)")
+        FinancialProjection getFinancialStats(
+        @Param("branchId") Long branchId, 
+        @Param("month") Integer month, 
+        @Param("year") Integer year
+        );
+
+       @Query("SELECT i FROM Invoice i " +
+       "WHERE i.status IN ('PENDING', 'PARTIAL') " +
+       "AND (:branchId IS NULL OR i.contract.room.floor.branch.branchId = :branchId) " +
+       "ORDER BY i.dueDate ASC")
+        List<Invoice> findTopPendingInvoices(
+        @Param("branchId") Long branchId, 
+        Pageable pageable
+        );
 }

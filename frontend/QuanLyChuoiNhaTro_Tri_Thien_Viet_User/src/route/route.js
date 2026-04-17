@@ -6,9 +6,9 @@ import SupportPage from "../page/Support";
 
 const UserRoute = [
   { path: "/", component: Home },
-  { path: "/news", component: NewsPage },
-  { path: "/search-room", component: SearchRoom },
-  { path: "/supports", component: SupportPage },
-  { path: "/rooms/:roomId/detail", component: RoomDetail },
+  { path: "/tin-tuc", component: NewsPage },
+  { path: "/tim-phong", component: SearchRoom },
+  { path: "/ho-tro", component: SupportPage },
+  { path: "/phong/:roomId/chi-tiet", component: RoomDetail },
 ];
 export default UserRoute;

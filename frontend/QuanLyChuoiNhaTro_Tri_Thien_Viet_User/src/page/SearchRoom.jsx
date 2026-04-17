@@ -2,96 +2,122 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import RoomCard from '../components/RoomCard';
 import userService from '../services/userService';
 
-const MAX_PRICE  = 20;
-const PAGE_SIZE  = 5;   // số phòng hiển thị mỗi trang (client-side)
-const FETCH_SIZE = 100; // fetch nhiều lên để filter client-side không bị lệch trang
+const MAX_PRICE = 20;
+const PAGE_SIZE = 5;
+const FETCH_SIZE = 100;
 
 const isRoomVisible = (room) => {
   const s = (room.status ?? room.Status ?? '').toUpperCase();
   if (s === 'MAINTENANCE' || s === 'DEPOSITED') return false;
-  if (s === 'OCCUPIED') return (room.currentPeople ?? 0) < (room.maxPeople ?? 1);
+  if (s === 'SHARED') return (room.currentPeople ?? 0) < (room.maxPeople ?? 1);
   return true;
 };
 
 const getRoomTag = (room) => {
   const s = (room.status ?? room.Status ?? '').toUpperCase();
   if (s === 'AVAILABLE') return { label: 'Còn phòng', bg: '#16a34a' };
-  if (s === 'OCCUPIED')  return { label: 'Ở ghép',    bg: '#f59e0b' };
+  if (s === 'SHARED') return { label: 'Ở ghép', bg: '#f59e0b' };
   return null;
 };
 
 export default function SearchRoom() {
-  const [allRooms,    setAllRooms]    = useState([]); // toàn bộ phòng fetch về
-  const [branches,    setBranches]    = useState([]);
-  const [amenities,   setAmenities]   = useState([]);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState(null);
+  const [allRooms, setAllRooms] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [amenities, setAmenities] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Server-side filter (gọi lại API)
   const [activeBranchId, setActiveBranchId] = useState(null);
-
-  // Client-side filters
-  const [maxPrice,        setMaxPrice]        = useState(MAX_PRICE);
+  const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
   const [activeAmenities, setActiveAmenities] = useState([]);
-  const [searchText,      setSearchText]      = useState('');
-  const [statusFilter,    setStatusFilter]    = useState('ALL');
-
-  // Client-side pagination
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(0);
 
-  // Fetch branches & amenities
   useEffect(() => {
     userService.getAllBranches(1, 50)
-      .then(res => { const l = res.content; setBranches(Array.isArray(l) ? l : []); })
+      .then(res => setBranches(Array.isArray(res.content) ? res.content : []))
       .catch(() => setBranches([]));
     userService.getAllAmenities(0, 100)
-      .then(res => { const l = res.content; setAmenities(Array.isArray(l) ? l : []); })
+      .then(res => setAmenities(Array.isArray(res.content) ? res.content : []))
       .catch(() => setAmenities([]));
   }, []);
 
+  const fetchRooms = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setPage(0);
 
-  const fetchRooms = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    setPage(0); // reset page về 0 khi fetch mới
-    userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', activeBranchId)
-      .then(res => {
-        const data = res.content;
-        setAllRooms(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setError('Không thể tải danh sách phòng.'))
-      .finally(() => setLoading(false));
+      const [availRes, shareRes] = await Promise.all([
+        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'AVAILABLE'),
+        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'SHARED')
+      ]);
+
+      const available = availRes.content || [];
+      const shared = shareRes.content || [];
+
+      const merged = [...available, ...shared].filter(
+        (room, index, self) => index === self.findIndex((t) => t.roomId === room.roomId)
+      );
+
+      setAllRooms(merged);
+    } catch (err) {
+      console.error('Fetch rooms error:', err);
+      setError('Không thể tải danh sách phòng.');
+      setAllRooms([]);
+    } finally {
+      setLoading(false);
+    }
   }, [activeBranchId]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchRooms(); }, [fetchRooms]);
 
-  // Client-side filter → đây là source of truth cho pagination
-  const filtered = useMemo(() => allRooms.filter(room => {
-    if (!isRoomVisible(room)) return false;
-    if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
-    if (!activeAmenities.every(id => room.amenities?.some(a => (a.amenityId ?? a.id) === id))) return false;
-    if (searchText && !room.roomName?.toLowerCase().includes(searchText.toLowerCase()) && !room.description?.toLowerCase().includes(searchText.toLowerCase())) return false;
-    const tag = getRoomTag(room);
-    if (statusFilter === 'AVAILABLE' && tag?.label !== 'Còn phòng') return false;
-    if (statusFilter === 'OCCUPIED'  && tag?.label !== 'Ở ghép')    return false;
-    return true;
-  }), [allRooms, maxPrice, activeAmenities, searchText, statusFilter]);
+  const filtered = useMemo(() => {
+    return allRooms.filter(room => {
+      if (!isRoomVisible(room)) return false;
 
-  // Pagination tính trên filtered
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages - 1); // tránh page vượt quá
-  const pageRooms   = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+      if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
 
-  // Reset page về 0 khi client filter thay đổi
+      if (activeAmenities.length > 0) {
+        const hasAllAmenities = activeAmenities.every(id => 
+          room.amenities?.some(a => (a.amenityId ?? a.id) === id)
+        );
+        if (!hasAllAmenities) return false;
+      }
+
+      const keyword = searchText.toLowerCase().trim();
+      if (keyword) {
+        const nameMatch = (room.roomName ?? '').toLowerCase().includes(keyword);
+        const descMatch = (room.description ?? '').toLowerCase().includes(keyword);
+        if (!nameMatch && !descMatch) return false;
+      }
+
+      const tag = getRoomTag(room);
+      if (statusFilter === 'AVAILABLE' && tag?.label !== 'Còn phòng') return false;
+      if (statusFilter === 'SHARED' && tag?.label !== 'Ở ghép') return false;
+
+      return true;
+    });
+  }, [allRooms, maxPrice, activeAmenities, searchText, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const pageRooms = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
   const setFilter = (fn) => { fn(); setPage(0); };
+  const handleBranch = (id) => { setActiveBranchId(id); };
+  const toggleAmenity = (id) => setFilter(() => setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+  const resetAll = () => {
+    setActiveBranchId(null);
+    setMaxPrice(MAX_PRICE);
+    setActiveAmenities([]);
+    setSearchText('');
+    setStatusFilter('ALL');
+  };
 
-  const handleBranch   = (id) => { setActiveBranchId(id); }; // fetchRooms tự reset page
-  const toggleAmenity  = (id) => setFilter(() => setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
-  const resetAll       = () => { setActiveBranchId(null); setMaxPrice(MAX_PRICE); setActiveAmenities([]); setSearchText(''); setStatusFilter('ALL'); };
-
-  const hasFilter  = activeBranchId !== null || maxPrice < MAX_PRICE || activeAmenities.length > 0 || searchText || statusFilter !== 'ALL';
-  const sliderPct  = (maxPrice / MAX_PRICE) * 100;
+  const hasFilter = activeBranchId !== null || maxPrice < MAX_PRICE || activeAmenities.length > 0 || searchText || statusFilter !== 'ALL';
+  const sliderPct = (maxPrice / MAX_PRICE) * 100;
 
   return (
     <>
@@ -121,17 +147,16 @@ export default function SearchRoom() {
       `}</style>
 
       <div className="sr-wrap">
-
         {/* Header + search */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2236', margin: 0 }}>Tìm phòng trọ</h2>
-              <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>Hiển thị phòng còn trống & phòng ghép còn chỗ</p>
+              <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>Hiển thị phòng còn trống &amp; phòng ghép còn chỗ</p>
             </div>
             {hasFilter && (
               <button onClick={resetAll} style={{ background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '7px 14px', color: '#64748b', fontFamily: 'inherit', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                ✕ Xóa bộ lọc
+                Xóa bộ lọc
               </button>
             )}
           </div>
@@ -141,14 +166,16 @@ export default function SearchRoom() {
             <input type="text" placeholder="Tìm theo tên phòng, mô tả..."
               value={searchText}
               onChange={e => setFilter(() => setSearchText(e.target.value))} />
-            {searchText && <button onClick={() => setFilter(() => setSearchText(''))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 18, padding: '0 4px' }}>✕</button>}
+            {searchText && (
+              <button onClick={() => setFilter(() => setSearchText(''))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 18, padding: '0 4px' }}>✕</button>
+            )}
             <button className="sr-btn">Tìm kiếm</button>
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className={`sr-chip ${statusFilter === 'ALL' ? 'active' : ''}`}       onClick={() => setFilter(() => setStatusFilter('ALL'))}>Tất cả</button>
+            <button className={`sr-chip ${statusFilter === 'ALL' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('ALL'))}>Tất cả</button>
             <button className={`sr-chip green ${statusFilter === 'AVAILABLE' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('AVAILABLE'))}>🟢 Còn phòng</button>
-            <button className={`sr-chip amber ${statusFilter === 'OCCUPIED' ? 'active' : ''}`}  onClick={() => setFilter(() => setStatusFilter('OCCUPIED'))}>🟡 Ở ghép</button>
+            <button className={`sr-chip amber ${statusFilter === 'SHARED' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('SHARED'))}>🟡 Ở ghép</button>
           </div>
         </div>
 
@@ -165,7 +192,6 @@ export default function SearchRoom() {
 
         {/* Main grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 268px', gap: 24, alignItems: 'start' }}>
-
           {/* LEFT */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -209,21 +235,20 @@ export default function SearchRoom() {
               </div>
             )}
 
-            {/* Pagination — tính trên filtered, không phải server */}
+            {/* Pagination */}
             {!loading && !error && totalPages > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 28 }}>
-                <button className="sr-pg" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>← Trước</button>
+                <button className="sr-pg" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>&larr; Trước</button>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button key={i} className={`sr-pg ${currentPage === i ? 'active' : ''}`} onClick={() => setPage(i)}>{i + 1}</button>
                 ))}
-                <button className="sr-pg" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>Tiếp →</button>
+                <button className="sr-pg" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>Tiếp &rarr;</button>
               </div>
             )}
           </div>
 
           {/* RIGHT sidebar */}
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 100 }}>
-
             {/* Price */}
             <div className="sr-card">
               <div className="sr-label">Giá thuê</div>
@@ -248,7 +273,7 @@ export default function SearchRoom() {
                     color: maxPrice === v ? '#1d6cf0' : '#64748b',
                     fontWeight: maxPrice === v ? 700 : 500,
                   }}>
-                    {v >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤${v}tr`}
+                    {v >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${v}tr`}
                   </button>
                 ))}
               </div>
@@ -262,22 +287,23 @@ export default function SearchRoom() {
             {/* Amenities */}
             <div className="sr-card">
               <div className="sr-label">Tiện ích</div>
-              {amenities.length === 0
-                ? <p style={{ fontSize: 13, color: '#94a3b8' }}>Đang tải...</p>
-                : amenities.map(a => {
+              {amenities.length === 0 ? (
+                <p style={{ fontSize: 13, color: '#94a3b8' }}>Đang tải...</p>
+              ) : (
+                amenities.map(a => {
                   const id = a.amenityId ?? a.id;
                   const on = activeAmenities.includes(id);
-                  const icon = Object.entries({ wifi:'📶','máy lạnh':'❄️','điều hòa':'❄️','nóng lạnh':'🚿','wc':'🚽',toilet:'🚽',bếp:'🍳','gác lửng':'🪜','thang máy':'🛗','bãi xe':'🅿️','bảo vệ':'💂' })
+                  const icon = Object.entries({ wifi:'📶', 'máy lạnh':'❄️', 'điều hòa':'❄️', 'nóng lạnh':'🚿', 'wc':'🚽', 'toilet':'🚽', 'bếp':'🍳', 'gác lửng':'🪜', 'thang máy':'🛗', 'bãi xe':'🅿️', 'bảo vệ':'💂' })
                     .find(([k]) => a.amenityName?.toLowerCase().includes(k))?.[1] ?? '✅';
                   return (
                     <div key={id} className="sr-amenity-row" onClick={() => toggleAmenity(id)}>
-                      <div className={`sr-checkbox ${on ? 'on' : ''}`}>{on && '✓'}</div>
+                      <div className={`sr-checkbox ${on ? 'on' : ''}`}>{on ? '✓' : ''}</div>
                       <span>{icon}</span>
                       <span>{a.amenityName}</span>
                     </div>
                   );
                 })
-              }
+              )}
               {activeAmenities.length > 0 && (
                 <button onClick={() => setFilter(() => setActiveAmenities([]))} style={{ width: '100%', marginTop: 12, padding: 8, border: '1.5px solid #e2e8f0', borderRadius: 8, background: 'none', color: '#94a3b8', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>
                   ✕ Bỏ lọc tiện ích
@@ -311,8 +337,14 @@ export default function SearchRoom() {
             <div style={{ background: 'linear-gradient(135deg,#1d6cf0,#1558cc)', borderRadius: 14, padding: 20, color: '#fff' }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, opacity: .9 }}>📞 Tư vấn miễn phí</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[['📱','0901 234 567'],['💬','Zalo: 0901 234 567'],['🕐','7:00 – 22:00 mỗi ngày']].map(([ic,tx]) => (
-                  <div key={tx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}><span>{ic}</span>{tx}</div>
+                {[
+                  ['📱', '0901 234 567'],
+                  ['💬', 'Zalo: 0901 234 567'],
+                  ['🕐', '7:00 – 22:00 mỗi ngày']
+                ].map(([ic, tx]) => (
+                  <div key={tx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                    <span>{ic}</span>{tx}
+                  </div>
                 ))}
               </div>
               <button style={{ width: '100%', marginTop: 14, padding: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 8, color: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>

@@ -42,7 +42,6 @@ const UpdateBranch = () => {
     loadBranch();
   }, [id]);
 
-  // HANDLE INPUT
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -55,7 +54,6 @@ const UpdateBranch = () => {
     }
   };
 
-  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -88,7 +86,6 @@ const UpdateBranch = () => {
     }
   };
 
-  // RENDER ERROR
   const renderError = (field) => {
     if (!errors[field]) return null;
 

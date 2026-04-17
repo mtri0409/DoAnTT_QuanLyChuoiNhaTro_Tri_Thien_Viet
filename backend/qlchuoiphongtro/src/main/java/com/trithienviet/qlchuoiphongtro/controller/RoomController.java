@@ -53,6 +53,7 @@ public class RoomController {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
                 pageNumber, pageSize, sortBy, sortOrder,
                 floorId, branchId, search, status);
+
         return new ResponseEntity<>(page, HttpStatus.OK);
     }
 
@@ -62,7 +63,7 @@ public class RoomController {
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
-                pageNumber, pageSize, "roomName", "asc", null, null, search);
+                pageNumber, pageSize, "roomName", "asc", null, null, search, null);
         return ResponseEntity.ok(page);
     }
 }
