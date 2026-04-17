@@ -25,9 +25,6 @@ import ListProfileDeleted from "../pages/proflie/ListProfileDeleted";
 import ListVehicleDeleted from "../pages/vehicle/ListVehicleDeleted";
 import ListNotification from "../pages/notification/ListNotification";
 
-
-
-
 import CreateRoom from "../pages/room/CreateRoom";
 import RoomDetail from "../pages/room/RoomDetail";
 import RoomList from "../pages/room/RoomList";
@@ -44,7 +41,8 @@ import CreateNotification from "../pages/notification/CreateNotify";
 import MeterReadingPage from "../pages/meter-reading/MeterReadingPage";
 import ListInvoice from "../pages/invoice/ListInvoice";
 import InvoiceDetail from "../pages/invoice/InvoiceDetail";
-
+import ListPost from "../pages/post/ListPost";
+import PostDetail from "../pages/post/PostDetail";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -66,21 +64,18 @@ const AdminRoute = [
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
 
-
   //meter-reading
   { path: "/meter-reading", component: MeterReadingPage },
   { path: "/invoice", component: ListInvoice },
   { path: "/invoice/:invoiceId", component: InvoiceDetail },
-
-
-  {path:"/profile/:profileId/vehicle",component:CreateVehicle},
+  { path: "/profile/:profileId/vehicle", component: CreateVehicle },
   { path: "/profile/restore", component: ListProfileDeleted },
   { path: "/users", component: ListUser },
   { path: "/users/create", component: CreateAccount },
   { path: "/users/restore", component: ListUserDeleted },
 
   { path: "/vehicles", component: ListVehicle },
-  {path:"/vehicle/:vehicleId/update",component:UpdateVehicle},
+  { path: "/vehicle/:vehicleId/update", component: UpdateVehicle },
   { path: "/vehicle/restore", component: ListVehicleDeleted },
 
   //branch
@@ -101,8 +96,11 @@ const AdminRoute = [
   { path: "/services/create", component: CreateService },
   { path: "/services/:id/update", component: UpdateService },
 
-  {path:"/notifications",component:ListNotification},
-  {path:"/notifications/create",component:CreateNotification}
+  //post
+  { path: "/posts", component: ListPost },
+  { path: "/posts/:postId/detail", component: PostDetail },
 
+  { path: "/notifications", component: ListNotification },
+  { path: "/notifications/create", component: CreateNotification },
 ];
 export default AdminRoute;

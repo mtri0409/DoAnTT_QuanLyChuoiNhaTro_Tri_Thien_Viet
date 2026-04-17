@@ -13,9 +13,9 @@ import {
   FaServicestack,
   FaWifi,
   FaCalculator,
-  FaGoodreadsG,
   FaCogs,
   FaBell,
+  FaRegNewspaper,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
@@ -30,10 +30,10 @@ const NAV_ITEMS = [
   { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },
   { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },
   { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi /> },
+  { title: "Quản lý Bài đăng", path: "/posts", icon: <FaRegNewspaper /> },
   { title: "Cài đặt", path: "/admin/settings", icon: <FaCogs /> },
-  { title: 'Thông báo',     path: '/notifications',  icon: <FaBell /> },
-
-]
+  { title: "Thông báo", path: "/notifications", icon: <FaBell /> },
+];
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
