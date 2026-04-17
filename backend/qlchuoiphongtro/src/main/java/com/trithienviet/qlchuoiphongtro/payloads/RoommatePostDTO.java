@@ -16,6 +16,7 @@ public class RoommatePostDTO {
     private String authorPhone;
     private String roomName;
     private String branchName;
+    private String branchAddress;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime expiresAt;
