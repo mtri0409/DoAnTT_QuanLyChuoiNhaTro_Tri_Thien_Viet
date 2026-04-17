@@ -48,9 +48,11 @@ public class RoomController {
             @RequestParam(defaultValue = "asc") String sortOrder,
             @RequestParam(required = false) Long floorId,
             @RequestParam(required = false) Long branchId,
-            @RequestParam(required = false) String search) {
-        PageResponse<RoomDTO> page = roomService.getAllRooms(pageNumber, pageSize, sortBy, sortOrder, floorId, branchId,
-                search);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
+        PageResponse<RoomDTO> page = roomService.getAllRooms(
+                pageNumber, pageSize, sortBy, sortOrder,
+                floorId, branchId, search, status);
         return new ResponseEntity<>(page, HttpStatus.OK);
     }
 
