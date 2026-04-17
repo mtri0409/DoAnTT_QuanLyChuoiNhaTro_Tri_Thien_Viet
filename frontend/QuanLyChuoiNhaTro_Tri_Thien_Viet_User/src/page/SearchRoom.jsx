@@ -1,22 +1,22 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import RoomCard from '../components/RoomCard';
-import userService from '../services/userService';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import RoomCard from "../components/RoomCard";
+import userService from "../services/userService";
 
 const MAX_PRICE = 20;
 const PAGE_SIZE = 5;
 const FETCH_SIZE = 100;
 
 const isRoomVisible = (room) => {
-  const s = (room.status ?? room.Status ?? '').toUpperCase();
-  if (s === 'MAINTENANCE' || s === 'DEPOSITED') return false;
-  if (s === 'SHARED') return (room.currentPeople ?? 0) < (room.maxPeople ?? 1);
+  const s = (room.status ?? room.Status ?? "").toUpperCase();
+  if (s === "MAINTENANCE" || s === "DEPOSITED") return false;
+  if (s === "SHARED") return (room.currentPeople ?? 0) < (room.maxPeople ?? 1);
   return true;
 };
 
 const getRoomTag = (room) => {
-  const s = (room.status ?? room.Status ?? '').toUpperCase();
-  if (s === 'AVAILABLE') return { label: 'Còn phòng', bg: '#16a34a' };
-  if (s === 'SHARED') return { label: 'Ở ghép', bg: '#f59e0b' };
+  const s = (room.status ?? room.Status ?? "").toUpperCase();
+  if (s === "AVAILABLE") return { label: "Còn phòng", bg: "#16a34a" };
+  if (s === "SHARED") return { label: "Ở ghép", bg: "#f59e0b" };
   return null;
 };
 
@@ -30,16 +30,20 @@ export default function SearchRoom() {
   const [activeBranchId, setActiveBranchId] = useState(null);
   const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
   const [activeAmenities, setActiveAmenities] = useState([]);
-  const [searchText, setSearchText] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    userService.getAllBranches(1, 50)
-      .then(res => setBranches(Array.isArray(res.content) ? res.content : []))
+    userService
+      .getAllBranches(1, 50)
+      .then((res) => setBranches(Array.isArray(res.content) ? res.content : []))
       .catch(() => setBranches([]));
-    userService.getAllAmenities(0, 100)
-      .then(res => setAmenities(Array.isArray(res.content) ? res.content : []))
+    userService
+      .getAllAmenities(0, 100)
+      .then((res) =>
+        setAmenities(Array.isArray(res.content) ? res.content : []),
+      )
       .catch(() => setAmenities([]));
   }, []);
 
@@ -50,73 +54,110 @@ export default function SearchRoom() {
       setPage(0);
 
       const [availRes, shareRes] = await Promise.all([
-        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'AVAILABLE'),
-        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'SHARED')
+        userService.getAllRooms(
+          0,
+          FETCH_SIZE,
+          "roomName",
+          "asc",
+          null,
+          activeBranchId,
+          "",
+          "AVAILABLE",
+        ),
+        userService.getAllRooms(
+          0,
+          FETCH_SIZE,
+          "roomName",
+          "asc",
+          null,
+          activeBranchId,
+          "",
+          "SHARED",
+        ),
       ]);
 
       const available = availRes.content || [];
       const shared = shareRes.content || [];
 
       const merged = [...available, ...shared].filter(
-        (room, index, self) => index === self.findIndex((t) => t.roomId === room.roomId)
+        (room, index, self) =>
+          index === self.findIndex((t) => t.roomId === room.roomId),
       );
 
       setAllRooms(merged);
     } catch (err) {
-      console.error('Fetch rooms error:', err);
-      setError('Không thể tải danh sách phòng.');
+      console.error("Fetch rooms error:", err);
+      setError("Không thể tải danh sách phòng.");
       setAllRooms([]);
     } finally {
       setLoading(false);
     }
   }, [activeBranchId]);
 
-  useEffect(() => { fetchRooms(); }, [fetchRooms]);
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
 
   const filtered = useMemo(() => {
-    return allRooms.filter(room => {
+    return allRooms.filter((room) => {
       if (!isRoomVisible(room)) return false;
-
       if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
-
       if (activeAmenities.length > 0) {
-        const hasAllAmenities = activeAmenities.every(id => 
-          room.amenities?.some(a => (a.amenityId ?? a.id) === id)
+        const hasAllAmenities = activeAmenities.every((id) =>
+          room.amenities?.some((a) => (a.amenityId ?? a.id) === id),
         );
         if (!hasAllAmenities) return false;
       }
-
       const keyword = searchText.toLowerCase().trim();
       if (keyword) {
-        const nameMatch = (room.roomName ?? '').toLowerCase().includes(keyword);
-        const descMatch = (room.description ?? '').toLowerCase().includes(keyword);
+        const nameMatch = (room.roomName ?? "").toLowerCase().includes(keyword);
+        const descMatch = (room.description ?? "")
+          .toLowerCase()
+          .includes(keyword);
         if (!nameMatch && !descMatch) return false;
       }
-
       const tag = getRoomTag(room);
-      if (statusFilter === 'AVAILABLE' && tag?.label !== 'Còn phòng') return false;
-      if (statusFilter === 'SHARED' && tag?.label !== 'Ở ghép') return false;
-
+      if (statusFilter === "AVAILABLE" && tag?.label !== "Còn phòng")
+        return false;
+      if (statusFilter === "SHARED" && tag?.label !== "Ở ghép") return false;
       return true;
     });
   }, [allRooms, maxPrice, activeAmenities, searchText, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages - 1);
-  const pageRooms = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const pageRooms = filtered.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
 
-  const setFilter = (fn) => { fn(); setPage(0); };
-  const handleBranch = (id) => { setActiveBranchId(id); };
-  const toggleAmenity = (id) => setFilter(() => setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+  const setFilter = (fn) => {
+    fn();
+    setPage(0);
+  };
+  const handleBranch = (id) => {
+    setActiveBranchId(id);
+  };
+  const toggleAmenity = (id) =>
+    setFilter(() =>
+      setActiveAmenities((p) =>
+        p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
+      ),
+    );
   const resetAll = () => {
     setActiveBranchId(null);
     setMaxPrice(MAX_PRICE);
     setActiveAmenities([]);
-    setSearchText('');
-    setStatusFilter('ALL');
+    setSearchText("");
+    setStatusFilter("ALL");
   };
 
-  const hasFilter = activeBranchId !== null || maxPrice < MAX_PRICE || activeAmenities.length > 0 || searchText || statusFilter !== 'ALL';
+  const hasFilter =
+    activeBranchId !== null ||
+    maxPrice < MAX_PRICE ||
+    activeAmenities.length > 0 ||
+    searchText ||
+    statusFilter !== "ALL";
   const sliderPct = (maxPrice / MAX_PRICE) * 100;
 
   return (
@@ -149,136 +190,442 @@ export default function SearchRoom() {
       <div className="sr-wrap">
         {/* Header + search */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 16,
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2236', margin: 0 }}>Tìm phòng trọ</h2>
-              <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>Hiển thị phòng còn trống &amp; phòng ghép còn chỗ</p>
+              <h2
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: "#1a2236",
+                  margin: 0,
+                }}
+              >
+                Tìm phòng trọ
+              </h2>
+              <p style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>
+                Hiển thị phòng còn trống &amp; phòng ghép còn chỗ
+              </p>
             </div>
             {hasFilter && (
-              <button onClick={resetAll} style={{ background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '7px 14px', color: '#64748b', fontFamily: 'inherit', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                Xóa bộ lọc
+              <button
+                onClick={resetAll}
+                style={{
+                  background: "none",
+                  border: "1.5px solid #e2e8f0",
+                  borderRadius: 8,
+                  padding: "7px 14px",
+                  color: "#64748b",
+                  fontFamily: "inherit",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                ✕ Xóa bộ lọc
               </button>
             )}
           </div>
 
           <div className="sr-search-bar" style={{ marginBottom: 14 }}>
-            <span style={{ fontSize: 17, color: '#94a3b8' }}>🔍</span>
-            <input type="text" placeholder="Tìm theo tên phòng, mô tả..."
+            <span style={{ fontSize: 17, color: "#94a3b8" }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Tìm theo tên phòng, mô tả..."
               value={searchText}
-              onChange={e => setFilter(() => setSearchText(e.target.value))} />
+              onChange={(e) => setFilter(() => setSearchText(e.target.value))}
+            />
             {searchText && (
-              <button onClick={() => setFilter(() => setSearchText(''))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 18, padding: '0 4px' }}>✕</button>
+              <button
+                onClick={() => setFilter(() => setSearchText(""))}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#94a3b8",
+                  fontSize: 18,
+                  padding: "0 4px",
+                }}
+              >
+                ✕
+              </button>
             )}
             <button className="sr-btn">Tìm kiếm</button>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className={`sr-chip ${statusFilter === 'ALL' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('ALL'))}>Tất cả</button>
-            <button className={`sr-chip green ${statusFilter === 'AVAILABLE' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('AVAILABLE'))}>🟢 Còn phòng</button>
-            <button className={`sr-chip amber ${statusFilter === 'SHARED' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('SHARED'))}>🟡 Ở ghép</button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              className={`sr-chip ${statusFilter === "ALL" ? "active" : ""}`}
+              onClick={() => setFilter(() => setStatusFilter("ALL"))}
+            >
+              Tất cả
+            </button>
+            <button
+              className={`sr-chip green ${statusFilter === "AVAILABLE" ? "active" : ""}`}
+              onClick={() => setFilter(() => setStatusFilter("AVAILABLE"))}
+            >
+              🟢 Còn phòng
+            </button>
+            <button
+              className={`sr-chip amber ${statusFilter === "SHARED" ? "active" : ""}`}
+              onClick={() => setFilter(() => setStatusFilter("SHARED"))}
+            >
+              🟡 Ở ghép
+            </button>
           </div>
         </div>
 
         {/* Branch */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 24, boxShadow: '0 2px 12px rgba(29,108,240,0.07)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.5px', marginRight: 4 }}>Chi nhánh</span>
-          <button className={`sr-chip ${activeBranchId === null ? 'active' : ''}`} onClick={() => handleBranch(null)}>Tất cả</button>
-          {branches.map(b => (
-            <button key={b.branchId} className={`sr-chip ${activeBranchId === b.branchId ? 'active' : ''}`} onClick={() => handleBranch(b.branchId)}>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 12,
+            padding: "14px 18px",
+            marginBottom: 24,
+            boxShadow: "0 2px 12px rgba(29,108,240,0.07)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              letterSpacing: ".5px",
+              marginRight: 4,
+            }}
+          >
+            Chi nhánh
+          </span>
+          <button
+            className={`sr-chip ${activeBranchId === null ? "active" : ""}`}
+            onClick={() => handleBranch(null)}
+          >
+            Tất cả
+          </button>
+          {branches.map((b) => (
+            <button
+              key={b.branchId}
+              className={`sr-chip ${activeBranchId === b.branchId ? "active" : ""}`}
+              onClick={() => handleBranch(b.branchId)}
+            >
               {b.branchName}
             </button>
           ))}
         </div>
 
         {/* Main grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 268px', gap: 24, alignItems: 'start' }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 268px",
+            gap: 24,
+            alignItems: "start",
+          }}
+        >
           {/* LEFT */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2236', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#1a2236",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 Kết quả
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#1d6cf0', background: '#e8f0fe', padding: '2px 10px', borderRadius: 20 }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#1d6cf0",
+                    background: "#e8f0fe",
+                    padding: "2px 10px",
+                    borderRadius: 20,
+                  }}
+                >
                   {filtered.length} phòng
                 </span>
               </div>
               {totalPages > 1 && (
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>Trang {currentPage + 1} / {totalPages}</span>
+                <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                  Trang {currentPage + 1} / {totalPages}
+                </span>
               )}
             </div>
 
             {loading && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[1,2,3].map(i => <div key={i} className="sr-skeleton" style={{ height: 200 }} />)}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="sr-skeleton"
+                    style={{ height: 200 }}
+                  />
+                ))}
               </div>
             )}
 
             {!loading && error && (
-              <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(29,108,240,0.07)' }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "48px 24px",
+                  background: "#fff",
+                  borderRadius: 14,
+                  boxShadow: "0 2px 12px rgba(29,108,240,0.07)",
+                }}
+              >
                 <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-                <p style={{ color: '#dc2626', fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{error}</p>
-                <button className="sr-btn" onClick={fetchRooms}>Thử lại</button>
+                <p
+                  style={{
+                    color: "#dc2626",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 16,
+                  }}
+                >
+                  {error}
+                </p>
+                <button className="sr-btn" onClick={fetchRooms}>
+                  Thử lại
+                </button>
               </div>
             )}
 
             {!loading && !error && filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '56px 24px', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(29,108,240,0.07)' }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "56px 24px",
+                  background: "#fff",
+                  borderRadius: 14,
+                  boxShadow: "0 2px 12px rgba(29,108,240,0.07)",
+                }}
+              >
                 <div style={{ fontSize: 52, marginBottom: 14 }}>🏚️</div>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a2236', marginBottom: 6 }}>Không tìm thấy phòng phù hợp</p>
-                <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-                <button className="sr-btn" onClick={resetAll}>Xóa bộ lọc</button>
+                <p
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#1a2236",
+                    marginBottom: 6,
+                  }}
+                >
+                  Không tìm thấy phòng phù hợp
+                </p>
+                <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                </p>
+                <button className="sr-btn" onClick={resetAll}>
+                  Xóa bộ lọc
+                </button>
               </div>
             )}
 
             {!loading && !error && pageRooms.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {pageRooms.map(room => <RoomCard key={room.roomId} room={room} tag={getRoomTag(room)} />)}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                {pageRooms.map((room) => (
+                  <RoomCard
+                    key={room.roomId}
+                    room={room}
+                    tag={getRoomTag(room)}
+                  />
+                ))}
               </div>
             )}
 
-            {/* Pagination */}
             {!loading && !error && totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 28 }}>
-                <button className="sr-pg" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>&larr; Trước</button>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 28,
+                }}
+              >
+                <button
+                  className="sr-pg"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                >
+                  &larr; Trước
+                </button>
                 {Array.from({ length: totalPages }, (_, i) => (
-                  <button key={i} className={`sr-pg ${currentPage === i ? 'active' : ''}`} onClick={() => setPage(i)}>{i + 1}</button>
+                  <button
+                    key={i}
+                    className={`sr-pg ${currentPage === i ? "active" : ""}`}
+                    onClick={() => setPage(i)}
+                  >
+                    {i + 1}
+                  </button>
                 ))}
-                <button className="sr-pg" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>Tiếp &rarr;</button>
+                <button
+                  className="sr-pg"
+                  onClick={() =>
+                    setPage((p) => Math.min(totalPages - 1, p + 1))
+                  }
+                  disabled={currentPage === totalPages - 1}
+                >
+                  Tiếp &rarr;
+                </button>
               </div>
             )}
           </div>
 
           {/* RIGHT sidebar */}
-          <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 100 }}>
+          <aside
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              position: "sticky",
+              top: 100,
+            }}
+          >
             {/* Price */}
             <div className="sr-card">
               <div className="sr-label">Giá thuê</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
-                <span style={{ color: '#94a3b8' }}>0đ</span>
-                <span style={{ fontWeight: 700, color: '#1d6cf0' }}>{maxPrice >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${maxPrice} triệu`}</span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 13,
+                  marginBottom: 12,
+                }}
+              >
+                <span style={{ color: "#94a3b8" }}>0đ</span>
+                <span style={{ fontWeight: 700, color: "#1d6cf0" }}>
+                  {maxPrice >= MAX_PRICE
+                    ? `${MAX_PRICE}tr+`
+                    : `≤ ${maxPrice} triệu`}
+                </span>
               </div>
-              <div style={{ position: 'relative', height: 20, display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-                <div style={{ position: 'absolute', inset: '7px 0', borderRadius: 3, background: '#f1f4f9' }} />
-                <div style={{ position: 'absolute', left: 0, width: `${sliderPct}%`, top: 7, bottom: 7, borderRadius: 3, background: '#1d6cf0' }} />
-                <input type="range" min={1} max={MAX_PRICE} step={1} value={maxPrice}
-                  onChange={e => setFilter(() => setMaxPrice(Number(e.target.value)))}
-                  style={{ position: 'absolute', width: '100%', opacity: 0, height: 20, cursor: 'pointer', zIndex: 2, margin: 0 }} />
-                <div style={{ position: 'absolute', left: `calc(${sliderPct}% - 10px)`, width: 20, height: 20, borderRadius: '50%', background: '#1d6cf0', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(29,108,240,0.35)', pointerEvents: 'none' }} />
+              <div
+                style={{
+                  position: "relative",
+                  height: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: "7px 0",
+                    borderRadius: 3,
+                    background: "#f1f4f9",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    width: `${sliderPct}%`,
+                    top: 7,
+                    bottom: 7,
+                    borderRadius: 3,
+                    background: "#1d6cf0",
+                  }}
+                />
+                <input
+                  type="range"
+                  min={1}
+                  max={MAX_PRICE}
+                  step={1}
+                  value={maxPrice}
+                  onChange={(e) =>
+                    setFilter(() => setMaxPrice(Number(e.target.value)))
+                  }
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    opacity: 0,
+                    height: 20,
+                    cursor: "pointer",
+                    zIndex: 2,
+                    margin: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `calc(${sliderPct}% - 10px)`,
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    background: "#1d6cf0",
+                    border: "3px solid #fff",
+                    boxShadow: "0 2px 8px rgba(29,108,240,0.35)",
+                    pointerEvents: "none",
+                  }}
+                />
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {[2, 4, 6, 8, 10, MAX_PRICE].map(v => (
-                  <button key={v} onClick={() => setFilter(() => setMaxPrice(v))} style={{
-                    padding: '4px 10px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                    border: `1.5px solid ${maxPrice === v ? '#1d6cf0' : '#e2e8f0'}`,
-                    background: maxPrice === v ? '#e8f0fe' : '#fff',
-                    color: maxPrice === v ? '#1d6cf0' : '#64748b',
-                    fontWeight: maxPrice === v ? 700 : 500,
-                  }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {[2, 4, 6, 8, 10, MAX_PRICE].map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setFilter(() => setMaxPrice(v))}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      border: `1.5px solid ${maxPrice === v ? "#1d6cf0" : "#e2e8f0"}`,
+                      background: maxPrice === v ? "#e8f0fe" : "#fff",
+                      color: maxPrice === v ? "#1d6cf0" : "#64748b",
+                      fontWeight: maxPrice === v ? 700 : 500,
+                    }}
+                  >
                     {v >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${v}tr`}
                   </button>
                 ))}
               </div>
               {maxPrice < MAX_PRICE && (
-                <button onClick={() => setFilter(() => setMaxPrice(MAX_PRICE))} style={{ width: '100%', marginTop: 12, padding: 8, border: '1.5px solid #e2e8f0', borderRadius: 8, background: 'none', color: '#94a3b8', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>
+                <button
+                  onClick={() => setFilter(() => setMaxPrice(MAX_PRICE))}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    padding: 8,
+                    border: "1.5px solid #e2e8f0",
+                    borderRadius: 8,
+                    background: "none",
+                    color: "#94a3b8",
+                    fontFamily: "inherit",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
                   ✕ Bỏ lọc giá
                 </button>
               )}
@@ -288,16 +635,36 @@ export default function SearchRoom() {
             <div className="sr-card">
               <div className="sr-label">Tiện ích</div>
               {amenities.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#94a3b8' }}>Đang tải...</p>
+                <p style={{ fontSize: 13, color: "#94a3b8" }}>Đang tải...</p>
               ) : (
-                amenities.map(a => {
+                amenities.map((a) => {
                   const id = a.amenityId ?? a.id;
                   const on = activeAmenities.includes(id);
-                  const icon = Object.entries({ wifi:'📶', 'máy lạnh':'❄️', 'điều hòa':'❄️', 'nóng lạnh':'🚿', 'wc':'🚽', 'toilet':'🚽', 'bếp':'🍳', 'gác lửng':'🪜', 'thang máy':'🛗', 'bãi xe':'🅿️', 'bảo vệ':'💂' })
-                    .find(([k]) => a.amenityName?.toLowerCase().includes(k))?.[1] ?? '✅';
+                  const icon =
+                    Object.entries({
+                      wifi: "📶",
+                      "máy lạnh": "❄️",
+                      "điều hòa": "❄️",
+                      "nóng lạnh": "🚿",
+                      wc: "🚽",
+                      toilet: "🚽",
+                      bếp: "🍳",
+                      "gác lửng": "🪜",
+                      "thang máy": "🛗",
+                      "bãi xe": "🅿️",
+                      "bảo vệ": "💂",
+                    }).find(([k]) =>
+                      a.amenityName?.toLowerCase().includes(k),
+                    )?.[1] ?? "✅";
                   return (
-                    <div key={id} className="sr-amenity-row" onClick={() => toggleAmenity(id)}>
-                      <div className={`sr-checkbox ${on ? 'on' : ''}`}>{on ? '✓' : ''}</div>
+                    <div
+                      key={id}
+                      className="sr-amenity-row"
+                      onClick={() => toggleAmenity(id)}
+                    >
+                      <div className={`sr-checkbox ${on ? "on" : ""}`}>
+                        {on ? "✓" : ""}
+                      </div>
                       <span>{icon}</span>
                       <span>{a.amenityName}</span>
                     </div>
@@ -305,7 +672,21 @@ export default function SearchRoom() {
                 })
               )}
               {activeAmenities.length > 0 && (
-                <button onClick={() => setFilter(() => setActiveAmenities([]))} style={{ width: '100%', marginTop: 12, padding: 8, border: '1.5px solid #e2e8f0', borderRadius: 8, background: 'none', color: '#94a3b8', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>
+                <button
+                  onClick={() => setFilter(() => setActiveAmenities([]))}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    padding: 8,
+                    border: "1.5px solid #e2e8f0",
+                    borderRadius: 8,
+                    background: "none",
+                    color: "#94a3b8",
+                    fontFamily: "inherit",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
                   ✕ Bỏ lọc tiện ích
                 </button>
               )}
@@ -314,40 +695,118 @@ export default function SearchRoom() {
             {/* Legend */}
             <div className="sr-card">
               <div className="sr-label">Chú thích</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
                 {[
-                  { color: '#16a34a', title: 'Còn phòng', sub: 'Chưa có ai thuê' },
-                  { color: '#f59e0b', title: 'Ở ghép', sub: 'Còn chỗ, đang có người thuê' },
+                  {
+                    color: "#16a34a",
+                    title: "Còn phòng",
+                    sub: "Chưa có ai thuê",
+                  },
+                  {
+                    color: "#f59e0b",
+                    title: "Ở ghép",
+                    sub: "Còn chỗ, đang có người thuê",
+                  },
                 ].map(({ color, title, sub }) => (
-                  <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                  <div
+                    key={title}
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <span
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        background: color,
+                        flexShrink: 0,
+                      }}
+                    />
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2236' }}>{title}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{sub}</div>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#1a2236",
+                        }}
+                      >
+                        {title}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                        {sub}
+                      </div>
                     </div>
                   </div>
                 ))}
-                <div style={{ paddingTop: 10, borderTop: '1px solid #f1f4f9', fontSize: 11, color: '#cbd5e1', lineHeight: 1.6 }}>
+                <div
+                  style={{
+                    paddingTop: 10,
+                    borderTop: "1px solid #f1f4f9",
+                    fontSize: 11,
+                    color: "#cbd5e1",
+                    lineHeight: 1.6,
+                  }}
+                >
                   Phòng bảo trì và đã đặt cọc không hiển thị ở đây.
                 </div>
               </div>
             </div>
 
             {/* Contact */}
-            <div style={{ background: 'linear-gradient(135deg,#1d6cf0,#1558cc)', borderRadius: 14, padding: 20, color: '#fff' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, opacity: .9 }}>📞 Tư vấn miễn phí</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div
+              style={{
+                background: "linear-gradient(135deg,#1d6cf0,#1558cc)",
+                borderRadius: 14,
+                padding: 20,
+                color: "#fff",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  marginBottom: 12,
+                  opacity: 0.9,
+                }}
+              >
+                📞 Tư vấn miễn phí
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  ['📱', '0901 234 567'],
-                  ['💬', 'Zalo: 0901 234 567'],
-                  ['🕐', '7:00 – 22:00 mỗi ngày']
+                  ["📱", "0901 234 567"],
+                  ["💬", "Zalo: 0901 234 567"],
+                  ["🕐", "7:00 – 22:00 mỗi ngày"],
                 ].map(([ic, tx]) => (
-                  <div key={tx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                    <span>{ic}</span>{tx}
+                  <div
+                    key={tx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    <span>{ic}</span>
+                    {tx}
                   </div>
                 ))}
               </div>
-              <button style={{ width: '100%', marginTop: 14, padding: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 8, color: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button
+                style={{
+                  width: "100%",
+                  marginTop: 14,
+                  padding: 10,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1.5px solid rgba(255,255,255,0.3)",
+                  borderRadius: 8,
+                  color: "#fff",
+                  fontFamily: "inherit",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
                 Liên hệ ngay
               </button>
             </div>
