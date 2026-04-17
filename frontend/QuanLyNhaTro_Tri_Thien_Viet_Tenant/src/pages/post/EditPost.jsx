@@ -56,7 +56,7 @@ export default function EditPost() {
     setApiError(null);
     try {
       await apiPost.updatePost(postId, { description: description.trim() });
-      navigate("/user/posts/my", {
+      navigate("/user/posts", {
         state: { success: "Cập nhật bài đăng thành công." },
       });
     } catch (err) {
@@ -85,7 +85,7 @@ export default function EditPost() {
     return (
       <div className="container py-4" style={{ maxWidth: 640 }}>
         <div className="alert alert-danger">{apiError}</div>
-        <Link to="/user/posts/my" className="btn btn-outline-secondary btn-sm">
+        <Link to="/user/posts" className="btn btn-outline-secondary btn-sm">
           <FaArrowLeft className="me-1" /> Quay lại
         </Link>
       </div>
@@ -95,7 +95,7 @@ export default function EditPost() {
   return (
     <div className="container py-4" style={{ maxWidth: 640 }}>
       <Link
-        to="/user/posts/my"
+        to="/user/posts"
         className="btn btn-link text-decoration-none px-0 mb-3 text-secondary"
       >
         <FaArrowLeft className="me-1" /> Quay lại bài của tôi
@@ -147,10 +147,7 @@ export default function EditPost() {
             </div>
 
             <div className="d-flex gap-2 justify-content-end">
-              <Link
-                to="/user/posts/my"
-                className="btn btn-outline-secondary px-4"
-              >
+              <Link to="/user/posts" className="btn btn-outline-secondary px-4">
                 Hủy
               </Link>
               <button

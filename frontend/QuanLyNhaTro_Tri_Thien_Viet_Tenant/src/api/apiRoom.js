@@ -28,8 +28,10 @@ const apiRoom = {
     axiosInstance.get(`/public/rooms`, {
       params: { search, pageNumber, pageSize },
     }),
+  getRoomById: (roomId) => axiosInstance.get(`/rooms/${roomId}`),
 
-  getRoomById: (roomId) => axiosInstance.get(`/public/rooms/${roomId}`),
+  // Lấy danh sách phòng mà tenant đang ở (isStaying = true)
+  getMyRooms: () => axiosInstance.get("/user/my-rooms"),
 
   createRoom: (roomDTO) => axiosInstance.post(`/admin/rooms`, roomDTO),
 

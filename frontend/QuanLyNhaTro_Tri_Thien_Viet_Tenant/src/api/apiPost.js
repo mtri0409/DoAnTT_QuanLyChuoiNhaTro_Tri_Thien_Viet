@@ -26,13 +26,17 @@ const apiPost = {
   deletePost: (postId) =>
     axiosInstance.delete(`/user/roommate-posts/${postId}`),
 
-  getMyPosts: (pageNumber = 0, pageSize = 10) =>
-    axiosInstance.get("/user/roommate-posts/my", {
-      params: { pageNumber, pageSize },
-    }),
+  getMyPosts: (pageNumber = 0, pageSize = 10, status = null) => {
+    const params = { pageNumber, pageSize };
+    if (status) params.status = status;
+    return axiosInstance.get("/user/roommate-posts/my", { params });
+  },
 
   closePost: (postId) =>
     axiosInstance.put(`/user/roommate-posts/${postId}`, { status: "CLOSED" }),
+
+  repost: (postId) =>
+    axiosInstance.post(`/user/roommate-posts/${postId}/repost`),
 };
 
 export default apiPost;

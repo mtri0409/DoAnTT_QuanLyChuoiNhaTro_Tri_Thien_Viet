@@ -9,6 +9,8 @@ import {
   FaClock,
   FaCheckCircle,
   FaUsers,
+  FaEye,
+  FaRedo,
 } from "react-icons/fa";
 import apiPost from "../../api/apiPost";
 
@@ -41,7 +43,7 @@ export default function RoommatePosts() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  const [confirm, setConfirm] = useState(null); // { type: "close"|"delete", postId }
+  const [confirm, setConfirm] = useState(null); // { type: "close"|"delete"|"repost", postId }
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState(location.state?.success || null);
 
@@ -51,8 +53,8 @@ export default function RoommatePosts() {
     setError(null);
     try {
       const res = await apiPost.getMyPosts(pageNum, 8);
-      setPosts(res.content || []);
-      setTotalPages(res.totalPages || 0);
+      setPosts(res?.content ?? res?.data?.content ?? []);
+      setTotalPages(res?.totalPages ?? res?.data?.totalPages ?? 0);
       setPage(pageNum);
     } catch {
       setError("Không thể tải bài đăng. Vui lòng thử lại.");
@@ -101,6 +103,33 @@ export default function RoommatePosts() {
     }
   };
 
+  const handleRepost = async () => {
+    setActionLoading(true);
+    try {
+      await apiPost.repost(confirm.postId);
+      setToast("Đã đăng lại bài thành công!");
+      fetchPosts(page);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Không thể đăng lại. Thử lại sau.";
+      setToast(
+        typeof msg === "string" ? msg : "Không thể đăng lại. Thử lại sau.",
+      );
+    } finally {
+      setActionLoading(false);
+      setConfirm(null);
+    }
+  };
+
+  const confirmAction =
+    confirm?.type === "delete"
+      ? handleDelete
+      : confirm?.type === "repost"
+        ? handleRepost
+        : handleClose;
+
   return (
     <div className="container py-4" style={{ maxWidth: 720 }}>
       {/* ── Confirm Modal ── */}
@@ -113,17 +142,25 @@ export default function RoommatePosts() {
             <div className="modal-content border-0 shadow rounded-4">
               <div className="modal-body text-center p-4">
                 <div className="mb-3" style={{ fontSize: 44 }}>
-                  {confirm.type === "delete" ? "🗑️" : "🔒"}
+                  {confirm.type === "delete"
+                    ? "🗑️"
+                    : confirm.type === "repost"
+                      ? "🔄"
+                      : "🔒"}
                 </div>
                 <h6 className="fw-bold mb-2">
                   {confirm.type === "delete"
                     ? "Xóa bài đăng?"
-                    : "Đóng bài đăng?"}
+                    : confirm.type === "repost"
+                      ? "Đăng lại bài?"
+                      : "Đóng bài đăng?"}
                 </h6>
                 <p className="text-muted small mb-4">
                   {confirm.type === "delete"
                     ? "Bài đăng sẽ bị xóa vĩnh viễn và không thể khôi phục."
-                    : "Bài sẽ chuyển sang Đã đóng, không hiển thị công khai nữa."}
+                    : confirm.type === "repost"
+                      ? "Một bài đăng mới sẽ được tạo từ nội dung cũ, thời hạn 30 ngày."
+                      : "Bài sẽ chuyển sang Đã đóng, không hiển thị công khai nữa."}
                 </p>
                 <div className="d-flex gap-2 justify-content-center">
                   <button
@@ -133,16 +170,16 @@ export default function RoommatePosts() {
                     Hủy
                   </button>
                   <button
-                    className={`btn btn-sm px-4 ${confirm.type === "delete" ? "btn-danger" : "btn-warning"}`}
+                    className={`btn btn-sm px-4 ${confirm.type === "delete" ? "btn-danger" : confirm.type === "repost" ? "btn-primary" : "btn-warning"}`}
                     disabled={actionLoading}
-                    onClick={
-                      confirm.type === "delete" ? handleDelete : handleClose
-                    }
+                    onClick={confirmAction}
                   >
                     {actionLoading ? (
                       <span className="spinner-border spinner-border-sm" />
                     ) : confirm.type === "delete" ? (
                       "Xóa"
+                    ) : confirm.type === "repost" ? (
+                      "Đăng lại"
                     ) : (
                       "Đóng bài"
                     )}
@@ -235,8 +272,13 @@ export default function RoommatePosts() {
             {posts.map((post) => {
               const left = daysLeft(post.expiresAt);
               const isActive = post.status === "ACTIVE";
+              const isInactive =
+                post.status === "EXPIRED" || post.status === "CLOSED";
               return (
-                <div key={post.postId} className="card border-0 shadow-sm">
+                <div
+                  key={post.postId}
+                  className={`card border-0 shadow-sm ${isInactive ? "opacity-75" : ""}`}
+                >
                   <div className="card-body">
                     <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                       {/* Info */}
@@ -288,7 +330,18 @@ export default function RoommatePosts() {
                       </div>
 
                       {/* Actions */}
-                      <div className="d-flex gap-2 flex-shrink-0 align-items-start pt-1">
+                      <div className="d-flex gap-2 flex-shrink-0 align-items-start pt-1 flex-wrap">
+                        {/* Xem chi tiết (chỉ bài ACTIVE vì public endpoint chặn bài khác) */}
+                        {isActive && (
+                          <Link
+                            to={`/user/posts/${post.postId}`}
+                            className="btn btn-outline-secondary btn-sm px-2"
+                            title="Xem chi tiết"
+                          >
+                            <FaEye size={12} />
+                          </Link>
+                        )}
+
                         {isActive && (
                           <>
                             <Link
@@ -310,6 +363,22 @@ export default function RoommatePosts() {
                             </button>
                           </>
                         )}
+
+                        {/* Đăng lại – chỉ cho EXPIRED / CLOSED */}
+                        {isInactive && (
+                          <button
+                            className="btn btn-outline-primary btn-sm px-3"
+                            onClick={() =>
+                              setConfirm({
+                                type: "repost",
+                                postId: post.postId,
+                              })
+                            }
+                          >
+                            <FaRedo size={12} className="me-1" /> Đăng lại
+                          </button>
+                        )}
+
                         <button
                           className="btn btn-outline-danger btn-sm px-3"
                           onClick={() =>
