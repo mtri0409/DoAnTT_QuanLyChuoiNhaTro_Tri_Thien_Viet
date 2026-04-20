@@ -1,19 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
-  FaSearch,
-  FaUser,
-  FaTimes,
-  FaCheck,
-  FaArrowLeft,
-  FaFileContract,
-  FaPhone,
-  FaIdCard,
-  FaCalendarAlt,
-  FaDoorOpen,
-  FaConciergeBell,
-  FaExclamationCircle,
-  FaSave,
+  FaSearch, FaUser, FaTimes, FaCheck, FaArrowLeft,
+  FaFileSignature, FaPhone, FaIdCard, FaCalendarAlt,
+  FaDoorOpen, FaConciergeBell, FaExclamationCircle, FaSave,
+  FaBuilding, FaCheckCircle,
 } from "react-icons/fa";
 import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
@@ -21,340 +12,271 @@ import apiServices from "../../api/apiService";
 import apiRoom from "../../api/apiRoom";
 import apiBranches from "../../api/apiBranches";
 
-// ====================== PROFILE SEARCH MODAL ======================
+/* ─── Font ────────────────────────────────────────────────── */
+const FontLink = () => (
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+);
+
+/* ─── Styles ──────────────────────────────────────────────── */
+const css = `
+  .cc-root { font-family:'Plus+Jakarta+Sans',sans-serif;background:#f4f6fb;min-height:100vh;font-family:'Plus Jakarta Sans',sans-serif; }
+  .cc-card { background:#fff;border-radius:20px;box-shadow:0 2px 16px rgba(0,0,0,.07);padding:28px; }
+  .cc-input { width:100%;background:#f4f6fb;border:1.5px solid transparent;border-radius:11px;
+    font-family:inherit;font-size:13.5px;padding:10px 14px;outline:none;transition:.15s;box-sizing:border-box; }
+  .cc-input:focus { border-color:#4361ee;background:#fff; }
+  .cc-input.err { border-color:#ef4444;background:#fff9f9; }
+  .cc-select { width:100%;background:#f4f6fb;border:1.5px solid transparent;border-radius:11px;
+    font-family:inherit;font-size:13.5px;padding:10px 14px;outline:none;transition:.15s;box-sizing:border-box;cursor:pointer; }
+  .cc-select:focus { border-color:#4361ee;background:#fff; }
+  .cc-select:disabled { opacity:.55;cursor:not-allowed; }
+  .cc-label { font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:#64748b;display:block;margin-bottom:7px; }
+  .cc-btn { display:inline-flex;align-items:center;gap:7px;border:none;border-radius:11px;
+    font-family:inherit;font-weight:700;font-size:13.5px;padding:10px 22px;cursor:pointer;transition:.15s; }
+  .cc-btn-primary { background:#4361ee;color:#fff; }
+  .cc-btn-primary:hover:not(:disabled) { background:#3451d1;transform:translateY(-1px);box-shadow:0 4px 14px rgba(67,97,238,.3); }
+  .cc-btn-primary:disabled { opacity:.6;cursor:not-allowed; }
+  .cc-btn-ghost { background:#f4f6fb;color:#475569;border:1.5px solid #e2e8f0; }
+  .cc-btn-ghost:hover { background:#e8ecf5; }
+  .cc-btn-outline { background:transparent;color:#4361ee;border:1.5px solid #c7d0f8;border-radius:10px;
+    padding:7px 14px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:.15s; }
+  .cc-btn-outline:hover { background:#eef0fd; }
+  .cc-err { font-size:12px;color:#ef4444;margin-top:5px;display:flex;align-items:center;gap:5px; }
+  .svc-row { border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;
+    display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;background:#fafbff; }
+  .svc-row.sel { border-color:#4361ee;background:#f0f3ff; }
+  .svc-row:hover { border-color:#a5b4fc; }
+  .svc-check { width:22px;height:22px;border-radius:7px;border:2px solid #cbd5e1;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s; }
+  .svc-check.sel { background:#4361ee;border-color:#4361ee; }
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;
+    display:flex;align-items:center;justify-content:center; }
+  .cc-modal { background:#fff;border-radius:20px;width:560px;max-height:85vh;
+    display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);overflow:hidden; }
+  .section-head { display:flex;align-items:center;gap:10px;padding-bottom:16px;
+    border-bottom:1.5px solid #f1f5f9;margin-bottom:20px; }
+  .section-icon { width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .room-pill { display:flex;align-items:center;gap:8px;padding:10px 14px;background:#eef0fd;
+    border-radius:11px;margin-top:8px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .cc-fadein { animation:fadeUp .25s ease; }
+  .profile-card { display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f0fdf4;
+    border:1.5px solid #bbf7d0;border-radius:12px; }
+  .empty-box { border:2px dashed #e2e8f0;border-radius:12px;padding:28px;text-align:center;
+    color:#94a3b8;cursor:pointer;transition:.15s; }
+  .empty-box:hover { border-color:#a5b4fc;background:#fafbff; }
+`;
+
+/* ─── Profile Search Modal ──────────────────────────────────── */
 const ProfileSearchModal = ({ onSelect, onClose }) => {
-  const [keyword, setKeyword] = useState("");
+  const [kw, setKw] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const inputRef = useRef(null);
+  const [done, setDone] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => { ref.current?.focus(); }, []);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSearch = async (e) => {
+  const search = async (e) => {
     e.preventDefault();
-    if (!keyword.trim()) return;
-    setLoading(true);
-    setSearched(true);
+    if (!kw.trim()) return;
+    setLoading(true); setDone(true);
     try {
-      const res = await apiProfile.searchProfiles(keyword.trim(), 0, 10,null,null,null,true);
+      const res = await apiProfile.searchProfiles(kw.trim(), 0, 10, null, null, null, true);
       setResults(res?.content ?? res ?? []);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setResults([]); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div
-      className="modal d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-      onClick={onClose}
-    >
-      <div
-        className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content border-0 shadow-lg rounded-4">
-          <div className="modal-header border-0 pb-0">
-            <h5 className="modal-title fw-bold">
-              <FaSearch className="me-2 text-primary" />
-              Tìm kiếm người đại diện
-            </h5>
-            <button type="button" className="btn-close" onClick={onClose} />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="cc-modal" onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '24px 24px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Tìm người đại diện</h3>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8' }}>×</button>
           </div>
-          <div className="modal-body pt-3">
-            <form onSubmit={handleSearch} className="d-flex gap-2 mb-4">
-              <div className="input-group">
-                <span className="input-group-text bg-light border-0">
-                  <FaSearch className="text-muted" />
-                </span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  className="form-control bg-light border-0"
-                  placeholder="Nhập tên, số điện thoại hoặc CCCD..."
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                />
+          <form onSubmit={search} style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <FaSearch style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13 }} />
+              <input ref={ref} className="cc-input" style={{ paddingLeft: 36 }}
+                placeholder="Tên, số điện thoại hoặc CCCD…"
+                value={kw} onChange={e => setKw(e.target.value)} />
+            </div>
+            <button className="cc-btn cc-btn-primary" type="submit" disabled={loading || !kw.trim()}>
+              {loading ? '⏳' : 'Tìm'}
+            </button>
+          </form>
+        </div>
+        <div style={{ overflowY: 'auto', padding: '0 24px 24px', flex: 1 }}>
+          {!done && (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
+              <FaUser style={{ fontSize: 36, opacity: .25, marginBottom: 10 }} />
+              <p style={{ fontSize: 13 }}>Nhập tên, SĐT hoặc số CCCD để tìm kiếm</p>
+            </div>
+          )}
+          {done && !loading && results.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 13, padding: '24px 0' }}>Không tìm thấy kết quả.</p>
+          )}
+          {results.map(p => (
+            <button key={p.profileId ?? p.id} type="button"
+              style={{ width: '100%', background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 12,
+                padding: '12px 14px', cursor: 'pointer', marginBottom: 8, textAlign: 'left', display: 'flex',
+                alignItems: 'center', gap: 12, transition: '.15s', fontFamily: 'inherit' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor='#4361ee'}
+              onMouseLeave={e => e.currentTarget.style.borderColor='#e2e8f0'}
+              onClick={() => onSelect(p)}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eef0fd',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FaUser color="#4361ee" />
               </div>
-              <button
-                type="submit"
-                className="btn btn-primary px-4"
-                disabled={loading || !keyword.trim()}
-              >
-                {loading ? (
-                  <span className="spinner-border spinner-border-sm" />
-                ) : (
-                  "Tìm"
-                )}
-              </button>
-            </form>
-
-            {!searched && (
-              <div className="text-center py-4 text-muted">
-                <FaUser className="fs-1 mb-2 opacity-25" />
-                <p className="small">
-                  Tìm theo tên, số điện thoại hoặc số CCCD
-                </p>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{p.fullName}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3, display: 'flex', gap: 14 }}>
+                  <span><FaPhone size={9} style={{ marginRight: 4 }} />{p.phone ?? 'N/A'}</span>
+                  <span><FaIdCard size={9} style={{ marginRight: 4 }} />{p.identityNumber ?? 'N/A'}</span>
+                </div>
               </div>
-            )}
-            {searched && !loading && results.length === 0 && (
-              <div className="text-center py-4 text-muted">
-                <p>Không tìm thấy kết quả phù hợp.</p>
-              </div>
-            )}
-            {results.length > 0 && (
-              <div className="list-group list-group-flush">
-                {results.map((profile) => (
-                  <button
-                    key={profile.profileId ?? profile.id}
-                    type="button"
-                    className="list-group-item list-group-item-action rounded-3 mb-1 border"
-                    onClick={() => onSelect(profile)}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <div
-                        className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{ width: 44, height: 44 }}
-                      >
-                        <FaUser className="text-primary" />
-                      </div>
-                      <div className="flex-grow-1 text-start">
-                        <div className="fw-semibold text-dark">
-                          {profile.fullName}
-                        </div>
-                        <div className="small text-muted d-flex gap-3 mt-1">
-                          <span>
-                            <FaPhone className="me-1" />
-                            {profile.phone ?? "N/A"}
-                          </span>
-                          <span>
-                            <FaIdCard className="me-1" />
-                            {profile.identityNumber ?? "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                      <FaCheck className="text-success opacity-50" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              <FaCheck color="#16a34a" size={13} />
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-// ====================== ROOM PICKER (branch select + room search) ======================
-const RoomPicker = ({ value, onSelect, error }) => {
+/* ─── Room Picker ─────────────────────────────────────────── */
+const RoomPicker = ({ value, onSelect, error, prefilledBranch }) => {
   const [branches, setBranches] = useState([]);
-  const [loadingBranches, setLoadingBranches] = useState(false);
-  const [selectedBranchId, setSelectedBranchId] = useState("");
-  const [keyword, setKeyword] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState(prefilledBranch ? String(prefilledBranch.branchId) : "");
+  const [keyword, setKeyword] = useState(value?.roomName || "");
   const [results, setResults] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
-  const debounceRef = useRef(null);
+  const debounce = useRef(null);
 
   useEffect(() => {
-    const fetchBranches = async () => {
+    const load = async () => {
       setLoadingBranches(true);
       try {
-        const res = await apiBranches.getAllBranches(
-          1,
-          100,
-          "branchId",
-          "asc",
-          "",
-        );
-        const list =
-          res?.data?.content ?? res?.data ?? res?.content ?? res ?? [];
+        const res = await apiBranches.getAllBranches(1, 100, "branchId", "asc", "");
+        const list = res?.data?.content ?? res?.data ?? res?.content ?? res ?? [];
         setBranches(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error("Loi tai chi nhanh:", err);
-      } finally {
-        setLoadingBranches(false);
-      }
+      } finally { setLoadingBranches(false); }
     };
-    fetchBranches();
+    load();
   }, []);
 
+  /* when prefilled branch changes after branches load */
   useEffect(() => {
-    const handler = (e) => {
-      if (!wrapperRef.current?.contains(e.target)) setOpen(false);
-    };
+    if (prefilledBranch) setSelectedBranchId(String(prefilledBranch.branchId));
+  }, [prefilledBranch]);
+
+  useEffect(() => {
+    if (value) { setKeyword(value.roomName); }
+    else { setKeyword(""); }
+  }, [value]);
+
+  useEffect(() => {
+    const handler = (e) => { if (!wrapperRef.current?.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => {
-    if (!value) setKeyword("");
-  }, [value]);
-
   const fetchRooms = async (kw, branchId) => {
-    if (!branchId) {
-      setResults([]);
-      setOpen(false);
-      return;
-    }
+    if (!branchId) { setResults([]); setOpen(false); return; }
     setLoadingRooms(true);
     try {
-      const res = await apiRoom.getAllRooms(
-        0,
-        100,
-        "roomName",
-        "asc",
-        null,
-        branchId,
-        kw,
-      );
+      const res = await apiRoom.getAllRooms(0, 100, "roomName", "asc", null, branchId, kw);
       const list = res?.data?.content ?? res?.data ?? res?.content ?? res ?? [];
-      setResults(Array.isArray(list) ? list : []);
+      setResults(Array.isArray(list) ? list.filter(r => (r.Status || r.status || '').toUpperCase() === 'AVAILABLE') : []);
       setOpen(true);
-    } catch (err) {
-      console.error("Loi tim phong:", err);
-      setResults([]);
-    } finally {
-      setLoadingRooms(false);
-    }
+    } catch { setResults([]); }
+    finally { setLoadingRooms(false); }
   };
 
   const handleBranchChange = (e) => {
-    const branchId = e.target.value;
-    setSelectedBranchId(branchId);
+    const id = e.target.value;
+    setSelectedBranchId(id);
     onSelect(null);
     setKeyword("");
     setResults([]);
     setOpen(false);
-    if (branchId) fetchRooms("", branchId);
+    if (id) fetchRooms("", id);
   };
 
-  const handleKeywordInput = (e) => {
-    const val = e.target.value;
-    setKeyword(val);
+  const handleInput = (e) => {
+    setKeyword(e.target.value);
     if (value) onSelect(null);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(
-      () => fetchRooms(val, selectedBranchId),
-      350,
-    );
-  };
-
-  const handleSelect = (room) => {
-    setKeyword(room.roomName);
-    setOpen(false);
-    onSelect(room);
+    clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => fetchRooms(e.target.value, selectedBranchId), 300);
   };
 
   return (
-    <div>
-      {/* Step 1: Chon chi nhanh */}
-      <div className="mb-2">
-        <div className="input-group">
-          <span className="input-group-text bg-light border-0">
-            {loadingBranches ? (
-              <span
-                className="spinner-border spinner-border-sm text-muted"
-                style={{ width: 14, height: 14 }}
-              />
-            ) : (
-              <FaSearch className="text-muted" size={13} />
-            )}
-          </span>
-          <select
-            className="form-select bg-light border-0 py-2"
-            value={selectedBranchId}
-            onChange={handleBranchChange}
-            disabled={loadingBranches}
-          >
-            <option value="">-- Chon chi nhanh --</option>
-            {branches.map((b) => (
-              <option key={b.branchId} value={b.branchId}>
-                {b.branchName}
-              </option>
-            ))}
-          </select>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Branch select */}
+      <div style={{ position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+          <FaBuilding size={13} />
         </div>
+        <select className="cc-select" style={{ paddingLeft: 34 }}
+          value={selectedBranchId} onChange={handleBranchChange}
+          disabled={loadingBranches}>
+          <option value="">— Chọn chi nhánh —</option>
+          {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.branchName}</option>)}
+        </select>
       </div>
 
-      {/* Step 2: Tim phong trong chi nhanh */}
-      <div ref={wrapperRef} className="position-relative">
-        <div className="input-group">
-          <span
-            className={`input-group-text bg-light border-0 ${error ? "border border-danger border-end-0" : ""}`}
-          >
-            {loadingRooms ? (
-              <span
-                className="spinner-border spinner-border-sm text-muted"
-                style={{ width: 14, height: 14 }}
-              />
-            ) : (
-              <FaDoorOpen className="text-primary" size={13} />
-            )}
-          </span>
-          <input
-            type="text"
-            autoComplete="off"
-            className={`form-control bg-light border-0 py-2 ${error ? "is-invalid border border-danger border-start-0" : ""}`}
-            placeholder={
-              selectedBranchId
-                ? "Gõ tên phòng để tìm kiếm..."
-                : "Vui lòng chọn chi nhánh trước..."
-            }
-            value={keyword}
-            onChange={handleKeywordInput}
-            onFocus={() => results.length > 0 && setOpen(true)}
-            disabled={!selectedBranchId}
-          />
+      {/* Room search */}
+      <div ref={wrapperRef} style={{ position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#4361ee', zIndex: 1 }}>
+          {loadingRooms ? <span style={{ width: 13, height: 13, border: '2px solid #c7d0f8', borderTopColor: '#4361ee',
+            borderRadius: '50%', display: 'inline-block', animation: 'spin .6s linear infinite' }} />
+            : <FaDoorOpen size={13} />}
         </div>
+        <input className={`cc-input ${error ? 'err' : ''}`} style={{ paddingLeft: 34 }}
+          type="text" autoComplete="off"
+          placeholder={selectedBranchId ? "Gõ tên phòng để tìm…" : "Chọn chi nhánh trước…"}
+          value={keyword}
+          onChange={handleInput}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          disabled={!selectedBranchId} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
         {open && results.length > 0 && (
-          <div
-            className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3"
-            style={{ maxHeight: 220, overflowY: "auto" }}
-          >
-            {results.filter((room) => room.Status === "AVAILABLE")
-                    .map((room) => (
-
-              <button
-                key={room.roomId}
-                type="button"
-                className="d-flex align-items-center gap-2 w-100 text-start px-3 py-2 border-0 bg-transparent"
-                style={{ cursor: "pointer" }}
-                onMouseDown={() => handleSelect(room)}
-              >
-                <FaDoorOpen className="text-primary flex-shrink-0" size={13} />
-                <div>
-                  <div className="fw-semibold small text-dark">
-                    {room.roomName}
-                  </div>
+          <div style={{ position: 'absolute', width: '100%', background: '#fff',
+            border: '1.5px solid #e2e8f0', borderRadius: 12, marginTop: 4,
+            maxHeight: 220, overflowY: 'auto', zIndex: 10, boxShadow: '0 8px 24px rgba(0,0,0,.1)' }}>
+            {results.map(room => (
+              <button key={room.roomId} type="button"
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  background: 'transparent', border: 'none', padding: '10px 14px', cursor: 'pointer',
+                  fontFamily: 'inherit', textAlign: 'left', transition: '.1s' }}
+                onMouseEnter={e => e.currentTarget.style.background='#f4f6fb'}
+                onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                onMouseDown={() => { setKeyword(room.roomName); setOpen(false); onSelect(room); }}>
+                <FaDoorOpen color="#4361ee" size={12} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>{room.roomName}</div>
                   {room.roomPrice && (
-                    <div className="text-muted" style={{ fontSize: "0.75rem" }}>
-                      {Number(room.roomPrice).toLocaleString("vi-VN")} d/thang
+                    <div style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                      {Number(room.roomPrice).toLocaleString('vi-VN')} đ/tháng
                     </div>
                   )}
                 </div>
-                <span
-                  className="ms-auto badge bg-light text-muted border"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  #{room.roomId}
-                </span>
+                <span style={{ fontSize: 11, color: '#cbd5e1' }}>#{room.roomId}</span>
               </button>
             ))}
           </div>
         )}
-
         {open && !loadingRooms && results.length === 0 && selectedBranchId && (
-          <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 p-3 text-center text-muted small z-3">
-            Khong tim thay phong phu hop
+          <div style={{ position: 'absolute', width: '100%', background: '#fff', border: '1.5px solid #e2e8f0',
+            borderRadius: 12, marginTop: 4, padding: '14px', textAlign: 'center',
+            fontSize: 13, color: '#94a3b8', zIndex: 10 }}>
+            Không tìm thấy phòng trống phù hợp
           </div>
         )}
       </div>
@@ -362,492 +284,344 @@ const RoomPicker = ({ value, onSelect, error }) => {
   );
 };
 
-// ====================== CREATE CONTRACT PAGE ======================
+/* ─── Main CreateContract ──────────────────────────────────── */
 const CreateContract = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  /* Pre-filled from RoomList navigation */
+  const prefilledRoom   = location.state?.room   ?? null;
+  const prefilledBranch = location.state?.branch ?? null;
 
   const [showModal, setShowModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(prefilledRoom);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Danh sách services từ API
   const [availableServices, setAvailableServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
-  // Services đã chọn: [{ serviceId, serviceName, quantity, unitPrice }]
   const [selectedServices, setSelectedServices] = useState([]);
 
-  const [form, setForm] = useState({
-    startDate: "",
-    endDate: "",
-    billingDay: "",
-  });
+  const [form, setForm] = useState({ startDate: "", endDate: "", billingDay: "" });
 
-  // Load danh sách services
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchSvc = async () => {
       setLoadingServices(true);
       try {
-        const res = await apiServices.getAllServices(
-          1,
-          100,
-          "serviceId",
-          "asc",
-          "",
-        );
-        const list =
-          res?.content ?? res?.data?.content ?? res?.data ?? res ?? [];
+        const res = await apiServices.getAllServices(1, 100, "serviceId", "asc", "");
+        const list = res?.content ?? res?.data?.content ?? res?.data ?? res ?? [];
         setAvailableServices(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error("Lỗi tải dịch vụ:", err);
-      } finally {
-        setLoadingServices(false);
-      }
+      } finally { setLoadingServices(false); }
     };
-    fetchServices();
+    fetchSvc();
   }, []);
 
-  // ====================== HANDLERS ======================
-  const handleSelectProfile = (profile) => {
-    const id = profile.profileId ?? profile.id;
-    setSelectedProfile(profile);
-    setErrors((prev) => ({ ...prev, representativeId: null }));
-    setShowModal(false);
-  };
-
-  const handleRemoveRepresentative = () => setSelectedProfile(null);
-
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: null }));
+    setForm(p => ({ ...p, [name]: value }));
+    setErrors(p => ({ ...p, [name]: null }));
   };
 
-  // Service handlers
-  const toggleService = (svc) => {
-    const exists = selectedServices.find((s) => s.serviceId === svc.serviceId);
-    if (exists) {
-      setSelectedServices((prev) =>
-        prev.filter((s) => s.serviceId !== svc.serviceId),
-      );
-    } else {
-      setSelectedServices((prev) => [
-        ...prev,
-        {
-          serviceId: svc.serviceId,
-          serviceName: svc.serviceName,
-          quantity: 1,
-          unitPrice: svc.unitPrice ?? svc.price ?? 0,
-        },
-      ]);
-    }
+  const toggleService = svc => {
+    const exists = selectedServices.find(s => s.serviceId === svc.serviceId);
+    if (exists) setSelectedServices(p => p.filter(s => s.serviceId !== svc.serviceId));
+    else setSelectedServices(p => [...p, { serviceId: svc.serviceId, serviceName: svc.serviceName,
+        quantity: 1, unitPrice: svc.unitPrice ?? svc.price ?? 0, unit: svc.unit ?? svc.unitName }]);
   };
 
-  const updateServiceQty = (serviceId, qty) => {
-    const num = Math.max(1, Number(qty) || 1);
-    setSelectedServices((prev) =>
-      prev.map((s) =>
-        s.serviceId === serviceId ? { ...s, quantity: num } : s,
-      ),
-    );
-  };
-
-  // ====================== VALIDATION ======================
   const validate = () => {
     const e = {};
     if (!selectedRoom) e.roomId = "Vui lòng chọn phòng";
     if (!selectedProfile) e.representativeId = "Vui lòng chọn người đại diện";
-    if (!form.startDate) e.startDate = "Vui lòng chọn ngày bắt đầu";
-    if (!form.endDate) e.endDate = "Vui lòng chọn ngày kết thúc";
-    if (form.startDate && form.endDate && form.startDate >= form.endDate)
-      e.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
-    if (
-      !form.billingDay ||
-      Number(form.billingDay) < 1 ||
-      Number(form.billingDay) > 28
-    )
-      e.billingDay = "Ngày thanh toán phải từ 1 đến 28";
+    if (!form.startDate) e.startDate = "Chọn ngày bắt đầu";
+    if (!form.endDate) e.endDate = "Chọn ngày kết thúc";
+    if (form.startDate && form.endDate && form.startDate >= form.endDate) e.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    if (!form.billingDay || +form.billingDay < 1 || +form.billingDay > 28) e.billingDay = "Ngày thanh toán từ 1–28";
     return e;
   };
 
-  // ====================== SUBMIT ======================
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    const representativeId = selectedProfile.profileId ?? selectedProfile.id;
-
+    const ve = validate();
+    if (Object.keys(ve).length) { setErrors(ve); return; }
+    const repId = selectedProfile.profileId ?? selectedProfile.id;
     const payload = {
       roomId: selectedRoom.roomId,
       startDate: form.startDate,
       endDate: form.endDate,
-      billingDay: Number(form.billingDay),
-      representativeId,
-      memberIds: [representativeId],
-      contractServices: selectedServices.map((s) => ({
-        serviceId: s.serviceId,
-        quantity: s.quantity,
-        unitPrice: s.unitPrice,
-      })),
+      billingDay: +form.billingDay,
+      representativeId: repId,
+      memberIds: [repId],
+      contractServices: selectedServices.map(s => ({ serviceId: s.serviceId, quantity: s.quantity, unitPrice: s.unitPrice })),
     };
-
     try {
       setSubmitting(true);
       await apiContract.createContract(payload);
       alert("Tạo hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
-      console.error("Lỗi tạo hợp đồng:", err.response);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        "Có lỗi xảy ra khi tạo hợp đồng!";
-      if (
-        err.response?.status === 400 &&
-        typeof err.response.data === "object"
-      ) {
-        setErrors(err.response.data);
-      } else {
-        alert(typeof msg === "string" ? msg : JSON.stringify(msg));
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      const msg = err.response?.data?.message || err.response?.data || "Có lỗi xảy ra!";
+      if (err.response?.status === 400 && typeof err.response.data === 'object') setErrors(err.response.data);
+      else alert(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally { setSubmitting(false); }
   };
 
-  const renderError = (field) => {
-    if (!errors[field]) return null;
-    return (
-      <div className="text-danger small mt-1 d-flex align-items-center gap-1">
-        <FaExclamationCircle size={12} /> {errors[field]}
-      </div>
-    );
-  };
+  const Err = ({ field }) => errors[field]
+    ? <div className="cc-err"><FaExclamationCircle size={11} />{errors[field]}</div>
+    : null;
 
-  // ====================== RENDER ======================
+  /* ── Render ── */
   return (
     <>
+      <style>{css}</style>
+      <FontLink />
       {showModal && (
         <ProfileSearchModal
-          onSelect={handleSelectProfile}
-          onClose={() => setShowModal(false)}
-        />
+          onSelect={p => { setSelectedProfile(p); setErrors(e => ({ ...e, representativeId: null })); setShowModal(false); }}
+          onClose={() => setShowModal(false)} />
       )}
 
-      <div className="container-fluid py-4">
+      <div className="cc-root" style={{ padding: '28px 24px' }}>
         {/* Header */}
-        <div className="d-flex align-items-center gap-3 mb-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="btn btn-light border-0 shadow-sm rounded-circle p-2"
-            title="Quay lại"
-          >
-            <FaArrowLeft className="text-muted" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+          <button onClick={() => navigate(-1)}
+            style={{ width: 38, height: 38, border: '1.5px solid #e2e8f0', borderRadius: 12,
+              background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FaArrowLeft color="#64748b" size={14} />
           </button>
-          <div>
-            <h4 className="fw-bold text-dark mb-0 text-uppercase">
-              <FaFileContract className="me-2 text-primary" />
-              Tạo hợp đồng mới
-            </h4>
-            <p className="text-muted small mb-0">
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, background: '#4361ee', borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FaFileSignature color="#fff" size={16} />
+              </div>
+              <h1 style={{ margin: 0, fontSize: 21, fontWeight: 800, color: '#0f172a', letterSpacing: '-.02em' }}>
+                Tạo hợp đồng mới
+              </h1>
+            </div>
+            <p style={{ margin: '3px 0 0 46px', fontSize: 12.5, color: '#94a3b8' }}>
               Điền đầy đủ thông tin để tạo hợp đồng thuê phòng
             </p>
           </div>
         </div>
 
+        {/* Pre-filled banner */}
+        {prefilledRoom && (
+          <div style={{ background: '#eef0fd', border: '1.5px solid #c7d0f8', borderRadius: 14,
+            padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FaCheckCircle color="#4361ee" size={16} />
+            <span style={{ fontSize: 13, color: '#3451d1', fontWeight: 600 }}>
+              Đã chọn phòng <strong>{prefilledRoom.roomName}</strong> từ danh sách phòng
+            </span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} noValidate>
-          <div className="row g-4">
-            {/* =================== CỘT TRÁI =================== */}
-            <div className="col-lg-5">
-              {/* THÔNG TIN PHÒNG & THỜI GIAN */}
-              <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
-                  <div className="bg-primary-subtle p-2 rounded-3 text-primary">
-                    <FaDoorOpen size={18} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 20 }}>
+            {/* ── Cột trái ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* Thông tin phòng & hợp đồng */}
+              <div className="cc-card cc-fadein">
+                <div className="section-head">
+                  <div className="section-icon" style={{ background: '#eef0fd' }}>
+                    <FaDoorOpen color="#4361ee" size={17} />
                   </div>
-                  <h6 className="fw-bold mb-0 text-primary">
-                    Thông tin phòng & hợp đồng
-                  </h6>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a' }}>Phòng & hợp đồng</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Chọn phòng và thiết lập thời gian</div>
+                  </div>
                 </div>
 
-                {/* Chọn phòng */}
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">
-                    CHI NHÁNH & PHÒNG <span className="text-danger">*</span>
-                  </label>
+                <div style={{ marginBottom: 18 }}>
+                  <label className="cc-label">Chi nhánh & Phòng <span style={{ color: '#ef4444' }}>*</span></label>
                   <RoomPicker
                     value={selectedRoom}
-                    onSelect={(room) => {
-                      setSelectedRoom(room);
-                      setErrors((prev) => ({ ...prev, roomId: null }));
-                    }}
+                    onSelect={r => { setSelectedRoom(r); setErrors(e => ({ ...e, roomId: null })); }}
                     error={errors.roomId}
-                  />
+                    prefilledBranch={prefilledBranch} />
                   {selectedRoom && (
-                    <div className="mt-2 px-3 py-2 bg-primary bg-opacity-10 rounded-3 d-flex align-items-center gap-2">
-                      <FaDoorOpen className="text-primary" size={13} />
-                      <span className="small fw-semibold text-primary">
+                    <div className="room-pill" style={{ marginTop: 10 }}>
+                      <FaDoorOpen color="#4361ee" size={13} />
+                      <span style={{ fontWeight: 700, fontSize: 13, color: '#3451d1', flex: 1 }}>
                         {selectedRoom.roomName}
                       </span>
-                      <span className="ms-auto text-muted small">
-                        ID: {selectedRoom.roomId}
-                      </span>
-                      <button
-                        type="button"
-                        className="btn btn-sm p-0 border-0 ms-1"
-                        onClick={() => setSelectedRoom(null)}
-                      >
-                        <FaTimes className="text-danger" size={12} />
+                      <span style={{ fontSize: 11.5, color: '#94a3b8' }}>ID: {selectedRoom.roomId}</span>
+                      <button type="button" onClick={() => setSelectedRoom(null)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0 2px' }}>
+                        <FaTimes size={12} />
                       </button>
                     </div>
                   )}
-                  {renderError("roomId")}
+                  <Err field="roomId" />
                 </div>
 
-                {/* Ngày thanh toán */}
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">
-                    NGÀY THANH TOÁN HÀNG THÁNG{" "}
-                    <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="billingDay"
-                    min={1}
-                    max={28}
-                    className={`form-control bg-light border-0 py-2 ${errors.billingDay ? "is-invalid border-danger" : ""}`}
+                <div style={{ marginBottom: 18 }}>
+                  <label className="cc-label">Ngày thanh toán hàng tháng <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input className={`cc-input ${errors.billingDay ? 'err' : ''}`}
+                    type="number" name="billingDay" min={1} max={28}
                     placeholder="VD: 5 (ngày 5 hàng tháng)"
-                    value={form.billingDay}
-                    onChange={handleChange}
-                  />
-                  {renderError("billingDay")}
+                    value={form.billingDay} onChange={handleChange} />
+                  <Err field="billingDay" />
                 </div>
 
-                {/* Ngày bắt đầu & kết thúc */}
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">
-                    <FaCalendarAlt className="me-1" />
-                    NGÀY BẮT ĐẦU <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    className={`form-control bg-light border-0 py-2 ${errors.startDate ? "is-invalid border-danger" : ""}`}
-                    value={form.startDate}
-                    onChange={handleChange}
-                  />
-                  {renderError("startDate")}
-                </div>
-
-                <div className="mb-0">
-                  <label className="form-label small fw-bold text-muted">
-                    <FaCalendarAlt className="me-1" />
-                    NGÀY KẾT THÚC <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    className={`form-control bg-light border-0 py-2 ${errors.endDate ? "is-invalid border-danger" : ""}`}
-                    value={form.endDate}
-                    onChange={handleChange}
-                    min={form.startDate || undefined}
-                  />
-                  {renderError("endDate")}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="cc-label"><FaCalendarAlt style={{ marginRight: 4 }} />Bắt đầu <span style={{ color: '#ef4444' }}>*</span></label>
+                    <input className={`cc-input ${errors.startDate ? 'err' : ''}`}
+                      type="date" name="startDate" value={form.startDate} onChange={handleChange} />
+                    <Err field="startDate" />
+                  </div>
+                  <div>
+                    <label className="cc-label"><FaCalendarAlt style={{ marginRight: 4 }} />Kết thúc <span style={{ color: '#ef4444' }}>*</span></label>
+                    <input className={`cc-input ${errors.endDate ? 'err' : ''}`}
+                      type="date" name="endDate" value={form.endDate} onChange={handleChange}
+                      min={form.startDate || undefined} />
+                    <Err field="endDate" />
+                  </div>
                 </div>
               </div>
 
-              {/* NGƯỜI ĐẠI DIỆN */}
-              <div className="card border-0 shadow-sm rounded-4 p-4">
-                <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
-                  <div className="bg-success-subtle p-2 rounded-3 text-success">
-                    <FaUser size={17} />
+              {/* Người đại diện */}
+              <div className="cc-card cc-fadein">
+                <div className="section-head">
+                  <div className="section-icon" style={{ background: '#f0fdf4' }}>
+                    <FaUser color="#16a34a" size={16} />
                   </div>
-                  <h6 className="fw-bold mb-0 text-success">Người đại diện</h6>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-success ms-auto rounded-3"
-                    onClick={() => setShowModal(true)}
-                  >
-                    <FaSearch className="me-1" size={11} />
-                    {selectedProfile ? "Đổi" : "Tìm kiếm"}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a' }}>Người đại diện</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Người ký hợp đồng</div>
+                  </div>
+                  <button type="button" className="cc-btn-outline"
+                    onClick={() => setShowModal(true)}>
+                    <FaSearch size={11} /> {selectedProfile ? "Đổi" : "Tìm kiếm"}
                   </button>
                 </div>
 
-                {renderError("representativeId")}
+                <Err field="representativeId" />
 
                 {!selectedProfile ? (
-                  <div
-                    className="border rounded-3 p-4 text-center text-muted bg-light"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setShowModal(true)}
-                  >
-                    <FaUser className="fs-3 mb-2 opacity-25" />
-                    <p className="small mb-0">
-                      Nhấn <strong>Tìm kiếm</strong> để chọn người đại diện
+                  <div className="empty-box" onClick={() => setShowModal(true)}>
+                    <FaUser style={{ fontSize: 28, opacity: .2, marginBottom: 10 }} />
+                    <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 13, color: '#475569' }}>
+                      Chưa chọn người đại diện
                     </p>
-                    <p className="small mb-0 text-muted">
-                      Tìm theo tên, SĐT hoặc CCCD
-                    </p>
+                    <p style={{ margin: 0, fontSize: 12 }}>Nhấn để tìm theo tên, SĐT hoặc CCCD</p>
                   </div>
                 ) : (
-                  <div className="d-flex align-items-center gap-3 p-3 border rounded-3 bg-success bg-opacity-10">
-                    <div
-                      className="rounded-circle bg-success bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0"
-                      style={{ width: 46, height: 46 }}
-                    >
-                      <FaUser className="text-success" />
+                  <div className="profile-card">
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: '#dcfce7',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FaUser color="#16a34a" />
                     </div>
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold text-dark">
-                        {selectedProfile.fullName}
-                      </div>
-                      <div className="small text-muted d-flex gap-3 mt-1 flex-wrap">
-                        <span>
-                          <FaPhone className="me-1" size={10} />
-                          {selectedProfile.phone ?? "N/A"}
-                        </span>
-                        <span>
-                          <FaIdCard className="me-1" size={10} />
-                          {selectedProfile.identityNumber ?? "N/A"}
-                        </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{selectedProfile.fullName}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 3, display: 'flex', gap: 14 }}>
+                        <span><FaPhone size={9} style={{ marginRight: 4 }} />{selectedProfile.phone ?? 'N/A'}</span>
+                        <span><FaIdCard size={9} style={{ marginRight: 4 }} />{selectedProfile.identityNumber ?? 'N/A'}</span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-light border-0"
-                      onClick={handleRemoveRepresentative}
-                    >
-                      <FaTimes className="text-danger" />
+                    <button type="button" onClick={() => setSelectedProfile(null)}
+                      style={{ background: '#fee2e2', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', color: '#ef4444' }}>
+                      <FaTimes size={12} />
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* =================== CỘT PHẢI =================== */}
-            <div className="col-lg-7">
-              <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
-                  <div className="bg-info-subtle p-2 rounded-3 text-info">
-                    <FaConciergeBell size={18} />
-                  </div>
-                  <h6 className="fw-bold mb-0 text-info">Dịch vụ đăng ký</h6>
-                  <span className="ms-auto badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+            {/* ── Cột phải: dịch vụ ── */}
+            <div className="cc-card cc-fadein" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="section-head">
+                <div className="section-icon" style={{ background: '#f0f9ff' }}>
+                  <FaConciergeBell color="#0284c7" size={17} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0f172a' }}>Dịch vụ đăng ký</div>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>Tùy chọn — có thể bỏ qua</div>
+                </div>
+                {selectedServices.length > 0 && (
+                  <span style={{ background: '#e0f2fe', color: '#0284c7', borderRadius: 20,
+                    padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>
                     {selectedServices.length} đã chọn
                   </span>
+                )}
+              </div>
+
+              {loadingServices ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexDirection: 'column', color: '#94a3b8', gap: 10 }}>
+                  <div style={{ width: 28, height: 28, border: '3px solid #e2e8f0', borderTopColor: '#0284c7',
+                    borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+                  <p style={{ fontSize: 13, margin: 0 }}>Đang tải dịch vụ…</p>
                 </div>
-
-                {loadingServices ? (
-                  <div className="text-center py-5 text-muted">
-                    <div className="spinner-border spinner-border-sm mb-2" />
-                    <p className="small mb-0">Đang tải danh sách dịch vụ...</p>
-                  </div>
-                ) : availableServices.length === 0 ? (
-                  <div className="text-center py-5 text-muted">
-                    <FaConciergeBell className="fs-2 mb-2 opacity-25" />
-                    <p className="small mb-0">Không có dịch vụ nào</p>
-                  </div>
-                ) : (
-                  <div
-                    className="d-flex flex-column gap-2"
-                    style={{ maxHeight: 380, overflowY: "auto" }}
-                  >
-                    {availableServices.map((svc) => {
-                      const selected = selectedServices.find(
-                        (s) => s.serviceId === svc.serviceId,
-                      );
-                      return (
-                        <div
-                          key={svc.serviceId}
-                          className={`border rounded-3 px-3 py-2 d-flex align-items-center gap-3 transition ${selected ? "border-info bg-info bg-opacity-10" : "bg-light border-0"}`}
-                          style={{ cursor: "pointer" }}
-                          onClick={() => toggleService(svc)}
-                        >
-                          {/* Checkbox visual */}
-                          <div
-                            className={`rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 ${selected ? "bg-info text-white" : "bg-white border"}`}
-                            style={{ width: 22, height: 22 }}
-                          >
-                            {selected && <FaCheck size={10} />}
-                          </div>
-
-                          {/* Service info */}
-                          <div className="flex-grow-1">
-                            <div className="fw-semibold small text-dark">
-                              {svc.serviceName}
-                            </div>
-                            {svc.unitPrice != null && (
-                              <div
-                                className="text-muted"
-                                style={{ fontSize: "0.75rem" }}
-                              >
-                                {Number(svc.unitPrice).toLocaleString("vi-VN")}{" "}
-                                đ/{svc.unit ?? svc.unitName ?? "tháng"}
-                              </div>
-                            )}
-                          </div>
+              ) : availableServices.length === 0 ? (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', color: '#94a3b8' }}>
+                  <FaConciergeBell style={{ fontSize: 32, opacity: .2, marginBottom: 10 }} />
+                  <p style={{ fontSize: 13 }}>Không có dịch vụ nào</p>
+                </div>
+              ) : (
+                <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 8,
+                  maxHeight: 400, paddingRight: 2 }}>
+                  {availableServices.map(svc => {
+                    const sel = !!selectedServices.find(s => s.serviceId === svc.serviceId);
+                    return (
+                      <div key={svc.serviceId}
+                        className={`svc-row ${sel ? 'sel' : ''}`}
+                        onClick={() => toggleService(svc)}>
+                        <div className={`svc-check ${sel ? 'sel' : ''}`}>
+                          {sel && <FaCheck color="#fff" size={9} />}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Summary dịch vụ đã chọn */}
-                {selectedServices.length > 0 && (
-                  <div className="mt-3 p-3 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25">
-                    <p className="small fw-bold text-info mb-2">
-                      Dịch vụ đã chọn:
-                    </p>
-                    {selectedServices.map((s) => (
-                      <div
-                        key={s.serviceId}
-                        className="d-flex justify-content-between small mb-1"
-                      >
-                        <span className="text-dark">{s.serviceName}</span>
-                        <span className="text-muted">
-                          {Number(s.unitPrice).toLocaleString("vi-VN")} đ
-                          {s.unit ? `/${s.unit}` : ""}
-                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13.5, color: '#0f172a' }}>{svc.serviceName}</div>
+                          {svc.unitPrice != null && (
+                            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                              {Number(svc.unitPrice).toLocaleString('vi-VN')} đ/{svc.unit ?? svc.unitName ?? 'tháng'}
+                            </div>
+                          )}
+                        </div>
+                        {sel && <FaCheck color="#4361ee" size={13} style={{ flexShrink: 0 }} />}
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Nút hành động */}
-                <div className="mt-auto pt-4">
-                  <hr className="text-muted opacity-25 mb-4" />
-                  <div className="text-end">
-                    <button
-                      type="button"
-                      className="btn btn-light px-4 me-2 border-0 fw-bold"
-                      onClick={() => navigate("/contracts")}
-                      disabled={submitting}
-                    >
-                      Hủy bỏ
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2"
-                    >
-                      {submitting ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm" />{" "}
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <FaSave size={14} /> Tạo hợp đồng
-                        </>
-                      )}
-                    </button>
-                  </div>
+                    );
+                  })}
                 </div>
+              )}
+
+              {/* Summary */}
+              {selectedServices.length > 0 && (
+                <div style={{ marginTop: 16, background: '#f0f9ff', border: '1.5px solid #bae6fd',
+                  borderRadius: 12, padding: '14px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', margin: '0 0 10px' }}>
+                    Dịch vụ đã chọn:
+                  </p>
+                  {selectedServices.map(s => (
+                    <div key={s.serviceId}
+                      style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+                      <span style={{ color: '#334155', fontWeight: 600 }}>{s.serviceName}</span>
+                      <span style={{ color: '#64748b' }}>
+                        {Number(s.unitPrice).toLocaleString('vi-VN')} đ{s.unit ? `/${s.unit}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1.5px solid #f1f5f9',
+                display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button type="button" className="cc-btn cc-btn-ghost"
+                  onClick={() => navigate('/contracts')} disabled={submitting}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="cc-btn cc-btn-primary" disabled={submitting}
+                  style={{ paddingLeft: 28, paddingRight: 28 }}>
+                  {submitting
+                    ? <><span style={{ width: 14, height: 14, border: '2px solid #a5b4fc', borderTopColor: '#fff',
+                        borderRadius: '50%', display: 'inline-block', animation: 'spin .6s linear infinite' }} /> Đang tạo…</>
+                    : <><FaSave size={13} /> Tạo hợp đồng</>}
+                </button>
               </div>
             </div>
           </div>

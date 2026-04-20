@@ -1,15 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaBed
+  FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaBed,
+  FaFileSignature, FaBuilding, FaLayerGroup, FaChevronDown,
+  FaChevronRight, FaTimes, FaCheck, FaFilter
 } from 'react-icons/fa';
 import apiRoom from '../../api/apiRoom';
 import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
 import Pagination from '../../components/Pagination';
 
+/* ─── Google Font ──────────────────────────────────────────── */
+const FontLink = () => (
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+);
+
+/* ─── Inline styles ────────────────────────────────────────── */
+const css = `
+  .rl-root { font-family: 'Plus Jakarta Sans', sans-serif; background: #f4f6fb; min-height: 100vh; }
+  .rl-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .rl-btn { display:inline-flex;align-items:center;gap:6px;border:none;border-radius:10px;
+    font-family:inherit;font-weight:600;font-size:13px;padding:8px 16px;cursor:pointer;transition:.15s; }
+  .rl-btn-primary { background:#4361ee;color:#fff; }
+  .rl-btn-primary:hover { background:#3451d1; }
+  .rl-btn-outline { background:transparent;color:#4361ee;border:1.5px solid #c7d0f8; }
+  .rl-btn-outline:hover { background:#eef0fd; }
+  .rl-btn-ghost { background:transparent;color:#64748b;border:1.5px solid #e2e8f0; }
+  .rl-btn-ghost:hover { background:#f8fafc; }
+  .rl-btn-danger-ghost { background:transparent;color:#ef4444;border:none;padding:4px 7px;border-radius:7px; }
+  .rl-btn-danger-ghost:hover { background:#fee2e2; }
+  .rl-btn-icon { padding:7px;border-radius:9px;font-size:14px; }
+  .rl-tag { display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;
+    font-size:12px;font-weight:600; }
+  .rl-tag-available { background:#dcfce7;color:#16a34a; }
+  .rl-tag-occupied  { background:#fef9c3;color:#b45309; }
+  .rl-tag-other     { background:#f1f5f9;color:#64748b; }
+  .rl-input { background:#f4f6fb;border:1.5px solid transparent;border-radius:10px;
+    font-family:inherit;font-size:13px;padding:8px 12px;outline:none;transition:.15s; }
+  .rl-input:focus { border-color:#4361ee;background:#fff; }
+  .rl-table th { font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:#94a3b8;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #f1f5f9; }
+  .rl-table td { padding:14px 16px;border-bottom:1px solid #f8fafc;font-size:13.5px;vertical-align:middle; }
+  .rl-table tr:hover td { background:#fafbff; }
+  .rl-table tr:last-child td { border-bottom:none; }
+  .branch-pill { cursor:pointer;padding:6px 14px;border-radius:20px;font-size:12.5px;
+    font-weight:600;border:1.5px solid transparent;transition:.15s; }
+  .branch-pill.active { background:#4361ee;color:#fff;border-color:#4361ee; }
+  .branch-pill.inactive { background:#f1f5f9;color:#475569;border-color:#e2e8f0; }
+  .branch-pill.inactive:hover { border-color:#c7d0f8;color:#4361ee; }
+  .floor-chip { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;
+    font-size:12px;font-weight:600;cursor:pointer;transition:.15s;background:#eef0fd;color:#4361ee;
+    border:1.5px solid transparent; }
+  .floor-chip.active { background:#4361ee;color:#fff; }
+  .floor-chip:hover { border-color:#a5b4fc; }
+  .floor-panel { background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:10px; }
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;
+    display:flex;align-items:center;justify-content:center; }
+  .rl-modal { background:#fff;border-radius:20px;width:420px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.15); }
+  .rl-modal h2 { font-size:17px;font-weight:700;margin:0 0 20px; }
+  .rl-label { font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:#64748b;display:block;margin-bottom:6px; }
+  .rl-select { width:100%;background:#f4f6fb;border:1.5px solid transparent;border-radius:10px;
+    font-family:inherit;font-size:13px;padding:9px 12px;outline:none;transition:.15s;cursor:pointer; }
+  .rl-select:focus { border-color:#4361ee;background:#fff; }
+  .action-icon { background:transparent;border:none;padding:6px 8px;border-radius:8px;cursor:pointer;transition:.15s; }
+  .action-icon:hover.view  { background:#eff6ff; }
+  .action-icon:hover.edit  { background:#f0fdf4; }
+  .action-icon:hover.sign  { background:#faf5ff; }
+  .action-icon:hover.del   { background:#fef2f2; }
+  .money { font-weight:600;color:#1e293b; }
+  .deposit-badge { background:#fef9c3;color:#92400e;padding:3px 8px;border-radius:6px;
+    font-size:12px;font-weight:600; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .rl-row-in { animation:fadeIn .2s ease; }
+  .empty-state { text-align:center;padding:56px 0;color:#94a3b8; }
+  .empty-icon { font-size:40px;margin-bottom:12px;opacity:.3; }
+`;
+
+/* ─── Add/Edit Floor Modal ──────────────────────────────────── */
+const FloorModal = ({ mode, floorData, branches, onConfirm, onClose, loading }) => {
+  const [data, setData] = useState(floorData);
+  const isEdit = mode === 'edit';
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="rl-modal" onClick={e => e.stopPropagation()}>
+        <h2>{isEdit ? '✏️ Sửa tầng' : '➕ Thêm tầng mới'}</h2>
+        <div style={{ marginBottom: 16 }}>
+          <label className="rl-label">Số tầng <span style={{ color: '#ef4444' }}>*</span></label>
+          <input className="rl-input" style={{ width: '100%', boxSizing: 'border-box' }}
+            type="number" min="0" placeholder="VD: 1, 2, 3…"
+            value={data.floorNumber}
+            onChange={e => setData({ ...data, floorNumber: e.target.value })} />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <label className="rl-label">Chi nhánh <span style={{ color: '#ef4444' }}>*</span></label>
+          <select className="rl-select" value={data.branchId}
+            disabled={isEdit}
+            onChange={e => setData({ ...data, branchId: e.target.value })}>
+            <option value="">-- Chọn chi nhánh --</option>
+            {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.branchName}</option>)}
+          </select>
+          {isEdit && <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 5 }}>Chi nhánh không thể thay đổi</p>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className="rl-btn rl-btn-ghost" onClick={onClose} disabled={loading}>Hủy</button>
+          <button className="rl-btn rl-btn-primary" onClick={() => onConfirm(data)} disabled={loading}>
+            {loading ? '⏳' : isEdit ? 'Cập nhật' : 'Thêm tầng'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Main Component ─────────────────────────────────────────── */
 const RoomList = () => {
-  const PAGE_SIZE = 5;
+  const navigate = useNavigate();
+  const PAGE_SIZE = 8;
 
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
   const [currentPage, setCurrentPage] = useState(0);
@@ -24,12 +134,14 @@ const RoomList = () => {
   const [branches, setBranches] = useState([]);
   const [deletingRoom, setDeletingRoom] = useState(null);
 
-  const [showAddFloorModal, setShowAddFloorModal] = useState(false);
-  const [showEditFloorModal, setShowEditFloorModal] = useState(false);
-  const [editingFloorId, setEditingFloorId] = useState(null);
-  const [newFloorData, setNewFloorData] = useState({ floorNumber: '', branchId: '' });
-  const [addingFloor, setAddingFloor] = useState(false);
+  /* floor panel visibility */
+  const [showFloorPanel, setShowFloorPanel] = useState(false);
 
+  /* floor modal */
+  const [floorModal, setFloorModal] = useState(null); // { mode:'add'|'edit', data:{} }
+  const [savingFloor, setSavingFloor] = useState(false);
+
+  /* ── API calls ── */
   const fetchRooms = async () => {
     setLoading(true);
     try {
@@ -39,365 +151,392 @@ const RoomList = () => {
         selectedBranch === 'all' ? null : selectedBranch,
         search
       );
-      const roomData = res.data || res;
-      setData(roomData || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-    } catch (err) {
-      console.error('Fetch rooms error:', err);
-      setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-    } finally {
-      setLoading(false);
-    }
+      const d = res.data || res;
+      setData(d || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
+    } catch { setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 }); }
+    finally { setLoading(false); }
   };
 
   const fetchFilters = async () => {
     try {
-      const floorRes = await apiFloor.getAllFloors();
-      const floorData = floorRes.data || floorRes;
-      setFloors(Array.isArray(floorData) ? floorData : []);
-
-      const branchRes = await apiBranches.getAllBranches(1, 100);
-      const branchData = branchRes.data || branchRes;
-      const branchList = branchData?.content || [];
-      setBranches([{ branchId: 'all', branchName: 'Tất cả' }, ...branchList]);
-    } catch (err) {
-      console.error('Fetch filters error:', err);
-      setBranches([{ branchId: 'all', branchName: 'Tất cả' }]);
-      setFloors([]);
-    }
+      const [floorRes, branchRes] = await Promise.all([
+        apiFloor.getAllFloors(),
+        apiBranches.getAllBranches(1, 100),
+      ]);
+      setFloors(Array.isArray(floorRes.data || floorRes) ? (floorRes.data || floorRes) : []);
+      const bl = (branchRes.data || branchRes)?.content || [];
+      setBranches(bl);
+    } catch { setBranches([]); setFloors([]); }
   };
+
+  const getStatus = r => (r.Status || r.status || '').toUpperCase();
+  const isAvailable = r => getStatus(r) === 'AVAILABLE';
 
   const handleDeleteRoom = async (roomId, roomName) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa phòng "${roomName}"?`)) return;
+    if (!window.confirm(`Xóa phòng "${roomName}"?`)) return;
     setDeletingRoom(roomId);
-    try {
-      await apiRoom.deleteRoom(roomId);
-      fetchRooms();
-      alert('Xóa phòng thành công!');
-    } catch (err) {
-      alert('Lỗi khi xóa phòng: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setDeletingRoom(null);
-    }
+    try { await apiRoom.deleteRoom(roomId); fetchRooms(); }
+    catch (err) { alert('Lỗi: ' + (err.response?.data?.message || err.message)); }
+    finally { setDeletingRoom(null); }
   };
 
+  /* floor crud */
+  const handleSaveFloor = async (d) => {
+    if (!d.floorNumber || (!d.branchId && floorModal.mode === 'add')) { alert('Điền đầy đủ!'); return; }
+    setSavingFloor(true);
+    try {
+      if (floorModal.mode === 'add') {
+        await apiFloor.createFloor({ floorNumber: +d.floorNumber, branchId: +d.branchId });
+      } else {
+        await apiFloor.updateFloor(floorModal.data.floorId, { floorNumber: +d.floorNumber, branchId: +d.branchId });
+      }
+      await fetchFilters();
+      setFloorModal(null);
+    } catch (err) { alert('Lỗi: ' + err.message); }
+    finally { setSavingFloor(false); }
+  };
+
+  const handleDeleteFloor = async (floor) => {
+    if (!window.confirm(`Xóa tầng ${floor.floorNumber}?`)) return;
+    try { await apiFloor.deleteFloor(floor.floorId); await fetchFilters(); }
+    catch (err) { alert('Lỗi: ' + err.message); }
+  };
+
+  /* effects */
+  useEffect(() => { fetchFilters(); }, []);
+
   useEffect(() => {
-    if (selectedBranch === 'all') {
-      setFilteredFloors(floors);
-    } else {
+    if (selectedBranch === 'all') setFilteredFloors(floors);
+    else {
       setFilteredFloors(floors.filter(f => f.branchId === parseInt(selectedBranch)));
       setSelectedFloor('');
     }
   }, [selectedBranch, floors]);
 
-  const getFloorNumber = (floorId) => {
-    if (!floorId || !Array.isArray(floors)) return '-';
-    const floor = floors.find(f => f.floorId === floorId);
-    return floor ? floor.floorNumber : '-';
-  };
-
-  const handleAddFloor = async () => {
-    if (!newFloorData.floorNumber || !newFloorData.branchId) { alert('Vui lòng nhập đầy đủ thông tin!'); return; }
-    setAddingFloor(true);
-    try {
-      await apiFloor.createFloor({ floorNumber: parseInt(newFloorData.floorNumber), branchId: parseInt(newFloorData.branchId) });
-      fetchFilters();
-      setShowAddFloorModal(false);
-      setNewFloorData({ floorNumber: '', branchId: '' });
-      alert('Thêm tầng thành công!');
-    } catch (err) {
-      alert('Lỗi khi thêm tầng: ' + err.message);
-    } finally {
-      setAddingFloor(false);
-    }
-  };
-
-  const handleEditFloor = async () => {
-    if (!newFloorData.floorNumber) { alert('Vui lòng nhập số tầng!'); return; }
-    setAddingFloor(true);
-    try {
-      await apiFloor.updateFloor(editingFloorId, { floorNumber: parseInt(newFloorData.floorNumber), branchId: parseInt(newFloorData.branchId) });
-      fetchFilters();
-      setShowEditFloorModal(false);
-      setEditingFloorId(null);
-      setNewFloorData({ floorNumber: '', branchId: '' });
-      alert('Cập nhật tầng thành công!');
-    } catch (err) {
-      alert('Lỗi khi cập nhật tầng: ' + err.message);
-    } finally {
-      setAddingFloor(false);
-    }
-  };
-
-  const handleDeleteFloor = async (floorId, floorNumber) => {
-    if (!window.confirm(`Xóa tầng ${floorNumber}?`)) return;
-    try {
-      await apiFloor.deleteFloor(floorId);
-      fetchFilters();
-      alert('Xóa tầng thành công!');
-    } catch (err) {
-      alert('Lỗi khi xóa tầng: ' + err.message);
-    }
-  };
-
-  const openEditFloorModal = (floor) => {
-    setEditingFloorId(floor.floorId);
-    setNewFloorData({ floorNumber: floor.floorNumber.toString(), branchId: floor.branchId.toString() });
-    setShowEditFloorModal(true);
-  };
-
-  useEffect(() => { fetchFilters(); }, []);
   useEffect(() => { setCurrentPage(0); }, [search, selectedFloor, selectedBranch]);
   useEffect(() => { fetchRooms(); }, [currentPage, search, selectedFloor, selectedBranch]);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const getFloorLabel = id => {
+    if (!id || !floors.length) return '—';
+    const f = floors.find(f => f.floorId === id);
+    return f ? `Tầng ${f.floorNumber}` : '—';
   };
 
+  const branchName = (id) => {
+    const b = branches.find(b => String(b.branchId) === String(id));
+    return b?.branchName || '';
+  };
+
+  /* navigate to create contract with room pre-filled */
+  const handleCreateContract = (room) => {
+    const branch = branches.find(b => {
+      const fl = floors.find(f => f.floorId === room.floorId);
+      return fl && String(b.branchId) === String(fl.branchId);
+    });
+    navigate('/contracts/create', { state: { room, branch } });
+  };
+
+  /* ── Render ── */
   return (
-    <div className="container-fluid py-4">
-      {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">QUẢN LÝ PHÒNG</h4>
-          <p className="text-muted small mb-0">Hệ thống quản lý phòng</p>
-        </div>
-        <div className="d-flex gap-2">
-          <button className="btn btn-outline-primary shadow-sm" onClick={() => setShowAddFloorModal(true)}>
-            <FaPlus /> Thêm tầng
-          </button>
-          <Link to="/rooms/create" className="btn btn-primary shadow-sm">
-            <FaPlus /> Thêm phòng
+    <>
+      <style>{css}</style>
+      <FontLink />
+
+      {floorModal && (
+        <FloorModal
+          mode={floorModal.mode}
+          floorData={floorModal.data}
+          branches={branches}
+          onConfirm={handleSaveFloor}
+          onClose={() => setFloorModal(null)}
+          loading={savingFloor}
+        />
+      )}
+
+      <div className="rl-root" style={{ padding: '28px 24px' }}>
+        {/* ── Header ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <div style={{ width: 36, height: 36, background: '#4361ee', borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FaBed color="#fff" size={17} />
+              </div>
+              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a', letterSpacing: '-.02em' }}>
+                Quản lý phòng
+              </h1>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>
+              Danh sách toàn bộ phòng trong hệ thống
+            </p>
+          </div>
+          <Link to="/rooms/create" className="rl-btn rl-btn-primary" style={{ textDecoration: 'none' }}>
+            <FaPlus size={12} /> Thêm phòng
           </Link>
         </div>
-      </div>
 
-      {/* MODAL THÊM TẦNG */}
-      {showAddFloorModal && (
-        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 rounded-4">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">Thêm tầng mới</h5>
-                <button type="button" className="btn-close" onClick={() => setShowAddFloorModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">SỐ TẦNG <span className="text-danger">*</span></label>
-                  <input type="number" className="form-control bg-light border-0 py-2" placeholder="VD: 1, 2, 3..."
-                    value={newFloorData.floorNumber}
-                    onChange={(e) => setNewFloorData({ ...newFloorData, floorNumber: e.target.value })} min="0" />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">CHI NHÁNH <span className="text-danger">*</span></label>
-                  <select className="form-select bg-light border-0 py-2"
-                    value={newFloorData.branchId}
-                    onChange={(e) => setNewFloorData({ ...newFloorData, branchId: e.target.value })}>
-                    <option value="">-- Chọn chi nhánh --</option>
-                    {Array.isArray(branches) && branches.filter(b => b.branchId !== 'all').map(b => (
-                      <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer border-0 pt-0">
-                <button type="button" className="btn btn-light" onClick={() => setShowAddFloorModal(false)} disabled={addingFloor}>Hủy</button>
-                <button type="button" className="btn btn-primary" onClick={handleAddFloor} disabled={addingFloor}>
-                  {addingFloor ? '...' : 'Thêm'}
+        {/* ── Filter card ── */}
+        <div className="rl-card" style={{ padding: 20, marginBottom: 16 }}>
+          {/* Row 1: Search + branch pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+            {/* Search */}
+            <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+              <FaSearch style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
+                color: '#94a3b8', fontSize: 13 }} />
+              <input className="rl-input" style={{ paddingLeft: 34, width: '100%', boxSizing: 'border-box' }}
+                placeholder="Tìm tên phòng…" value={search}
+                onChange={e => setSearch(e.target.value)} />
+            </div>
+
+            {/* Branch pills */}
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginRight: 2 }}>Chi nhánh:</span>
+              <button
+                className={`branch-pill ${selectedBranch === 'all' ? 'active' : 'inactive'}`}
+                onClick={() => { setSelectedBranch('all'); setShowFloorPanel(false); }}>
+                Tất cả
+              </button>
+              {branches.map(b => (
+                <button key={b.branchId}
+                  className={`branch-pill ${String(selectedBranch) === String(b.branchId) ? 'active' : 'inactive'}`}
+                  onClick={() => {
+                    const id = String(b.branchId);
+                    setSelectedBranch(id);
+                    setShowFloorPanel(String(selectedBranch) !== id ? true : !showFloorPanel);
+                  }}>
+                  <FaBuilding size={10} /> {b.branchName}
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL SỬA TẦNG */}
-      {showEditFloorModal && (
-        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 rounded-4">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">Sửa tầng</h5>
-                <button type="button" className="btn-close" onClick={() => setShowEditFloorModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">SỐ TẦNG <span className="text-danger">*</span></label>
-                  <input type="number" className="form-control bg-light border-0 py-2" placeholder="VD: 1, 2, 3..."
-                    value={newFloorData.floorNumber}
-                    onChange={(e) => setNewFloorData({ ...newFloorData, floorNumber: e.target.value })} min="0" />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-muted">CHI NHÁNH</label>
-                  <select className="form-select bg-light border-0 py-2" value={newFloorData.branchId} disabled>
-                    {Array.isArray(branches) && branches.filter(b => b.branchId !== 'all').map(b => (
-                      <option key={b.branchId} value={b.branchId}>{b.branchName}</option>
-                    ))}
-                  </select>
-                  <small className="text-muted d-block mt-2">Chi nhánh không thể thay đổi</small>
-                </div>
-              </div>
-              <div className="modal-footer border-0 pt-0">
-                <button type="button" className="btn btn-light" onClick={() => setShowEditFloorModal(false)} disabled={addingFloor}>Hủy</button>
-                <button type="button" className="btn btn-primary" onClick={handleEditFloor} disabled={addingFloor}>
-                  {addingFloor ? '...' : 'Cập nhật'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="card border-0 shadow-sm rounded-3">
-        {/* TOOLBAR */}
-        <div className="card-header bg-white py-3 border-0">
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <div className="input-group" style={{ maxWidth: '250px' }}>
-              <span className="input-group-text bg-light border-0"><FaSearch /></span>
-              <input type="text" className="form-control bg-light border-0 small"
-                placeholder="Tìm tên phòng..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <select className="form-select bg-light border-0 small" style={{ maxWidth: '200px' }}
-              value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
-              <option value="">Tất cả tầng</option>
-              {Array.isArray(filteredFloors) && filteredFloors.map(f => (
-                <option key={f.floorId} value={f.floorId}>Tầng {f.floorNumber}</option>
               ))}
-            </select>
+            </div>
           </div>
 
-          <div className="d-flex gap-2 mb-2 flex-wrap">
-            {Array.isArray(branches) && branches.length > 0 ? (
-              branches.map(b => (
-                <div key={b.branchId} className="position-relative">
-                  <button
-                    className={`btn btn-sm ${selectedBranch === b.branchId.toString() ? 'btn-primary' : 'btn-light border'}`}
-                    onClick={() => setSelectedBranch(b.branchId.toString())}>
-                    {b.branchName}
-                  </button>
-                  {selectedBranch === b.branchId.toString() && b.branchId !== 'all' && (
-                    <div className="d-flex gap-1 ms-2">
-                      {filteredFloors.map(floor => (
-                        <div key={floor.floorId} className="d-flex align-items-center gap-1 small">
-                          <span className="text-muted">Tầng {floor.floorNumber}</span>
-                          <button className="btn btn-sm btn-link text-primary p-0" onClick={() => openEditFloorModal(floor)} title="Sửa">
-                            <FaEdit size={12} />
-                          </button>
-                          <button className="btn btn-sm btn-link text-danger p-0" onClick={() => handleDeleteFloor(floor.floorId, floor.floorNumber)} title="Xóa">
-                            <FaTrash size={12} />
-                          </button>
-                        </div>
-                      ))}
+          {/* Row 2: Floor chips (only when branch selected) */}
+          {selectedBranch !== 'all' && (
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Tầng:</span>
+              <button
+                className={`floor-chip ${selectedFloor === '' ? 'active' : ''}`}
+                onClick={() => setSelectedFloor('')}>Tất cả</button>
+              {filteredFloors.map(f => (
+                <button key={f.floorId}
+                  className={`floor-chip ${String(selectedFloor) === String(f.floorId) ? 'active' : ''}`}
+                  onClick={() => setSelectedFloor(String(f.floorId) === String(selectedFloor) ? '' : String(f.floorId))}>
+                  T.{f.floorNumber}
+                </button>
+              ))}
+              {/* Toggle floor management */}
+              <button
+                style={{ marginLeft: 'auto', fontSize: 12, color: '#4361ee', background: 'none', border: 'none',
+                  cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}
+                onClick={() => setShowFloorPanel(v => !v)}>
+                <FaLayerGroup size={12} />
+                Quản lý tầng
+                {showFloorPanel ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+              </button>
+            </div>
+          )}
+
+          {/* Floor management panel */}
+          {selectedBranch !== 'all' && showFloorPanel && (
+            <div className="floor-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
+                  Tầng — {branchName(selectedBranch)}
+                </span>
+                <button className="rl-btn rl-btn-primary" style={{ fontSize: 12, padding: '6px 12px' }}
+                  onClick={() => setFloorModal({ mode: 'add', data: { floorNumber: '', branchId: selectedBranch } })}>
+                  <FaPlus size={10} /> Thêm tầng
+                </button>
+              </div>
+
+              {filteredFloors.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '12px 0' }}>
+                  Chưa có tầng nào trong chi nhánh này
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {filteredFloors.map(floor => (
+                    <div key={floor.floorId}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        background: '#fff', borderRadius: 10, padding: '8px 14px',
+                        border: '1.5px solid #e2e8f0' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                        Tầng {floor.floorNumber}
+                      </span>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 7px',
+                            borderRadius: 7, color: '#4361ee', fontSize: 12 }}
+                          onMouseEnter={e => e.currentTarget.style.background='#eef0fd'}
+                          onMouseLeave={e => e.currentTarget.style.background='none'}
+                          onClick={() => setFloorModal({ mode: 'edit', data: { ...floor, branchId: floor.branchId } })}
+                          title="Sửa tầng">
+                          <FaEdit size={13} />
+                        </button>
+                        <button
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 7px',
+                            borderRadius: 7, color: '#ef4444', fontSize: 12 }}
+                          onMouseEnter={e => e.currentTarget.style.background='#fee2e2'}
+                          onMouseLeave={e => e.currentTarget.style.background='none'}
+                          onClick={() => handleDeleteFloor(floor)}
+                          title="Xóa tầng">
+                          <FaTrash size={13} />
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))
-            ) : <small className="text-muted">Đang tải branches...</small>}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* TABLE */}
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr className="text-muted small text-uppercase">
-                <th className="ps-4 py-3">Phòng</th>
-                <th>Giá</th>
-                <th>Tiền cọc</th>
-                <th>Mô tả</th>
-                <th>Người</th>
-                <th>Tầng</th>
-                <th className="text-center">Trạng thái</th>
-                <th className="text-end pe-4">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+        {/* ── Table card ── */}
+        <div className="rl-card" style={{ overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="rl-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
                 <tr>
-                  <td colSpan="8" className="text-center py-5">
-                    <div className="spinner-border spinner-border-sm text-primary" role="status"/>
-                    <span className="ms-2">Đang tải...</span>
-                  </td>
+                  <th>Phòng</th>
+                  <th>Tầng</th>
+                  <th>Giá thuê</th>
+                  <th>Tiền cọc</th>
+                  <th>Người thuê</th>
+                  <th>Mô tả</th>
+                  <th style={{ textAlign: 'center' }}>Trạng thái</th>
+                  <th style={{ textAlign: 'right', paddingRight: 20 }}>Thao tác</th>
                 </tr>
-              ) : data?.content && data.content.length > 0 ? (
-                data.content.map((item) => (
-                  <tr key={item.roomId}>
-                    <td className="ps-4">
-                      <div className="d-flex align-items-center">
-                        <FaBed className="fs-3 text-secondary me-2" />
-                        <span className="fw-bold">{item.roomName}</span>
-                      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '56px 0', color: '#94a3b8' }}>
+                      <div style={{ display: 'inline-block', width: 28, height: 28, border: '3px solid #e2e8f0',
+                        borderTopColor: '#4361ee', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
                     </td>
-                    <td>
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
-                    </td>
-                    <td>
-                      {item.depositAmount
-                        ? <span className="badge bg-warning-subtle text-warning fw-semibold">
-                            💰 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.depositAmount)}
+                  </tr>
+                ) : data.content?.length > 0 ? (
+                  data.content.map(item => {
+                    const available = isAvailable(item);
+                    return (
+                      <tr key={item.roomId} className="rl-row-in">
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10,
+                              background: available ? '#dcfce7' : '#f1f5f9',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <FaBed color={available ? '#16a34a' : '#94a3b8'} size={15} />
+                            </div>
+                            <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>{item.roomName}</span>
+                          </div>
+                        </td>
+                        <td style={{ color: '#64748b', fontSize: 13 }}>{getFloorLabel(item.floorId)}</td>
+                        <td>
+                          <span className="money">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
                           </span>
-                        : <span className="text-muted small">—</span>
-                      }
-                    </td>
-                    <td>
-                      <div className="text-muted small text-truncate" style={{ maxWidth: '150px' }} title={item.description}>
-                        {item.description || '-'}
-                      </div>
-                    </td>
-                    <td className="small">{item.currentPeople}/{item.maxPeople}</td>
-                    <td className="small">Tầng {getFloorNumber(item.floorId)}</td>
-                    <td className="text-center">
-                      <span className={`badge rounded-pill ${
-                        (item.Status?.toUpperCase() === 'AVAILABLE' || item.status?.toUpperCase() === 'AVAILABLE')
-                          ? 'bg-success-subtle text-success'
-                          : (item.Status?.toUpperCase() === 'OCCUPIED' || item.status?.toUpperCase() === 'OCCUPIED')
-                            ? 'bg-warning-subtle text-warning'
-                            : 'bg-secondary-subtle text-secondary'
-                      }`}>
-                        {item.Status?.toUpperCase() === 'AVAILABLE' || item.status?.toUpperCase() === 'AVAILABLE' ? '✓ Có sẵn'
-                          : item.Status?.toUpperCase() === 'OCCUPIED' || item.status?.toUpperCase() === 'OCCUPIED' ? '📌 Đã cho thuê'
-                            : item.Status || item.status || 'Chưa xác định'}
-                      </span>
-                    </td>
-                    <td className="text-end pe-4">
-                      <div className="d-flex justify-content-end gap-1">
-                        <Link to={`/rooms/${item.roomId}/detail`} className="btn btn-sm btn-light border-0" title="Xem chi tiết">
-                          <FaEye className="text-primary" />
-                        </Link>
-                        <Link to={`/rooms/${item.roomId}/update`} className="btn btn-sm btn-light border-0" title="Chỉnh sửa">
-                          <FaEdit className="text-primary" />
-                        </Link>
-                        <button className="btn btn-sm btn-light border-0"
-                          onClick={() => handleDeleteRoom(item.roomId, item.roomName)}
-                          disabled={deletingRoom === item.roomId} title="Xóa">
-                          {deletingRoom === item.roomId
-                            ? <span className="spinner-border spinner-border-sm text-danger"/>
-                            : <FaTrash className="text-danger" />}
-                        </button>
+                        </td>
+                        <td>
+                          {item.depositAmount
+                            ? <span className="deposit-badge">
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.depositAmount)}
+                              </span>
+                            : <span style={{ color: '#cbd5e1' }}>—</span>}
+                        </td>
+                        <td>
+                          <span style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                            {item.currentPeople}<span style={{ color: '#cbd5e1', fontWeight: 400 }}>/{item.maxPeople}</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: 12.5, color: '#94a3b8', display: 'block',
+                            maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            title={item.description}>
+                            {item.description || '—'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`rl-tag ${available ? 'rl-tag-available'
+                            : getStatus(item) === 'OCCUPIED' ? 'rl-tag-occupied' : 'rl-tag-other'}`}>
+                            {available
+                              ? <><FaCheck size={9} /> Có sẵn</>
+                              : getStatus(item) === 'OCCUPIED' ? '📌 Đã thuê'
+                              : getStatus(item) || 'N/A'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right', paddingRight: 20 }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                            {available && (
+                              <button className="action-icon sign" title="Tạo hợp đồng"
+                                style={{ color: '#7c3aed' }}
+                                onMouseEnter={e => e.currentTarget.style.background='#f5f3ff'}
+                                onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                                onClick={() => handleCreateContract(item)}>
+                                <FaFileSignature size={14} />
+                              </button>
+                            )}
+                            <Link to={`/rooms/${item.roomId}/detail`}
+                              className="action-icon view" title="Xem chi tiết"
+                              style={{ color: '#2563eb', display: 'flex', alignItems: 'center' }}
+                              onMouseEnter={e => e.currentTarget.style.background='#eff6ff'}
+                              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                              <FaEye size={14} />
+                            </Link>
+                            <Link to={`/rooms/${item.roomId}/update`}
+                              className="action-icon edit" title="Chỉnh sửa"
+                              style={{ color: '#16a34a', display: 'flex', alignItems: 'center' }}
+                              onMouseEnter={e => e.currentTarget.style.background='#f0fdf4'}
+                              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                              <FaEdit size={14} />
+                            </Link>
+                            <button className="action-icon del" title="Xóa"
+                              style={{ color: '#ef4444' }}
+                              onMouseEnter={e => e.currentTarget.style.background='#fef2f2'}
+                              onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                              disabled={deletingRoom === item.roomId}
+                              onClick={() => handleDeleteRoom(item.roomId, item.roomName)}>
+                              {deletingRoom === item.roomId
+                                ? <span style={{ width: 14, height: 14, border: '2px solid #fca5a5',
+                                    borderTopColor: '#ef4444', borderRadius: '50%',
+                                    display: 'inline-block', animation: 'spin .6s linear infinite' }} />
+                                : <FaTrash size={13} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="8">
+                      <div className="empty-state">
+                        <div className="empty-icon">🛏️</div>
+                        <p style={{ fontWeight: 600, color: '#475569', marginBottom: 4 }}>Không có phòng nào</p>
+                        <p style={{ fontSize: 13, color: '#94a3b8' }}>Thay đổi bộ lọc hoặc thêm phòng mới</p>
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center py-5 text-muted">Không tìm thấy phòng nào</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {/* FOOTER */}
-        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0 flex-wrap gap-2">
-          <small className="text-muted">
-            Tổng: <strong>{data?.totalElements || 0}</strong> phòng | Trang: <strong>{(currentPage + 1)}/{data?.totalPages || 1}</strong>
-          </small>
-          {data?.totalPages > 1 && (
-            <Pagination currentPage={currentPage} totalPages={data.totalPages} onPageChange={handlePageChange} />
-          )}
+          {/* Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '14px 20px', borderTop: '1px solid #f1f5f9' }}>
+            <span style={{ fontSize: 12.5, color: '#94a3b8' }}>
+              Tổng <strong style={{ color: '#0f172a' }}>{data.totalElements || 0}</strong> phòng
+              {' · '}Trang <strong style={{ color: '#0f172a' }}>{currentPage + 1}</strong>/{data.totalPages || 1}
+            </span>
+            {data.totalPages > 1 && (
+              <Pagination currentPage={currentPage} totalPages={data.totalPages}
+                onPageChange={p => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
