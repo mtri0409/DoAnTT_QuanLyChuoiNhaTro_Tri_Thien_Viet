@@ -165,7 +165,7 @@ public class RoomServiceImpl implements RoomService {
             Deposit deposit = new Deposit();
             deposit.setRoom(saved);
             deposit.setAmount(roomDTO.getDepositAmount());
-            deposit.setStatus("BOOKED");
+            deposit.setStatus("PENDING");
             depositRepo.save(deposit);
         }
 

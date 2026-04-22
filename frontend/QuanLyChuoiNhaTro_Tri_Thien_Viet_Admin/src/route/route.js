@@ -43,6 +43,7 @@ import ListInvoice from "../pages/invoice/ListInvoice";
 import InvoiceDetail from "../pages/invoice/InvoiceDetail";
 import ListPost from "../pages/post/ListPost";
 import PostDetail from "../pages/post/PostDetail";
+import FastContract from "../pages/contract/FastContract";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -63,6 +64,7 @@ const AdminRoute = [
   { path: "/contracts/create", component: CreateContract },
   { path: "/contracts/:id/detail", component: ContractDetail },
   { path: "/contracts/:id/members", component: ContractMember },
+  { path: "/rooms/:roomId/fast-contract", component: FastContract },
 
   //meter-reading
   { path: "/meter-reading", component: MeterReadingPage },
