@@ -33,7 +33,7 @@ const UpdateRoom = () => {
     roomName: '',
     price: '',
     description: '',
-    currentPeople: 0,   
+    currentPeople: 0,
     maxPeople: 1,
     floorId: '',
     Status: 'AVAILABLE',
@@ -42,7 +42,6 @@ const UpdateRoom = () => {
   });
 
   const [currentPeopleDisplay, setCurrentPeopleDisplay] = useState(0);
-
   const [existingMedia, setExistingMedia] = useState([]);
   const [newMediaFiles, setNewMediaFiles] = useState([]);
   const [mediaToDelete, setMediaToDelete] = useState([]);
@@ -98,7 +97,7 @@ const UpdateRoom = () => {
           roomName: roomData.roomName || '',
           price: roomData.price || '',
           description: roomData.description || '',
-          currentPeople: currentPeople, // giữ giá trị thực từ server
+          currentPeople,
           maxPeople: roomData.maxPeople || 1,
           floorId: roomData.floorId || '',
           Status: roomData.Status || roomData.status || 'AVAILABLE',
@@ -120,9 +119,8 @@ const UpdateRoom = () => {
 
   useEffect(() => {
     return () => {
-      if (newMediaFiles.length > 0) {
+      if (newMediaFiles.length > 0)
         newMediaFiles.forEach(m => { if (m.preview) URL.revokeObjectURL(m.preview); });
-      }
     };
   }, [newMediaFiles]);
 
@@ -146,23 +144,21 @@ const UpdateRoom = () => {
     setNewMediaFiles(prev => [
       ...prev,
       ...Array.from(files).map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        mediaType: file.type || 'image/jpeg'
+        file, preview: URL.createObjectURL(file), mediaType: file.type || 'image/jpeg'
       }))
     ]);
   };
 
   const handleRemoveExistingMedia = (index) => {
     const media = existingMedia[index];
-    if (media && media.mediaId) setMediaToDelete(prev => [...prev, media.mediaId]);
+    if (media?.mediaId) setMediaToDelete(prev => [...prev, media.mediaId]);
     setExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleRemoveNewMedia = (index) => {
     setNewMediaFiles(prev => {
       const target = prev[index];
-      if (target && target.preview) URL.revokeObjectURL(target.preview);
+      if (target?.preview) URL.revokeObjectURL(target.preview);
       return prev.filter((_, i) => i !== index);
     });
   };
@@ -187,22 +183,15 @@ const UpdateRoom = () => {
     if (!formData.floorId) { alert('Vui lòng chọn tầng!'); setLoading(false); return; }
 
     try {
-      console.log('Bước 1: Cập nhật phòng...');
       await apiRoom.updateRoom(roomId, formData);
 
-      if (mediaToDelete.length > 0) {
-        for (const mediaId of mediaToDelete) {
-          try { await apiRoomMedia.deleteRoomMedia(mediaId); }
-          catch (e) { console.error(`Lỗi xóa ảnh ${mediaId}:`, e); }
-        }
-      }
+      if (mediaToDelete.length > 0)
+        for (const mId of mediaToDelete) try { await apiRoomMedia.deleteRoomMedia(mId); } catch (e) { console.error(e); }
 
       if (newMediaFiles.length > 0) {
         setUploading(true);
-        for (let i = 0; i < newMediaFiles.length; i++) {
-          try { await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); }
-          catch (e) { console.error(`Lỗi upload ảnh ${i + 1}:`, e); }
-        }
+        for (let i = 0; i < newMediaFiles.length; i++)
+          try { await apiRoomMedia.createRoomMedia(newMediaFiles[i].file, roomId, false); } catch (e) { console.error(e); }
         setUploading(false);
       }
 
@@ -226,10 +215,7 @@ const UpdateRoom = () => {
     ? <div className="text-danger small mt-1 d-flex align-items-center gap-1"><FaExclamationCircle size={12}/> {errors[f]}</div>
     : null;
 
-  const getFloorName = (fId) => {
-    const f = floors.find(f => String(f.floorId) === String(fId));
-    return f ? `Tầng ${f.floorNumber}` : 'Chọn tầng';
-  };
+  const getFloorName = (fId) => { const f = floors.find(f => String(f.floorId) === String(fId)); return f ? `Tầng ${f.floorNumber}` : 'Chọn tầng'; };
   const getBranchName = (bId) => branches.find(b => String(b.branchId) === String(bId))?.branchName || '-';
   const getAmenityName = (aId) => allAmenities.find(a => a.amenityId === aId)?.amenityName || 'Không xác định';
   const fmtVND = (val) => val ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val) : '(chưa nhập)';
@@ -307,18 +293,11 @@ const UpdateRoom = () => {
               {/* ── Số người hiện tại — chỉ đọc ── */}
               <div className="mb-0">
                 <label className="form-label small fw-bold text-muted">SỐ NGƯỜI HIỆN TẠI</label>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    className="form-control bg-light border-0 py-2 text-muted"
-                    value={`${currentPeopleDisplay} người (tự động theo hợp đồng)`}
-                    readOnly
-                    disabled
-                  />
-                </div>
-                <small className="text-muted d-block mt-1">
-                  Cập nhật tự động dựa trên thành viên trong hợp đồng
-                </small>
+                <input type="text"
+                  className="form-control bg-light border-0 py-2 text-muted"
+                  value={`${currentPeopleDisplay} người (tự động theo hợp đồng)`}
+                  readOnly disabled />
+                <small className="text-muted d-block mt-1">Cập nhật tự động dựa trên thành viên trong hợp đồng</small>
               </div>
             </div>
           </div>
@@ -372,8 +351,10 @@ const UpdateRoom = () => {
                   <label className="form-label small fw-bold text-muted">
                     <FaToggleOn className="me-1"/> TRẠNG THÁI
                   </label>
+                  {/* ── 5 trạng thái ── */}
                   <select name="Status" className="form-select bg-light border-0 py-2" value={formData.Status} onChange={handleInputChange}>
                     <option value="AVAILABLE">✓ Có sẵn</option>
+                    <option value="SHARED">🤝 Ở ghép</option>
                     <option value="DEPOSITED">💰 Đã cọc</option>
                     <option value="OCCUPIED">📌 Đã cho thuê</option>
                     <option value="MAINTENANCE">🔧 Bảo trì</option>
@@ -394,7 +375,6 @@ const UpdateRoom = () => {
                   </div>
                 </div>
 
-                {/* Hình ảnh */}
                 <div className="col-12 mt-3">
                   <label className="form-label small fw-bold text-muted">
                     <FaImage className="me-1"/> HÌNH ẢNH PHÒNG
@@ -421,12 +401,9 @@ const UpdateRoom = () => {
                             <div key={`existing-${media.mediaId || idx}`} className="col-6 col-md-4">
                               <div className="bg-white rounded-2 p-2 position-relative">
                                 <img src={getFullImageUrl(media.url)} alt={`Ảnh ${idx + 1}`}
-                                  className="img-fluid rounded-2"
-                                  style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
+                                  className="img-fluid rounded-2" style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
                                 <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1"
-                                  onClick={() => handleRemoveExistingMedia(idx)}>
-                                  <FaTimes size={10} />
-                                </button>
+                                  onClick={() => handleRemoveExistingMedia(idx)}><FaTimes size={10} /></button>
                                 <span className="badge bg-secondary position-absolute bottom-0 start-0 m-1 rounded-pill" style={{ fontSize: '9px' }}>Đã lưu</span>
                               </div>
                             </div>
@@ -443,12 +420,9 @@ const UpdateRoom = () => {
                             <div key={`new-${idx}`} className="col-6 col-md-4">
                               <div className="bg-white rounded-2 p-2 position-relative">
                                 <img src={media.preview} alt={`Mới ${idx + 1}`}
-                                  className="img-fluid rounded-2"
-                                  style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
+                                  className="img-fluid rounded-2" style={{ maxHeight: '80px', width: '100%', objectFit: 'cover' }} />
                                 <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-1"
-                                  onClick={() => handleRemoveNewMedia(idx)}>
-                                  <FaTimes size={10} />
-                                </button>
+                                  onClick={() => handleRemoveNewMedia(idx)}><FaTimes size={10} /></button>
                                 <span className="badge bg-primary position-absolute bottom-0 start-0 m-1 rounded-pill" style={{ fontSize: '9px' }}>Mới</span>
                                 <small className="text-muted d-block text-center mt-1" style={{ fontSize: '10px' }}>{media.file.name}</small>
                               </div>
@@ -466,7 +440,6 @@ const UpdateRoom = () => {
                   </div>
                 </div>
 
-                {/* Tóm tắt */}
                 <div className="col-12 mt-3">
                   <div className="alert alert-light border-1 border-secondary-subtle">
                     <small className="text-muted fw-bold d-block mb-2">TÓM LẠI</small>

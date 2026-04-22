@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @SecurityRequirement(name = "Manager Room Application")
 
 public class AuthController {
-  
+
     @Autowired
     private JWTUtil jwtUtil;
 
@@ -44,55 +44,53 @@ public class AuthController {
     @PostMapping("auth/login")
     public Map<String, Object> loginHandler(@RequestBody LoginCredentials credentials) {
         try {
-            // 1️⃣ Authenticate
+            // Authenticate
             authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                    credentials.getUserName(),
-                    credentials.getPassword()
-                )
-            );
-        } catch (Exception e) { 
+                    new UsernamePasswordAuthenticationToken(
+                            credentials.getUserName(),
+                            credentials.getPassword()));
+        } catch (Exception e) {
             // Nếu bị IllegalAccessException hoặc BadCredentialsException sẽ rơi vào đây
             throw new RuntimeException("Xác thực thất bại: " + e.getMessage());
         }
 
         // Lấy User để trả về data
         User user = userRepo.findByUserName(credentials.getUserName())
-            .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
         if (user.getIsActice() != null && !user.getIsActice()) {
-        throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
         }
-        //  Generate JWT
+        // Generate JWT
         String token = jwtUtil.generateToken(user.getUserName());
-        
+
         // Trả data cho Frontend (React)
         return Map.of(
-            "token", token,
-            "username", user.getUserName(),
-            "role", user.getRole().name() // Nên trả thêm Role để React phân quyền UI
+                "token", token,
+                "username", user.getUserName(),
+                "role", user.getRole().name() // Nên trả thêm Role để React phân quyền UI
         );
     }
+
     // @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/auth/create-account/{profileId}")
     public ResponseEntity<UserDTO> createAccount(
             @PathVariable Long profileId,
             @RequestBody LoginCredentials credentials) {
-        
+
         UserDTO newUser = userService.createAccountForProfile(
-            profileId, 
-            credentials.getUserName(), 
-            credentials.getPassword()
-        );
+                profileId,
+                credentials.getUserName(),
+                credentials.getPassword());
 
         return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
-     @PostMapping("/auth/generare-account/{profileId}")
+
+    @PostMapping("/auth/generare-account/{profileId}")
     public ResponseEntity<UserDTO> generateAccount(@PathVariable Long profileId) {
-            
+
         UserDTO newUser = userService.generateAccountForFile(
-            profileId
-        );
+                profileId);
         return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 }

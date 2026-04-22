@@ -12,7 +12,8 @@ public interface RoomService {
             String sortOrder,
             Long floorId,
             Long branchId,
-            String search
+            String search,
+            String status
     );
     
     RoomDTO getRoomById(Long roomId);

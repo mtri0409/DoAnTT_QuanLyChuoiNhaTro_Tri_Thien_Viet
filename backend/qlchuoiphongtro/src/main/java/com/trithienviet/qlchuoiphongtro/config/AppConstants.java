@@ -21,6 +21,7 @@ public class AppConstants {
             "/api/register/**",
             "/api/auth/login",
             "/api/auth/create-account/**",
+            "/api/public/**", // để như này có được không:))
             "/api/rooms",
             "/api/rooms/**",
             "/api/room-medias",
@@ -34,8 +35,9 @@ public class AppConstants {
             "/api/contracts",
             "/error"
     };
+    public static final String[] USER_URLS = { "/api/user/**" };
 
-    public static final String[] USER_URLS = { "/api/public/**" };
+    // public static final String[] USER_URLS = { "/api/public/**" };
 
     public static final String[] ADMIN_URLS = { "/api/admin/**" };
 
