@@ -34,7 +34,7 @@ public class InvoiceDetail {
     private Invoice invoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", nullable = false)
+    @JoinColumn(name = "service_id", nullable = true)
     private ServiceItem service;
 
     // null nếu dịch vụ cố định (rác, xe...), có giá trị nếu tính theo đồng hồ
@@ -52,4 +52,38 @@ public class InvoiceDetail {
     private BigDecimal subTotal; // quantity * unit_price
 
     private String status;
+
+    // ── REPAIR only: thông tin chi phí sửa chữa ──────────────────────────────
+
+    /**
+     * ID của bản ghi Expenses tương ứng.
+     * Cho phép trace back từ invoice detail → expense gốc.
+     */
+    @Column(name = "expense_id", nullable = true)
+    private Long expenseId;
+
+    /**
+     * Danh mục sửa chữa: "Sửa điện", "Sửa nước", "Thay thiết bị"…
+     * Snapshot tại thời điểm tạo, tránh mất dữ liệu nếu expense bị xóa.
+     */
+    @Column(name = "expense_category", nullable = true)
+    private String expenseCategory;
+
+    /**
+     * Mô tả / nguyên nhân gây ra chi phí sửa chữa.
+     */
+    @Column(name = "repair_description", columnDefinition = "TEXT", nullable = true)
+    private String description;
+
+    /**
+     * Tên thợ / đơn vị thực hiện sửa chữa.
+     */
+    @Column(name = "payee_name", nullable = true)
+    private String payeeName;
+
+    /**
+     * Link ảnh hoặc hóa đơn bằng chứng từ thợ.
+     */
+    @Column(name = "evidence_url", nullable = true)
+    private String evidenceUrl;
 }

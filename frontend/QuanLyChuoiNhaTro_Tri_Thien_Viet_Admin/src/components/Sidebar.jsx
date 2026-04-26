@@ -16,6 +16,7 @@ import {
   FaCogs,
   FaBell,
   FaRegNewspaper,
+  FaWrench,
 } from "react-icons/fa";
 
 const NAV_ITEMS = [
@@ -26,6 +27,8 @@ const NAV_ITEMS = [
   { title: "Tài khoản", path: "/users", icon: <FaUsers /> },
   { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator /> },
   { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar /> },
+  { title: "Báo hỏng", path: "/maintenance", icon: <FaWrench /> },
+  { title: "Chi phí", path: "/expenses", icon: <FaFileInvoiceDollar /> },
   { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding /> },
   { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed /> },
   { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack /> },

@@ -64,5 +64,11 @@ public class InvoiceDTO {
 
         private BigDecimal oldValue;
         private BigDecimal newValue;
+
+        private Long expenseId;
+        private String expenseCategory;
+        private String description;
+        private String payeeName;
+        private String evidenceUrl;
     }
 }

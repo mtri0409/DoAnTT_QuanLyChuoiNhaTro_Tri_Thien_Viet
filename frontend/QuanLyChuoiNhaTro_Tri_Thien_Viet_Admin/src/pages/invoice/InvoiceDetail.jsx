@@ -608,6 +608,8 @@ export default function InvoiceDetail() {
               >
                 {isDeposit ? (
                   <FaShieldAlt style={{ color: "#f59e0b", fontSize: 20 }} />
+                ) : invoice.type === "REPAIR" ? (
+                  <FaWrench style={{ color: "#ef4444", fontSize: 20 }} />
                 ) : (
                   <FaHome style={{ color: "#6366f1", fontSize: 20 }} />
                 )}
@@ -619,13 +621,19 @@ export default function InvoiceDetail() {
                     color: "#0f172a",
                   }}
                 >
-                  {isDeposit ? "HÓA ĐƠN TIỀN CỌC" : "HÓA ĐƠN TIỀN PHÒNG"}
+                  {isDeposit
+                    ? "HÓA ĐƠN TIỀN CỌC"
+                    : invoice.type === "REPAIR"
+                      ? "HÓA ĐƠN SỬA CHỮA"
+                      : "HÓA ĐƠN TIỀN PHÒNG"}
                 </h3>
               </div>
               <p style={{ margin: 0, color: "#64748b", fontSize: 13 }}>
                 {isDeposit
                   ? `Hợp đồng #${invoice.contractId} · ${invoice.roomName || ""}`
-                  : `Kỳ: Tháng ${invoice.periodMonth}/${invoice.periodYear}`}
+                  : invoice.type === "REPAIR"
+                    ? `Phòng ${invoice.roomName || "—"} · HĐ #${invoice.contractId}`
+                    : `Kỳ: Tháng ${invoice.periodMonth}/${invoice.periodYear}`}
               </p>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -877,8 +885,269 @@ export default function InvoiceDetail() {
                 </div>
               </div>
             </div>
+          ) : invoice.type === "REPAIR" ? (
+            /* ── REPAIR: bảng nguyên nhân + mô tả sửa chữa ─────────────── */
+            <>
+              <div style={{ padding: "20px 32px" }}>
+                {/* Banner nhắc nhở trạng thái DRAFT */}
+                {invoice.status === "DRAFT" && (
+                  <div
+                    style={{
+                      background: "#fffbeb",
+                      border: "1px solid #fde68a",
+                      borderRadius: 10,
+                      padding: "12px 16px",
+                      marginBottom: 18,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                    }}
+                  >
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 13,
+                          color: "#92400e",
+                          marginBottom: 3,
+                        }}
+                      >
+                        Hóa đơn đang ở trạng thái DRAFT — chưa gửi cho khách
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#78350f",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        Kiểm tra thông tin bên dưới. Khi xác nhận đúng, bấm{" "}
+                        <strong>"Gửi hóa đơn"</strong> để khách nhận được yêu
+                        cầu thanh toán.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1.5px solid #f1f5f9" }}>
+                      {[
+                        "Hạng mục sửa chữa",
+                        "Mô tả / Nguyên nhân",
+                        "Thợ thực hiện",
+                        "Số tiền",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "8px 12px",
+                            textAlign: h === "Số tiền" ? "right" : "left",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#94a3b8",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details.length > 0 ? (
+                      details.map((d, i) => (
+                        <tr
+                          key={d.invoiceDetailId ?? i}
+                          style={{
+                            borderBottom: "1px solid #f1f5f9",
+                            background: i % 2 === 0 ? "#fff" : "#fafbff",
+                          }}
+                        >
+                          <td style={{ padding: "14px 12px" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                              }}
+                            >
+                              <FaWrench
+                                style={{
+                                  color: "#ef4444",
+                                  fontSize: 15,
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <div>
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    color: "#0f172a",
+                                    fontSize: 14,
+                                  }}
+                                >
+                                  {d.expenseCategory || "Sửa chữa"}
+                                </div>
+                                {d.expenseId && (
+                                  <div
+                                    style={{ fontSize: 11, color: "#94a3b8" }}
+                                  >
+                                    Chi phí #{d.expenseId}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              padding: "14px 12px",
+                              color: "#475569",
+                              fontSize: 13,
+                              maxWidth: 220,
+                            }}
+                          >
+                            <div
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {d.description ? (
+                                d.description
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "#cbd5e1",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  Không có mô tả
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              padding: "14px 12px",
+                              color: "#64748b",
+                              fontSize: 13,
+                            }}
+                          >
+                            {d.payeeName || (
+                              <span style={{ color: "#cbd5e1" }}>—</span>
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              padding: "14px 12px",
+                              textAlign: "right",
+                              fontWeight: 700,
+                              color: "#0f172a",
+                            }}
+                          >
+                            {fmt(d.subTotal)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      /* invoiceDetails rỗng = backend chưa populate REPAIR details
+                         → hiện thông báo rõ ràng thay vì "Không có mô tả" */
+                      <tr>
+                        <td
+                          colSpan={4}
+                          style={{ padding: "28px 12px", textAlign: "center" }}
+                        >
+                          <div
+                            style={{
+                              color: "#f59e0b",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              marginBottom: 6,
+                            }}
+                          >
+                            ⚠️ Backend chưa trả về chi tiết hóa đơn sửa chữa
+                          </div>
+                          <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                            Service cần populate <code>expenseCategory</code>,{" "}
+                            <code>description</code>, <code>payeeName</code> vào{" "}
+                            <code>invoiceDetails</code> khi map Invoice REPAIR.
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Total block REPAIR */}
+              <div
+                style={{
+                  padding: "20px 32px",
+                  borderTop: "2px solid #f1f5f9",
+                  background: "#fafbff",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ minWidth: 300 }}>
+                    {details.length > 0 && (
+                      <SummaryRow
+                        label="Tổng chi phí sửa chữa"
+                        value={fmt(detailsSum || computedTotal)}
+                      />
+                    )}
+                    <div
+                      style={{
+                        height: 1,
+                        background: "#e2e8f0",
+                        margin: "8px 0",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "14px 20px",
+                        background: "#7f1d1d",
+                        borderRadius: 10,
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: "#fca5a5",
+                          fontWeight: 600,
+                          fontSize: 14,
+                        }}
+                      >
+                        TỔNG SỬA CHỮA
+                      </span>
+                      <span
+                        style={{ color: "#fff", fontWeight: 900, fontSize: 22 }}
+                      >
+                        {fmt(computedTotal)}
+                      </span>
+                    </div>
+                    {invoice.status === "PENDING" && invoice.dueDate && (
+                      <p
+                        style={{
+                          margin: "10px 0 0",
+                          textAlign: "right",
+                          fontSize: 12,
+                          color: "#f59e0b",
+                        }}
+                      >
+                        <FaCalendarAlt style={{ marginRight: 4 }} />
+                        Hạn thanh toán: {fmtDate(invoice.dueDate)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
-            /* ── MONTHLY / REPAIR: bảng chi tiết dịch vụ gốc ─────────────── */
+            /* ── MONTHLY: bảng chi tiết dịch vụ gốc ─────────────── */
             <>
               <div style={{ padding: "20px 32px" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
