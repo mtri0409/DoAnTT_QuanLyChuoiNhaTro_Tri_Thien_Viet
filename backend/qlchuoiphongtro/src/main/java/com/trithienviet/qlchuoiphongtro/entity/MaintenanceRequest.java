@@ -1,7 +1,10 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,10 +21,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter 
-@AllArgsConstructor 
+@Setter
+@AllArgsConstructor
 @NoArgsConstructor
-@Entity @Table(name="maintenance_requests")
+@Entity
+@Table(name = "maintenance_requests")
 public class MaintenanceRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,4 +50,10 @@ public class MaintenanceRequest {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "maintenanceRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MaintenanceRequestImage> images = new ArrayList<>();
 }

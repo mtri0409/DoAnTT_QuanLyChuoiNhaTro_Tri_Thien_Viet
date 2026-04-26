@@ -75,7 +75,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         Invoice invoice = buildDraftInvoice(contract, month, year);
         invoiceRepo.save(invoice);
 
-
         return toDTO(invoice);
     }
 
@@ -94,7 +93,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             Invoice invoice = buildDraftInvoice(contract, month, year);
             invoiceRepo.save(invoice);
-      
+
             result.add(toDTO(invoice));
         }
         return result;
@@ -284,14 +283,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         return toDTO(invoice);
     }
+
     @Override
     @Transactional
     public void remindInvoice() {
         LocalDate today = LocalDate.now();
-        
+
         List<Invoice> overdueInvoices = invoiceRepo.findOverdueInvoices(STATUS_PENDING, today);
 
-       
         if (overdueInvoices.isEmpty()) {
             log.info("Không có hóa đơn nào quá hạn hôm nay: {}", today);
             return;
@@ -299,12 +298,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         for (Invoice invoice : overdueInvoices) {
             try {
-             log.info(">> EMAIL : ",invoice.getContract().getRepresentative().getEmail());
-                log.info("Đã gửi nhắc nợ cho hóa đơn: {} - Khách hàng: {}", 
+                log.info(">> EMAIL : ", invoice.getContract().getRepresentative().getEmail());
+                log.info("Đã gửi nhắc nợ cho hóa đơn: {} - Khách hàng: {}",
                         invoice.getInvoiceId(), invoice.getContract().getRepresentative().getFullName());
-                
-            notificationHelper.sendOVerBillToAllMembers(invoice);
-            
+
+                notificationHelper.sendOVerBillToAllMembers(invoice);
+
             } catch (Exception e) {
                 log.error("Lỗi khi gửi thông báo cho hóa đơn {}: {}", invoice.getInvoiceId(), e.getMessage());
             }
@@ -452,7 +451,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         // DEPOSIT: chỉ chuyển sang PENDING, không tính lại (totalAmount =
         // deposit.amount)
-        if (!TYPE_DEPOSIT.equals(invoice.getType())) {
+        if (!TYPE_DEPOSIT.equals(invoice.getType()) && !"REPAIR".equals(invoice.getType())) {
             recalculateTotal(invoice);
         }
 
@@ -463,18 +462,17 @@ public class InvoiceServiceImpl implements InvoiceService {
         return toDTO(invoice);
     }
 
-
-   @Override
+    @Override
     @Transactional // Đảm bảo tính toàn vẹn dữ liệu khi xử lý hàng loạt
     public List<InvoiceDTO> sendAllInvoices(Integer month, Integer year) {
-        // 1. Tìm hóa đơn DRAFT theo Tháng và Năm (Nếu month/year null thì lấy toàn bộ DRAFT)
+        // 1. Tìm hóa đơn DRAFT theo Tháng và Năm (Nếu month/year null thì lấy toàn bộ
+        // DRAFT)
         List<Invoice> draftInvoices;
-        
+
         if (month != null && year != null) {
             // Tri cần khai báo hàm này trong Repo (mình sẽ chỉ ở mục 3)
             draftInvoices = invoiceRepo.findByStatusAndPeriodMonthAndPeriodYear(
-                STATUS_DRAFT, month, year
-            );
+                    STATUS_DRAFT, month, year);
         } else {
             draftInvoices = invoiceRepo.findByStatus(STATUS_DRAFT);
         }
@@ -487,7 +485,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         for (Invoice invoice : draftInvoices) {
             try {
-                // 2. Tận dụng hàm sendInvoice lẻ (đã có logic set PENDING, set DueDate, recalculate)
+                // 2. Tận dụng hàm sendInvoice lẻ (đã có logic set PENDING, set DueDate,
+                // recalculate)
                 InvoiceDTO dto = sendInvoice(invoice.getInvoiceId());
                 notificationHelper.sendNotificationNewInvoid(invoice);
                 updatedInvoices.add(dto);
@@ -517,6 +516,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (TYPE_DEPOSIT.equals(invoice.getType())) {
             throw new RuntimeException("DEPOSIT invoices do not have meter-based details to recalculate");
         }
+        if ("REPAIR".equals(invoice.getType())) {
+            throw new RuntimeException("REPAIR invoices do not support recalculation");
+        }
 
         if (invoice.getDetails() != null) {
             for (InvoiceDetail detail : invoice.getDetails()) {
@@ -540,7 +542,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepo.save(invoice);
         return toDTO(invoice);
     }
-
 
     // ────────────────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
@@ -619,7 +620,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     private Invoice findInvoice(Long id) {
-        return invoiceRepo.findById(id)
+        return invoiceRepo.findByIdWithDetails(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found: " + id));
     }
 
@@ -687,6 +688,12 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .meterReadingId(mr != null ? mr.getReadingId() : null)
                 .oldValue(mr != null ? mr.getOldValue() : null)
                 .newValue(mr != null ? mr.getNewValue() : null)
+                // ── REPAIR fields (null cho MONTHLY, có giá trị cho REPAIR) ──
+                .expenseId(d.getExpenseId())
+                .expenseCategory(d.getExpenseCategory())
+                .description(d.getDescription())
+                .payeeName(d.getPayeeName())
+                .evidenceUrl(d.getEvidenceUrl())
                 .build();
     }
 

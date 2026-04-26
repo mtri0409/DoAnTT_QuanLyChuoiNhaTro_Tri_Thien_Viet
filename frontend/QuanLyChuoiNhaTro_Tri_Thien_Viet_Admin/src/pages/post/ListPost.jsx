@@ -63,7 +63,7 @@ const ListPost = () => {
       );
       setData(response);
     } catch (err) {
-      console.error("Lỗi tải bài đăng:", err);
+      console.error("Lỗi tải bài đăng:", err.response);
     } finally {
       setLoading(false);
     }

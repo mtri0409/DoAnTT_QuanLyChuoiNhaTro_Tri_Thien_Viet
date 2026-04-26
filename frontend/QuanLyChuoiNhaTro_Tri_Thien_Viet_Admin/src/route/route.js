@@ -44,6 +44,11 @@ import InvoiceDetail from "../pages/invoice/InvoiceDetail";
 import ListPost from "../pages/post/ListPost";
 import PostDetail from "../pages/post/PostDetail";
 import FastContract from "../pages/contract/FastContract";
+import ListMaintenance from "../pages/maintenance/ListMaintenance";
+import MaintenanceDetail from "../pages/maintenance/MaintenanceDetail";
+import ListExpenses from "../pages/expenses/ListExpenses";
+import DetailExpense from "../pages/expenses/DetailExpense";
+import CreateExpense from "../pages/expenses/CreateExpense";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -104,5 +109,13 @@ const AdminRoute = [
 
   { path: "/notifications", component: ListNotification },
   { path: "/notifications/create", component: CreateNotification },
+
+  //maintenance
+  { path: "/maintenance", component: ListMaintenance },
+  { path: "/maintenance/:requestId/detail", component: MaintenanceDetail },
+  //expense
+  { path: "/expenses", component: ListExpenses },
+  { path: "/expenses/create", component: CreateExpense },
+  { path: "/expenses/:expenseId/detail", component: DetailExpense },
 ];
 export default AdminRoute;
