@@ -157,8 +157,8 @@ const FastContract = () => {
           monthlyRent: data.price ?? "",
           depositAmount: data.depositAmount ?? "",
         }));
-      } catch {
-        // ignore
+      } catch (e) {
+        console.log("Error with :",e.response)
       } finally {
         setLoadingRoom(false);
       }
@@ -364,6 +364,7 @@ const FastContract = () => {
       navigate(`/contracts/${contractId}/detail`);
     } catch (err) {
       const res = err.response;
+      console.log(res);
       if (res?.status === 400) {
         alert(res.data?.message || "Dữ liệu không hợp lệ.");
       } else if (res?.status === 409) {
