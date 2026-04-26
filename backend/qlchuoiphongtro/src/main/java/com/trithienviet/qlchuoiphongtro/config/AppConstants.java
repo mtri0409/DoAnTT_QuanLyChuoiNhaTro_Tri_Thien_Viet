@@ -32,6 +32,7 @@ public class AppConstants {
             "/api/amenities",
             "/api/amenities/**",
             "/api/contracts",
+            "/api/ocr/**",
             "/error"
     };
 
