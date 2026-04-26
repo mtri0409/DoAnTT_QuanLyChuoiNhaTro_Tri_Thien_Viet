@@ -281,6 +281,7 @@ const ListMaintenance = () => {
       .then((res) => {
         // Hỗ trợ: PageResponse { content: [...] }, array thẳng, hoặc { data: [...] }
         let allFloors = [];
+        console.log(res);
         if (Array.isArray(res)) allFloors = res;
         else if (Array.isArray(res?.content)) allFloors = res.content;
         else if (Array.isArray(res?.data)) allFloors = res.data;
@@ -321,7 +322,7 @@ const ListMaintenance = () => {
       const res = await apiMaintenance.getAllRequests(params);
       setData(res);
     } catch (err) {
-      console.error("Lỗi tải danh sách:", err);
+      console.error("Lỗi tải danh sách:", err.response);
     } finally {
       setLoading(false);
     }
@@ -347,7 +348,9 @@ const ListMaintenance = () => {
           COMPLETED: results[2].totalElements || 0,
           CANCELLED: results[3].totalElements || 0,
         });
-      } catch {}
+      } catch(e) {
+        console.log("Error :" , e);
+      }
     };
     fetchSummary();
   }, []);
