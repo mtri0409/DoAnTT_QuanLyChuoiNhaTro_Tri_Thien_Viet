@@ -25,6 +25,8 @@ public class AppConstants {
             "/api/rooms/**",
             "/api/room-medias",
             "/images/**",
+            "/api/notification/send-manual",
+            "/api/profiles/**",
             "/api/floors",
             "/api/floors/**",
             "/api/branches",

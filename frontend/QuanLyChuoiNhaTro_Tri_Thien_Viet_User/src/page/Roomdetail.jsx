@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import apiRoom from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiRoom';
-import apiFloor from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiFloor';
-import apiBranches from '../../../QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin/src/api/apiBranches';
+import userService from '../services/userService';
 import RoomGridCard from '../components/RoomGridCard';
-
-const CONTACT_PHONE = '0385018194';
-const ZALO_PHONE    = '0385018194';
 
 const amenityIconMap = {
   wifi: '📶', 'wi-fi': '📶', internet: '📶',
@@ -34,6 +29,214 @@ const statusMap = {
 
 const fmt = (p) => (p ? Number(p).toLocaleString('vi-VN') + 'đ' : '—');
 
+function InquiryModal({ roomName, onClose }) {
+  const [form, setForm]       = useState({ name: '', phone: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [done, setDone]       = useState(false);
+  const [error, setError]     = useState('');
+
+  const handleChange = (e) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate bắt buộc
+    if (!form.name.trim() || !form.phone.trim()) {
+      setError('Vui lòng nhập họ tên và số điện thoại.');
+      return;
+    }
+
+    const content = [
+      `Họ tên   : ${form.name.trim()}`,
+      `SĐT      : ${form.phone.trim()}`,
+      form.email.trim() ? `Email    : ${form.email.trim()}` : null,
+      `Nội dung : ${form.message.trim() || '(Không có nội dung thêm)'}`,
+    ].filter(Boolean).join('\n');
+
+    // payload gửi lên
+    const payload = {
+      title  : `Khách hàng hỏi về phòng ${roomName || 'phòng'}`,
+      content: content,
+      type   : 'GENERAL',
+    };
+
+    try {
+      setSending(true);
+      await userService.createManualNotification(0, 0, payload);
+      setDone(true);
+    } catch (err) {
+      setError('Gửi thất bại, vui lòng thử lại sau.');
+      console.error(err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const overlayClick = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div
+      onClick={overlayClick}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+      }}
+    >
+      <div style={{
+        background: '#fff', borderRadius: 24, width: '100%', maxWidth: 480,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
+        overflow: 'hidden', animation: 'popIn .22s cubic-bezier(.34,1.56,.64,1)',
+      }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+          padding: '22px 28px 18px',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+              💬 Hỏi thông tin phòng
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
+              {roomName
+                ? <>Phòng <strong style={{ color: '#fff' }}>{roomName}</strong></>
+                : 'Để lại thông tin, chúng tôi sẽ liên hệ lại'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'rgba(255,255,255,0.18)', border: 'none',
+            borderRadius: '50%', width: 32, height: 32,
+            color: '#fff', fontSize: 18, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, marginLeft: 12,
+          }}>×</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '24px 28px 28px' }}>
+          {done ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
+              <div style={{ fontWeight: 800, fontSize: 18, color: '#0f172a', marginBottom: 8 }}>
+                Gửi thành công!
+              </div>
+              <div style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+                Chúng tôi đã nhận được yêu cầu của bạn.<br />
+                Quản lý sẽ liên hệ lại sớm nhất có thể.
+              </div>
+              <button onClick={onClose} style={{
+                background: '#3b82f6', color: '#fff', border: 'none',
+                borderRadius: 12, padding: '11px 32px',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: 15, cursor: 'pointer',
+              }}>Đóng</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={styles.label}>Họ tên <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input
+                    name="name" value={form.name} onChange={handleChange}
+                    placeholder="Nguyễn Văn A"
+                    style={styles.input}
+                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
+                <div>
+                  <label style={styles.label}>Số điện thoại <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input
+                    name="phone" value={form.phone} onChange={handleChange}
+                    placeholder="0912 345 678" type="tel"
+                    style={styles.input}
+                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.label}>Email <span style={{ color: '#94a3b8', fontWeight: 400 }}>(tùy chọn)</span></label>
+                <input
+                  name="email" value={form.email} onChange={handleChange}
+                  placeholder="example@email.com" type="email"
+                  style={styles.input}
+                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                />
+              </div>
+
+              <div>
+                <label style={styles.label}>Nội dung <span style={{ color: '#94a3b8', fontWeight: 400 }}>(tùy chọn)</span></label>
+                <textarea
+                  name="message" value={form.message} onChange={handleChange}
+                  rows={3}
+                  placeholder="Bạn muốn hỏi gì về phòng này? VD: giờ giấc, nội quy, có thể xem phòng không..."
+                  style={{ ...styles.input, resize: 'vertical', minHeight: 80, lineHeight: 1.6 }}
+                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                />
+              </div>
+
+              {error && (
+                <div style={{
+                  background: '#fef2f2', border: '1px solid #fecaca',
+                  borderRadius: 10, padding: '10px 14px',
+                  color: '#dc2626', fontSize: 13, fontWeight: 600,
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button type="button" onClick={onClose} style={{
+                  flex: 1, background: '#f1f5f9', color: '#475569',
+                  border: '1.5px solid #e2e8f0', borderRadius: 12,
+                  padding: '12px 0', fontFamily: 'inherit',
+                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                }}>
+                  Hủy
+                </button>
+                <button type="submit" disabled={sending} style={{
+                  flex: 2,
+                  background: sending ? '#93c5fd' : 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                  color: '#fff', border: 'none', borderRadius: 12,
+                  padding: '12px 0', fontFamily: 'inherit',
+                  fontWeight: 700, fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  transition: 'opacity .15s',
+                }}>
+                  {sending
+                    ? <><span style={styles.spinner} /> Đang gửi...</>
+                    : '📨 Gửi yêu cầu'}
+                </button>
+              </div>
+
+              <div style={{ textAlign: 'center', fontSize: 11.5, color: '#94a3b8', marginTop: -4 }}>
+                Thông tin của bạn được bảo mật và chỉ dùng để liên hệ lại
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(.92) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function RoomDetail() {
   const { roomId } = useParams();
   const navigate   = useNavigate();
@@ -47,13 +250,14 @@ export default function RoomDetail() {
   const [relatedRooms,    setRelatedRooms]    = useState([]);
   const [loadingRelated,  setLoadingRelated]  = useState(false);
 
-  // ── Branch / Floor info ──
   const [branchName,  setBranchName]  = useState('');
   const [floorNumber, setFloorNumber] = useState('');
+  const [managerPhone, setManagerPhone] = useState('0385018194');
+
+  const [showInquiry, setShowInquiry] = useState(false);
 
   const abortRef = useRef(false);
 
-  // ── Fetch room ──
   useEffect(() => {
     if (!roomId) { setLoading(false); return; }
     abortRef.current = false;
@@ -61,7 +265,7 @@ export default function RoomDetail() {
     const fetchRoom = async () => {
       try {
         setLoading(true);
-        const res = await apiRoom.getRoomById(roomId);
+        const res = await userService.getRoomById(roomId);
         if (abortRef.current) return;
 
         const raw  = res.data || res;
@@ -104,8 +308,8 @@ export default function RoomDetail() {
         setLoadingRelated(true);
 
         const [floorRes, branchRes] = await Promise.all([
-          apiFloor.getAllFloors(),
-          apiBranches.getAllBranches(1, 200),
+          userService.getAllFloors(),
+          userService.getAllBranches(1, 200),
         ]);
 
         if (cancelled) return;
@@ -135,11 +339,22 @@ export default function RoomDetail() {
 
         setBranchName(resolvedBranchName);
 
+        if (foundBranch?.managerId) {
+          try {
+            const profileRes = await userService.getProfileById(foundBranch.managerId);
+            const profileData = profileRes.data || profileRes;
+            const phone = profileData?.phone ?? profileData?.result?.phone;
+            if (phone) setManagerPhone(phone);
+          } catch (err) {
+            console.error('Không lấy được thông tin Profile quản lý:', err);
+          }
+        }
+
         const floorIdsInSameBranch = allFloors
           .filter(f => f.branchId === targetBranchId || String(f.branchId) === String(targetBranchId))
           .map(f => f.floorId);
 
-        const roomRes  = await apiRoom.getAllRooms(0, 50);
+        const roomRes  = await userService.getAllRooms(0, 50);
         if (cancelled) return;
 
         const roomRaw  = roomRes.data || roomRes;
@@ -182,12 +397,12 @@ export default function RoomDetail() {
   const images = getImages();
 
   const copyPhone = () => {
-    navigator.clipboard.writeText(CONTACT_PHONE.replace(/\s/g, ''));
+    if (!managerPhone) return;
+    navigator.clipboard.writeText(managerPhone.replace(/\s/g, ''));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Loading skeleton ──
   if (loading) return (
     <div style={styles.pageWrap}>
       <div style={{ maxWidth: 1120, margin: '0 auto' }}>
@@ -206,7 +421,6 @@ export default function RoomDetail() {
     </div>
   );
 
-  // ── Error ──
   if (error) return (
     <div style={{ ...styles.pageWrap, textAlign: 'center', paddingTop: 100 }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>😕</div>
@@ -218,22 +432,28 @@ export default function RoomDetail() {
 
   if (!room) return null;
 
-  const statusKey    = (room.Status ?? room.status ?? '').toLowerCase();
-  const statusInfo   = statusMap[statusKey] ?? null;
-  const maxPeople    = room.maxPeople ?? room.maxOccupants ?? null;
+  const statusKey     = (room.Status ?? room.status ?? '').toLowerCase();
+  const statusInfo    = statusMap[statusKey] ?? null;
+  const maxPeople     = room.maxPeople ?? room.maxOccupants ?? null;
   const currentPeople = room.currentPeople ?? room.currentOccupants ?? null;
-  const roomArea     = room.area ?? room.roomArea ?? null;
-  const roomPrice    = room.price ?? room.roomPrice ?? null;
-  const roomDeposit  = room.depositAmount ?? room.deposit ?? null;
-  const roomDesc     = room.description ?? '';
-  const roomName     = room.roomName ?? room.name ?? roomId;
-  const amenities    = room.amenities ?? [];
+  const roomArea      = room.area ?? room.roomArea ?? null;
+  const roomPrice     = room.price ?? room.roomPrice ?? null;
+  const roomDeposit   = room.depositAmount ?? room.deposit ?? null;
+  const roomDesc      = room.description ?? '';
+  const roomName      = room.roomName ?? room.name ?? roomId;
+  const amenities     = room.amenities ?? [];
 
   return (
     <div style={styles.pageWrap}>
+      {showInquiry && (
+        <InquiryModal
+          roomName={roomName}
+          onClose={() => setShowInquiry(false)}
+        />
+      )}
+
       <div style={{ maxWidth: 1120, margin: '0 auto' }}>
 
-        {/* ── Breadcrumb / Back ── */}
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
             onClick={() => navigate(-1)}
@@ -267,7 +487,6 @@ export default function RoomDetail() {
           {/* ── LEFT ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Gallery */}
             <div style={styles.card}>
               <div style={{ position: 'relative', height: 440, borderRadius: 16, overflow: 'hidden', background: '#e2e8f0' }}>
                 <img
@@ -321,7 +540,6 @@ export default function RoomDetail() {
               )}
             </div>
 
-            {/* ── Giá + Tiền cọc ── */}
             <div style={{
               ...styles.card,
               background: 'linear-gradient(135deg, #eff6ff 0%, #f0f4ff 100%)',
@@ -338,13 +556,11 @@ export default function RoomDetail() {
                   </div>
                 </div>
 
-                {/* ── THÊM: Hiển thị tiền cọc nổi bật hơn ── */}
                 {roomDeposit && (
                   <div style={{
-                    background: '#fff', borderRadius: 14, padding: '14px 20px',
-                    border: '1.5px solid #fde68a',
-                    // eslint-disable-next-line no-dupe-keys
                     background: 'linear-gradient(135deg, #fffbeb 0%, #fefce8 100%)',
+                    borderRadius: 14, padding: '14px 20px',
+                    border: '1.5px solid #fde68a',
                     textAlign: 'center', minWidth: 140,
                   }}>
                     <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 4 }}>
@@ -361,16 +577,14 @@ export default function RoomDetail() {
               </div>
             </div>
 
-            {/* Stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-              {branchName  && <StatCard emoji="🏢" label="Chi nhánh"  value={branchName} />}
-              {floorNumber && <StatCard emoji="🏗️" label="Tầng"       value={`Tầng ${floorNumber}`} />}
-              {roomArea    && <StatCard emoji="📐" label="Diện tích"   value={`${roomArea} m²`} />}
+              {branchName   && <StatCard emoji="🏢" label="Chi nhánh"  value={branchName} />}
+              {floorNumber  && <StatCard emoji="🏗️" label="Tầng"       value={`Tầng ${floorNumber}`} />}
+              {roomArea     && <StatCard emoji="📐" label="Diện tích"  value={`${roomArea} m²`} />}
               {maxPeople    != null && <StatCard emoji="👥" label="Tối đa"    value={`${maxPeople} người`} />}
               {currentPeople != null && <StatCard emoji="🧑" label="Hiện tại" value={`${currentPeople} người`} />}
             </div>
 
-            {/* Description */}
             {roomDesc && (
               <div style={styles.card}>
                 <div style={styles.sectionHeader}>
@@ -383,7 +597,6 @@ export default function RoomDetail() {
               </div>
             )}
 
-            {/* Amenities */}
             {amenities.length > 0 && (
               <div style={styles.card}>
                 <div style={styles.sectionHeader}>
@@ -423,7 +636,6 @@ export default function RoomDetail() {
           {/* ── RIGHT sidebar ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 24 }}>
 
-            {/* Contact card */}
             <div style={{
               borderRadius: 20, overflow: 'hidden',
               background: 'linear-gradient(145deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
@@ -434,11 +646,11 @@ export default function RoomDetail() {
               <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 24 }}>Phản hồi nhanh trong ngày</div>
 
               <div style={{ marginBottom: 18 }}>
-                <div style={styles.contactLabel}>SỐ ĐIỆN THOẠI</div>
+                <div style={styles.contactLabel}>SỐ ĐIỆN THOẠI QUẢN LÝ</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 16px', backdropFilter: 'blur(8px)' }}>
-                  <a href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`}
+                  <a href={`tel:${managerPhone.replace(/\s/g, '')}`}
                     style={{ color: '#fff', fontWeight: 700, fontSize: 18, flex: 1, textDecoration: 'none', letterSpacing: '0.5px' }}>
-                    📞 {CONTACT_PHONE}
+                    📞 {managerPhone}
                   </a>
                   <button onClick={copyPhone} style={{
                     background: copied ? 'rgba(134,239,172,0.3)' : 'rgba(255,255,255,0.18)',
@@ -450,22 +662,43 @@ export default function RoomDetail() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ marginBottom: 14 }}>
                 <div style={styles.contactLabel}>NHẮN TIN ZALO</div>
-                <a href={`https://zalo.me/${ZALO_PHONE}`} target="_blank" rel="noopener noreferrer"
+                <a href={`https://zalo.me/${managerPhone.replace(/\s/g, '')}`} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', color: '#0068ff', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   💬 Chat Zalo ngay
                 </a>
-                <div style={{ marginTop: 8, color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'center' }}>
-                  Hỗ trợ 7:00 – 22:00 • T2 – CN
-                </div>
+              </div>
+
+              <div>
+                <div style={styles.contactLabel}>GỬI YÊU CẦU TƯ VẤN</div>
+                <button
+                  onClick={() => setShowInquiry(true)}
+                  style={{
+                    width: '100%', background: 'rgba(255,255,255,0.15)',
+                    border: '1.5px solid rgba(255,255,255,0.4)',
+                    borderRadius: 12, padding: '13px 0',
+                    color: '#fff', fontFamily: 'inherit',
+                    fontWeight: 700, fontSize: 15, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'background .15s, border-color .15s',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.25)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.7)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                >
+                  ✉️ Hỏi thông tin phòng
+                </button>
+              </div>
+
+              <div style={{ marginTop: 14, color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'center' }}>
+                Hỗ trợ 7:00 – 22:00 • T2 – CN
               </div>
             </div>
 
-            {/* Quick summary */}
             <div style={{ ...styles.card, padding: '20px 22px' }}>
               <div style={{ ...styles.sectionHeader, marginBottom: 14 }}>
                 <span style={styles.sectionIcon}>📋</span>
@@ -479,7 +712,6 @@ export default function RoomDetail() {
                 {maxPeople    != null && <SummaryRow label="Tối đa"    value={`${maxPeople} người`} />}
                 {currentPeople != null && <SummaryRow label="Hiện tại" value={`${currentPeople} người`} />}
                 <SummaryRow label="Giá thuê" value={fmt(roomPrice)} highlight />
-                {/* ── THÊM: tiền cọc trong tóm tắt ── */}
                 {roomDeposit && <SummaryRow label="💰 Tiền cọc" value={fmt(roomDeposit)} depositHighlight />}
                 {statusInfo && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: '1px solid #f1f5f9' }}>
@@ -492,7 +724,6 @@ export default function RoomDetail() {
               </div>
             </div>
 
-            {/* Why us */}
             <div style={{ ...styles.card, background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)', border: '1px solid #fde68a', padding: '20px 22px' }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 12 }}>💡 Tại sao chọn chúng tôi?</div>
               {['Giá cả minh bạch', 'Hỗ trợ 24/7', 'Không phí trung gian', 'Xem phòng miễn phí'].map((t, i) => (
@@ -505,7 +736,6 @@ export default function RoomDetail() {
           </div>
         </div>
 
-        {/* ── Related rooms ── */}
         {loadingRelated && (
           <div style={{ marginTop: 48, marginBottom: 40 }}>
             <div style={{ ...styles.skeleton, height: 28, width: 300, marginBottom: 20 }} />
@@ -524,7 +754,8 @@ export default function RoomDetail() {
                   {relatedRooms.length} phòng khác tại <span style={{ color: '#1d4ed8', fontWeight: 600 }}>{branchName}</span>
                 </p>
               </div>
-              <button onClick={() => navigate(-1)} style={{ background: '#f0f4ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              <button onClick={() => navigate(-1)}
+                style={{ background: '#f0f4ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#f0f4ff'; }}
               >
@@ -544,13 +775,11 @@ export default function RoomDetail() {
             <div style={{ fontSize: 13, color: '#94a3b8' }}>Hãy xem thêm các phòng ở chi nhánh khác</div>
           </div>
         )}
-
       </div>
     </div>
   );
 }
 
-// ── Sub-components ──
 function StatCard({ emoji, label, value }) {
   return (
     <div
@@ -624,11 +853,31 @@ const styles = {
     boxShadow: '0 2px 12px rgba(0,0,0,0.12)', zIndex: 2,
     transition: 'transform 0.15s, background 0.15s', color: '#334155',
   }),
+  label: {
+    display: 'block', fontSize: 12, fontWeight: 700,
+    color: '#475569', marginBottom: 6, letterSpacing: '0.3px',
+  },
+  input: {
+    width: '100%', boxSizing: 'border-box',
+    background: '#f8fafc', border: '1.5px solid #e2e8f0',
+    borderRadius: 10, padding: '10px 13px',
+    fontFamily: 'inherit', fontSize: 14, color: '#0f172a',
+    outline: 'none', transition: 'border-color .15s',
+  },
+  spinner: {
+    display: 'inline-block', width: 14, height: 14,
+    border: '2px solid rgba(255,255,255,0.4)',
+    borderTopColor: '#fff', borderRadius: '50%',
+    animation: 'spin .6s linear infinite',
+  },
 };
 
 if (typeof document !== 'undefined' && !document.getElementById('room-detail-styles')) {
   const styleEl = document.createElement('style');
   styleEl.id = 'room-detail-styles';
-  styleEl.textContent = `@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`;
+  styleEl.textContent = `
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    @keyframes spin    { to { transform: rotate(360deg); } }
+  `;
   document.head.appendChild(styleEl);
 }

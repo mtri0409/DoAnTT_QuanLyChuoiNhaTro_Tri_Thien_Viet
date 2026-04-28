@@ -10,7 +10,6 @@ import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
 import Pagination from '../../components/Pagination';
 
-/* ─── Google Font ──────────────────────────────────────────── */
 const FontLink = () => (
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -18,7 +17,6 @@ const FontLink = () => (
   />
 );
 
-/* ─── Inline styles ────────────────────────────────────────── */
 const css = `
   .rl-root { font-family: 'Plus Jakarta Sans', sans-serif; background: #f4f6fb; min-height: 100vh; }
   .rl-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }

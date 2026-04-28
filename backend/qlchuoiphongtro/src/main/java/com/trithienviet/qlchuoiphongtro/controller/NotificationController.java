@@ -34,7 +34,7 @@ public class NotificationController {
         return new ResponseEntity<>(notificationResponse, HttpStatus.OK);     
     }
     // 1. API dành cho Admin gửi thông báo thủ công
-    @PostMapping("/admin/notification/send-manual")
+    @PostMapping("/notification/send-manual")
     public ResponseEntity<String> sendManualNotification(
             @RequestParam(name = "profileId", defaultValue = "0") Long profileId,
             @RequestParam(name = "branchId", defaultValue = "0") Integer branchId,

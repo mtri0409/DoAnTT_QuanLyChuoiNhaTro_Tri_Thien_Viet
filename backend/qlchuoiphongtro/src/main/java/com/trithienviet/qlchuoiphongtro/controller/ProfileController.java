@@ -130,7 +130,7 @@ public class ProfileController {
     public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
         return ResponseEntity.ok(profileService.getProfilesWithoutAccount());
     }
-    @GetMapping("/public/profiles/{profileId}")
+    @GetMapping("/profiles/{profileId}")
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
 
         ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
