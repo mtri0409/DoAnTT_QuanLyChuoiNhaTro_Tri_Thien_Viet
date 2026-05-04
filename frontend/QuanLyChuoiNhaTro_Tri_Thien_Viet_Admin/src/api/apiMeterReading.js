@@ -47,6 +47,17 @@ const apiMeterReading = {
   // Xóa bản ghi
   delete: (readingId) =>
     axiosInstance.delete(`/admin/meter-readings/${readingId}`),
-};
+
+  ocrWater: (imageFile) => {
+    const formData = new FormData();
+    formData.append('file', imageFile); // Tên field phải đúng với backend
+    
+    return axiosInstance.post(`/admin/ocr/water`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  };
 
 export default apiMeterReading;
