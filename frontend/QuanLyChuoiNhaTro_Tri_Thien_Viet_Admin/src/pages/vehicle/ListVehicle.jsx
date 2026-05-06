@@ -7,6 +7,8 @@ import apiVehicle from '../../api/apiVehicle';
 import Pagination from '../../components/Pagination';
 import { useNavigate, Link } from 'react-router-dom';
 import apiBranches from '../../api/apiBranches';
+import { confirmAction } from '../../utils/swalUtils';
+import { toast } from 'react-toastify';
 
 const ListVehicle = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
@@ -62,18 +64,23 @@ const ListVehicle = () => {
   }, []);
   // 2. Hàm Xóa xe
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa thông tin xe này?")) {
+    const result = await confirmAction({
+    title: 'Xóa xe',
+    text: `Bạn có chắc chắn muốn xóa thông tin xe này?`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         setLoading(true);
         await apiVehicle.deleteVehicle(id);
-        alert("Xóa xe thành công!");
+        toast.success("Xóa xe thành công!");
         if (data.content.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         } else {
           fetchVehicles();
         }
       } catch (err) {
-        alert(err.response?.data?.message || "Không thể xóa xe này!");
+        toast.error(err.response?.data?.message || "Không thể xóa xe này!");
       } finally {
         setLoading(false);
       }
@@ -95,16 +102,25 @@ const ListVehicle = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold text-dark mb-1">QUẢN LÝ XE GỬI</h4>
-          <p className="text-muted small mb-0">Danh sách phương tiện của khách thuê</p>
-        </div>
-        <Link to="/vehicle/create" className="btn btn-primary shadow-sm"><FaPlus /> Đăng ký xe</Link>
-        <Link to="/vehicle/restore" className="btn btn-danger shadow-sm"><FaPlus /> Danh sách đã xóa</Link>
-
+         <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+      <div>
+        <h4 className="fw-bold text-dark mb-1">
+          QUẢN LÝ XE
+        </h4>
+        <p className="text-muted small mb-0">
+         Hệ thống quản xe khách hàng
+        </p>
       </div>
+      
+      <div className="d-flex gap-2">
+        <Link to="/vehicle/restore" className="btn btn-outline-danger shadow-sm d-flex align-items-center gap-2">
+          <FaTrash size={14}/> <span className="d-none d-md-inline">Danh sách đã xóa</span>
+        </Link>
+        <Link to="/vehicle/create" className="btn btn-primary shadow-sm d-flex align-items-center gap-2">
+          <FaPlus size={14}/> <span>Thêm mới</span>
+        </Link>
+      </div>
+    </div>
 
       <div className="card border-0 shadow-sm rounded-3">
         {/* Toolbar */}

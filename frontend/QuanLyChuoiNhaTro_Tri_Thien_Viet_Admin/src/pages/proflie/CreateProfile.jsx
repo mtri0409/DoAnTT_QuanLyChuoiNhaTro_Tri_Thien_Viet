@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import apiUser from '../../api/apiUser';
+import { toast } from 'react-toastify';
 
 const CreateProfile = () => {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ const CreateProfile = () => {
     try {
       const response = await apiProfile.createProfile(formData);
       await apiUser.generareAcount(response.profileId);
-      alert("Tạo hồ sơ và tài khoản khách thuê thành công!");
+      toast.success("Tạo hồ sơ và tài khoản khách thuê thành công!");
       navigate('/profiles'); 
     } catch (err) {
       console.error("Lỗi API:", err.response);
@@ -92,10 +93,10 @@ const CreateProfile = () => {
         else if (typeof errorData === 'object') {
           setErrors(errorData);
         } else {
-          alert(errorData.message || "Dữ liệu không hợp lệ.");
+          toast.error(errorData.message || "Dữ liệu không hợp lệ.");
         }
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setLoading(false);

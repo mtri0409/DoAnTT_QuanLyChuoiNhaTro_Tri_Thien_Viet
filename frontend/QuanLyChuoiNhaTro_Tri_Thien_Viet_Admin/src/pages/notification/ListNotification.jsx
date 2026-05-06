@@ -6,6 +6,8 @@ import {
 import apiNotification from '../../api/apiNotification'; // Giả định bạn đã có file api này
 import Pagination from '../../components/Pagination';
 import { Link, useNavigate } from 'react-router-dom';
+import { confirmAction } from '../../utils/swalUtils';
+import { toast } from 'react-toastify';
 
 const ListNotification = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
@@ -53,13 +55,18 @@ const ListNotification = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa thông báo này?")) {
+    const result = await confirmAction({
+    title: 'Xóa thông báo',
+    text: "Bạn có chắc muốn xóa thông báo này?",
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         await apiNotification.deleteNotification(id);
-        alert("Xóa thành công!");
+        toast.success("Xóa thành công!");
         fetchNotifications();
       } catch (err) {
-        alert("Không thể xóa thông báo này!");
+        toast.error("Không thể xóa thông báo này!");
       }
     }
   };

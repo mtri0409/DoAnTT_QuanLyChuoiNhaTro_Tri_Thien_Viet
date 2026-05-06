@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaLock, FaKey, FaSave, FaArrowLeft, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
-import apiUser from '../../api/apiUser'; // Giả định axios instance của nhóm
+import apiUser from '../../api/apiUser';
 import { useAuth } from '../../context/AuthContext';
 
 const ChangePassword = () => {
@@ -37,7 +37,6 @@ const ChangePassword = () => {
     try {
       // Gọi API đổi mật khẩu
       const response = await apiUser.changePassword(user.userId, formData);
-      console.log(">>----",response);
       setStatus({ type: 'success', message: 'Đổi mật khẩu thành công!', code: 200 });
       
       // Thành công thì xóa form và về trang chủ sau 2s

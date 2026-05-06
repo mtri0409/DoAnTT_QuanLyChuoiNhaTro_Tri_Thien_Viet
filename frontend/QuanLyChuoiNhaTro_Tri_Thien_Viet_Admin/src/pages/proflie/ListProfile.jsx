@@ -10,6 +10,8 @@ import Pagination from '../../components/Pagination';
 import { Link, useNavigate } from 'react-router-dom';
 import apiUser from '../../api/apiUser';
 import apiBranch from '../../api/apiBranches';
+import { toast } from 'react-toastify';
+import { confirmAction } from '../../utils/swalUtils';
 
 const ListProfile = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
@@ -104,12 +106,16 @@ const ListProfile = () => {
   };
   // 2. Hàm Xóa hồ sơ (Có xác nhận)
   const handleDelete = async (id) => {
-    const isConfirmed = window.confirm("Bạn có chắc chắn muốn xóa hồ sơ này? Hành động này không thể hoàn tác!");
-    if (isConfirmed) {
+  const result = await confirmAction({
+      title: 'Xóa hồ sơ',
+      text: `Bạn có chắc xóa hồ sơ này không ?`,
+      icon: 'info'
+  });  
+  if (result.isConfirmed) {
       try {
         setLoading(true); 
         await apiProfile.deleteProfile(id);
-        alert("Xóa hồ sơ thành công!");
+        toast.success("Xóa hồ sơ thành công!");
         
         // Nếu xóa dòng cuối cùng của trang thì lùi về 1 trang
         if (data.content.length === 1 && currentPage > 1) {
@@ -120,24 +126,29 @@ const ListProfile = () => {
       } catch (err) {
         console.error("Lỗi khi xóa:", err);
         const errorMsg = err.response?.data?.message || "Lỗi ràng buộc dữ liệu, không thể xóa!";
-        alert(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
     }
   };
   const handleGenerateAccount = async (profileId, fullName) => {
-    if (window.confirm(`Bạn có muốn cấp tài khoản tự động cho khách hàng: ${fullName}?`)) {
+    const result = await confirmAction({
+    title: 'Cấp tài khoản tự động',
+    text: `Hệ thống sẽ gửi thông tin đăng nhập cho khách hàng: ${fullName}`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         setLoading(true);
         // Gọi API sinh tài khoản từ profileId
         await apiUser.generareAcount(profileId); 
-        alert("Cấp tài khoản thành công! Thông tin đã được gửi đến khách hàng.");
+        toast.success("Cấp tài khoản thành công! Thông tin đã được gửi đến khách hàng.");
         fetchProfiles(); // Refresh lại danh sách để cập nhật trạng thái (nếu có)
       } catch (err) {
         console.error("Lỗi cấp tài khoản:", err);
         const errorMsg = err.response?.data?.message || "Lỗi! Có thể hồ sơ này đã có tài khoản rồi.";
-        alert(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }

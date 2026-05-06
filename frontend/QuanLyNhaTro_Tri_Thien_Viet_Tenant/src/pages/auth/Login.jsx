@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaLock, FaSignInAlt } from 'react-icons/fa';
-// Giả sử bạn để axiosInstance trong file api.js hoặc tương đương
 import { useAuth } from '../../context/AuthContext';
 import apiUser from '../../api/apiUser';
 
@@ -34,7 +33,7 @@ const Login = () => {
         
         login(response.username,token); 
 
-        navigate('/'); // Hoặc '/' tùy vào cấu trúc route của bạn
+        navigate('/');
         
     } catch (err) {
         console.error(err);
@@ -54,7 +53,7 @@ const Login = () => {
             
           </div>
           <h4 className="fw-bold text-dark">Hệ Thống Quản Lý</h4>
-          <p className="text-muted small">Chào Tri, đăng nhập để quản lý nhà trọ nhé!</p>
+          <p className="text-muted small">Chào bạn, đăng nhập để quản lý nhà trọ nhé!</p>
         </div>
 
         {error && (
@@ -115,7 +114,7 @@ const Login = () => {
         </form>
 
         <div className="mt-4 text-center">
-          <small className="text-muted">Đồ án tốt nghiệp - IT Student 2026</small>
+          <small className="text-muted">HỆ THỐNG QUẢN LÝ PHÒNG TRỌ</small>
         </div>
       </div>
     </div>

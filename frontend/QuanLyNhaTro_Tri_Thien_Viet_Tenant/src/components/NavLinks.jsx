@@ -18,7 +18,7 @@ const NavLinks = () => {
   }
   const isActive = (path) => location.pathname.includes(path);
   const menus = [
-    { path: "/user/dashboard", label: "Tổng quan", icon: <FaHome size={15} /> },
+    { path: "/", label: "Tổng quan", icon: <FaHome size={15} /> },
     {
       path: "/user/bills",
       label: "Hóa đơn",

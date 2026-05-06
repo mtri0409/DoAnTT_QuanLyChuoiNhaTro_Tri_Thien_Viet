@@ -23,7 +23,7 @@ const Home = () => {
             apiProfile.getProfileById(user.profileId),
             apiNotification.getNotificationById(user.userId), // Chỉ lấy các thông báo chưa đọc
           ]);
-
+          console.log(profileRes);
           setProfile(profileRes);
           setNotifications(notiRes.filter((noti) => noti.isRead === false));
         } catch (error) {
@@ -82,7 +82,7 @@ const Home = () => {
           </h4>
           <p className="text-muted small mb-0">
             Hệ thống Quản lý Chuỗi Nhà trọ -{" "}
-            <span className="text-primary fw-bold">TRI PHAM</span>
+            <span className="text-primary fw-bold">TTV</span>
           </p>
         </div>
 
@@ -116,13 +116,7 @@ const Home = () => {
         ></div>
       </div>
 
-      <QuickActions />
-
-      {/* 4. Footer nhỏ (Tùy chọn) */}
-      <footer className="mt-5 pt-4 text-center text-muted small border-top">
-        &copy; {new Date().getFullYear()} - Hệ thống Quản lý Nhà trọ Trí Thiên
-        Việt
-      </footer>
+      <QuickActions profile={profile}/>
     </div>
   );
 };

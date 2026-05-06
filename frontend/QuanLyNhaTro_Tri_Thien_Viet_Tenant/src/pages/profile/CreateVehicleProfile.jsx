@@ -7,6 +7,7 @@ import {
 // Giả định bạn có apiVehicle hoặc tương đương
 import apiVehicle from '../../api/apiVehicle'; 
 import apiProfile from '../../api/apiProfile';
+import { notify } from '../../utils/swalUtils';
 
 const CreateVehicle = () => {
   const navigate = useNavigate();
@@ -57,14 +58,14 @@ const CreateVehicle = () => {
       console.log(formData);
       // Gọi API thêm xe
       await apiVehicle.createVehicle(id,formData);
-      alert("Thêm phương tiện thành công!");
+      notify("Thêm phương tiện thành công !");
       navigate(-1); 
     } catch (err) {
       console.error("Lỗi API:", err);
       if (err.response && err.response.status === 400) {
         setErrors(err.response.data || {});
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        notify("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setLoading(false);

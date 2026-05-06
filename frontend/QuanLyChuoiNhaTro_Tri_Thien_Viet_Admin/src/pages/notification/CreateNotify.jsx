@@ -7,6 +7,7 @@ import {
 import apiBranch from '../../api/apiBranches';
 import apiProfile from '../../api/apiProfile';
 import apiNotification from '../../api/apiNotification';
+import { toast } from 'react-toastify';
 
 const CreateNotification = () => {
   const navigate = useNavigate();
@@ -89,12 +90,12 @@ const CreateNotification = () => {
       console.log(finalBranchId,"-",finalProfileId);
       const response =await apiNotification.createManualNotification(finalProfileId,finalBranchId, formData);
       console.log(response);
-      alert("Gửi thông báo thành công!");
+      toast.success("Gửi thông báo thành công!");
       navigate('/notifications'); 
     } catch (err) {
         console.log(err.response)
       if (err.response?.status === 400) setErrors(err.response.data || {});
-      else alert("Lỗi hệ thống.");
+      else toast.error("Lỗi hệ thống.");
     } finally { setLoading(false); }
   };
 

@@ -6,6 +6,8 @@ import {
 import apiVehicle from "../../api/apiVehicle";
 import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";
+import { confirmAction } from "../../utils/swalUtils";
+import { toast } from "react-toastify";
 
 const ListVehicleDeleted = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
@@ -23,7 +25,6 @@ const ListVehicleDeleted = () => {
   const fetchDeletedVehicles = async () => {
     setLoading(true);
     try {
-      // Đảm bảo Tri đã định nghĩa getAllVehiclesDeleted trong apiVehicle.js
       const response = await apiVehicle.getAllVehiclesDeleted(
         currentPage, 
         10, 
@@ -58,12 +59,18 @@ const ListVehicleDeleted = () => {
 
   // 3. Hàm Khôi phục xe (Restore)
   const handleRestore = async (id, licensePlate) => {
-    if (window.confirm(`Bạn có chắc muốn khôi phục xe biển số [${licensePlate}]?`)) {
+
+    const result = await confirmAction({
+    title: 'Khôi phục xe',
+    text: `Bạn có chắc muốn khôi phục xe biển số [${licensePlate}]?`,
+    icon: 'info'
+  });
+    if (result.isConfirmed ) {
       try {
         setLoading(true);
         // Gọi API cập nhật status = true
         await apiVehicle.restoreVehicle(id); 
-        alert("Khôi phục phương tiện thành công!");
+        toast.success("Khôi phục phương tiện thành công!");
         
         if (data.content.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
@@ -71,7 +78,7 @@ const ListVehicleDeleted = () => {
           fetchDeletedVehicles();
         }
       } catch (err) {
-        alert(err.response?.data?.message || "Lỗi khi khôi phục xe!");
+        toast.error(err.response?.data?.message || "Lỗi khi khôi phục xe!");
       } finally {
         setLoading(false);
       }

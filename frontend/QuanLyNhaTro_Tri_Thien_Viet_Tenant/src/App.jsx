@@ -8,8 +8,9 @@ import Login from "./pages/auth/Login";
 
 function App() {
   return (
-    <AuthProvider>
+    
       <BrowserRouter>
+      <AuthProvider>
         <Routes>
            <Route path="/login" element={<Login />} />
           <Route path="/" element={<TenantLayout />}>
@@ -19,8 +20,8 @@ function App() {
             })}
           </Route>
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
 
   );
 }

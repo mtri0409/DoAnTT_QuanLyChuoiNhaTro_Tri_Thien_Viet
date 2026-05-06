@@ -12,6 +12,8 @@ import {
 import apiUser from "../../api/apiUser";
 import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 const ListUserDeleted = () => {
   const [data, setData] = useState({
@@ -69,11 +71,16 @@ const ListUserDeleted = () => {
 
   // 3. Hàm Khôi phục (Restore)
   const handleRestore = async (userId, userName) => {
-    if (window.confirm(`Khôi phục quyền truy cập cho tài khoản [${userName}]?`)) {
+    const result = await confirmAction({
+    title: 'Cấp tài khoản tự động',
+    text: `Khôi phục quyền truy cập cho tài khoản [${userName}]?`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         // Sử dụng API đổi trạng thái để bật lại active = true
         await apiUser.changeStatus(userId);
-        alert("Đã khôi phục tài khoản thành công!");
+        toast.success("Đã khôi phục tài khoản thành công!");
         
         if (data.content.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
@@ -81,7 +88,7 @@ const ListUserDeleted = () => {
           fetchDeletedUsers();
         }
       } catch (err) {
-        alert("Lỗi khi khôi phục tài khoản!");
+        toast.error("Lỗi khi khôi phục tài khoản!");
       }
     }
   };

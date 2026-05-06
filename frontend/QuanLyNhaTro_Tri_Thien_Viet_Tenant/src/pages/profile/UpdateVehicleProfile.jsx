@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 // Giả định bạn có apiVehicle hoặc tương đương
 import apiVehicle from '../../api/apiVehicle'; 
+import { notify } from '../../utils/swalUtils';
 // import apiProfile from '../../api/apiProfile';
 
 const UpdateVehicle = () => {
@@ -69,14 +70,14 @@ const UpdateVehicle = () => {
       console.log(formData);
       // Gọi API thêm xe
       await apiVehicle.updateVehicle(id,formData);
-      alert("Cập nhập phương tiện thành công!");
+      notify("Cập nhập phương tiện thành công!");
       navigate(-1); 
     } catch (err) {
       console.error("Lỗi API:", err.response);
       if (err.response && err.response.status === 400) {
         setErrors(err.response.data || {});
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        notify("Lỗi hệ thống hoặc mất kết nối Server.","error");
       }
     } finally {
       setLoading(false);

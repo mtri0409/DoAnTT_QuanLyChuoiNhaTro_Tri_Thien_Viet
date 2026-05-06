@@ -5,6 +5,7 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import apiProfile from '../../api/apiProfile';
 import apiVehicle from '../../api/apiVehicle';
+import { confirmAction, notify } from '../../utils/swalUtils';
 
 const VehicleGridLayout = () => {
   const navigate = useNavigate();
@@ -31,11 +32,16 @@ const VehicleGridLayout = () => {
   fetchVehicleByOwner(id);
   },[id])
  const onDeleteVehicle = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa thông tin xe này?")) {
+   const result = await confirmAction({
+    title: 'Xóa xe',
+    text: `Bạn có chắc chắn muốn xóa thông tin xe này?`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         // setLoading(true);
         await apiVehicle.deleteVehicle(id);
-        alert("Xóa xe thành công!");
+        notify("Xóa xe thành công!");
         // if (data.content.length === 1 && currentPage > 1) {
         //   setCurrentPage(currentPage - 1);
         // } else {
@@ -43,7 +49,7 @@ const VehicleGridLayout = () => {
         // }
       } catch (err) {
         console.log("error from serve :",err.response)
-        alert(err.response?.data?.message || "Không thể xóa xe này!");
+        notify(err.response?.data?.message || "Không thể xóa xe này!","error");
       } finally {
         // setLoading(false);
       }

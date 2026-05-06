@@ -13,6 +13,8 @@ import apiProfile from "../../api/apiProfile";
 import Pagination from "../../components/Pagination";
 import { useNavigate } from "react-router-dom";
 import apiBranches from "../../api/apiBranches";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 const ListProfileDeleted = () => {
   const [data, setData] = useState({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
@@ -108,12 +110,17 @@ const ListProfileDeleted = () => {
   };
   // 3. Hàm Khôi phục hồ sơ (Restore)
   const handleRestore = async (id, fullName) => {
-    if (window.confirm(`Bạn có chắc muốn khôi phục hồ sơ của khách: ${fullName}?`)) {
+    const result = await confirmAction({
+    title: 'Khôi phục hồ sơ',
+    text: `Bạn có chắc khôi phục hồ sơ này không ?: ${fullName}`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         setLoading(true);
         // Thường là gọi API cập nhật isActive = true
         await apiProfile.restoreProfile(id); 
-        alert("Khôi phục hồ sơ thành công!");
+        toast.success("Khôi phục hồ sơ thành công!");
         
         if (data.content.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
@@ -121,7 +128,7 @@ const ListProfileDeleted = () => {
           fetchDeletedProfiles();
         }
       } catch (err) {
-        alert("Lỗi khi khôi phục hồ sơ!");
+        toast.error("Lỗi khi khôi phục hồ sơ!");
       } finally {
         setLoading(false);
       }

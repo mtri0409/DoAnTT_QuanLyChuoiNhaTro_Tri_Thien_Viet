@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import apiUser from '../../api/apiUser';
 import apiProfile from '../../api/apiProfile';
+import { toast } from 'react-toastify';
 
 const CreateAccount = () => {
   const navigate = useNavigate();
@@ -68,10 +69,9 @@ const CreateAccount = () => {
 
     try {
       await apiUser.createAccount(profileId, formData);
-      alert("Tạo tài khoản hệ thống thành công!");
+      toast.success("Tạo tài khoản hệ thống thành công!");
       navigate('/users'); 
     } catch (err) {
-      console.error("Full Error:", err);
       
       if (err.response) {
         if (err.response.status === 400) {

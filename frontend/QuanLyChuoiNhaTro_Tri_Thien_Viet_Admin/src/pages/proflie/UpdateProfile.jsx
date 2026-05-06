@@ -5,6 +5,7 @@ import {
   FaArrowLeft, FaSave, FaExclamationCircle 
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
+import { toast } from 'react-toastify';
 
 const UpdateProfile = () => {
   const { id } = useParams(); // Lấy profileId từ URL
@@ -43,7 +44,7 @@ const UpdateProfile = () => {
         });
       } catch (err) {
         console.error("Lỗi khi lấy thông tin:", err);
-        alert("Không thể tải thông tin hồ sơ.");
+        toast.error("Không thể tải thông tin hồ sơ.");
         navigate('/profiles');
       } finally {
         setFetching(false);
@@ -70,13 +71,13 @@ const UpdateProfile = () => {
     try {
       // Gửi PUT request để cập nhật
       await apiProfile.updateProfile(id, formData);
-      alert("Cập nhật hồ sơ thành công!");
+      toast.success("Cập nhật hồ sơ thành công!");
       navigate('/profiles'); 
     } catch (err) {
       if (err.response && err.response.status === 400) {
         setErrors(err.response.data); // Hứng lỗi validation từ Backend
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setLoading(false);

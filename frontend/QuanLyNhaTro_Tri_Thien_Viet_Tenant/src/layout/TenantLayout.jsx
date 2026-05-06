@@ -17,7 +17,7 @@ const TenantLayout = () => {
         <div className="container-fluid px-lg-5">
           <span className="opacity-75">© 2026 Hệ thống Quản Lý Nhà Trọ</span>
           <span className="mx-2 text-primary">|</span>
-          <strong>Tri Pham</strong>
+          <strong>TTV</strong>
         </div>
       </footer>
     </div>

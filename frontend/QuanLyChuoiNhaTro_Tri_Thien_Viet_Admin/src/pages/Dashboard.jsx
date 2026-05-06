@@ -98,27 +98,59 @@ const Dashboard = () => {
   return (
     <div className="container-fluid p-4 bg-light min-vh-100" style={{ fontFamily: "'Inter', sans-serif" }}>
       
-      {/* 1. BỘ LỌC (FILTER BAR) */}
-      <div className="card border-0 shadow-sm p-3 mb-4 rounded-4">
-        <div className="d-flex flex-wrap justify-content-between align-items-center g-3">
-          <h4 className="fw-bold mb-0 text-dark">Dashboard Quản Lý</h4>
-          <div className="d-flex gap-2">
-            <select className="form-select border-light shadow-none w-auto rounded-3" value={selectedBranchId} onChange={(e) => setSelectedBranchId(e.target.value)}>
-              <option value="">-- Tất cả chi nhánh --</option>
-              {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.branchName}</option>)}
-            </select>
-            <select className="form-select border-light shadow-none w-auto rounded-3" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : "")}>
-              <option value="">-- Tháng --</option>
-              {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>)}
-            </select>
-            <select className="form-select border-light shadow-none w-auto rounded-3" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value ? parseInt(e.target.value) : "")}>
-              <option value="">-- Năm --</option>
-              {[currentYear, currentYear - 1].map(y => <option key={y} value={y}>Năm {y}</option>)}
-            </select>
-            <button className="btn btn-primary rounded-3" onClick={loadDashboardData}><FaSyncAlt /></button>
-          </div>
+     {/* 1. BỘ LỌC (FILTER BAR) */}
+<div className="card border-0 shadow-sm p-3 mb-4 rounded-4">
+  <div className="row g-3 align-items-center">
+    {/* Tiêu đề - Luôn nằm trên cùng hoặc bên trái */}
+    <div className="col-12 col-md-auto">
+      <h4 className="fw-bold mb-0 text-dark">Dashboard Quản Lý</h4>
+    </div>
+
+    {/* Nhóm bộ lọc - Tự động giãn cách */}
+    <div className="col-12 col-md">
+      <div className="row g-2 justify-content-md-end">
+        <div className="col-12 col-sm-4 col-md-auto">
+          <select 
+            className="form-select border-light shadow-none w-100 rounded-3" 
+            value={selectedBranchId} 
+            onChange={(e) => setSelectedBranchId(e.target.value)}
+          >
+            <option value="">-- Tất cả chi nhánh --</option>
+            {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.branchName}</option>)}
+          </select>
+        </div>
+        
+        <div className="col-6 col-sm-3 col-md-auto">
+          <select 
+            className="form-select border-light shadow-none w-100 rounded-3" 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : "")}
+          >
+            <option value="">-- Tháng --</option>
+            {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>)}
+          </select>
+        </div>
+
+        <div className="col-6 col-sm-3 col-md-auto">
+          <select 
+            className="form-select border-light shadow-none w-100 rounded-3" 
+            value={selectedYear} 
+            onChange={(e) => setSelectedYear(e.target.value ? parseInt(e.target.value) : "")}
+          >
+            <option value="">-- Năm --</option>
+            {[currentYear, currentYear - 1].map(y => <option key={y} value={y}>Năm {y}</option>)}
+          </select>
+        </div>
+
+        <div className="col-12 col-sm-auto">
+          <button className="btn btn-primary rounded-3 w-100" onClick={loadDashboardData}>
+            <FaSyncAlt /> <span className="d-sm-none ms-1">Làm mới</span>
+          </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
       {/* 2. TỈ LỆ LẤP ĐẦY (HIỆU SUẤT VẬN HÀNH) */}
       <div className="card border-0 shadow-sm p-4 mb-4 rounded-4">

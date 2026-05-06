@@ -11,6 +11,7 @@ import {
 import apiMaintenanceRequest from "../../api/apiMaintenanceaRequest";
 import CreateRequestModal from "./CreateRequestModal";
 import { useAuth } from "../../context/AuthContext";
+import { notify } from "../../utils/swalUtils";
 
 const STATUS_MAP = {
   PENDING: { label: "Chờ xử lý", className: "bg-warning text-dark" },
@@ -98,7 +99,7 @@ const ListMaintenanceRequest = () => {
       await apiMaintenanceRequest.cancelRequest(requestId);
       fetchRequests();
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể hủy yêu cầu");
+      notify(err?.response?.data?.message || "Không thể hủy yêu cầu");
     } finally {
       setCancellingId(null);
     }

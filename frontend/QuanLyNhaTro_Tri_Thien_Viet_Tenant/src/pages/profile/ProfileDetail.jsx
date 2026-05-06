@@ -6,6 +6,7 @@ import {
   FaHome, FaFileContract, FaCloudUploadAlt, FaKey, FaUserEdit 
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
+import { notify } from '../../utils/swalUtils';
 
 const ProfileDetail = () => {
   const { id } = useParams();
@@ -49,9 +50,9 @@ const ProfileDetail = () => {
      const response= await apiProfile.uploadFrontImage(id, formData); 
      console.log(response);
       await fetchDetail(); // Refresh dữ liệu
-      alert("Cập nhật mặt trước thành công!");
+      notify("Cập nhật mặt trước thành công!");
     } catch (err) {
-      alert("Lỗi upload mặt trước :>!");
+      notify("Lỗi upload mặt trước :>!");
     } finally {
       setUploadingFront(false);
     }
@@ -69,9 +70,9 @@ const ProfileDetail = () => {
       // Gọi đúng API mặt sau của ní ở đây
       await apiProfile.uploadBackImage(id, formData); 
       await fetchDetail(); // Refresh dữ liệu
-      alert("Cập nhật mặt sau thành công!");
+      notify("Cập nhật mặt sau thành công!");
     } catch (err) {
-      alert("Lỗi upload mặt sau!");
+      notify("Lỗi upload mặt sau!","error");
     } finally {
       setUploadingBack(false);
     }

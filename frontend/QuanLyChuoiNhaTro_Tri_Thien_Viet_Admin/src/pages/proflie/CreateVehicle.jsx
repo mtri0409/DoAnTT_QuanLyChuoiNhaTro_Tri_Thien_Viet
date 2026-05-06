@@ -7,6 +7,7 @@ import {
 // Giả định bạn có apiVehicle hoặc tương đương
 import apiVehicle from '../../api/apiVehicle'; 
 import apiProfile from '../../api/apiProfile';
+import { toast } from 'react-toastify';
 
 const CreateVehicle = () => {
   const navigate = useNavigate();
@@ -57,14 +58,14 @@ const CreateVehicle = () => {
       console.log(formData);
       // Gọi API thêm xe
       await apiVehicle.createVehicle(profileId,formData);
-      alert("Thêm phương tiện thành công!");
+      toast.success("Thêm phương tiện thành công!");
       navigate('/vehicles'); 
     } catch (err) {
       console.error("Lỗi API:", err);
       if (err.response && err.response.status === 400) {
         setErrors(err.response.data || {});
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setLoading(false);

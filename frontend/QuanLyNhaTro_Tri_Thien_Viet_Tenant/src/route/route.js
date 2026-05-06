@@ -17,6 +17,7 @@ import ProfileUpdate from "../pages/profile/UpdateProfile";
 import UpdateVehicle from "../pages/profile/UpdateVehicleProfile";
 import ListMaintenanceRequest from "../pages/maintenance-request/ListMaintenanceRequest";
 import MaintenanceRequestDetail from "../pages/maintenance-request/MaintenanceRequestDetail";
+import TenantContractDetail from "../pages/contract/ContractDetail";
 
 const AdminRoute = [
   { path: "/", component: Home },
@@ -29,6 +30,7 @@ const AdminRoute = [
   { path: "user/bills", component: ListInvoice },
   { path: "user/bills/:invoiceId", component: InvoiceDetail },
   { path: "payment/:invoiceId", component: PaymentPage },
+  { path: "user/contract/:id", component: TenantContractDetail },
 
   { path: "user/posts", component: RoommatePosts },
   { path: "user/posts/create", component: CreatePost },

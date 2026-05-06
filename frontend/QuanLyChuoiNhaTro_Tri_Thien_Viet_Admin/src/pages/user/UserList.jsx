@@ -15,6 +15,8 @@ import {
 import apiUser from "../../api/apiUser";
 import Pagination from "../../components/Pagination";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 const ListUser = () => {
   const [data, setData] = useState({
@@ -59,7 +61,7 @@ const ListUser = () => {
       fetchUsers();
     } catch (err) {
       console.log(err);
-      alert("Lỗi khi thay đổi trạng thái!");
+      toast.error("Lỗi khi thay đổi trạng thái!");
     }  
   };
 
@@ -68,41 +70,50 @@ const ListUser = () => {
     try {
       // Giả sử API của Tri là apiUser.updateRole(userId, roleName)
       await apiUser.updateRole(userId, newRole);
-      alert(`Đã cập nhật vai trò sang ${newRole} thành công!`);
+      toast.success(`Đã cập nhật vai trò sang ${newRole} thành công!`);
       fetchUsers();
     } catch (err) {
-      alert("Lỗi khi cập nhật vai trò!");
+      toast.error("Lỗi khi cập nhật vai trò!");
       console.log(err);
     }
   };
 
   // 3. Reset mật khẩu
   const handleResetPassword = async (userId) => {
+    const result = await confirmAction({
+      title:"Đặt lại mật khẩu",
+      text:"Bạn có chắc đặt lại mật khẩu cho tài khoản này ?",
+      icon:"info"
+    });
     if (
-      window.confirm(
-        "Hệ thống sẽ tạo mật khẩu ngẫu nhiên và gửi mail cho người dùng này?",
-      )
+      result.isConfirmed
     ) {
       try {
         await apiUser.resetPassword(userId);
-        alert("Đã reset mật khẩu thành công! Kiểm tra email người dùng.");
+        toast.success("Đã reset mật khẩu thành công");
       } catch (err) {
         console.log(err);
-        alert("Lỗi khi reset mật khẩu!");
+        toast.error("Lỗi khi reset mật khẩu!");
       }
     }
   };
 
   // 4. Xóa tài khoản (mở lại nếu Tri cần dùng)
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa tài khoản này?")) {
+  
+  const result = await confirmAction({
+    title: '',
+    text: `Bạn có chắc muốn xóa tài khoản này?`,
+    icon: 'info'
+  });
+    if (result.isConfirmed) {
       try {
         await apiUser.deleteUser(id);
-        alert("Xóa thành công!");
+        toast.success("Xóa thành công!");
         fetchUsers();
       } catch (err) {
         console.log(err);
-        alert("Lỗi khi xóa!");
+        toast.error("Lỗi khi xóa!");
       }
     }
   };
@@ -124,28 +135,25 @@ const ListUser = () => {
   return (
     <div className="container-fluid py-4">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold text-dark mb-1 text-uppercase">
-            Quản lý tài khoản
-          </h4>
-          <p className="text-muted small mb-0">
-            Hệ thống quản lý quyền truy cập cư dân và quản trị viên
-          </p>
-        </div>
-        <Link
-          to="/users/create"
-          className="btn btn-primary shadow-sm px-4"
-        >
-          <FaPlus size={14} className="me-2" /> Tạo tài khoản
+        <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+      <div>
+        <h4 className="fw-bold text-dark mb-1">
+          QUẢN LÝ TÀI KHOẢN
+        </h4>
+        <p className="text-muted small mb-0">
+         Hệ thống quản lý tài khoản khách hàng và nhân viên hệ thống
+        </p>
+      </div>
+      
+      <div className="d-flex gap-2">
+        <Link to="/users/restore" className="btn btn-outline-danger shadow-sm d-flex align-items-center gap-2">
+          <FaTrash size={14}/> <span className="d-none d-md-inline">Danh sách đã xóa</span>
         </Link>
-         <Link
-          to="/users/restore"
-          className="btn btn-danger shadow-sm px-4"
-        >
-          <FaTrash size={14} className="me-2" /> Danh sách tài khoản đã xóa
+        <Link to="/users/create" className="btn btn-primary shadow-sm d-flex align-items-center gap-2">
+          <FaPlus size={14}/> <span>Thêm mới</span>
         </Link>
       </div>
+    </div>
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         {/* Toolbar */}

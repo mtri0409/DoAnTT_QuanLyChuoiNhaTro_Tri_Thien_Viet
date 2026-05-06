@@ -2,6 +2,8 @@ import React, { useState, useCallback } from "react";
 import { AuthContext } from "./AuthContext";
 import axios from "axios"; // Đảm bảo đã cài axios: npm install axios
 import apiUser from "../api/apiUser";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -13,6 +15,14 @@ export const AuthProvider = ({ children }) => {
 
   const [token, setToken] = useState(() => localStorage.getItem("authToken"));
   const [loading, setLoading] = useState(false);
+ const navigate = useNavigate();    
+ useEffect(()=>{
+    console.log("Loading context ....")
+    if(user==null)
+    {
+       navigate("/login");
+    }
+  },[])
 
   // --- HÀM LOGIN MỚI: CÓ GỌI API LẤY ID ---
   const login = useCallback(async (username, authToken) => {

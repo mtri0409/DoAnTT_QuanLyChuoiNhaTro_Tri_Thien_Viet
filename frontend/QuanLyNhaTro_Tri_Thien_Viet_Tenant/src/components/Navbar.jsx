@@ -17,7 +17,8 @@ const Navbar = () => {
     };
     fetchCount();
   }, []);
-  if (!user) {
+
+  if (!user || !user.userId) {
     return null;
   }
   return (

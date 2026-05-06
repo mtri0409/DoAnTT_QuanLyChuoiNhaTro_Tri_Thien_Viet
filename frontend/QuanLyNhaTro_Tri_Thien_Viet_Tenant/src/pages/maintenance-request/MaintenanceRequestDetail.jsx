@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import apiMaintenanceRequest from "../../api/apiMaintenanceaRequest";
 import { imgURL } from "../../api/config";
+import { notify } from "../../utils/swalUtils";
 
 /* ─── Status badge ─── */
 const STATUS_MAP = {
@@ -230,7 +231,7 @@ const MaintenanceRequestDetail = () => {
       const updated = await apiMaintenanceRequest.cancelRequest(requestId);
       setRequest(updated);
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể hủy yêu cầu");
+      notify(err?.response?.data?.message || "Không thể hủy yêu cầu");
     } finally {
       setCancelling(false);
     }
