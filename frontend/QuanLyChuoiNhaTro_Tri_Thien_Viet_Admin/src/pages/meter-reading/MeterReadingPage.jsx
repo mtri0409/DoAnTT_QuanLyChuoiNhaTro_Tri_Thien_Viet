@@ -10,7 +10,7 @@ import {
   FaCheck,
   FaArrowRight,
   FaSearch,
-  FaTimes,
+  FaTimesCircle,
   FaChevronRight,
   FaInfoCircle,
   FaCalculator,
@@ -32,21 +32,29 @@ const SERVICES = [
     id: 1,
     label: "Điện",
     icon: <FaBolt />,
-    color: "#f59e0b",
-    bg: "#fef3c7",
+    colorClass: "text-warning",
+    bgClass: "bg-warning-subtle",
+    borderColor: "#fbbf24",
     unit: "kWh",
   },
   {
     id: 2,
     label: "Nước",
     icon: <FaTint />,
-    color: "#3b82f6",
-    bg: "#dbeafe",
+    colorClass: "text-primary",
+    bgClass: "bg-primary-subtle",
+    borderColor: "#3b82f6",
     unit: "m³",
   },
 ];
 
-// ── Modal tạo hóa đơn thủ công ────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  done: { label: "✓ Đã xong", badge: "bg-success-subtle text-success" },
+  partial: { label: "~ Ghi dở", badge: "bg-warning-subtle text-warning" },
+  pending: { label: "Chưa ghi", badge: "bg-secondary-subtle text-secondary" },
+};
+
+/* ── Modal tạo hóa đơn thủ công ── */
 function CreateInvoiceModal({
   onClose,
   onCreated,
@@ -88,214 +96,119 @@ function CreateInvoiceModal({
 
   return (
     <div
+      className="modal d-flex align-items-center justify-content-center"
       style={{
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 1050,
       }}
     >
       <div
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          padding: 32,
-          width: 420,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-        }}
+        className="card border-0 shadow-lg rounded-4"
+        style={{ width: 420, maxWidth: "95vw" }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 6,
-          }}
-        >
-          <FaFileInvoiceDollar style={{ color: "#6366f1", fontSize: 20 }} />
-          <h3
-            style={{
-              margin: 0,
-              fontWeight: 800,
-              color: "#0f172a",
-              fontSize: 17,
-            }}
-          >
-            Tạo hóa đơn thủ công
-          </h3>
-        </div>
-        <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 24px" }}>
-          Hệ thống sẽ tạo hóa đơn DRAFT dựa trên chỉ số đã ghi và các dịch vụ
-          trong hợp đồng.
-        </p>
+        <div className="card-body p-4">
+          <div className="d-flex align-items-center gap-2 mb-1">
+            <FaFileInvoiceDollar className="text-primary fs-5" />
+            <h5 className="fw-bold mb-0">Tạo hóa đơn thủ công</h5>
+          </div>
+          <p className="text-muted small mb-4">
+            Hệ thống sẽ tạo hóa đơn DRAFT dựa trên chỉ số đã ghi và các dịch vụ
+            trong hợp đồng.
+          </p>
 
-        <div style={{ marginBottom: 14 }}>
-          <label
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#64748b",
-              textTransform: "uppercase",
-              display: "block",
-              marginBottom: 6,
-            }}
-          >
-            ID Hợp đồng *
-          </label>
-          <input
-            type="number"
-            value={contractId}
-            onChange={(e) => setContractId(e.target.value)}
-            placeholder="Nhập contract ID..."
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              border: `1.5px solid ${error ? "#ef4444" : "#e2e8f0"}`,
-              borderRadius: 8,
-              fontSize: 14,
-              boxSizing: "border-box",
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1 }}>
+          <div className="mb-3">
             <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#64748b",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: 6,
-              }}
+              className="form-label small fw-semibold text-uppercase text-muted"
+              style={{ letterSpacing: 0.6 }}
             >
-              Tháng
+              ID Hợp đồng <span className="text-danger">*</span>
             </label>
-            <select
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>
-                  Tháng {m}
-                </option>
-              ))}
-            </select>
+            <input
+              type="number"
+              className={`form-control ${error ? "is-invalid" : ""}`}
+              value={contractId}
+              onChange={(e) => setContractId(e.target.value)}
+              placeholder="Nhập contract ID..."
+            />
           </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#64748b",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: 6,
-              }}
-            >
-              Năm
-            </label>
-            <select
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            >
-              {[2024, 2025, 2026, 2027].map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        {error && (
-          <div
-            style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 8,
-              padding: "10px 14px",
-              marginBottom: 16,
-              color: "#dc2626",
-              fontSize: 13,
-            }}
-          >
-            <FaInfoCircle style={{ marginRight: 6 }} />
-            {error}
+          <div className="row g-3 mb-4">
+            <div className="col-6">
+              <label
+                className="form-label small fw-semibold text-uppercase text-muted"
+                style={{ letterSpacing: 0.6 }}
+              >
+                Tháng
+              </label>
+              <select
+                className="form-select"
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    Tháng {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6">
+              <label
+                className="form-label small fw-semibold text-uppercase text-muted"
+                style={{ letterSpacing: 0.6 }}
+              >
+                Năm
+              </label>
+              <select
+                className="form-select"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+              >
+                {[2024, 2025, 2026, 2027].map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        )}
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "11px",
-              borderRadius: 8,
-              border: "1.5px solid #e2e8f0",
-              background: "#fff",
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: 14,
-            }}
-          >
-            Hủy
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={{
-              flex: 2,
-              padding: "11px",
-              borderRadius: 8,
-              border: "none",
-              background: loading
-                ? "#a5b4fc"
-                : "linear-gradient(135deg, #6366f1, #4f46e5)",
-              color: "#fff",
-              fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            {loading ? (
-              "Đang tạo..."
-            ) : (
-              <>
-                <FaCheck /> Tạo hóa đơn
-              </>
-            )}
-          </button>
+          {error && (
+            <div className="alert alert-danger py-2 px-3 small mb-3">
+              <FaInfoCircle className="me-2" />
+              {error}
+            </div>
+          )}
+
+          <div className="d-flex gap-2">
+            <button
+              onClick={onClose}
+              className="btn btn-outline-secondary flex-fill"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="btn btn-primary flex-fill fw-semibold d-flex align-items-center justify-content-center gap-2"
+            >
+              {loading ? (
+                <span className="spinner-border spinner-border-sm" />
+              ) : (
+                <FaCheck />
+              )}
+              {loading ? "Đang tạo..." : "Tạo hóa đơn"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+/* ══ TRANG CHÍNH ══ */
 export default function MeterReadingPage() {
   const navigate = useNavigate();
 
@@ -308,17 +221,13 @@ export default function MeterReadingPage() {
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
 
-  // readings[roomId][serviceId] = { newValue, oldValue, image, status, savedValue, errMsg }
   const [readings, setReadings] = useState({});
-  // contracts[roomId] = contractObject | null
   const [contracts, setContracts] = useState({});
   const [expandedRooms, setExpandedRooms] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(false);
-
-  // Modal tạo hóa đơn
   const [invoiceModal, setInvoiceModal] = useState(null);
 
-  // Load branches
+  /* ── Load branches ── */
   useEffect(() => {
     apiBranches
       .getAllBranches(1, 100)
@@ -326,30 +235,44 @@ export default function MeterReadingPage() {
       .catch(() => setBranches([]));
   }, []);
 
-  // Load floors khi đổi chi nhánh
+  /* ── Load floors khi đổi chi nhánh — giống ListMaintenance ── */
   useEffect(() => {
-    if (!selectedBranch) {
-      setFloors([]);
-      setSelectedFloor("");
-      return;
-    }
+    setSelectedFloor("");
+    setFloors([]);
+    if (!selectedBranch) return;
+
     apiFloor
       .getAllFloors()
       .then((res) => {
-        const all = Array.isArray(res) ? res : res.content || [];
+        let all = [];
+        if (Array.isArray(res)) all = res;
+        else if (Array.isArray(res?.content)) all = res.content;
+        else if (Array.isArray(res?.data)) all = res.data;
+
+        // Chuẩn hóa field giống ListMaintenance
+        all = all.map((f) => ({
+          ...f,
+          floorId: f.floorId ?? f.id,
+          floorName:
+            f.floorName ??
+            f.name ??
+            f.floorNumber ??
+            `Tầng ${f.floorId ?? f.id}`,
+        }));
+
         setFloors(
           all.filter((f) => String(f.branchId) === String(selectedBranch)),
         );
       })
       .catch(() => setFloors([]));
-    setSelectedFloor("");
+
     setRooms([]);
     setReadings({});
     setContracts({});
     setExpandedRooms({});
   }, [selectedBranch]);
 
-  // Load rooms
+  /* ── Load rooms ── */
   useEffect(() => {
     if (!selectedBranch) {
       setRooms([]);
@@ -374,15 +297,14 @@ export default function MeterReadingPage() {
       .finally(() => setLoadingRooms(false));
   }, [selectedBranch, selectedFloor, searchRoom]);
 
-  // Khi đổi tháng/năm → reset để force reload khi mở lại
+  /* ── Reset khi đổi kỳ ── */
   useEffect(() => {
     setReadings({});
     setContracts({});
     setExpandedRooms({});
   }, [month, year]);
 
-  // Load dữ liệu khi mở 1 phòng
-  // FIX CHÍNH: gọi getByRoomAndPeriod để biết kỳ này đã ghi chưa
+  /* ── Load dữ liệu 1 phòng ── */
   const loadRoomData = useCallback(
     async (roomId) => {
       const initReadings = {};
@@ -396,33 +318,29 @@ export default function MeterReadingPage() {
         };
       });
 
-      // Chạy song song
       const [currentPeriod, contractRes] = await Promise.allSettled([
         apiMeterReading.getByRoomAndPeriod(roomId, month, year),
         apiContract.getContractsByRoom(roomId),
       ]);
 
-      // ── Xử lý chỉ số đã ghi trong kỳ này ──────────────────────────────────
       if (currentPeriod.status === "fulfilled") {
         const existing = Array.isArray(currentPeriod.value)
           ? currentPeriod.value
           : [];
         existing.forEach((r) => {
-          // serviceId có thể là number hoặc string tùy backend
           const sid = Number(r.serviceId);
           if (initReadings[sid]) {
             initReadings[sid] = {
               newValue: String(r.newValue ?? ""),
               oldValue: r.oldValue ?? 0,
               savedValue: r.newValue,
-              status: "saved", // ← ĐÃ GHI → hiện badge "Đã lưu"
+              status: "saved",
               image: null,
             };
           }
         });
       }
 
-      // ── Với service chưa ghi → load oldValue từ kỳ trước ─────────────────
       await Promise.allSettled(
         SERVICES.filter((svc) => initReadings[svc.id].status !== "saved").map(
           async (svc) => {
@@ -435,7 +353,7 @@ export default function MeterReadingPage() {
               );
               if (prev) initReadings[svc.id].oldValue = prev.newValue ?? 0;
             } catch {
-              /* không có kỳ trước → giữ 0 */
+              /* không có kỳ trước */
             }
           },
         ),
@@ -443,7 +361,6 @@ export default function MeterReadingPage() {
 
       setReadings((prev) => ({ ...prev, [roomId]: initReadings }));
 
-      // ── Xử lý contract ────────────────────────────────────────────────────
       if (contractRes.status === "fulfilled") {
         const list = Array.isArray(contractRes.value)
           ? contractRes.value
@@ -461,7 +378,6 @@ export default function MeterReadingPage() {
   const toggleRoom = async (roomId) => {
     const next = !expandedRooms[roomId];
     setExpandedRooms((prev) => ({ ...prev, [roomId]: next }));
-    // Load mỗi khi mở (kể cả lần 2) để luôn đồng bộ DB
     if (next) loadRoomData(roomId);
   };
 
@@ -542,25 +458,8 @@ export default function MeterReadingPage() {
     return "pending";
   };
 
-  const STATUS_COLOR = {
-    done: "#10b981",
-    partial: "#f59e0b",
-    pending: "#94a3b8",
-  };
-  const STATUS_LABEL = {
-    done: "✓ Đã xong",
-    partial: "~ Ghi dở",
-    pending: "Chưa ghi",
-  };
-
   return (
-    <div
-      style={{
-        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-        minHeight: "100vh",
-        background: "#f0f4f8",
-      }}
-    >
+    <div className="container-fluid py-4">
       {invoiceModal && (
         <CreateInvoiceModal
           defaultContractId={invoiceModal.contractId}
@@ -571,632 +470,327 @@ export default function MeterReadingPage() {
         />
       )}
 
-      {/* Header */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-          padding: "24px 32px 20px",
-          color: "#fff",
-        }}
-      >
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 12,
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 4,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#f59e0b",
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    fontSize: 18,
-                  }}
-                >
-                  <FaCalculator />
-                </div>
-                <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>
-                  Ghi Chỉ Số Điện – Nước
-                </h1>
-              </div>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 13 }}>
-                Chọn chi nhánh → mở phòng → nhập chỉ số → tạo hóa đơn
-              </p>
-            </div>
-
-            {/* Nút tạo hóa đơn thủ công độc lập (không cần chọn phòng) */}
-            <button
-              onClick={() => setInvoiceModal({ contractId: "", roomName: "" })}
-              style={{
-                padding: "10px 18px",
-                borderRadius: 10,
-                border: "none",
-                cursor: "pointer",
-                background: "#6366f1",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <FaPlus /> Tạo hóa đơn thủ công
-            </button>
-          </div>
-
-          {/* Period selector */}
-          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                background: "rgba(255,255,255,0.08)",
-                borderRadius: 10,
-                padding: "8px 18px",
-              }}
-            >
-              <span
-                style={{
-                  color: "#94a3b8",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                }}
-              >
-                Kỳ
-              </span>
-              <select
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#fff",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m} style={{ background: "#1e293b" }}>
-                    Tháng {m < 10 ? `0${m}` : m}
-                  </option>
-                ))}
-              </select>
-              <span style={{ color: "#475569" }}>/</span>
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#fff",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {[2024, 2025, 2026, 2027].map((y) => (
-                  <option key={y} value={y} style={{ background: "#1e293b" }}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+      {/* ── Header ── */}
+      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+        <div>
+          <h4 className="fw-bold text-dark mb-1">GHI CHỈ SỐ ĐIỆN – NƯỚC</h4>
+          <p className="text-muted small mb-0">
+            Chọn chi nhánh → mở phòng → nhập chỉ số → tạo hóa đơn
+          </p>
         </div>
+        <button
+          className="btn btn-primary shadow-sm d-flex align-items-center gap-2"
+          onClick={() => setInvoiceModal({ contractId: "", roomName: "" })}
+        >
+          <FaPlus size={14} /> Tạo hóa đơn thủ công
+        </button>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
-        {/* Filters */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "16px 20px",
-            marginBottom: 16,
-            boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-            alignItems: "flex-end",
-          }}
-        >
-          <div style={{ flex: "1 1 200px" }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#64748b",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              <FaBuilding style={{ marginRight: 4 }} />
-              Chi nhánh
-            </label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "9px 12px",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: 8,
-                fontSize: 14,
-                background: "#f8fafc",
-              }}
-            >
-              <option value="">-- Chọn chi nhánh --</option>
-              {branches.map((b) => (
-                <option key={b.branchId} value={b.branchId}>
-                  {b.branchName}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* ── Toolbar card: filters + kỳ ── */}
+      <div className="card border-0 shadow-sm rounded-3 mb-4">
+        <div className="card-body py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          {/* Bộ lọc trái: chi nhánh, tầng, tìm phòng */}
+          <div className="d-flex gap-2 flex-wrap align-items-center">
+            {/* Chi nhánh */}
+            <div className="input-group input-group-sm" style={{ width: 200 }}>
+              <span className="input-group-text bg-light border-0">
+                <FaBuilding className="text-muted" size={12} />
+              </span>
+              <select
+                className="form-select form-select-sm border-0 bg-light bg-primary-subtle text-primary fw-bold"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                {branches.map((b) => (
+                  <option key={b.branchId} value={b.branchId}>
+                    {b.branchName}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div style={{ flex: "1 1 160px" }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#64748b",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              <FaLayerGroup style={{ marginRight: 4 }} />
-              Tầng
-            </label>
-            <select
-              value={selectedFloor}
-              onChange={(e) => setSelectedFloor(e.target.value)}
-              disabled={!selectedBranch}
-              style={{
-                width: "100%",
-                padding: "9px 12px",
-                border: "1.5px solid #e2e8f0",
-                borderRadius: 8,
-                fontSize: 14,
-                background: selectedBranch ? "#f8fafc" : "#f1f5f9",
-              }}
-            >
-              <option value="">-- Tất cả tầng --</option>
-              {floors.map((f) => (
-                <option key={f.floorId} value={f.floorId}>
-                  {f.floorName}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Tầng */}
+            <div className="input-group input-group-sm" style={{ width: 160 }}>
+              <span className="input-group-text bg-light border-0">
+                <FaLayerGroup className="text-muted" size={12} />
+              </span>
+              <select
+                className="form-select form-select-sm border-0 bg-light"
+                value={selectedFloor}
+                onChange={(e) => setSelectedFloor(e.target.value)}
+                disabled={!selectedBranch || floors.length === 0}
+              >
+                <option value="">Tất cả tầng</option>
+                {floors.map((f) => (
+                  <option key={f.floorId} value={f.floorId}>
+                    {f.floorName}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div style={{ flex: "1 1 220px" }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#64748b",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              <FaSearch style={{ marginRight: 4 }} />
-              Tìm phòng
-            </label>
-            <div style={{ position: "relative" }}>
+            {/* Tìm phòng */}
+            <div className="input-group input-group-sm" style={{ width: 220 }}>
+              <span className="input-group-text bg-light border-0">
+                <FaSearch size={12} />
+              </span>
               <input
                 type="text"
-                placeholder="Tên phòng..."
+                className="form-control bg-light border-0 small"
+                placeholder="Tìm tên phòng..."
                 value={searchRoom}
                 onChange={(e) => setSearchRoom(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px 9px 34px",
-                  border: "1.5px solid #e2e8f0",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  background: "#f8fafc",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-              <FaSearch
-                style={{
-                  position: "absolute",
-                  left: 11,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#94a3b8",
-                  fontSize: 12,
-                }}
               />
               {searchRoom && (
                 <button
+                  className="btn btn-light border-0"
                   onClick={() => setSearchRoom("")}
-                  style={{
-                    position: "absolute",
-                    right: 9,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#94a3b8",
-                  }}
                 >
-                  <FaTimes />
+                  <FaTimesCircle className="text-muted" size={12} />
                 </button>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Stats strip */}
-        {selectedBranch && (
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginBottom: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            {[
-              {
-                label: "Tổng phòng",
-                val: filteredRooms.length,
-                color: "#6366f1",
-              },
-              {
-                label: "Đã ghi xong",
-                val: filteredRooms.filter(
-                  (r) => getRoomStatus(r.roomId) === "done",
-                ).length,
-                color: "#10b981",
-              },
-              {
-                label: "Ghi dở",
-                val: filteredRooms.filter(
-                  (r) => getRoomStatus(r.roomId) === "partial",
-                ).length,
-                color: "#f59e0b",
-              },
-              {
-                label: "Chưa ghi",
-                val: filteredRooms.filter(
-                  (r) => getRoomStatus(r.roomId) === "pending",
-                ).length,
-                color: "#ef4444",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                style={{
-                  background: "#fff",
-                  borderRadius: 10,
-                  padding: "10px 18px",
-                  boxShadow: "0 1px 5px rgba(0,0,0,0.05)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ fontSize: 20, fontWeight: 800, color: s.color }}>
-                  {s.val}
-                </span>
-                <span style={{ fontSize: 12, color: "#64748b" }}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
+          {/* Kỳ tháng/năm bên phải */}
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted small fw-semibold">Kỳ:</span>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ width: 110 }}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <option key={m} value={m}>
+                  Tháng {m < 10 ? `0${m}` : m}
+                </option>
+              ))}
+            </select>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ width: 90 }}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+            >
+              {[2024, 2025, 2026, 2027].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Content */}
-        {!selectedBranch ? (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 14,
-              padding: "60px",
-              textAlign: "center",
-              boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
-            }}
-          >
+      {/* ── Stats strip (chỉ hiện khi đã chọn chi nhánh) ── */}
+      {selectedBranch && (
+        <div className="d-flex gap-4 mb-4">
+          {[
+            {
+              label: "Tổng phòng",
+              val: filteredRooms.length,
+              color: "text-primary",
+            },
+            {
+              label: "Đã xong",
+              val: filteredRooms.filter(
+                (r) => getRoomStatus(r.roomId) === "done",
+              ).length,
+              color: "text-success",
+            },
+            {
+              label: "Ghi dở",
+              val: filteredRooms.filter(
+                (r) => getRoomStatus(r.roomId) === "partial",
+              ).length,
+              color: "text-warning",
+            },
+            {
+              label: "Chưa ghi",
+              val: filteredRooms.filter(
+                (r) => getRoomStatus(r.roomId) === "pending",
+              ).length,
+              color: "text-danger",
+            },
+          ].map((s) => (
+            <div key={s.label} className="d-flex align-items-center gap-2">
+              <span className={`fw-bold fs-5 ${s.color}`}>{s.val}</span>
+              <span className="text-muted small">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Nội dung chính ── */}
+      {!selectedBranch ? (
+        <div className="card border-0 shadow-sm rounded-3">
+          <div className="card-body text-center py-5">
             <FaBuilding
-              style={{ fontSize: 38, color: "#e2e8f0", marginBottom: 14 }}
+              size={36}
+              className="text-secondary opacity-25 mb-3 d-block mx-auto"
             />
-            <p style={{ color: "#94a3b8", fontSize: 14, margin: 0 }}>
+            <p className="text-muted small mb-0">
               Chọn chi nhánh để bắt đầu ghi chỉ số
             </p>
           </div>
-        ) : loadingRooms ? (
-          <div
-            style={{ textAlign: "center", padding: "60px", color: "#64748b" }}
-          >
-            Đang tải phòng...
+        </div>
+      ) : loadingRooms ? (
+        <div className="card border-0 shadow-sm rounded-3">
+          <div className="card-body text-center py-5">
+            <div className="spinner-border spinner-border-sm text-secondary me-2" />
+            <span className="text-muted small">Đang tải phòng...</span>
           </div>
-        ) : filteredRooms.length === 0 ? (
-          <div
-            style={{ textAlign: "center", padding: "60px", color: "#94a3b8" }}
-          >
-            Không tìm thấy phòng nào
+        </div>
+      ) : filteredRooms.length === 0 ? (
+        <div className="card border-0 shadow-sm rounded-3">
+          <div className="card-body text-center py-5">
+            <FaDoorOpen
+              size={28}
+              className="text-secondary opacity-25 mb-2 d-block mx-auto"
+            />
+            <p className="text-muted small mb-0">Không tìm thấy phòng nào</p>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {filteredRooms.map((room) => {
-              const expanded = expandedRooms[room.roomId];
-              const roomStatus = getRoomStatus(room.roomId);
-              const sc = STATUS_COLOR[roomStatus];
-              const sl = STATUS_LABEL[roomStatus];
-              const contract = contracts[room.roomId];
+        </div>
+      ) : (
+        <div className="d-flex flex-column gap-2">
+          {filteredRooms.map((room) => {
+            const expanded = expandedRooms[room.roomId];
+            const roomStatus = getRoomStatus(room.roomId);
+            const statusCfg = STATUS_CONFIG[roomStatus];
+            const contract = contracts[room.roomId];
 
-              return (
-                <div
-                  key={room.roomId}
-                  style={{
-                    background: "#fff",
-                    borderRadius: 12,
-                    overflow: "hidden",
-                    border: `1.5px solid ${expanded ? "#6366f1" : "#e2e8f0"}`,
-                    boxShadow: expanded
-                      ? "0 4px 18px rgba(99,102,241,0.1)"
-                      : "0 1px 4px rgba(0,0,0,0.04)",
-                    transition: "all 0.18s",
-                  }}
+            return (
+              <div
+                key={room.roomId}
+                className={`card border-0 shadow-sm rounded-3 overflow-hidden ${expanded ? "border border-primary" : ""}`}
+                style={{ transition: "all 0.18s" }}
+              >
+                {/* ── Room header (click để mở) ── */}
+                <button
+                  className="btn btn-white w-100 d-flex align-items-center gap-3 p-3 border-0 bg-white text-start"
+                  onClick={() => toggleRoom(room.roomId)}
                 >
-                  {/* Room header */}
-                  <button
-                    onClick={() => toggleRoom(room.roomId)}
-                    style={{
-                      width: "100%",
-                      padding: "14px 18px",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      textAlign: "left",
-                    }}
+                  <div
+                    className={`rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 ${expanded ? "bg-primary-subtle text-primary" : "bg-light text-secondary"}`}
+                    style={{ width: 40, height: 40 }}
                   >
-                    <div
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 9,
-                        flexShrink: 0,
-                        background: expanded ? "#ede9fe" : "#f1f5f9",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: expanded ? "#6366f1" : "#64748b",
-                        fontSize: 15,
-                      }}
-                    >
-                      <FaDoorOpen />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          color: "#0f172a",
-                          fontSize: 14,
-                        }}
-                      >
-                        {room.roomName}
-                      </div>
-                      <div
-                        style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}
-                      >
-                        {room.floorName} · {room.branchName}
-                        {contract && (
-                          <span
-                            style={{
-                              color: "#6366f1",
-                              marginLeft: 8,
-                              fontWeight: 600,
-                            }}
-                          >
-                            HĐ #{contract.contractId}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: "3px 10px",
-                        borderRadius: 20,
-                        background: `${sc}18`,
-                        color: sc,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {sl}
-                    </span>
-                    <FaChevronRight
-                      style={{
-                        color: "#94a3b8",
-                        fontSize: 11,
-                        flexShrink: 0,
-                        transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-                        transition: "transform 0.2s",
-                      }}
-                    />
-                  </button>
+                    <FaDoorOpen size={16} />
+                  </div>
 
-                  {/* Expanded */}
-                  {expanded && (
-                    <div
-                      style={{
-                        padding: "4px 18px 18px",
-                        borderTop: "1px solid #f1f5f9",
-                      }}
-                    >
-                      {!readings[room.roomId] ? (
-                        <div
-                          style={{
-                            textAlign: "center",
-                            padding: "30px",
-                            color: "#94a3b8",
-                            fontSize: 13,
-                          }}
-                        >
+                  <div className="flex-fill">
+                    <div className="fw-bold text-dark small">
+                      {room.roomName}
+                    </div>
+                    <div className="text-muted" style={{ fontSize: 11 }}>
+                      {room.floorName} · {room.branchName}
+                      {contract && (
+                        <span className="text-primary ms-2 fw-semibold">
+                          HĐ #{contract.contractId}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <span
+                    className={`badge rounded-pill fw-semibold ${statusCfg.badge}`}
+                    style={{ fontSize: 11 }}
+                  >
+                    {statusCfg.label}
+                  </span>
+
+                  <FaChevronRight
+                    size={11}
+                    className="text-muted flex-shrink-0"
+                    style={{
+                      transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                      transition: "transform 0.2s",
+                    }}
+                  />
+                </button>
+
+                {/* ── Expanded content ── */}
+                {expanded && (
+                  <div className="border-top px-3 pb-3 pt-2">
+                    {!readings[room.roomId] ? (
+                      <div className="text-center py-4">
+                        <div className="spinner-border spinner-border-sm text-secondary me-2" />
+                        <span className="text-muted small">
                           Đang tải chỉ số...
-                        </div>
-                      ) : (
-                        <>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 12,
-                              marginTop: 14,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {SERVICES.map((svc) => {
-                              const rd = readings[room.roomId]?.[svc.id] || {};
-                              const usage =
-                                rd.newValue && !isNaN(Number(rd.newValue))
-                                  ? Math.max(
-                                      0,
-                                      Number(rd.newValue) - (rd.oldValue || 0),
-                                    )
-                                  : null;
-                              const isSaved = rd.status === "saved";
-                              const isLoading = rd.status === "loading";
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Service cards */}
+                        <div className="row g-3 mt-1">
+                          {SERVICES.map((svc) => {
+                            const rd = readings[room.roomId]?.[svc.id] || {};
+                            const usage =
+                              rd.newValue && !isNaN(Number(rd.newValue))
+                                ? Math.max(
+                                    0,
+                                    Number(rd.newValue) - (rd.oldValue || 0),
+                                  )
+                                : null;
+                            const isSaved = rd.status === "saved";
+                            const isLoading = rd.status === "loading";
 
-                              return (
+                            return (
+                              <div key={svc.id} className="col-md-6">
                                 <div
-                                  key={svc.id}
+                                  className={`rounded-3 p-3 ${svc.bgClass}`}
                                   style={{
-                                    flex: "1 1 260px",
-                                    border: `1.5px solid ${isSaved ? svc.color + "60" : svc.color + "30"}`,
-                                    borderRadius: 12,
-                                    padding: "14px",
-                                    background: svc.bg,
+                                    border: `1.5px solid ${isSaved ? svc.borderColor + "80" : svc.borderColor + "30"}`,
                                   }}
                                 >
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                      marginBottom: 12,
-                                    }}
-                                  >
-                                    <span
-                                      style={{ color: svc.color, fontSize: 17 }}
-                                    >
+                                  {/* Service header */}
+                                  <div className="d-flex align-items-center gap-2 mb-3">
+                                    <span className={svc.colorClass}>
                                       {svc.icon}
                                     </span>
-                                    <span
-                                      style={{
-                                        fontWeight: 700,
-                                        fontSize: 14,
-                                        color: "#0f172a",
-                                      }}
-                                    >
+                                    <span className="fw-bold small">
                                       {svc.label}
                                     </span>
                                     {isSaved && (
                                       <span
-                                        style={{
-                                          marginLeft: "auto",
-                                          color: "#10b981",
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 4,
-                                          background: "#d1fae5",
-                                          padding: "2px 9px",
-                                          borderRadius: 12,
-                                        }}
+                                        className="badge bg-success-subtle text-success ms-auto d-flex align-items-center gap-1"
+                                        style={{ fontSize: 11 }}
                                       >
-                                        <FaCheck style={{ fontSize: 10 }} /> Đã
-                                        lưu
+                                        <FaCheck size={9} /> Đã lưu
                                       </span>
                                     )}
                                   </div>
 
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "space-between",
-                                      marginBottom: 10,
-                                    }}
-                                  >
+                                  {/* Chỉ số kỳ trước / tiêu thụ */}
+                                  <div className="d-flex justify-content-between mb-3">
                                     <div>
                                       <div
-                                        style={{
-                                          fontSize: 10,
-                                          color: "#64748b",
-                                          fontWeight: 600,
-                                          textTransform: "uppercase",
-                                          marginBottom: 2,
-                                        }}
+                                        className="text-muted text-uppercase fw-semibold mb-1"
+                                        style={{ fontSize: 10 }}
                                       >
                                         Kỳ trước
                                       </div>
-                                      <div
-                                        style={{
-                                          fontSize: 19,
-                                          fontWeight: 800,
-                                          color: "#475569",
-                                        }}
-                                      >
+                                      <div className="fw-bold fs-5 text-secondary">
                                         {rd.oldValue ?? 0}{" "}
-                                        <span style={{ fontSize: 11 }}>
+                                        <span className="small fw-normal">
                                           {svc.unit}
                                         </span>
                                       </div>
                                     </div>
                                     {usage !== null && (
-                                      <div style={{ textAlign: "right" }}>
+                                      <div className="text-end">
                                         <div
-                                          style={{
-                                            fontSize: 10,
-                                            color: "#64748b",
-                                            fontWeight: 600,
-                                            textTransform: "uppercase",
-                                            marginBottom: 2,
-                                          }}
+                                          className="text-muted text-uppercase fw-semibold mb-1"
+                                          style={{ fontSize: 10 }}
                                         >
                                           Tiêu thụ
                                         </div>
                                         <div
-                                          style={{
-                                            fontSize: 19,
-                                            fontWeight: 800,
-                                            color: svc.color,
-                                          }}
+                                          className={`fw-bold fs-5 ${svc.colorClass}`}
                                         >
                                           +{usage}{" "}
-                                          <span style={{ fontSize: 11 }}>
+                                          <span className="small fw-normal">
                                             {svc.unit}
                                           </span>
                                         </div>
@@ -1204,22 +798,16 @@ export default function MeterReadingPage() {
                                     )}
                                   </div>
 
-                                  <div style={{ marginBottom: 8 }}>
-                                    <label
-                                      style={{
-                                        fontSize: 11,
-                                        fontWeight: 700,
-                                        color: "#64748b",
-                                        display: "block",
-                                        marginBottom: 5,
-                                      }}
-                                    >
+                                  {/* Input chỉ số mới */}
+                                  <div className="mb-2">
+                                    <label className="form-label small fw-semibold text-muted mb-1">
                                       Chỉ số mới ({svc.unit})
                                     </label>
-                                    <div style={{ display: "flex", gap: 7 }}>
+                                    <div className="d-flex gap-2">
                                       <input
                                         type="number"
                                         min={rd.oldValue || 0}
+                                        className={`form-control form-control-sm fw-bold ${rd.status === "error" ? "is-invalid" : isSaved ? "border-success bg-success-subtle" : ""}`}
                                         value={rd.newValue || ""}
                                         onChange={(e) =>
                                           updateReading(
@@ -1231,94 +819,52 @@ export default function MeterReadingPage() {
                                         }
                                         placeholder="Nhập chỉ số..."
                                         disabled={isSaved}
-                                        style={{
-                                          flex: 1,
-                                          padding: "9px 11px",
-                                          border: `1.5px solid ${rd.status === "error" ? "#ef4444" : isSaved ? "#10b981" : "#d1d5db"}`,
-                                          borderRadius: 8,
-                                          fontSize: 15,
-                                          fontWeight: 700,
-                                          background: isSaved
-                                            ? "#f0fdf4"
-                                            : "#fff",
-                                          outline: "none",
-                                        }}
                                       />
                                       <button
+                                        className={`btn btn-sm fw-bold d-flex align-items-center gap-1 flex-shrink-0 ${isSaved ? "btn-success" : "btn-dark"}`}
                                         onClick={() =>
                                           handleSave(room.roomId, svc.id)
                                         }
                                         disabled={
                                           !rd.newValue || isSaved || isLoading
                                         }
-                                        style={{
-                                          padding: "9px 14px",
-                                          borderRadius: 8,
-                                          border: "none",
-                                          cursor: "pointer",
-                                          background: isSaved
-                                            ? "#10b981"
-                                            : svc.color,
-                                          color: "#fff",
-                                          fontWeight: 700,
-                                          fontSize: 13,
-                                          opacity:
-                                            !rd.newValue || isSaved || isLoading
-                                              ? 0.5
-                                              : 1,
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: 5,
-                                        }}
                                       >
                                         {isLoading ? (
-                                          "..."
+                                          <span
+                                            className="spinner-border spinner-border-sm"
+                                            style={{ width: 12, height: 12 }}
+                                          />
                                         ) : isSaved ? (
-                                          <FaCheck />
+                                          <FaCheck size={11} />
                                         ) : (
                                           "Lưu"
                                         )}
                                       </button>
                                     </div>
                                     {rd.status === "error" && (
-                                      <p
-                                        style={{
-                                          color: "#ef4444",
-                                          fontSize: 12,
-                                          margin: "4px 0 0",
-                                        }}
-                                      >
-                                        <FaInfoCircle
-                                          style={{ marginRight: 4 }}
-                                        />
+                                      <div className="text-danger small mt-1">
+                                        <FaInfoCircle className="me-1" />
                                         {rd.errMsg}
-                                      </p>
+                                      </div>
                                     )}
                                   </div>
 
+                                  {/* Upload ảnh đồng hồ */}
                                   {!isSaved && (
                                     <label
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 5,
-                                        fontSize: 12,
-                                        color: "#64748b",
-                                        cursor: "pointer",
-                                        padding: "4px 10px",
-                                        borderRadius: 6,
-                                        background: "rgba(255,255,255,0.6)",
-                                        border: "1px dashed #cbd5e1",
-                                      }}
+                                      className="d-inline-flex align-items-center gap-2 small text-muted mt-1"
+                                      style={{ cursor: "pointer" }}
                                     >
-                                      <FaCamera />
-                                      {rd.image
-                                        ? rd.image.name
-                                        : "Ảnh đồng hồ (tuỳ chọn)"}
+                                      <span className="badge bg-light text-secondary border border-secondary-subtle d-flex align-items-center gap-1 fw-normal py-1 px-2">
+                                        <FaCamera size={11} />
+                                        {rd.image
+                                          ? rd.image.name
+                                          : "Ảnh đồng hồ (tuỳ chọn)"}
+                                      </span>
                                       <input
                                         type="file"
                                         accept="image/*"
-                                        style={{ display: "none" }}
+                                        className="d-none"
                                         onChange={(e) =>
                                           updateReading(
                                             room.roomId,
@@ -1331,81 +877,53 @@ export default function MeterReadingPage() {
                                     </label>
                                   )}
                                 </div>
-                              );
-                            })}
-                          </div>
+                              </div>
+                            );
+                          })}
+                        </div>
 
-                          {/* Footer action */}
-                          <div
-                            style={{
-                              marginTop: 14,
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              flexWrap: "wrap",
-                              gap: 8,
-                            }}
-                          >
-                            <div style={{ fontSize: 12, color: "#64748b" }}>
-                              {contract ? (
-                                <>
-                                  Hợp đồng{" "}
-                                  <strong style={{ color: "#6366f1" }}>
-                                    #{contract.contractId}
-                                  </strong>{" "}
-                                  · {contract.status}
-                                </>
-                              ) : (
-                                <span style={{ color: "#f59e0b" }}>
-                                  ⚠ Không tìm thấy hợp đồng active
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() =>
-                                setInvoiceModal({
-                                  contractId: contract?.contractId || "",
-                                  roomName: room.roomName,
-                                })
-                              }
-                              style={{
-                                padding: "9px 18px",
-                                borderRadius: 9,
-                                border: "none",
-                                cursor: "pointer",
-                                background:
-                                  roomStatus === "done"
-                                    ? "linear-gradient(135deg, #6366f1, #4f46e5)"
-                                    : "linear-gradient(135deg, #64748b, #475569)",
-                                color: "#fff",
-                                fontWeight: 700,
-                                fontSize: 13,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 7,
-                                boxShadow:
-                                  roomStatus === "done"
-                                    ? "0 4px 12px rgba(99,102,241,0.25)"
-                                    : "none",
-                              }}
-                            >
-                              <FaFileInvoiceDollar />
-                              {roomStatus === "done"
-                                ? `Tạo hóa đơn T${month}/${year}`
-                                : "Tạo hóa đơn (chưa ghi đủ)"}
-                              <FaArrowRight style={{ fontSize: 11 }} />
-                            </button>
+                        {/* Footer: hợp đồng + nút tạo hóa đơn */}
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3 pt-2 border-top">
+                          <div className="small text-muted">
+                            {contract ? (
+                              <>
+                                Hợp đồng{" "}
+                                <strong className="text-primary">
+                                  #{contract.contractId}
+                                </strong>{" "}
+                                · {contract.status}
+                              </>
+                            ) : (
+                              <span className="text-warning">
+                                ⚠ Không tìm thấy hợp đồng active
+                              </span>
+                            )}
                           </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                          <button
+                            className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 ${getRoomStatus(room.roomId) === "done" ? "btn-primary" : "btn-secondary"}`}
+                            onClick={() =>
+                              setInvoiceModal({
+                                contractId: contract?.contractId || "",
+                                roomName: room.roomName,
+                              })
+                            }
+                          >
+                            <FaFileInvoiceDollar size={13} />
+                            {getRoomStatus(room.roomId) === "done"
+                              ? `Tạo hóa đơn T${month}/${year}`
+                              : "Tạo hóa đơn (chưa ghi đủ)"}
+                            <FaArrowRight size={11} />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

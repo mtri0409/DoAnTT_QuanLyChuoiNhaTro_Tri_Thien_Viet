@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   FaTools,
   FaSearch,
   FaTimesCircle,
   FaEye,
   FaTrash,
-  FaCheckCircle,
   FaClock,
   FaCog,
-  FaBan,
   FaChevronDown,
+  FaEdit,
+  FaPlus,
 } from "react-icons/fa";
 import apiMaintenance from "../../api/apiMaintenance";
 import apiBranches from "../../api/apiBranches";
@@ -21,60 +21,43 @@ import Pagination from "../../components/Pagination";
 const STATUS_CONFIG = {
   PENDING: {
     label: "Chờ xử lý",
-    bg: "#fef9ec",
-    color: "#92400e",
-    dot: "#d97706",
+    bg: "bg-warning-subtle",
+    text: "text-warning",
   },
   PROCESSING: {
     label: "Đang xử lý",
-    bg: "#eff6ff",
-    color: "#1e40af",
-    dot: "#3b82f6",
+    bg: "bg-primary-subtle",
+    text: "text-primary",
   },
   COMPLETED: {
     label: "Hoàn thành",
-    bg: "#f0fdf4",
-    color: "#166534",
-    dot: "#22c55e",
+    bg: "bg-success-subtle",
+    text: "text-success",
   },
   CANCELLED: {
     label: "Đã hủy",
-    bg: "#f3f4f6",
-    color: "#6b7280",
-    dot: "#9ca3af",
+    bg: "bg-secondary-subtle",
+    text: "text-secondary",
   },
 };
 
 const StatusBadge = ({ status }) => {
   const s = STATUS_CONFIG[status] || {
     label: status,
-    bg: "#f3f4f6",
-    color: "#374151",
-    dot: "#9ca3af",
+    bg: "bg-light",
+    text: "text-dark",
   };
   return (
     <span
-      style={{
-        background: s.bg,
-        color: s.color,
-        padding: "3px 10px",
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 600,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-      }}
+      className={`badge rounded-pill ${s.bg} ${s.text} fw-semibold`}
+      style={{ fontSize: 11 }}
     >
-      <span
-        style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot }}
-      />
       {s.label}
     </span>
   );
 };
 
-/* ── Status dropdown ── */
+/* ── Status inline dropdown (only for non-terminal statuses) ── */
 const StatusDropdown = ({ current, onSelect, loading }) => {
   const [open, setOpen] = useState(false);
   const options = ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"].filter(
@@ -85,36 +68,24 @@ const StatusDropdown = ({ current, onSelect, loading }) => {
     return <StatusBadge status={current} />;
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
+    <div className="position-relative d-inline-block">
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={loading}
-        style={{
-          background: "none",
-          border: "none",
-          padding: 0,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 3,
-        }}
+        className="btn btn-sm border-0 bg-transparent d-inline-flex align-items-center gap-1 p-0"
       >
         <StatusBadge status={current} />
-        <FaChevronDown size={9} color="#9ca3af" />
+        <FaChevronDown size={9} className="text-muted" />
       </button>
       {open && (
         <div
+          className="position-absolute bg-white rounded-3 shadow border"
           style={{
-            position: "absolute",
             top: "110%",
             left: 0,
             zIndex: 99,
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-            padding: 4,
             minWidth: 150,
-            border: "1px solid #e5e7eb",
+            padding: 4,
           }}
         >
           {options.map((s) => (
@@ -124,33 +95,10 @@ const StatusDropdown = ({ current, onSelect, loading }) => {
                 onSelect(s);
                 setOpen(false);
               }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                width: "100%",
-                padding: "6px 10px",
-                border: "none",
-                background: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: 12,
-                color: "#374151",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#f3f4f6")
-              }
-              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+              className="btn btn-sm w-100 text-start d-flex align-items-center gap-2"
+              style={{ fontSize: 12, borderRadius: 6 }}
             >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: STATUS_CONFIG[s]?.dot,
-                }}
-              />
-              {STATUS_CONFIG[s]?.label}
+              <StatusBadge status={s} />
             </button>
           ))}
         </div>
@@ -159,74 +107,35 @@ const StatusDropdown = ({ current, onSelect, loading }) => {
   );
 };
 
-/* ── Summary strip (compact) ── */
+/* ── Summary cards (matching profile style) ── */
 const SummaryStrip = ({ summary }) => (
-  <div
-    style={{
-      display: "flex",
-      gap: 1,
-      background: "#e5e7eb",
-      borderRadius: 10,
-      overflow: "hidden",
-      marginBottom: 16,
-    }}
-  >
+  <div className="d-flex gap-4 mb-4">
     {[
       {
         key: "PENDING",
         label: "Chờ xử lý",
-        icon: <FaClock size={13} />,
-        color: "#92400e",
-        bg: "#fef9ec",
+        icon: <FaClock size={16} />,
+        color: "text-warning",
+        bg: "bg-warning-subtle",
       },
       {
         key: "PROCESSING",
         label: "Đang xử lý",
-        icon: <FaCog size={13} />,
-        color: "#1e40af",
-        bg: "#eff6ff",
-      },
-      {
-        key: "COMPLETED",
-        label: "Hoàn thành",
-        icon: <FaCheckCircle size={13} />,
-        color: "#166534",
-        bg: "#f0fdf4",
-      },
-      {
-        key: "CANCELLED",
-        label: "Đã hủy",
-        icon: <FaBan size={13} />,
-        color: "#6b7280",
-        bg: "#f9fafb",
+        icon: <FaCog size={16} />,
+        color: "text-primary",
+        bg: "bg-primary-subtle",
       },
     ].map(({ key, label, icon, color, bg }) => (
-      <div
-        key={key}
-        style={{
-          flex: 1,
-          background: bg,
-          padding: "12px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        <span style={{ color }}>{icon}</span>
+      <div key={key} className="d-flex align-items-center gap-3">
+        <div
+          className={`${bg} ${color} rounded-3 d-flex align-items-center justify-content-center`}
+          style={{ width: 44, height: 44, flexShrink: 0 }}
+        >
+          {icon}
+        </div>
         <div>
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: "#111",
-              lineHeight: 1,
-            }}
-          >
-            {summary[key]}
-          </div>
-          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
-            {label}
-          </div>
+          <div className="fw-bold fs-5 mb-0">{summary[key]}</div>
+          <div className="text-muted small">{label}</div>
         </div>
       </div>
     ))}
@@ -279,14 +188,10 @@ const ListMaintenance = () => {
     apiFloor
       .getAllFloors()
       .then((res) => {
-        // Hỗ trợ: PageResponse { content: [...] }, array thẳng, hoặc { data: [...] }
         let allFloors = [];
-        console.log(res);
         if (Array.isArray(res)) allFloors = res;
         else if (Array.isArray(res?.content)) allFloors = res.content;
         else if (Array.isArray(res?.data)) allFloors = res.data;
-
-        // Chuẩn hóa field name: backend có thể trả floorName hoặc name
         allFloors = allFloors.map((f) => ({
           ...f,
           floorId: f.floorId ?? f.id,
@@ -296,11 +201,9 @@ const ListMaintenance = () => {
             f.floorNumber ??
             `Tầng ${f.floorId ?? f.id}`,
         }));
-
         const branchFloors = filterBranch
           ? allFloors.filter((f) => String(f.branchId) === String(filterBranch))
           : allFloors;
-
         setFloors(branchFloors);
       })
       .catch(() => {});
@@ -348,8 +251,8 @@ const ListMaintenance = () => {
           COMPLETED: results[2].totalElements || 0,
           CANCELLED: results[3].totalElements || 0,
         });
-      } catch(e) {
-        console.log("Error :" , e);
+      } catch (e) {
+        console.log("Error:", e);
       }
     };
     fetchSummary();
@@ -378,7 +281,7 @@ const ListMaintenance = () => {
   };
 
   const handleDelete = async (requestId) => {
-    if (!window.confirm("Xóa yêu cầu này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa yêu cầu này?")) return;
     try {
       await apiMaintenance.deleteRequest(requestId);
       fetchData();
@@ -409,7 +312,6 @@ const ListMaintenance = () => {
         })
       : "—";
 
-  // Search client-side; tầng/chi nhánh/trạng thái đã lọc server-side
   const filtered = data.content.filter((r) =>
     appliedSearch
       ? r.description?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
@@ -419,20 +321,29 @@ const ListMaintenance = () => {
   );
 
   return (
-    <div className="container-fluid py-4" style={{ maxWidth: 1400 }}>
+    <div className="container-fluid py-4">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
         <div>
-          <h5
-            className="fw-bold mb-0 d-flex align-items-center gap-2"
-            style={{ color: "#111" }}
-          >
-            <FaTools size={16} style={{ color: "#d97706" }} />
-            Quản lý báo hỏng
-          </h5>
-          <p className="text-muted mb-0" style={{ fontSize: 12 }}>
-            Tiếp nhận và xử lý yêu cầu sửa chữa
+          <h4 className="fw-bold text-dark mb-1">QUẢN LÝ BÁO HỎNG</h4>
+          <p className="text-muted small mb-0">
+            Tiếp nhận và xử lý yêu cầu sửa chữa từ cư dân
           </p>
+        </div>
+        <div className="d-flex gap-2">
+          <Link
+            to="/maintenance/restore"
+            className="btn btn-outline-danger shadow-sm d-flex align-items-center gap-2"
+          >
+            <FaTrash size={14} />{" "}
+            <span className="d-none d-md-inline">Danh sách đã xóa</span>
+          </Link>
+          <Link
+            to="/maintenance/create"
+            className="btn btn-primary shadow-sm d-flex align-items-center gap-2"
+          >
+            <FaPlus size={14} /> <span>Thêm mới</span>
+          </Link>
         </div>
       </div>
 
@@ -440,55 +351,22 @@ const ListMaintenance = () => {
       <SummaryStrip summary={summary} />
 
       {/* Main card */}
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          overflow: "hidden",
-        }}
-      >
-        {/* Toolbar — tất cả trên 1 hàng */}
-        <div
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid #f0f0f0",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 8,
-            alignItems: "center",
-          }}
-        >
+      <div className="card border-0 shadow-sm rounded-3">
+        {/* Toolbar */}
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
           {/* Search */}
           <form
             onSubmit={handleSearchSubmit}
-            style={{
-              display: "flex",
-              gap: 6,
-              flex: "1 1 220px",
-              minWidth: 200,
-            }}
+            className="d-flex gap-2"
+            style={{ maxWidth: 400, flex: 1 }}
           >
-            <div style={{ position: "relative", flex: 1 }}>
-              <FaSearch
-                size={12}
-                style={{
-                  position: "absolute",
-                  left: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#9ca3af",
-                }}
-              />
+            <div className="input-group">
+              <span className="input-group-text bg-light border-0">
+                <FaSearch size={13} />
+              </span>
               <input
                 type="text"
-                className="form-control form-control-sm"
-                style={{
-                  paddingLeft: 30,
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                  fontSize: 13,
-                }}
+                className="form-control bg-light border-0 small"
                 placeholder="Tìm mô tả, phòng, người gửi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -496,177 +374,107 @@ const ListMaintenance = () => {
               {appliedSearch && (
                 <button
                   type="button"
+                  className="btn btn-light border-0"
                   onClick={handleClearSearch}
-                  style={{
-                    position: "absolute",
-                    right: 8,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 0,
-                    color: "#9ca3af",
-                  }}
                 >
-                  <FaTimesCircle size={13} />
+                  <FaTimesCircle className="text-muted" />
                 </button>
               )}
             </div>
-            <button
-              type="submit"
-              className="btn btn-sm btn-dark"
-              style={{ fontSize: 12, padding: "4px 12px" }}
-            >
+            <button type="submit" className="btn btn-dark shadow-sm">
               Tìm
             </button>
           </form>
 
-          {/* Divider */}
-          <div style={{ width: 1, height: 28, background: "#e5e7eb" }} />
+          {/* Filters */}
+          <div className="d-flex gap-2">
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="PROCESSING">Đang xử lý</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
 
-          {/* Lọc trạng thái */}
-          <select
-            className="form-select form-select-sm"
-            style={{
-              width: "auto",
-              minWidth: 130,
-              fontSize: 12,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-            }}
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ xử lý</option>
-            <option value="PROCESSING">Đang xử lý</option>
-            <option value="COMPLETED">Hoàn thành</option>
-            <option value="CANCELLED">Đã hủy</option>
-          </select>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="createdAt">Ngày tạo</option>
+              <option value="updatedAt">Cập nhật</option>
+              <option value="status">Trạng thái</option>
+            </select>
 
-          {/* Lọc chi nhánh */}
-          <select
-            className="form-select form-select-sm"
-            style={{
-              width: "auto",
-              minWidth: 140,
-              fontSize: 12,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-            }}
-            value={filterBranch}
-            onChange={(e) => {
-              setFilterBranch(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">Tất cả chi nhánh</option>
-            {branches.map((b) => (
-              <option key={b.branchId} value={b.branchId}>
-                {b.branchName}
-              </option>
-            ))}
-          </select>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="desc">Mới nhất</option>
+              <option value="asc">Cũ nhất</option>
+            </select>
 
-          {/* Lọc tầng — thay thế lọc phòng */}
-          <select
-            className="form-select form-select-sm"
-            style={{
-              width: "auto",
-              minWidth: 130,
-              fontSize: 12,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-            }}
-            value={filterFloor}
-            onChange={(e) => {
-              setFilterFloor(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">Tất cả tầng</option>
-            {floors.map((f) => (
-              <option key={f.floorId} value={f.floorId}>
-                {f.floorName}
-              </option>
-            ))}
-          </select>
+            <select
+              className="form-select form-select-sm border-0 bg-primary-subtle text-primary fw-bold"
+              style={{ width: "180px" }}
+              value={filterBranch}
+              onChange={(e) => {
+                setFilterBranch(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tất cả chi nhánh</option>
+              {branches.map((b) => (
+                <option key={b.branchId} value={b.branchId}>
+                  {b.branchName}
+                </option>
+              ))}
+            </select>
 
-          {/* Sắp xếp */}
-          <select
-            className="form-select form-select-sm"
-            style={{
-              width: "auto",
-              minWidth: 140,
-              fontSize: 12,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-            }}
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="createdAt">Sắp xếp: Ngày tạo</option>
-            <option value="updatedAt">Sắp xếp: Cập nhật</option>
-            <option value="status">Sắp xếp: Trạng thái</option>
-          </select>
-
-          <select
-            className="form-select form-select-sm"
-            style={{
-              width: "auto",
-              minWidth: 100,
-              fontSize: 12,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-            }}
-            value={sortOrder}
-            onChange={(e) => {
-              setSortOrder(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="desc">Mới nhất</option>
-            <option value="asc">Cũ nhất</option>
-          </select>
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              value={filterFloor}
+              onChange={(e) => {
+                setFilterFloor(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tất cả tầng</option>
+              {floors.map((f) => (
+                <option key={f.floorId} value={f.floorId}>
+                  {f.floorName}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Table */}
         <div className="table-responsive">
-          <table
-            className="table table-hover align-middle mb-0"
-            style={{ fontSize: 13 }}
-          >
-            <thead>
-              <tr
-                style={{
-                  background: "#f9fafb",
-                  color: "#6b7280",
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                <th
-                  className="ps-4 py-2 fw-semibold border-0"
-                  style={{ width: 60 }}
-                >
-                  #
-                </th>
-                <th className="py-2 fw-semibold border-0">Mô tả sự cố</th>
-                <th className="py-2 fw-semibold border-0">Phòng</th>
-                <th className="py-2 fw-semibold border-0">Người gửi</th>
-                <th className="py-2 fw-semibold border-0">Trạng thái</th>
-                <th className="py-2 fw-semibold border-0">Ngày gửi</th>
-                <th className="text-end pe-4 py-2 fw-semibold border-0">
-                  Thao tác
-                </th>
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr className="text-muted small text-uppercase">
+                <th className="ps-4 py-3">#</th>
+                <th>Mô tả sự cố</th>
+                <th>Phòng</th>
+                <th>Người gửi</th>
+                <th className="text-center">Trạng thái</th>
+                <th>Ngày gửi</th>
+                <th className="text-end pe-4">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -679,57 +487,36 @@ const ListMaintenance = () => {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-5 text-muted small">
+                  <td colSpan={7} className="text-center py-5 text-muted">
                     <FaTools
                       size={28}
-                      className="mb-2 d-block mx-auto"
-                      style={{ opacity: 0.2 }}
+                      className="mb-2 d-block mx-auto opacity-25"
                     />
                     Không có yêu cầu nào
                   </td>
                 </tr>
               ) : (
-                filtered.map((req, idx) => (
-                  <tr
-                    key={req.requestId}
-                    style={{ borderTop: "1px solid #f3f4f6" }}
-                  >
-                    <td className="ps-4 text-muted" style={{ fontSize: 12 }}>
-                      #{req.requestId}
-                    </td>
+                filtered.map((req) => (
+                  <tr key={req.requestId}>
+                    <td className="ps-4 text-muted small">#{req.requestId}</td>
                     <td style={{ maxWidth: 300 }}>
                       <div
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          lineHeight: 1.5,
-                          color: "#111",
-                        }}
+                        className="fw-semibold text-truncate"
+                        style={{ maxWidth: 280 }}
                       >
                         {req.description}
                       </div>
                       {req.images?.length > 0 && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "#9ca3af",
-                            marginTop: 2,
-                            display: "inline-block",
-                          }}
-                        >
+                        <span className="text-muted" style={{ fontSize: 11 }}>
                           {req.images.length} ảnh đính kèm
                         </span>
                       )}
                     </td>
-                    <td style={{ fontWeight: 500, color: "#374151" }}>
-                      {req.roomName}
-                    </td>
-                    <td style={{ color: "#6b7280" }}>
+                    <td className="fw-semibold small">{req.roomName}</td>
+                    <td className="text-muted small">
                       {req.creatorName || "—"}
                     </td>
-                    <td>
+                    <td className="text-center">
                       <StatusDropdown
                         current={req.status}
                         loading={updatingId === req.requestId}
@@ -738,38 +525,35 @@ const ListMaintenance = () => {
                         }
                       />
                     </td>
-                    <td style={{ color: "#6b7280", whiteSpace: "nowrap" }}>
+                    <td className="text-muted small">
                       {formatDate(req.createdAt)}
                     </td>
                     <td className="text-end pe-4">
                       <div className="d-flex justify-content-end gap-1">
                         <button
-                          className="btn btn-sm"
+                          className="btn btn-sm btn-light border-0"
                           title="Xem chi tiết"
-                          style={{
-                            padding: "3px 8px",
-                            background: "#f3f4f6",
-                            border: "none",
-                            borderRadius: 6,
-                          }}
                           onClick={() =>
                             navigate(`/maintenance/${req.requestId}/detail`)
                           }
                         >
-                          <FaEye size={13} style={{ color: "#374151" }} />
+                          <FaEye className="text-info" />
                         </button>
                         <button
-                          className="btn btn-sm"
+                          className="btn btn-sm btn-light border-0"
+                          title="Chỉnh sửa"
+                          onClick={() =>
+                            navigate(`/maintenance/${req.requestId}/edit`)
+                          }
+                        >
+                          <FaEdit className="text-primary" />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-light border-0"
                           title="Xóa"
-                          style={{
-                            padding: "3px 8px",
-                            background: "#f3f4f6",
-                            border: "none",
-                            borderRadius: 6,
-                          }}
                           onClick={() => handleDelete(req.requestId)}
                         >
-                          <FaTrash size={13} style={{ color: "#dc2626" }} />
+                          <FaTrash className="text-danger" />
                         </button>
                       </div>
                     </td>
@@ -780,18 +564,9 @@ const ListMaintenance = () => {
           </table>
         </div>
 
-        {/* Footer phân trang */}
-        <div
-          style={{
-            padding: "10px 16px",
-            borderTop: "1px solid #f0f0f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "#fafafa",
-          }}
-        >
-          <small className="text-muted" style={{ fontSize: 12 }}>
+        {/* Footer */}
+        <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
+          <small className="text-muted">
             Tổng: <strong>{data.totalElements}</strong> yêu cầu
           </small>
           <Pagination

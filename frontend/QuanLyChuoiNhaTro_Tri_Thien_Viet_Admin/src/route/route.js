@@ -49,6 +49,8 @@ import MaintenanceDetail from "../pages/maintenance/MaintenanceDetail";
 import ListExpenses from "../pages/expenses/ListExpenses";
 import DetailExpense from "../pages/expenses/DetailExpense";
 import CreateExpense from "../pages/expenses/CreateExpense";
+import MaintenanceEdit from "../pages/maintenance/MaintenanceEdit";
+import EditExpense from "../pages/expenses/EditExpense";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -113,9 +115,12 @@ const AdminRoute = [
   //maintenance
   { path: "/maintenance", component: ListMaintenance },
   { path: "/maintenance/:requestId/detail", component: MaintenanceDetail },
+  { path: "/maintenance/:requestId/edit", component: MaintenanceEdit },
+
   //expense
   { path: "/expenses", component: ListExpenses },
   { path: "/expenses/create", component: CreateExpense },
   { path: "/expenses/:expenseId/detail", component: DetailExpense },
+  { path: "/expenses/:expenseId/edit", component: EditExpense },
 ];
 export default AdminRoute;

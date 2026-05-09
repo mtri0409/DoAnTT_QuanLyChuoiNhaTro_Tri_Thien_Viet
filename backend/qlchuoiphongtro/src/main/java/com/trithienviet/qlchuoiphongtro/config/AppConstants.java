@@ -34,6 +34,7 @@ public class AppConstants {
             "/api/amenities/**",
             "/api/contracts",
             "/api/maintenance/images/**",
+            "/api/admin/expenses/evidence/**",
             "/error"
     };
     public static final String[] USER_URLS = { "/api/user/**" };

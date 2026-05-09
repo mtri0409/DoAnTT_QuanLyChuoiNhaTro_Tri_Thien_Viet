@@ -8,8 +8,6 @@ import {
   FaTrash,
   FaExternalLinkAlt,
   FaEdit,
-  FaTimes,
-  FaCheck,
   FaSync,
   FaTools,
   FaListAlt,
@@ -104,251 +102,6 @@ const PayerBadge = ({ payer }) => {
   );
 };
 
-// ── EditModal ──────────────────────────────────────────────────────────────────
-const EditModal = ({ expense, onClose, onSaved }) => {
-  const [form, setForm] = useState({
-    expenseCategory: expense.expenseCategory || "",
-    amount: expense.amount || "",
-    payeeName: expense.payeeName || "",
-    evidenceUrl: expense.evidenceUrl || "",
-    description: expense.description || "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
-
-  const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  const handleSave = async () => {
-    if (!form.amount || Number(form.amount) <= 0)
-      return setErr("Số tiền không hợp lệ");
-    setSaving(true);
-    try {
-      const updated = await apiExpenses.update(expense.expenseId, {
-        expenseCategory: form.expenseCategory || undefined,
-        amount: Number(form.amount),
-        payeeName: form.payeeName || undefined,
-        evidenceUrl: form.evidenceUrl || undefined,
-        description: form.description || undefined,
-      });
-      onSaved(updated);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Không thể cập nhật");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const inputStyle = {
-    width: "100%",
-    border: "1.5px solid #e2e8f0",
-    borderRadius: 8,
-    padding: "9px 12px",
-    fontSize: 13,
-    outline: "none",
-    boxSizing: "border-box",
-  };
-  const labelStyle = {
-    fontSize: 11,
-    color: "#64748b",
-    fontWeight: 700,
-    marginBottom: 5,
-    display: "block",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 9000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          width: "100%",
-          maxWidth: 480,
-          padding: "28px 28px 22px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 20,
-          }}
-        >
-          <div>
-            <h3
-              style={{
-                margin: 0,
-                fontWeight: 800,
-                fontSize: 16,
-                color: "#0f172a",
-              }}
-            >
-              Chỉnh sửa chi phí
-            </h3>
-            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#94a3b8" }}>
-              #{expense.expenseId} ·{" "}
-              {expense.payer === "TENANT_FAULT" ? "Lỗi khách" : "Chi phí trọ"}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "#f1f5f9",
-              border: "none",
-              borderRadius: "50%",
-              width: 32,
-              height: 32,
-              cursor: "pointer",
-              color: "#64748b",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <FaTimes size={14} />
-          </button>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <label style={labelStyle}>Danh mục</label>
-            <select
-              value={form.expenseCategory}
-              onChange={f("expenseCategory")}
-              style={{ ...inputStyle, appearance: "none" }}
-            >
-              <option value="">Chọn danh mục...</option>
-              {EXPENSE_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Số tiền (VNĐ) *</label>
-            <input
-              type="number"
-              value={form.amount}
-              onChange={f("amount")}
-              style={inputStyle}
-            />
-          </div>
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
-          >
-            <div>
-              <label style={labelStyle}>Tên thợ / đơn vị</label>
-              <input
-                type="text"
-                value={form.payeeName}
-                onChange={f("payeeName")}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Link bằng chứng</label>
-              <input
-                type="text"
-                value={form.evidenceUrl}
-                onChange={f("evidenceUrl")}
-                style={inputStyle}
-              />
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Ghi chú</label>
-            <textarea
-              rows={2}
-              value={form.description}
-              onChange={f("description")}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
-          </div>
-
-          {err && (
-            <div
-              style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: 8,
-                padding: "9px 12px",
-                fontSize: 12,
-                color: "#b91c1c",
-              }}
-            >
-              {err}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button
-              onClick={onClose}
-              style={{
-                flex: 1,
-                background: "#f1f5f9",
-                border: "none",
-                borderRadius: 9,
-                padding: "10px",
-                fontSize: 13,
-                cursor: "pointer",
-                color: "#374151",
-                fontWeight: 600,
-              }}
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                flex: 2,
-                background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-                border: "none",
-                borderRadius: 9,
-                padding: "10px",
-                fontSize: 13,
-                cursor: "pointer",
-                color: "#fff",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 7,
-                opacity: saving ? 0.7 : 1,
-              }}
-            >
-              {saving ? (
-                <span
-                  className="spinner-border spinner-border-sm"
-                  style={{ width: 13, height: 13 }}
-                />
-              ) : (
-                <FaCheck size={11} />
-              )}
-              Lưu thay đổi
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ══ Trang chính ═══════════════════════════════════════════════════════════════
 const ListExpenses = () => {
   const navigate = useNavigate();
@@ -371,7 +124,6 @@ const ListExpenses = () => {
   const [appliedSearch, setAppliedSearch] = useState("");
 
   // Actions
-  const [editTarget, setEditTarget] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   const load = useCallback(
@@ -450,13 +202,6 @@ const ListExpenses = () => {
     }
   };
 
-  const handleSaved = (updated) => {
-    setExpenses((prev) =>
-      prev.map((e) => (e.expenseId === updated.expenseId ? updated : e)),
-    );
-    setEditTarget(null);
-  };
-
   // Stats (trang hiện tại)
   const totalTenantFault = expenses
     .filter((e) => e.payer === "TENANT_FAULT")
@@ -467,14 +212,6 @@ const ListExpenses = () => {
 
   return (
     <div className="container-fluid py-4">
-      {editTarget && (
-        <EditModal
-          expense={editTarget}
-          onClose={() => setEditTarget(null)}
-          onSaved={handleSaved}
-        />
-      )}
-
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
         <div>
@@ -698,7 +435,9 @@ const ListExpenses = () => {
                         <button
                           className="btn btn-sm btn-light border-0"
                           title="Chỉnh sửa"
-                          onClick={() => setEditTarget(e)}
+                          onClick={() =>
+                            navigate(`/expenses/${e.expenseId}/edit`)
+                          }
                         >
                           <FaEdit className="text-primary" />
                         </button>

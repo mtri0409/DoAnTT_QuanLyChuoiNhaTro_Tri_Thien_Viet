@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import com.trithienviet.qlchuoiphongtro.entity.ServiceItem;
 import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.repo.ContractRepo;
 import com.trithienviet.qlchuoiphongtro.repo.ContractServiceRepo;
 import com.trithienviet.qlchuoiphongtro.repo.DepositRepo;
@@ -37,7 +40,6 @@ import com.trithienviet.qlchuoiphongtro.service.EmailService;
 import com.trithienviet.qlchuoiphongtro.service.NotificationService;
 
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
-
 
 import lombok.RequiredArgsConstructor;
 
@@ -60,42 +62,76 @@ public class ContractServiceImpl implements ContractService {
     private final InvoiceService invoiceService;
 
     private final NotificationHelper notificationHelper;
+
     // ==================== terminateContract ====================
     @Override
     public void terminateContract(Long contractId) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
+    // ==================== Helper build Pageable & PageResponse
+    // ====================
+    private Pageable buildPageable(int pageNumber, int pageSize, String sortBy, String sortOrder) {
+        Sort sort = sortOrder.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        return PageRequest.of(pageNumber, pageSize, sort);
+    }
+
+    private PageResponse<ContractDTO> toPageResponse(Page<ContractDTO> page) {
+        return PageResponse.<ContractDTO>builder()
+                .content(page.getContent())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .lastPage(page.isLast())
+                .build();
+    }
+
     // ==================== getAllContracts (phân trang) ====================
     @Override
-    public Page<ContractDTO> getAllContracts(Pageable pageable) {
-        return contractRepo.findByIsDeletedFalse(pageable)
-                .map(this::mapToDTO);
+    public PageResponse<ContractDTO> getAllContracts(int pageNumber, int pageSize, String sortBy, String sortOrder) {
+        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
+        Page<ContractDTO> page = contractRepo.findByIsDeletedFalse(pageable).map(this::mapToDTO);
+        return toPageResponse(page);
     }
 
     // ==================== searchContracts (phân trang) ====================
     @Override
-    public Page<ContractDTO> searchContracts(String keyword, Pageable pageable) {
+    public PageResponse<ContractDTO> searchContracts(String keyword, int pageNumber, int pageSize, String sortBy,
+            String sortOrder) {
+        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
+        Page<ContractDTO> page;
         if (keyword == null || keyword.isBlank()) {
-            return contractRepo.findByIsDeletedFalse(pageable).map(this::mapToDTO);
+            page = contractRepo.findByIsDeletedFalse(pageable).map(this::mapToDTO);
+        } else {
+            String trimmed = keyword.trim();
+            String rawId = trimmed
+                    .replaceAll("(?i)^HD-", "")
+                    .replaceAll("^0*(\\d+)$", "$1");
+            page = contractRepo.searchByKeyword(trimmed, rawId, pageable).map(this::mapToDTO);
         }
-
-        String trimmed = keyword.trim();
-
-        // "HD-00002" → "2", "00002" → "2", "A202" → "A202" (giữ nguyên)
-        String rawId = trimmed
-                .replaceAll("(?i)^HD-", "") // bỏ prefix HD-
-                .replaceAll("^0*(\\d+)$", "$1"); // bỏ leading zeros
-
-        return contractRepo.searchByKeyword(trimmed, rawId, pageable)
-                .map(this::mapToDTO);
+        return toPageResponse(page);
     }
 
     // ==================== getContractsByStatus (phân trang) ====================
     @Override
-    public Page<ContractDTO> getContractsByStatus(ContractStatus status, Pageable pageable) {
-        return contractRepo.findByStatusAndIsDeletedFalse(status, pageable)
-                .map(this::mapToDTO);
+    public PageResponse<ContractDTO> getContractsByStatus(ContractStatus status, int pageNumber, int pageSize,
+            String sortBy, String sortOrder) {
+        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
+        Page<ContractDTO> page = contractRepo.findByStatusAndIsDeletedFalse(status, pageable).map(this::mapToDTO);
+        return toPageResponse(page);
+    }
+
+    // ==================== filterContracts (phân trang, lọc theo status + branchId)
+    // ====================
+    @Override
+    public PageResponse<ContractDTO> filterContracts(ContractStatus status, Long branchId, int pageNumber,
+            int pageSize, String sortBy, String sortOrder) {
+        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
+        Page<ContractDTO> page = contractRepo.filterContracts(status, branchId, pageable).map(this::mapToDTO);
+        return toPageResponse(page);
     }
 
     // ==================== getContractById ====================
@@ -259,23 +295,19 @@ public class ContractServiceImpl implements ContractService {
         ContractDTO response = mapToDTO(savedContract);
         response.setContractServices(savedContractServices);
 
-        String template = EmailTemplate.
-                                getContractCreatedSuccess(
-                                representative.getFullName(),
-                                room.getRoomName(),
-                                response.getStartDate().toString(),
-                                response.getEndDate().toString(),
-                                roomDeposit.getAmount().toString()
-                            );
+        String template = EmailTemplate.getContractCreatedSuccess(
+                representative.getFullName(),
+                room.getRoomName(),
+                response.getStartDate().toString(),
+                response.getEndDate().toString(),
+                roomDeposit.getAmount().toString());
         emailService.sendHtmlEmail(representative.getEmail(), "THÔNG BÁO TẠO HỌP ĐỒNG THÀNH CÔNG", template);
-       
+
         String title = NotificationConstant.CONTRACT_CREATED_TITLE;
         String content = String.format(
-            NotificationConstant.CONTRACT_CREATED_CONTENT, 
-            representative.getFullName(), 
-            room.getRoomName()
-        );
-
+                NotificationConstant.CONTRACT_CREATED_CONTENT,
+                representative.getFullName(),
+                room.getRoomName());
 
         // 15. Tự động tạo hóa đơn tiền cọc → status DRAFT
         invoiceService.createDepositInvoice(
@@ -290,11 +322,10 @@ public class ContractServiceImpl implements ContractService {
                     + savedContract.getContractId() + " — " + ex.getMessage());
         }
         notificationService.sendSystemNotification(
-            representative.getProfileId(), 
-            title, 
-            content, 
-            NotificationConstant.TYPE_CONTRACT
-        );
+                representative.getProfileId(),
+                title,
+                content,
+                NotificationConstant.TYPE_CONTRACT);
         return response;
     }
 
@@ -379,8 +410,8 @@ public class ContractServiceImpl implements ContractService {
                 contract.setStatus(ContractStatus.ACTIVE);
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.ACTIVE);
                 updatedContracts.add(contract);
-                
-               notificationHelper.sendNotificationActiveContract(contract);
+
+                notificationHelper.sendNotificationActiveContract(contract);
 
             } else if (contract.getStatus() == ContractStatus.ACTIVE
                     && contract.getEndDate().isBefore(today)) {
@@ -389,7 +420,7 @@ public class ContractServiceImpl implements ContractService {
                 handleRoomStatusChange(contract, previousStatus, ContractStatus.EXPIRED);
                 updatedContracts.add(contract);
 
-                  notificationHelper.sendNotificationExpiredContract(contract);
+                notificationHelper.sendNotificationExpiredContract(contract);
             }
         }
 
@@ -580,6 +611,16 @@ public class ContractServiceImpl implements ContractService {
                         .map(this::mapToServiceDTO)
                         .collect(Collectors.toList());
 
+        // [FIX] Map branchId (Integer → Long) và branchName từ room → floor → branch
+        Long branchId = null;
+        String branchName = null;
+        try {
+            Integer rawBranchId = contract.getRoom().getFloor().getBranch().getBranchId();
+            branchId = rawBranchId != null ? rawBranchId.longValue() : null;
+            branchName = contract.getRoom().getFloor().getBranch().getBranchName();
+        } catch (NullPointerException ignored) {
+        }
+
         return ContractDTO.builder()
                 .contractId(contract.getContractId())
                 .roomId(contract.getRoom().getRoomId())
@@ -595,6 +636,8 @@ public class ContractServiceImpl implements ContractService {
                         : null)
                 .memberIds(memberIds)
                 .contractServices(contractServices)
+                .branchId(branchId)
+                .branchName(branchName)
                 .build();
     }
 
@@ -637,5 +680,4 @@ public class ContractServiceImpl implements ContractService {
         roomRepo.save(room);
     }
 
-   
 }

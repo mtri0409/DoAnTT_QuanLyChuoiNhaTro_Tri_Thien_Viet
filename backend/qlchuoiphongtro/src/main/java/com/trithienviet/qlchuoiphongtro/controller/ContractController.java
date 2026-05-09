@@ -3,10 +3,6 @@ package com.trithienviet.qlchuoiphongtro.controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,14 +33,6 @@ public class ContractController {
 
     private final ContractService contractService;
 
-    // ==================== Helper tạo Pageable ====================
-    private Pageable buildPageable(int pageNumber, int pageSize, String sortBy, String sortOrder) {
-        Sort sort = sortOrder.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        return PageRequest.of(pageNumber, pageSize, sort);
-    }
-
     // ==================== CREATE (Admin) ====================
     @PostMapping("/admin/contracts")
     public ResponseEntity<ContractDTO> create(@RequestBody ContractDTO dto) {
@@ -52,25 +42,42 @@ public class ContractController {
 
     // ==================== GET ALL (Admin, phân trang) ====================
     @GetMapping("/admin/contracts")
-    public ResponseEntity<Page<ContractDTO>> getAll(
-            @RequestParam(defaultValue = "0") int pageNumber,
-            @RequestParam(defaultValue = "10") int pageSize,
+    public ResponseEntity<PageResponse<ContractDTO>> getAll(
+            @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
+            @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder) {
-        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
-        return ResponseEntity.ok(contractService.getAllContracts(pageable));
+            @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
+        return ResponseEntity.ok(contractService.getAllContracts(
+                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
+    }
+
+    // ==================== FILTER (Admin, lọc theo status + branchId, phân trang)
+    // ====================
+    // [FIX] Endpoint mới thay thế việc lọc chi nhánh client-side
+    // GET
+    // /api/admin/contracts/filter?status=ACTIVE&branchId=2&pageNumber=1&pageSize=10
+    @GetMapping("/admin/contracts/filter")
+    public ResponseEntity<PageResponse<ContractDTO>> filter(
+            @RequestParam(required = false) ContractStatus status,
+            @RequestParam(required = false) Long branchId,
+            @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
+            @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
+            @RequestParam(defaultValue = "contractId") String sortBy,
+            @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
+        return ResponseEntity.ok(contractService.filterContracts(
+                status, branchId, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
     }
 
     // ==================== SEARCH (Admin, phân trang) ====================
     @GetMapping("/admin/contracts/search")
-    public ResponseEntity<Page<ContractDTO>> search(
+    public ResponseEntity<PageResponse<ContractDTO>> search(
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int pageNumber,
-            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
+            @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder) {
-        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
-        return ResponseEntity.ok(contractService.searchContracts(keyword, pageable));
+            @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
+        return ResponseEntity.ok(contractService.searchContracts(
+                keyword, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
     }
 
     // ==================== GET BY ID (Public) ====================
@@ -81,14 +88,14 @@ public class ContractController {
 
     // ==================== GET BY STATUS (Admin, phân trang) ====================
     @GetMapping("/admin/contracts/status/{status}")
-    public ResponseEntity<Page<ContractDTO>> getByStatus(
+    public ResponseEntity<PageResponse<ContractDTO>> getByStatus(
             @PathVariable ContractStatus status,
-            @RequestParam(defaultValue = "0") int pageNumber,
-            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
+            @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder) {
-        Pageable pageable = buildPageable(pageNumber, pageSize, sortBy, sortOrder);
-        return ResponseEntity.ok(contractService.getContractsByStatus(status, pageable));
+            @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
+        return ResponseEntity.ok(contractService.getContractsByStatus(
+                status, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
     }
 
     // ==================== UPDATE (Public) ====================
