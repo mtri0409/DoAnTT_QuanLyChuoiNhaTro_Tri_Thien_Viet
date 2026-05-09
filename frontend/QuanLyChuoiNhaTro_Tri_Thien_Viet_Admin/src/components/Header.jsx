@@ -16,7 +16,7 @@ const Header = ({ toggleSidebar }) => {
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const { logout } = useAuth();
-
+  
   // ========== SEARCH STATE ==========
   const [searchText, setSearchText] = useState('');
   const [showSearch, setShowSearch] = useState(false);

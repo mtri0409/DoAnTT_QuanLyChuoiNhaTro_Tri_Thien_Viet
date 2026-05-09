@@ -7,26 +7,30 @@ import { AuthProvider } from "./context/AuthProvider";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import SystemSettingProvider from "./context/SystemSettingProvider";
+
 function App() {
   return (
-    <AuthProvider>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
-        theme="light"
-      />
-      <BrowserRouter>
-        <Routes>
-           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<AdminLayout />}>
-            {AdminRoute.map((route, index) => {
-              const Page = route.component;
-              return <Route key={index} path={route.path} element={<Page />} />;
-            })}
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <SystemSettingProvider> 
+      <AuthProvider>
+          <ToastContainer 
+            position="top-right" 
+            autoClose={3000} 
+            theme="light"
+          />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+                <Route path="/" element={<AdminLayout />}>
+                  {AdminRoute.map((route, index) => {
+                    const Page = route.component;
+                    return <Route key={index} path={route.path} element={<Page />} />;
+                  })}
+                </Route>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+     </SystemSettingProvider>
   );
 }
 

@@ -49,6 +49,7 @@ import MaintenanceDetail from "../pages/maintenance/MaintenanceDetail";
 import ListExpenses from "../pages/expenses/ListExpenses";
 import DetailExpense from "../pages/expenses/DetailExpense";
 import CreateExpense from "../pages/expenses/CreateExpense";
+import SystemSettings from "../pages/setting/SystemSettings";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -117,5 +118,8 @@ const AdminRoute = [
   { path: "/expenses", component: ListExpenses },
   { path: "/expenses/create", component: CreateExpense },
   { path: "/expenses/:expenseId/detail", component: DetailExpense },
+
+  //setting
+  {path :"/setting",component: SystemSettings}
 ];
 export default AdminRoute;

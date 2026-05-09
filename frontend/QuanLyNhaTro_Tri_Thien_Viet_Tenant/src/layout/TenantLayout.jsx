@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const TenantLayout = () => {
   return (
@@ -13,13 +14,7 @@ const TenantLayout = () => {
         </div>
       </main>
 
-      <footer className="bg-white py-4 mt-auto text-center text-muted small" style={{ borderTop: 'none' }}>
-        <div className="container-fluid px-lg-5">
-          <span className="opacity-75">© 2026 Hệ thống Quản Lý Nhà Trọ</span>
-          <span className="mx-2 text-primary">|</span>
-          <strong>TTV</strong>
-        </div>
-      </footer>
+     <Footer/>
     </div>
   );
 };
