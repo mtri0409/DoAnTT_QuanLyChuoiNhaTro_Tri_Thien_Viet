@@ -62,7 +62,7 @@ const apiProfile = {
   deleteProfile:(id)=> axiosInstance.delete(`/admin/profiles/${id}`),
 
   getProfileById: (id) => {
-    return axiosInstance.get(`/public/profiles/${id}`);
+    return axiosInstance.get(`/profiles/${id}`);
   },
   restoreProfile :(id) => axiosInstance.patch( `/admin/profile/restore/${id}`)
 };

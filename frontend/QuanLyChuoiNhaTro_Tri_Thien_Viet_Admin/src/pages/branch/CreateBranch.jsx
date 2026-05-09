@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FaBuilding, FaMapMarkerAlt, FaArrowLeft, 
-  FaSave, FaExclamationCircle, FaSearch, FaUser, 
-  FaPhone, FaIdCard, FaTimes, FaCheck 
+import {
+  FaBuilding, FaMapMarkerAlt, FaArrowLeft,
+  FaSave, FaExclamationCircle, FaSearch, FaUser,
+  FaPhone, FaIdCard, FaTimes, FaCheck
 } from 'react-icons/fa';
 import apiBranches from '../../api/apiBranches';
 import apiProfile from '../../api/apiProfile';
-/* ─── Font & Styles ────────────────────────────────────────── */
+
 const FontLink = () => (
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 );
@@ -33,28 +33,65 @@ const css = `
   .empty-box:hover { border-color:#a5b4fc;background:#fafbff; }
 `;
 
-/* ─── Profile Search Modal ──────────────────────────────────── */
+const normalizeProfiles = res => {
+  const data = res?.data ?? res;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.content)) return data.content;
+  return [];
+};
+
 const ProfileSearchModal = ({ onSelect, onClose }) => {
-  const [kw, setKw] = useState("");
+  const [kw, setKw] = useState('');
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [done, setDone] = useState(false);
   const ref = useRef(null);
 
-  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
 
-  const search = async (e) => {
+  useEffect(() => {
+    let active = true;
+
+    apiProfile.getInternalProfile(1, 10, 'profileId', 'desc', true)
+      .then(res => {
+        if (!active) return;
+        setResults(normalizeProfiles(res));
+        setDone(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setResults([]);
+        setDone(true);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const search = async e => {
     e.preventDefault();
-    if (!kw.trim()) return;
-    setLoading(true); setDone(true);
+
+    const keyword = kw.trim();
+    setLoading(true);
+    setDone(true);
+
     try {
-      // Dùng searchInternalProfiles cho branch manager
-      const res = await apiProfile.searchInternalProfiles(kw.trim(), 0, 10);
-      setResults(res?.data?.content ?? res?.content ?? res?.data ?? []);
-    } catch { 
-      setResults([]); 
-    } finally { 
-      setLoading(false); 
+      const res = keyword
+        ? await apiProfile.searchInternalProfiles(keyword, 1, 10, 'profileId', 'desc', true)
+        : await apiProfile.getInternalProfile(1, 10, 'profileId', 'desc', true);
+
+      setResults(normalizeProfiles(res));
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,47 +103,84 @@ const ProfileSearchModal = ({ onSelect, onClose }) => {
             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Tìm người quản lý</h3>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8' }}>×</button>
           </div>
+
           <form onSubmit={search} style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <FaSearch style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13 }} />
-              <input ref={ref} className="cc-input" style={{ paddingLeft: 36 }}
-                placeholder="Tên, số điện thoại hoặc CCCD…"
-                value={kw} onChange={e => setKw(e.target.value)} />
+              <input
+                ref={ref}
+                className="cc-input"
+                style={{ paddingLeft: 36 }}
+                placeholder="Tên, số điện thoại hoặc CCCD..."
+                value={kw}
+                onChange={e => setKw(e.target.value)}
+              />
             </div>
-            <button className="cc-btn cc-btn-primary" type="submit" disabled={loading || !kw.trim()}>
-              {loading ? '⏳' : 'Tìm'}
+            <button className="cc-btn cc-btn-primary" type="submit" disabled={loading}>
+              {loading ? 'Đang tìm' : 'Tìm'}
             </button>
           </form>
         </div>
+
         <div style={{ overflowY: 'auto', padding: '0 24px 24px', flex: 1 }}>
-          {!done && (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
-              <FaUser style={{ fontSize: 36, opacity: .25, marginBottom: 10 }} />
-              <p style={{ fontSize: 13 }}>Nhập tên, SĐT hoặc số CCCD để tìm kiếm</p>
-            </div>
+          {loading && (
+            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 13, padding: '24px 0' }}>
+              Đang tải nhân sự hệ thống...
+            </p>
           )}
+
           {done && !loading && results.length === 0 && (
-            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 13, padding: '24px 0' }}>Không tìm thấy kết quả.</p>
+            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: 13, padding: '24px 0' }}>
+              Không tìm thấy nhân sự hệ thống phù hợp.
+            </p>
           )}
-          {results.map(p => (
-            <button key={p.profileId ?? p.id} type="button"
-              style={{ width: '100%', background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 12,
-                padding: '12px 14px', cursor: 'pointer', marginBottom: 8, textAlign: 'left', display: 'flex',
-                alignItems: 'center', gap: 12, transition: '.15s', fontFamily: 'inherit' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor='#4361ee'}
-              onMouseLeave={e => e.currentTarget.style.borderColor='#e2e8f0'}
-              onClick={() => onSelect(p)}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eef0fd',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+
+          {!loading && results.map(profile => (
+            <button
+              key={profile.profileId ?? profile.id}
+              type="button"
+              style={{
+                width: '100%',
+                background: 'none',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: 12,
+                padding: '12px 14px',
+                cursor: 'pointer',
+                marginBottom: 8,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                transition: '.15s',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#4361ee'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; }}
+              onClick={() => onSelect(profile)}
+            >
+              <div style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: '#eef0fd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
                 <FaUser color="#4361ee" />
               </div>
+
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{p.fullName}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                  {profile.fullName}
+                </div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3, display: 'flex', gap: 14 }}>
-                  <span><FaPhone size={9} style={{ marginRight: 4 }} />{p.phone ?? 'N/A'}</span>
-                  <span><FaIdCard size={9} style={{ marginRight: 4 }} />{p.identityNumber ?? 'N/A'}</span>
+                  <span><FaPhone size={9} style={{ marginRight: 4 }} />{profile.phone ?? 'N/A'}</span>
+                  <span><FaIdCard size={9} style={{ marginRight: 4 }} />{profile.identityNumber ?? 'N/A'}</span>
                 </div>
               </div>
+
               <FaCheck color="#16a34a" size={13} />
             </button>
           ))}
@@ -116,7 +190,6 @@ const ProfileSearchModal = ({ onSelect, onClose }) => {
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────
 const CreateBranch = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -131,31 +204,39 @@ const CreateBranch = () => {
   const [showManagerModal, setShowManagerModal] = useState(false);
   const [selectedManager, setSelectedManager] = useState(null);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      const newErrors = { ...errors };
-      delete newErrors[name];
-      setErrors(newErrors);
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     }
   };
 
-  const handleSelectManager = (profile) => {
+  const handleSelectManager = profile => {
     setSelectedManager(profile);
-    setFormData({ ...formData, managerId: profile.profileId ?? profile.id });
+    setFormData(prev => ({
+      ...prev,
+      managerId: profile.profileId ?? profile.id,
+    }));
     setShowManagerModal(false);
   };
 
   const handleRemoveManager = () => {
     setSelectedManager(null);
-    setFormData({ ...formData, managerId: null });
+    setFormData(prev => ({ ...prev, managerId: null }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
+
     try {
       await apiBranches.createBranch(formData);
       alert('Tạo chi nhánh thành công!');
@@ -163,8 +244,8 @@ const CreateBranch = () => {
     } catch (err) {
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
-        if (backendErrors) setErrors(backendErrors);
-        else alert(err.response.data.message || 'Dữ liệu không hợp lệ.');
+        if (backendErrors && typeof backendErrors === 'object') setErrors(backendErrors);
+        else alert(err.response.data?.message || 'Dữ liệu không hợp lệ.');
       } else {
         alert('Lỗi hệ thống hoặc mất kết nối server.');
       }
@@ -173,11 +254,12 @@ const CreateBranch = () => {
     }
   };
 
-  const renderError = (field) => {
+  const renderError = field => {
     if (!errors[field]) return null;
+
     return (
       <div className="text-danger small mt-1 d-flex align-items-center gap-1">
-        <FaExclamationCircle size={12}/> {errors[field]}
+        <FaExclamationCircle size={12} /> {errors[field]}
       </div>
     );
   };
@@ -186,8 +268,8 @@ const CreateBranch = () => {
     <>
       <style>{css}</style>
       <FontLink />
-      <div className="container-fluid py-4 cc-root-font">
 
+      <div className="container-fluid py-4 cc-root-font">
         {showManagerModal && (
           <ProfileSearchModal
             onSelect={handleSelectManager}
@@ -195,7 +277,6 @@ const CreateBranch = () => {
           />
         )}
 
-        {/* HEADER */}
         <div className="d-flex align-items-center gap-3 mb-4">
           <button onClick={() => navigate(-1)} className="btn btn-light border-0 shadow-sm rounded-circle p-2">
             <FaArrowLeft />
@@ -208,11 +289,8 @@ const CreateBranch = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="row g-4">
-
-            {/* LEFT */}
             <div className="col-lg-5">
               <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
-
                 <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
                   <div className="bg-primary-subtle p-2 rounded-3 text-primary"><FaBuilding /></div>
                   <h6 className="fw-bold mb-0 text-primary">Thông tin chi nhánh</h6>
@@ -248,11 +326,8 @@ const CreateBranch = () => {
                   {renderError('address')}
                 </div>
 
-                {/* MANAGER */}
                 <div className="mb-0">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <label className="form-label small fw-bold text-muted mb-0">NGƯỜI QUẢN LÝ</label>
-                  </div>
+                  <label className="form-label small fw-bold text-muted mb-2">NGƯỜI QUẢN LÝ</label>
 
                   {!selectedManager ? (
                     <div className="empty-box" onClick={() => setShowManagerModal(true)}>
@@ -260,56 +335,68 @@ const CreateBranch = () => {
                       <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 13, color: '#475569' }}>
                         Chưa chọn người quản lý
                       </p>
-                      <p style={{ margin: 0, fontSize: 12 }}>Nhấn để tìm theo tên, SĐT hoặc CCCD</p>
+                      <p style={{ margin: 0, fontSize: 12 }}>Nhấn để chọn từ nhân sự hệ thống</p>
                     </div>
                   ) : (
                     <div className="profile-card">
-                      <div style={{ width: 42, height: 42, borderRadius: 12, background: '#dcfce7',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 12,
+                        background: '#dcfce7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
                         <FaUser color="#16a34a" />
                       </div>
+
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{selectedManager.fullName}</div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                          {selectedManager.fullName}
+                        </div>
                         <div style={{ fontSize: 12, color: '#64748b', marginTop: 3, display: 'flex', gap: 14 }}>
                           <span><FaPhone size={9} style={{ marginRight: 4 }} />{selectedManager.phone ?? 'N/A'}</span>
                           <span><FaIdCard size={9} style={{ marginRight: 4 }} />{selectedManager.identityNumber ?? 'N/A'}</span>
                         </div>
                       </div>
-                      <button type="button" onClick={handleRemoveManager}
-                        style={{ background: '#fee2e2', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', color: '#ef4444' }}>
+
+                      <button
+                        type="button"
+                        onClick={handleRemoveManager}
+                        style={{ background: '#fee2e2', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', color: '#ef4444' }}
+                      >
                         <FaTimes size={12} />
                       </button>
                     </div>
                   )}
+                  {renderError('managerId')}
                 </div>
-
               </div>
             </div>
 
-            {/* RIGHT (decor / preview) */}
             <div className="col-lg-7">
               <div className="card border-0 shadow-sm rounded-4 p-4 h-100 d-flex justify-content-center align-items-center text-center">
-                <FaMapMarkerAlt size={40} className="text-primary mb-3"/>
+                <FaMapMarkerAlt size={40} className="text-primary mb-3" />
                 <h5 className="fw-bold">Thông tin chi nhánh</h5>
                 <p className="text-muted small mb-0">
-                  Nhập tên và địa chỉ để tạo chi nhánh mới trong hệ thống
+                  Nhập tên, địa chỉ và chọn người quản lý từ nhân sự hệ thống
                 </p>
               </div>
             </div>
 
-            {/* ACTION */}
             <div className="col-12 text-end">
               <hr className="opacity-25" />
-              <button type="button" onClick={() => navigate('/branches')}
-                className="btn btn-light me-2 fw-bold">Hủy</button>
-              <button type="submit" disabled={loading}
-                className="btn btn-primary px-5 fw-bold d-inline-flex align-items-center gap-2">
+              <button type="button" onClick={() => navigate('/branches')} className="btn btn-light me-2 fw-bold">
+                Hủy
+              </button>
+              <button type="submit" disabled={loading} className="btn btn-primary px-5 fw-bold d-inline-flex align-items-center gap-2">
                 {loading
                   ? <><span className="spinner-border spinner-border-sm"></span> Đang lưu...</>
-                  : <><FaSave size={14}/> Lưu</>}
+                  : <><FaSave size={14} /> Lưu</>}
               </button>
             </div>
-
           </div>
         </form>
       </div>

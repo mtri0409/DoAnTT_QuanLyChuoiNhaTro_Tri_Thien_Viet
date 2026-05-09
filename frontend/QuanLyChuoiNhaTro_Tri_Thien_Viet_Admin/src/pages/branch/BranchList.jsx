@@ -51,11 +51,6 @@ const BranchList = () => {
         });
         setManagerMap(map);
       }
-
-      // ── Fetch room count per branch ─────────────────────────────
-      // Gọi getAllRooms với branchId + pageSize=1 để lấy totalElements
-      // Branch không liên kết trực tiếp với Room mà phải qua Floor,
-      // nhưng API /rooms đã hỗ trợ filter branchId nên dùng luôn.
       const roomCountResults = await Promise.allSettled(
         branches.map(b =>
           apiRoom.getAllRooms(0, 1, 'roomName', 'asc', null, b.branchId, '')
