@@ -9,192 +9,149 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
+  FaClock,
+  FaImage,
+  FaFileAlt,
+  FaInfoCircle,
 } from "react-icons/fa";
 import apiMaintenanceRequest from "../../api/apiMaintenanceaRequest";
 import { imgURL } from "../../api/config";
 
-/* ─── Status badge ─── */
-const STATUS_MAP = {
-  PENDING: { label: "Chờ xử lý", bg: "#fff3cd", color: "#856404" },
-  PROCESSING: { label: "Đang xử lý", bg: "#cfe2ff", color: "#084298" },
-  COMPLETED: { label: "Hoàn thành", bg: "#d1e7dd", color: "#0a3622" },
-  CANCELLED: { label: "Đã hủy", bg: "#e2e3e5", color: "#41464b" },
+/**
+ * STATUS_CONFIG — every color expressed as Bootstrap utility classes.
+ * dot:      background class for the colour dot
+ * badge:    for the pill badge in the status card
+ * chipBg:   background of the header status chip
+ * chipText: text colour of the header status chip
+ */
+const STATUS_CONFIG = {
+  PENDING: {
+    label: "Chờ xử lý",
+    badge: "bg-warning-subtle text-warning",
+    chipBg: "bg-warning bg-opacity-10",
+    chipText: "text-warning-emphasis",
+    dot: "bg-warning",
+  },
+  PROCESSING: {
+    label: "Đang xử lý",
+    badge: "bg-primary-subtle text-primary",
+    chipBg: "bg-primary bg-opacity-10",
+    chipText: "text-primary",
+    dot: "bg-primary",
+  },
+  COMPLETED: {
+    label: "Hoàn thành",
+    badge: "bg-success-subtle text-success",
+    chipBg: "bg-success bg-opacity-10",
+    chipText: "text-success-emphasis",
+    dot: "bg-success",
+  },
+  CANCELLED: {
+    label: "Đã hủy",
+    badge: "bg-secondary-subtle text-secondary",
+    chipBg: "bg-secondary bg-opacity-10",
+    chipText: "text-secondary",
+    dot: "bg-secondary",
+  },
 };
 
-const StatusBadge = ({ status }) => {
-  const s = STATUS_MAP[status] || {
-    label: status,
-    bg: "#f8f9fa",
-    color: "#333",
-  };
-  return (
-    <span
-      style={{
-        background: s.bg,
-        color: s.color,
-        padding: "5px 14px",
-        borderRadius: 20,
-        fontSize: 13,
-        fontWeight: 600,
-        letterSpacing: 0.2,
-      }}
-    >
-      {s.label}
-    </span>
-  );
+const HINTS = {
+  PENDING: "Yêu cầu đã được ghi nhận, đang chờ phân công kỹ thuật viên.",
+  PROCESSING: "Kỹ thuật viên đang tiến hành xử lý sự cố.",
+  COMPLETED: "Sự cố đã được khắc phục thành công.",
+  CANCELLED: "Yêu cầu đã bị hủy.",
 };
 
-/* ─── Lightbox ─── */
+/* ─── Lightbox ─────────────────────────────────────────────────── */
 const Lightbox = ({ images, startIndex, onClose }) => {
   const [idx, setIdx] = useState(startIndex);
+  const src = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
 
   useEffect(() => {
-    const handler = (e) => {
+    const h = (e) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") setIdx((i) => Math.max(0, i - 1));
       if (e.key === "ArrowRight")
         setIdx((i) => Math.min(images.length - 1, i + 1));
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [images, onClose]);
 
-  const src = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+  /* Transparent circular nav button — reused three times */
+  const NavBtn = ({ onClick, className, children }) => (
+    <button
+      onClick={onClick}
+      className={`btn border-0 rounded-circle d-flex align-items-center justify-content-center text-white ${className}`}
+      style={{ width: 44, height: 44, background: "rgba(255,255,255,.15)" }}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <div
       onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.92)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      style={{ background: "rgba(0,0,0,.92)", zIndex: 9999 }}
     >
-      {/* Nút đóng */}
-      <button
-        onClick={onClose}
-        style={{
-          position: "absolute",
-          top: 20,
-          right: 24,
-          background: "rgba(255,255,255,0.12)",
-          border: "none",
-          borderRadius: "50%",
-          width: 40,
-          height: 40,
-          color: "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <NavBtn onClick={onClose} className="position-absolute top-0 end-0 m-3">
         <FaTimes size={16} />
-      </button>
+      </NavBtn>
 
-      {/* Prev */}
       {idx > 0 && (
-        <button
+        <NavBtn
           onClick={(e) => {
             e.stopPropagation();
             setIdx(idx - 1);
           }}
-          style={{
-            position: "absolute",
-            left: 20,
-            background: "rgba(255,255,255,0.12)",
-            border: "none",
-            borderRadius: "50%",
-            width: 44,
-            height: 44,
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="position-absolute start-0 ms-3"
         >
           <FaChevronLeft size={18} />
-        </button>
+        </NavBtn>
       )}
 
-      {/* Ảnh chính */}
       <img
         src={src(images[idx])}
         alt=""
         onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: "88vw",
-          maxHeight: "88vh",
-          objectFit: "contain",
-          borderRadius: 12,
-          boxShadow: "0 8px 48px rgba(0,0,0,0.6)",
-        }}
+        className="rounded-3 shadow-lg"
+        style={{ maxWidth: "88vw", maxHeight: "80vh", objectFit: "contain" }}
       />
 
-      {/* Next */}
       {idx < images.length - 1 && (
-        <button
+        <NavBtn
           onClick={(e) => {
             e.stopPropagation();
             setIdx(idx + 1);
           }}
-          style={{
-            position: "absolute",
-            right: 20,
-            background: "rgba(255,255,255,0.12)",
-            border: "none",
-            borderRadius: "50%",
-            width: 44,
-            height: 44,
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="position-absolute end-0 me-3"
         >
           <FaChevronRight size={18} />
-        </button>
+        </NavBtn>
       )}
 
-      {/* Counter + thumbnails */}
       <div
-        style={{
-          position: "absolute",
-          bottom: 24,
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 10,
-        }}
+        className="position-absolute bottom-0 mb-4 d-flex flex-column align-items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
-        <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
+        <small className="text-white-50">
           {idx + 1} / {images.length}
-        </span>
-        <div style={{ display: "flex", gap: 8 }}>
+        </small>
+        <div className="d-flex gap-2">
           {images.map((img, i) => (
             <img
               key={img.imageId}
               src={src(img)}
               alt=""
               onClick={() => setIdx(i)}
+              className={`rounded-2 ${i === idx ? "opacity-100 border border-2 border-white" : "opacity-50"}`}
               style={{
                 width: 48,
                 height: 48,
                 objectFit: "cover",
-                borderRadius: 8,
                 cursor: "pointer",
-                border: i === idx ? "2px solid #fff" : "2px solid transparent",
-                opacity: i === idx ? 1 : 0.5,
-                transition: "all 0.15s",
+                transition: "all .15s",
               }}
             />
           ))}
@@ -204,8 +161,29 @@ const Lightbox = ({ images, startIndex, onClose }) => {
   );
 };
 
-/* ─── Trang chính ─── */
-const MaintenanceRequestDetail = () => {
+/* ─── InfoBox — labelled info row inside the status card ────────── */
+function InfoBox({ label, children }) {
+  return (
+    <div className="col-12">
+      <div className="rounded-3 p-3 bg-light border">
+        <p
+          className="text-muted fw-semibold text-uppercase mb-1"
+          style={{ fontSize: 10, letterSpacing: 1 }}
+        >
+          {label}
+        </p>
+        <div className="fw-semibold small d-flex align-items-center gap-2">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Main component
+══════════════════════════════════════════════════════════════════ */
+export default function MaintenanceRequestDetail() {
   const { requestId } = useParams();
   const navigate = useNavigate();
 
@@ -214,6 +192,7 @@ const MaintenanceRequestDetail = () => {
   const [error, setError] = useState("");
   const [lightbox, setLightbox] = useState({ open: false, index: 0 });
   const [cancelling, setCancelling] = useState(false);
+  const [confirm, setConfirm] = useState(false);
 
   useEffect(() => {
     apiMaintenanceRequest
@@ -224,11 +203,11 @@ const MaintenanceRequestDetail = () => {
   }, [requestId]);
 
   const handleCancel = async () => {
-    if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này?")) return;
     setCancelling(true);
     try {
       const updated = await apiMaintenanceRequest.cancelRequest(requestId);
       setRequest(updated);
+      setConfirm(false);
     } catch (err) {
       alert(err?.response?.data?.message || "Không thể hủy yêu cầu");
     } finally {
@@ -237,7 +216,6 @@ const MaintenanceRequestDetail = () => {
   };
 
   const imgSrc = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
-
   const formatDate = (dt) =>
     dt
       ? new Date(dt).toLocaleString("vi-VN", {
@@ -246,322 +224,356 @@ const MaintenanceRequestDetail = () => {
         })
       : "—";
 
+  /* ── Loading ── */
   if (loading)
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: 300 }}
-      >
-        <div className="spinner-border text-warning" />
+      <div className="container-fluid py-4 bg-light min-vh-100">
+        <div className="d-flex align-items-center gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm">
+          <div className="btn btn-light border-0 rounded-circle p-2 shadow-sm">
+            <FaArrowLeft className="text-muted" />
+          </div>
+          <h4 className="fw-bold text-dark mb-0">CHI TIẾT YÊU CẦU</h4>
+        </div>
+        <div className="card border-0 shadow-sm rounded-4">
+          <div className="card-body text-center py-5">
+            <div className="spinner-border text-warning" />
+            <p className="text-muted mt-2 small">Đang tải...</p>
+          </div>
+        </div>
       </div>
     );
 
+  /* ── Error ── */
   if (error)
     return (
-      <div className="container py-5 text-center">
-        <p className="text-danger">{error}</p>
-        <button
-          className="btn btn-light rounded-3"
-          onClick={() => navigate(-1)}
-        >
-          Quay lại
-        </button>
+      <div className="container-fluid py-4 bg-light min-vh-100">
+        <div className="d-flex align-items-center gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-light border-0 rounded-circle p-2 shadow-sm"
+          >
+            <FaArrowLeft className="text-muted" />
+          </button>
+          <h4 className="fw-bold text-dark mb-0">CHI TIẾT YÊU CẦU</h4>
+        </div>
+        <div className="alert alert-warning rounded-3">{error}</div>
       </div>
     );
 
+  const cfg = STATUS_CONFIG[request?.status] ?? {
+    label: request?.status,
+    badge: "bg-light text-dark",
+    chipBg: "bg-light",
+    chipText: "text-secondary",
+    dot: "bg-secondary",
+  };
+  const hint = HINTS[request?.status] ?? "";
+  const images = request?.images ?? [];
+  const curIdx = lightbox.index ?? 0;
+
   return (
-    <div
-      style={{ background: "#f5f6fa", minHeight: "100vh", paddingBottom: 48 }}
-    >
-      {/* Lightbox */}
-      {lightbox.open && request?.images?.length > 0 && (
+    <div className="container-fluid py-4 bg-light min-vh-100">
+      {/* ── Lightbox ── */}
+      {lightbox.open && images.length > 0 && (
         <Lightbox
-          images={request.images}
-          startIndex={lightbox.index}
+          images={images}
+          startIndex={curIdx}
           onClose={() => setLightbox({ open: false, index: 0 })}
         />
       )}
 
-      {/* Top bar */}
-      <div
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #eee",
-          padding: "14px 0",
-        }}
-      >
-        <div className="container-fluid px-3 px-md-4 d-flex align-items-center justify-content-between">
+      {/* ── Confirm cancel modal ── */}
+      {confirm && (
+        <div
+          className="modal d-block"
+          style={{ background: "rgba(0,0,0,.4)", zIndex: 9998 }}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content border-0 rounded-4 shadow-lg">
+              <div className="modal-body text-center p-4">
+                <div className="fs-1 mb-3">⚠️</div>
+                <h6 className="fw-bold mb-1">Hủy yêu cầu này?</h6>
+                <p className="text-muted small mb-4">
+                  Sau khi hủy bạn không thể khôi phục lại yêu cầu.
+                </p>
+                <div className="d-flex gap-2 justify-content-center">
+                  <button
+                    className="btn btn-outline-secondary btn-sm px-4 rounded-3"
+                    onClick={() => setConfirm(false)}
+                  >
+                    Không
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm px-4 rounded-3 d-flex align-items-center gap-2"
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? (
+                      <span className="spinner-border spinner-border-sm" />
+                    ) : (
+                      <FaBan size={12} />
+                    )}
+                    Hủy yêu cầu
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Header ══ */}
+      <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
+        <div className="d-flex align-items-center gap-3">
           <button
-            className="btn btn-light btn-sm rounded-3 d-flex align-items-center gap-2"
             onClick={() => navigate(-1)}
+            className="btn btn-light border-0 rounded-circle p-2 shadow-sm"
           >
-            <FaArrowLeft size={13} />
-            <span className="small">Quay lại</span>
+            <FaArrowLeft className="text-muted" />
           </button>
-          <span className="text-muted small fw-semibold">
-            Yêu cầu #{request?.requestId}
+          <div>
+            <h4 className="fw-bold text-dark mb-0">CHI TIẾT YÊU CẦU</h4>
+            <span className="badge bg-warning-subtle text-warning">
+              #REQ-{requestId}
+            </span>
+          </div>
+        </div>
+
+        {/* Status chip — pure Bootstrap */}
+        <div
+          className={`d-flex align-items-center gap-2 px-3 py-2 rounded-3 ${cfg.chipBg}`}
+        >
+          <span
+            className={`rounded-circle d-inline-block flex-shrink-0 ${cfg.dot}`}
+            style={{ width: 8, height: 8 }}
+          />
+          <span className={`small fw-semibold ${cfg.chipText}`}>
+            {cfg.label}
           </span>
         </div>
       </div>
 
-      <div
-        className="container-fluid px-3 px-md-4 mt-4"
-        style={{ maxWidth: 760 }}
-      >
-        {/* Card chính */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 20,
-            boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Header card */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #fffbea 0%, #fff8e1 100%)",
-              padding: "24px 28px",
-              borderBottom: "1px solid #f0e6c0",
-            }}
-          >
-            <div className="d-flex align-items-start justify-content-between gap-3">
-              <div className="d-flex align-items-center gap-3">
+      {/* ══ Content row ══ */}
+      <div className="row g-4">
+        {/* ── Left col: gallery + description ── */}
+        <div className="col-lg-7 d-flex flex-column gap-4">
+          {/* Gallery */}
+          <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+            {images.length > 0 ? (
+              <>
+                {/* Main image area */}
                 <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: "#fff",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
+                  className="position-relative bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center"
+                  style={{ aspectRatio: "16/10" }}
                 >
-                  <FaTools color="#f59e0b" size={20} />
-                </div>
-                <div>
-                  <h5 className="fw-bold mb-1" style={{ fontSize: 17 }}>
-                    Yêu cầu sửa chữa
-                  </h5>
-                  <div className="d-flex align-items-center gap-2 text-muted small">
-                    <FaHome size={11} />
-                    <span>{request?.roomName}</span>
+                  <img
+                    src={imgSrc(images[curIdx] ?? images[0])}
+                    alt=""
+                    className="w-100 h-100"
+                    style={{ objectFit: "cover", cursor: "zoom-in" }}
+                    onClick={() => setLightbox({ open: true, index: curIdx })}
+                    onError={(e) => {
+                      e.target.parentElement.classList.replace(
+                        "bg-secondary",
+                        "bg-light",
+                      );
+                      e.target.classList.add("d-none");
+                    }}
+                  />
+
+                  {images.length > 1 && (
+                    <>
+                      {/* Prev arrow */}
+                      <button
+                        className="btn btn-dark btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 rounded-circle p-0 d-flex align-items-center justify-content-center opacity-75"
+                        style={{ width: 34, height: 34 }}
+                        onClick={() =>
+                          setLightbox((l) => ({
+                            ...l,
+                            index: Math.max(0, l.index - 1),
+                          }))
+                        }
+                      >
+                        <FaChevronLeft size={12} />
+                      </button>
+
+                      {/* Next arrow */}
+                      <button
+                        className="btn btn-dark btn-sm position-absolute top-50 end-0 translate-middle-y me-2 rounded-circle p-0 d-flex align-items-center justify-content-center opacity-75"
+                        style={{ width: 34, height: 34 }}
+                        onClick={() =>
+                          setLightbox((l) => ({
+                            ...l,
+                            index: Math.min(images.length - 1, l.index + 1),
+                          }))
+                        }
+                      >
+                        <FaChevronRight size={12} />
+                      </button>
+
+                      {/* Dot indicators */}
+                      <div className="position-absolute bottom-0 start-50 translate-middle-x mb-3 d-flex gap-1">
+                        {images.map((_, i) => (
+                          <button
+                            key={i}
+                            className={`p-0 border-0 rounded-circle ${i === curIdx ? "bg-white" : "bg-white opacity-50"}`}
+                            style={{ width: 8, height: 8, cursor: "pointer" }}
+                            onClick={() =>
+                              setLightbox((l) => ({ ...l, index: i }))
+                            }
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Counter */}
+                  <div className="position-absolute top-0 end-0 m-2">
+                    <span className="badge bg-dark bg-opacity-50 text-white rounded-3 small">
+                      {curIdx + 1}/{images.length} ảnh
+                    </span>
                   </div>
                 </div>
-              </div>
-              <StatusBadge status={request?.status} />
-            </div>
-          </div>
 
-          {/* Body */}
-          <div style={{ padding: "24px 28px" }}>
-            {/* Mô tả */}
-            <div className="mb-4">
-              <p
-                className="mb-2 fw-semibold"
-                style={{
-                  fontSize: 11,
-                  letterSpacing: 1,
-                  color: "#aaa",
-                  textTransform: "uppercase",
-                }}
-              >
-                Mô tả sự cố
-              </p>
-              <p
-                style={{
-                  background: "#f8f9fa",
-                  borderRadius: 12,
-                  padding: "14px 16px",
-                  margin: 0,
-                  lineHeight: 1.7,
-                  fontSize: 15,
-                  color: "#333",
-                }}
-              >
-                {request?.description}
-              </p>
-            </div>
-
-            {/* Thông tin dạng grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginBottom: 24,
-              }}
-            >
-              <div
-                style={{
-                  background: "#f8f9fa",
-                  borderRadius: 12,
-                  padding: "14px 16px",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 11,
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    marginBottom: 4,
-                  }}
-                >
-                  Ngày gửi
-                </p>
-                <p className="mb-0 fw-semibold small d-flex align-items-center gap-2">
-                  <FaCalendarAlt size={12} color="#f59e0b" />
-                  {formatDate(request?.createdAt)}
-                </p>
-              </div>
-
-              {request?.updatedAt && (
-                <div
-                  style={{
-                    background: "#f8f9fa",
-                    borderRadius: 12,
-                    padding: "14px 16px",
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: "#aaa",
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Cập nhật lúc
-                  </p>
-                  <p className="mb-0 fw-semibold small d-flex align-items-center gap-2">
-                    <FaCalendarAlt size={12} color="#6c757d" />
-                    {formatDate(request?.updatedAt)}
-                  </p>
-                </div>
-              )}
-
-              {request?.assetName && (
-                <div
-                  style={{
-                    background: "#f8f9fa",
-                    borderRadius: 12,
-                    padding: "14px 16px",
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: "#aaa",
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Tài sản liên quan
-                  </p>
-                  <p className="mb-0 fw-semibold small">{request.assetName}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Ảnh đính kèm */}
-            {request?.images?.length > 0 && (
-              <div>
-                <p
-                  className="mb-3 fw-semibold"
-                  style={{
-                    fontSize: 11,
-                    letterSpacing: 1,
-                    color: "#aaa",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Ảnh đính kèm ({request.images.length})
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {request.images.map((img, i) => (
-                    <div
-                      key={img.imageId}
-                      onClick={() => setLightbox({ open: true, index: i })}
-                      style={{
-                        width: 100,
-                        height: 100,
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        position: "relative",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        transition: "transform 0.15s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.04)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
-                    >
-                      <img
-                        src={imgSrc(img)}
-                        alt=""
+                {/* Thumbnail strip */}
+                {images.length > 1 && (
+                  <div className="p-3 d-flex gap-2 flex-wrap bg-light">
+                    {images.map((img, i) => (
+                      <div
+                        key={img.imageId}
+                        onClick={() => setLightbox((l) => ({ ...l, index: i }))}
+                        className={`rounded-3 overflow-hidden flex-shrink-0 border ${
+                          i === curIdx
+                            ? "border-warning opacity-100"
+                            : "opacity-50"
+                        }`}
                         style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                          width: 56,
+                          height: 56,
+                          cursor: "pointer",
+                          transition: "opacity .15s",
                         }}
-                        onError={(e) => {
-                          e.target.parentElement.style.background = "#f0f0f0";
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
+                      >
+                        <img
+                          src={imgSrc(img)}
+                          alt=""
+                          className="w-100 h-100"
+                          style={{ objectFit: "cover" }}
+                          onError={(e) => {
+                            e.target.parentElement.classList.add(
+                              "bg-secondary-subtle",
+                            );
+                            e.target.classList.add("d-none");
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div
+                className="d-flex align-items-center justify-content-center flex-column gap-2 text-muted"
+                style={{ aspectRatio: "16/10" }}
+              >
+                <FaImage size={48} className="opacity-25" />
+                <span className="small">Không có ảnh đính kèm</span>
               </div>
             )}
           </div>
 
-          {/* Footer action */}
-          {request?.status === "PENDING" && (
-            <div
-              style={{
-                borderTop: "1px solid #f0f0f0",
-                padding: "16px 28px",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
+          {/* Description */}
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <h6 className="fw-bold mb-3 border-bottom pb-3 d-flex align-items-center gap-2">
+              <FaFileAlt className="text-warning" /> Mô tả sự cố
+            </h6>
+            <p
+              className="mb-0 text-secondary lh-lg small"
+              style={{ whiteSpace: "pre-wrap" }}
             >
-              <button
-                className="btn btn-sm d-flex align-items-center gap-2"
-                onClick={handleCancel}
-                disabled={cancelling}
-                style={{
-                  background: "#fff1f1",
-                  color: "#dc3545",
-                  border: "1px solid #f5c2c7",
-                  borderRadius: 10,
-                  padding: "8px 20px",
-                  fontWeight: 600,
-                  fontSize: 13,
-                }}
+              {request?.description}
+            </p>
+          </div>
+        </div>
+
+        {/* ── Right col: room + status + action ── */}
+        <div className="col-lg-5 d-flex flex-column gap-4">
+          {/* Room info */}
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <h6 className="fw-bold mb-3 border-bottom pb-3 d-flex align-items-center gap-2">
+              <FaHome className="text-warning" /> Thông tin phòng
+            </h6>
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                <FaHome size={16} />
+              </div>
+              <div>
+                <div className="fw-semibold">{request?.roomName}</div>
+                <div className="text-muted small">Phòng đang thuê</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status + dates */}
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <h6 className="fw-bold mb-3 border-bottom pb-3 d-flex align-items-center gap-2">
+              <FaInfoCircle className="text-warning" /> Trạng thái
+            </h6>
+
+            {/* Status badge row */}
+            <div className="d-flex align-items-center gap-2 mb-3">
+              <span
+                className={`rounded-circle d-inline-block flex-shrink-0 ${cfg.dot}`}
+                style={{ width: 10, height: 10 }}
+              />
+              <span
+                className={`badge rounded-pill px-3 py-2 small ${cfg.badge}`}
               >
-                {cancelling ? (
-                  <span className="spinner-border spinner-border-sm" />
-                ) : (
-                  <FaBan size={12} />
-                )}
-                Hủy yêu cầu
+                {cfg.label}
+              </span>
+            </div>
+
+            {hint && <p className="text-muted small mb-3 lh-base">{hint}</p>}
+
+            <div className="row g-3">
+              <InfoBox label="Ngày gửi">
+                <FaCalendarAlt size={11} className="text-warning" />
+                {formatDate(request?.createdAt)}
+              </InfoBox>
+
+              {request?.updatedAt && (
+                <InfoBox label="Cập nhật lúc">
+                  <FaClock size={11} className="text-muted" />
+                  {formatDate(request?.updatedAt)}
+                </InfoBox>
+              )}
+
+              {request?.assetName && (
+                <InfoBox label="Tài sản liên quan">{request.assetName}</InfoBox>
+              )}
+            </div>
+          </div>
+
+          {/* Cancel action */}
+          {request?.status === "PENDING" && (
+            <div className="card border-0 shadow-sm rounded-4 p-4">
+              <h6 className="fw-bold mb-3 border-bottom pb-3 d-flex align-items-center gap-2">
+                <FaTools className="text-muted" /> Thao tác
+              </h6>
+              <button
+                className="btn btn-outline-danger rounded-3 w-100 d-flex align-items-center justify-content-center gap-2 fw-medium small"
+                onClick={() => setConfirm(true)}
+                disabled={cancelling}
+              >
+                <FaBan size={12} /> Hủy yêu cầu này
               </button>
+              <p className="text-muted small mt-2 mb-0 text-center">
+                Chỉ có thể hủy khi yêu cầu đang ở trạng thái chờ xử lý
+              </p>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-};
-
-export default MaintenanceRequestDetail;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   FaArrowLeft,
@@ -6,6 +6,7 @@ import {
   FaDoorOpen,
   FaCheckCircle,
   FaImage,
+  FaEdit,
 } from "react-icons/fa";
 import apiPost from "../../api/apiPost";
 import apiRoom from "../../api/apiRoom";
@@ -31,28 +32,24 @@ const getFullImageUrl = (url) => {
 export default function CreatePost() {
   const navigate = useNavigate();
 
-  // ── Phòng ──
   const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [roomDetail, setRoomDetail] = useState(null); // chứa ảnh + giá
+  const [roomDetail, setRoomDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [roomError, setRoomError] = useState(null);
 
-  // ── Form ──
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // Load phòng đang ở khi mount
   useEffect(() => {
     const load = async () => {
       try {
         const data = await apiRoom.getMyRooms();
         const list = Array.isArray(data) ? data : (data?.data ?? []);
         setRooms(list);
-        // Nếu chỉ có 1 phòng → tự chọn luôn
         if (list.length === 1) setSelectedRoom(list[0]);
       } catch {
         setRoomError("Không thể tải danh sách phòng. Vui lòng thử lại.");
@@ -63,7 +60,6 @@ export default function CreatePost() {
     load();
   }, []);
 
-  // Khi chọn phòng → load chi tiết (ảnh + giá)
   useEffect(() => {
     if (!selectedRoom) {
       setRoomDetail(null);
@@ -118,219 +114,217 @@ export default function CreatePost() {
     }
   };
 
-  // Lấy ảnh thumbnail hoặc ảnh đầu tiên
   const thumbnail =
     roomDetail?.roomMedia?.find((m) => m.isThumbnail) ??
     roomDetail?.roomMedia?.[0];
   const descLen = description.length;
 
   return (
-    <div className="container py-4" style={{ maxWidth: 660 }}>
-      <Link
-        to="/user/posts"
-        className="btn btn-link text-decoration-none px-0 mb-3 text-secondary"
-      >
-        <FaArrowLeft className="me-1" /> Quay lại
-      </Link>
-
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-4">
-          <h5 className="fw-bold mb-1">Đăng bài tìm bạn ghép phòng</h5>
-          <p className="text-muted small mb-4">
-            Bài đăng sẽ hiển thị công khai và tự động hết hạn sau 30 ngày.
-          </p>
-
-          {apiError && (
-            <div className="alert alert-danger py-2 small">{apiError}</div>
+    <div className="container-fluid py-4 animate__animated animate__fadeIn">
+      {/* ── Header Panel ── */}
+      <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
+        <div className="d-flex align-items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-light border-0 rounded-circle p-2 shadow-sm"
+          >
+            <FaArrowLeft className="text-muted" />
+          </button>
+          <div>
+            <h4 className="fw-bold text-dark mb-0">
+              ĐĂNG BÀI TÌM BẠN GHÉP PHÒNG
+            </h4>
+            <span className="text-muted small">
+              Bài đăng sẽ hiển thị công khai và tự động hết hạn sau 30 ngày
+            </span>
+          </div>
+        </div>
+        <button
+          type="submit"
+          form="create-post-form"
+          className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm"
+          disabled={submitting || rooms.length === 0}
+        >
+          {submitting ? (
+            <>
+              <span className="spinner-border spinner-border-sm" /> Đang đăng...
+            </>
+          ) : (
+            <>
+              <FaPaperPlane /> Đăng bài
+            </>
           )}
+        </button>
+      </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-            {/* ── Chọn phòng ── */}
-            <div className="mb-3">
-              <label className="form-label fw-medium small">
-                Phòng đang ở <span className="text-danger">*</span>
-              </label>
+      {/* ── API Error ── */}
+      {apiError && (
+        <div className="alert alert-danger py-2 small rounded-3 mb-4">
+          {apiError}
+        </div>
+      )}
 
-              {loadingRooms ? (
-                <div className="d-flex align-items-center gap-2 text-muted small py-2">
-                  <span className="spinner-border spinner-border-sm" />
-                  Đang tải danh sách phòng...
-                </div>
-              ) : roomError ? (
-                <div className="alert alert-warning py-2 small">
-                  {roomError}
-                </div>
-              ) : rooms.length === 0 ? (
-                <div className="alert alert-info py-2 small">
-                  Bạn chưa là thành viên của phòng nào. Vui lòng liên hệ quản lý
-                  để được thêm vào phòng.
-                </div>
-              ) : rooms.length === 1 ? (
-                /* Chỉ 1 phòng → hiện chip không cần chọn */
-                <div className="d-inline-flex align-items-center gap-2 bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 small">
-                  <FaDoorOpen size={12} />
-                  <span className="fw-medium">{rooms[0].roomName}</span>
-                  <FaCheckCircle size={11} className="ms-1" />
-                </div>
-              ) : (
-                /* Nhiều phòng → dropdown */
-                <select
-                  className={`form-select form-select-sm ${errors.room ? "is-invalid" : ""}`}
-                  value={selectedRoom?.roomId ?? ""}
-                  onChange={(e) => {
-                    const found = rooms.find(
-                      (r) => r.roomId === Number(e.target.value),
-                    );
-                    setSelectedRoom(found ?? null);
-                    setErrors((p) => ({ ...p, room: undefined }));
-                  }}
-                >
-                  <option value="">-- Chọn phòng --</option>
-                  {rooms.map((r) => (
-                    <option key={r.roomId} value={r.roomId}>
-                      {r.roomName}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {errors.room && (
-                <div className="invalid-feedback d-block">{errors.room}</div>
-              )}
-            </div>
+      <div className="row g-4">
+        {/* ── Cột trái: Chọn phòng ── */}
+        <div className="col-lg-5">
+          <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
+              <FaDoorOpen className="text-primary" /> Chọn phòng
+            </h6>
 
-            {/* ── Preview phòng (ảnh + giá) ── */}
-            {selectedRoom && (
-              <div
-                className="mb-4 rounded-3 overflow-hidden border"
-                style={{ background: "#f8f9fa" }}
+            {loadingRooms ? (
+              <div className="d-flex align-items-center gap-2 text-muted small py-2">
+                <span className="spinner-border spinner-border-sm" /> Đang tải
+                danh sách phòng...
+              </div>
+            ) : roomError ? (
+              <div className="alert alert-warning py-2 small rounded-3">
+                {roomError}
+              </div>
+            ) : rooms.length === 0 ? (
+              <div className="alert alert-info py-2 small rounded-3">
+                Bạn chưa là thành viên của phòng nào. Vui lòng liên hệ quản lý
+                để được thêm vào phòng.
+              </div>
+            ) : rooms.length === 1 ? (
+              <div className="d-inline-flex align-items-center gap-2 bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 small">
+                <FaDoorOpen size={13} />
+                <span className="fw-semibold">{rooms[0].roomName}</span>
+                <FaCheckCircle size={12} className="ms-1" />
+              </div>
+            ) : (
+              <select
+                className={`form-select rounded-3 ${errors.room ? "is-invalid" : ""}`}
+                value={selectedRoom?.roomId ?? ""}
+                onChange={(e) => {
+                  const found = rooms.find(
+                    (r) => r.roomId === Number(e.target.value),
+                  );
+                  setSelectedRoom(found ?? null);
+                  setErrors((p) => ({ ...p, room: undefined }));
+                }}
               >
-                {loadingDetail ? (
-                  <div className="d-flex align-items-center justify-content-center py-4 text-muted small gap-2">
-                    <span className="spinner-border spinner-border-sm" /> Đang
-                    tải thông tin phòng...
-                  </div>
-                ) : (
-                  <div
-                    className="d-flex align-items-stretch"
-                    style={{ minHeight: 90 }}
-                  >
-                    {/* Ảnh thumbnail */}
-                    <div
-                      className="flex-shrink-0 d-flex align-items-center justify-content-center bg-secondary bg-opacity-10"
-                      style={{ width: 120 }}
-                    >
-                      {thumbnail ? (
-                        <img
-                          src={getFullImageUrl(thumbnail.url)}
-                          alt={selectedRoom.roomName}
-                          style={{ width: 120, height: 90, objectFit: "cover" }}
-                        />
-                      ) : (
-                        <FaImage size={28} className="text-muted opacity-50" />
-                      )}
-                    </div>
-
-                    {/* Thông tin phòng */}
-                    <div className="p-3 d-flex flex-column justify-content-center gap-1 flex-grow-1">
-                      <div className="fw-semibold small d-flex align-items-center gap-1">
-                        <FaDoorOpen className="text-primary" size={13} />
-                        {selectedRoom.roomName}
-                      </div>
-                      {roomDetail?.price && (
-                        <div
-                          className="text-success fw-bold"
-                          style={{ fontSize: 15 }}
-                        >
-                          {formatPrice(roomDetail.price)}
-                          <span
-                            className="text-muted fw-normal"
-                            style={{ fontSize: 12 }}
-                          >
-                            {" "}
-                            /tháng
-                          </span>
-                        </div>
-                      )}
-                      {roomDetail?.currentPeople != null &&
-                        roomDetail?.maxPeople != null && (
-                          <div className="text-muted" style={{ fontSize: 12 }}>
-                            {roomDetail.currentPeople}/{roomDetail.maxPeople}{" "}
-                            người
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                )}
+                <option value="">-- Chọn phòng --</option>
+                {rooms.map((r) => (
+                  <option key={r.roomId} value={r.roomId}>
+                    {r.roomName}
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.room && (
+              <div className="invalid-feedback d-block small mt-1">
+                {errors.room}
               </div>
             )}
+          </div>
 
-            {/* ── Mô tả ── */}
-            <div className="mb-4">
-              <label className="form-label fw-medium small">
-                Mô tả <span className="text-danger">*</span>
-              </label>
-              <textarea
-                className={`form-control form-control-sm ${errors.description ? "is-invalid" : ""}`}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setErrors((p) => ({ ...p, description: undefined }));
-                  setApiError(null);
-                }}
-                rows={6}
-                maxLength={MAX_DESC}
-                placeholder={`Mô tả về phòng, yêu cầu người ghép, giá thuê chia sẻ, liên hệ... (tối thiểu ${MIN_DESC} ký tự)`}
-              />
-              {errors.description && (
-                <div className="invalid-feedback">{errors.description}</div>
+          {/* ── Preview phòng ── */}
+          {selectedRoom && (
+            <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+              {loadingDetail ? (
+                <div className="d-flex align-items-center justify-content-center py-4 text-muted small gap-2 p-4">
+                  <span className="spinner-border spinner-border-sm" /> Đang tải
+                  thông tin phòng...
+                </div>
+              ) : (
+                <>
+                  {/* Thumbnail */}
+                  <div
+                    className="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center"
+                    style={{ height: 180 }}
+                  >
+                    {thumbnail ? (
+                      <img
+                        src={getFullImageUrl(thumbnail.url)}
+                        alt={selectedRoom.roomName}
+                        style={{
+                          width: "100%",
+                          height: 180,
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <FaImage size={36} className="text-muted opacity-50" />
+                    )}
+                  </div>
+                  <div className="card-body p-4">
+                    <div className="fw-semibold d-flex align-items-center gap-2 mb-2">
+                      <FaDoorOpen className="text-primary" size={14} />
+                      {selectedRoom.roomName}
+                    </div>
+                    {roomDetail?.price && (
+                      <div className="text-success fw-bold fs-5 mb-1">
+                        {formatPrice(roomDetail.price)}
+                        <span className="text-muted fw-normal small">
+                          {" "}
+                          /tháng
+                        </span>
+                      </div>
+                    )}
+                    {roomDetail?.currentPeople != null &&
+                      roomDetail?.maxPeople != null && (
+                        <div className="text-muted small">
+                          {roomDetail.currentPeople}/{roomDetail.maxPeople}{" "}
+                          người
+                        </div>
+                      )}
+                  </div>
+                </>
               )}
-              <div className="d-flex justify-content-between mt-1">
-                <span
-                  className={`small ${descLen < MIN_DESC && descLen > 0 ? "text-danger" : "text-muted"}`}
-                >
-                  {descLen < MIN_DESC && descLen > 0
-                    ? `Cần thêm ${MIN_DESC - descLen} ký tự`
-                    : ""}
-                </span>
-                <span
-                  className={`small ${descLen >= MAX_DESC ? "text-danger" : "text-muted"}`}
-                >
-                  {descLen}/{MAX_DESC}
-                </span>
-              </div>
             </div>
+          )}
+        </div>
 
-            <div className="alert alert-info py-2 small mb-4">
-              💡 Gợi ý: nêu rõ giá thuê chia sẻ, giới tính, thói quen sinh hoạt
-              để tìm người phù hợp nhanh hơn.
-            </div>
+        {/* ── Cột phải: Mô tả ── */}
+        <div className="col-lg-7">
+          <div className="card border-0 shadow-sm rounded-4 p-4">
+            <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
+              <FaEdit className="text-info" /> Nội dung bài đăng
+            </h6>
 
-            <div className="d-flex gap-2 justify-content-end">
-              <Link
-                to="/user/posts"
-                className="btn btn-outline-secondary btn-sm px-4"
-              >
-                Hủy
-              </Link>
-              <button
-                type="submit"
-                className="btn btn-primary btn-sm px-4"
-                disabled={submitting || rooms.length === 0}
-              >
-                {submitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" />
-                    Đang đăng...
-                  </>
-                ) : (
-                  <>
-                    <FaPaperPlane className="me-2" size={12} />
-                    Đăng bài
-                  </>
+            <form id="create-post-form" onSubmit={handleSubmit} noValidate>
+              <div className="mb-3">
+                <label className="form-label fw-medium small">
+                  Mô tả <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  className={`form-control rounded-3 ${errors.description ? "is-invalid" : ""}`}
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setErrors((p) => ({ ...p, description: undefined }));
+                    setApiError(null);
+                  }}
+                  rows={10}
+                  maxLength={MAX_DESC}
+                  placeholder={`Mô tả về phòng, yêu cầu người ghép, giá thuê chia sẻ, liên hệ... (tối thiểu ${MIN_DESC} ký tự)`}
+                />
+                {errors.description && (
+                  <div className="invalid-feedback">{errors.description}</div>
                 )}
-              </button>
-            </div>
-          </form>
+                <div className="d-flex justify-content-between mt-1">
+                  <span
+                    className={`small ${descLen < MIN_DESC && descLen > 0 ? "text-danger" : "text-muted"}`}
+                  >
+                    {descLen < MIN_DESC && descLen > 0
+                      ? `Cần thêm ${MIN_DESC - descLen} ký tự`
+                      : ""}
+                  </span>
+                  <span
+                    className={`small ${descLen >= MAX_DESC ? "text-danger" : "text-muted"}`}
+                  >
+                    {descLen}/{MAX_DESC}
+                  </span>
+                </div>
+              </div>
+
+              <div className="alert alert-info py-2 small rounded-3 mb-0">
+                💡 Gợi ý: nêu rõ giá thuê chia sẻ, giới tính, thói quen sinh
+                hoạt để tìm người phù hợp nhanh hơn.
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

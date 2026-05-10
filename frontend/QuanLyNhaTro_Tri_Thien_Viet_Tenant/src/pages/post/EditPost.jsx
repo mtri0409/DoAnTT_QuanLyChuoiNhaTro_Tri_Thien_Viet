@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { FaArrowLeft, FaSave } from "react-icons/fa";
+import { FaArrowLeft, FaSave, FaEdit } from "react-icons/fa";
 import apiPost from "../../api/apiPost";
 
 const MIN_DESC = 20;
@@ -20,8 +20,6 @@ export default function EditPost() {
   useEffect(() => {
     const load = async () => {
       try {
-        // Gọi getMyPosts lấy toàn bộ rồi tìm theo postId
-        // Hoặc backend có getPostById public (chỉ ACTIVE)
         const res = await apiPost.getMyPosts(0, 100);
         const found = res.content?.find((p) => p.postId === Number(postId));
         if (!found) throw new Error("Không tìm thấy bài đăng.");
@@ -72,104 +70,131 @@ export default function EditPost() {
 
   const descLen = description.length;
 
+  /* ── Loading ── */
   if (loadingPost) {
     return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-primary" />
-        <p className="text-muted mt-2 small">Đang tải bài đăng...</p>
+      <div className="container-fluid py-4 animate__animated animate__fadeIn">
+        <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
+          <div className="d-flex align-items-center gap-3">
+            <div className="btn btn-light border-0 rounded-circle p-2 shadow-sm">
+              <FaArrowLeft className="text-muted" />
+            </div>
+            <div>
+              <h4 className="fw-bold text-dark mb-0">CHỈNH SỬA BÀI ĐĂNG</h4>
+            </div>
+          </div>
+        </div>
+        <div className="card border-0 shadow-sm rounded-4">
+          <div className="card-body text-center py-5">
+            <div className="spinner-border text-primary" />
+            <p className="text-muted mt-2 small">Đang tải bài đăng...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  /* ── Not found ── */
   if (apiError && !post) {
     return (
-      <div className="container py-4" style={{ maxWidth: 640 }}>
-        <div className="alert alert-danger">{apiError}</div>
-        <Link to="/user/posts" className="btn btn-outline-secondary btn-sm">
-          <FaArrowLeft className="me-1" /> Quay lại
-        </Link>
+      <div className="container-fluid py-4 animate__animated animate__fadeIn">
+        <div className="d-flex align-items-center gap-3 mb-4 bg-white p-3 rounded-4 shadow-sm">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-light border-0 rounded-circle p-2 shadow-sm"
+          >
+            <FaArrowLeft className="text-muted" />
+          </button>
+          <h4 className="fw-bold text-dark mb-0">CHỈNH SỬA BÀI ĐĂNG</h4>
+        </div>
+        <div className="alert alert-danger rounded-3">{apiError}</div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4" style={{ maxWidth: 640 }}>
-      <Link
-        to="/user/posts"
-        className="btn btn-link text-decoration-none px-0 mb-3 text-secondary"
-      >
-        <FaArrowLeft className="me-1" /> Quay lại bài của tôi
-      </Link>
-
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-4">
-          <h5 className="fw-bold mb-1">Chỉnh sửa bài đăng</h5>
-          <p className="text-muted small mb-4">
-            Phòng: <strong>{post?.roomName}</strong>
-            {post?.branchName && <> — {post.branchName}</>}
-          </p>
-
-          {apiError && (
-            <div className="alert alert-danger py-2 small">{apiError}</div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="mb-4">
-              <label className="form-label fw-medium">
-                Mô tả <span className="text-danger">*</span>
-              </label>
-              <textarea
-                className={`form-control ${descError ? "is-invalid" : ""}`}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setDescError(null);
-                  setApiError(null);
-                }}
-                rows={7}
-                maxLength={MAX_DESC}
-              />
-              {descError && <div className="invalid-feedback">{descError}</div>}
-              <div className="d-flex justify-content-between mt-1">
-                <span
-                  className={`small ${descLen < MIN_DESC && descLen > 0 ? "text-danger" : "text-muted"}`}
-                >
-                  {descLen < MIN_DESC && descLen > 0
-                    ? `Cần thêm ${MIN_DESC - descLen} ký tự`
-                    : ""}
-                </span>
-                <span
-                  className={`small ${descLen >= MAX_DESC ? "text-danger" : "text-muted"}`}
-                >
-                  {descLen}/{MAX_DESC}
-                </span>
-              </div>
-            </div>
-
-            <div className="d-flex gap-2 justify-content-end">
-              <Link to="/user/posts" className="btn btn-outline-secondary px-4">
-                Hủy
-              </Link>
-              <button
-                type="submit"
-                className="btn btn-primary px-4"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" />
-                    Đang lưu...
-                  </>
-                ) : (
-                  <>
-                    <FaSave className="me-2" size={13} />
-                    Lưu thay đổi
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+    <div className="container-fluid py-4 animate__animated animate__fadeIn">
+      {/* ── Header Panel ── */}
+      <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
+        <div className="d-flex align-items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn btn-light border-0 rounded-circle p-2 shadow-sm"
+          >
+            <FaArrowLeft className="text-muted" />
+          </button>
+          <div>
+            <h4 className="fw-bold text-dark mb-0">CHỈNH SỬA BÀI ĐĂNG</h4>
+            <span className="text-muted small">
+              Phòng: <strong>{post?.roomName}</strong>
+              {post?.branchName && <> — {post.branchName}</>}
+            </span>
+          </div>
         </div>
+        <button
+          type="submit"
+          form="edit-post-form"
+          className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm"
+          disabled={submitting}
+        >
+          {submitting ? (
+            <>
+              <span className="spinner-border spinner-border-sm" /> Đang lưu...
+            </>
+          ) : (
+            <>
+              <FaSave /> Lưu thay đổi
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* ── API Error ── */}
+      {apiError && (
+        <div className="alert alert-danger py-2 small rounded-3 mb-4">
+          {apiError}
+        </div>
+      )}
+
+      {/* ── Form Card ── */}
+      <div className="card border-0 shadow-sm rounded-4 p-4">
+        <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
+          <FaEdit className="text-info" /> Nội dung bài đăng
+        </h6>
+
+        <form id="edit-post-form" onSubmit={handleSubmit} noValidate>
+          <div className="mb-4">
+            <label className="form-label fw-medium small">
+              Mô tả <span className="text-danger">*</span>
+            </label>
+            <textarea
+              className={`form-control rounded-3 ${descError ? "is-invalid" : ""}`}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setDescError(null);
+                setApiError(null);
+              }}
+              rows={12}
+              maxLength={MAX_DESC}
+            />
+            {descError && <div className="invalid-feedback">{descError}</div>}
+            <div className="d-flex justify-content-between mt-1">
+              <span
+                className={`small ${descLen < MIN_DESC && descLen > 0 ? "text-danger" : "text-muted"}`}
+              >
+                {descLen < MIN_DESC && descLen > 0
+                  ? `Cần thêm ${MIN_DESC - descLen} ký tự`
+                  : ""}
+              </span>
+              <span
+                className={`small ${descLen >= MAX_DESC ? "text-danger" : "text-muted"}`}
+              >
+                {descLen}/{MAX_DESC}
+              </span>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );

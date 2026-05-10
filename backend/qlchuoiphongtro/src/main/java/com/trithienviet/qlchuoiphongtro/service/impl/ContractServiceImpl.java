@@ -263,7 +263,7 @@ public class ContractServiceImpl implements ContractService {
         // 11. Gắn hợp đồng vào deposit và cập nhật trạng thái deposit
         roomDeposit.setContract(savedContract);
         roomDeposit.setStatus("ACTIVE");
-        depositRepo.save(roomDeposit);
+        depositRepo.saveAndFlush(roomDeposit);
 
         // 12. Tạo danh sách dịch vụ hợp đồng
         if (contractRequest.getContractServices() != null && !contractRequest.getContractServices().isEmpty()) {
@@ -313,14 +313,6 @@ public class ContractServiceImpl implements ContractService {
         invoiceService.createDepositInvoice(
                 savedContract.getContractId(),
                 roomDeposit.getDepositId());
-        try {
-            invoiceService.createDepositInvoice(
-                    savedContract.getContractId(),
-                    roomDeposit.getDepositId());
-        } catch (Exception ex) {
-            System.err.println("[ContractService] Cảnh báo: Tạo hóa đơn cọc thất bại cho hợp đồng "
-                    + savedContract.getContractId() + " — " + ex.getMessage());
-        }
         notificationService.sendSystemNotification(
                 representative.getProfileId(),
                 title,
@@ -664,6 +656,14 @@ public class ContractServiceImpl implements ContractService {
         if (oldStatus == ContractStatus.ACTIVE &&
                 (newStatus == ContractStatus.TERMINATED || newStatus == ContractStatus.EXPIRED)) {
             room.setStatus(RoomStatus.AVAILABLE);
+
+            // Reset deposit về PENDING để phòng sẵn sàng cho hợp đồng mới
+            depositRepo.findTopByRoom_RoomIdAndStatus(room.getRoomId(), "ACTIVE")
+                    .ifPresent(deposit -> {
+                        deposit.setStatus("PENDING");
+                        deposit.setContract(null);
+                        depositRepo.save(deposit);
+                    });
         }
 
         roomRepo.save(room);

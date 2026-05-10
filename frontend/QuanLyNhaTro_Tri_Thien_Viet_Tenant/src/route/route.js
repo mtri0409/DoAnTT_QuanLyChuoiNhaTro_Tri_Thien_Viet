@@ -17,6 +17,7 @@ import ProfileUpdate from "../pages/profile/UpdateProfile";
 import UpdateVehicle from "../pages/profile/UpdateVehicleProfile";
 import ListMaintenanceRequest from "../pages/maintenance-request/ListMaintenanceRequest";
 import MaintenanceRequestDetail from "../pages/maintenance-request/MaintenanceRequestDetail";
+import CreateMaintenanceRequest from "../pages/maintenance-request/CreateRequestModal";
 
 const AdminRoute = [
   { path: "/", component: Home },
@@ -35,6 +36,7 @@ const AdminRoute = [
   { path: "user/posts/:postId/edit", component: EditPost },
   { path: "user/posts/:postId", component: PostDetail },
   { path: "user/requests", component: ListMaintenanceRequest },
+  { path: "user/requests/create", component: CreateMaintenanceRequest },
   { path: "user/requests/:requestId", component: MaintenanceRequestDetail },
 
   { path: "user/profile/:id", component: ProfileDetail },

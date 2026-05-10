@@ -39,7 +39,7 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
         // Lấy hóa đơn deposit của 1 hợp đồng (thường chỉ có 1)
         Optional<Invoice> findByContract_ContractIdAndType(Long contractId, String type);
 
-        @Query("SELECT i FROM Invoice i LEFT JOIN FETCH i.details WHERE i.invoiceId = :id")
+        @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.details WHERE i.invoiceId = :id")
         Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
 
         /**
@@ -74,6 +74,19 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
         Page<Invoice> filterByContractIds(
                         @Param("contractIds") List<Long> contractIds,
                         @Param("status") String status,
+                        @Param("type") String type,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year,
+                        Pageable pageable);
+
+        // Query dành cho tab "Tất cả" — lấy mọi status trừ DRAFT
+        @Query("SELECT i FROM Invoice i WHERE i.contract.contractId IN :contractIds " +
+                        "AND i.status <> 'DRAFT' " +
+                        "AND (:type IS NULL OR i.type = :type) " +
+                        "AND (:month IS NULL OR i.periodMonth = :month) " +
+                        "AND (:year IS NULL OR i.periodYear = :year)")
+        Page<Invoice> filterByContractIdsExcludeDraft(
+                        @Param("contractIds") List<Long> contractIds,
                         @Param("type") String type,
                         @Param("month") Integer month,
                         @Param("year") Integer year,
