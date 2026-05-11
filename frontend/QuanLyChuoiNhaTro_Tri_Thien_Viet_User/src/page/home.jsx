@@ -9,7 +9,9 @@ const FETCH_SIZE = 100;
 
 const getRoomStatus = room => (room.status ?? room.Status ?? '').toUpperCase();
 
-const isRoomVisible = room => {
+const isAvailableRoom = room => getRoomStatus(room) === 'AVAILABLE';
+
+const isBuildingRoomVisible = room => {
   const status = getRoomStatus(room);
 
   if (status === 'AVAILABLE') return true;
@@ -21,20 +23,29 @@ const isRoomVisible = room => {
   return false;
 };
 
-const getRoomTag = room => {
-  const status = getRoomStatus(room);
+const hasAmenities = (room, activeAmenities) =>
+  activeAmenities.every(id =>
+    room.amenities?.some(a => (a.amenityId ?? a.id) === id),
+  );
 
-  if (status === 'AVAILABLE') return { label: 'Còn phòng', bg: '#16a34a' };
-  if (status === 'SHARED') return { label: 'Ở ghép', bg: '#f59e0b' };
+const getRoomTag = room => {
+  if (getRoomStatus(room) === 'AVAILABLE') {
+    return { label: 'Còn phòng', bg: '#eaf7ea', color: '#287a35' };
+  }
 
   return null;
 };
 
 export default function Home() {
-  const [allRooms, setAllRooms] = useState([]);
+  const [homeRooms, setHomeRooms] = useState([]);
+  const [buildingRooms, setBuildingRooms] = useState([]);
+
   const [branches, setBranches] = useState([]);
   const [amenities, setAmenities] = useState([]);
+  const [floors, setFloors] = useState([]);
+
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [loadingBuildingRooms, setLoadingBuildingRooms] = useState(true);
   const [error, setError] = useState(null);
 
   const [activeBranchId, setActiveBranchId] = useState(null);
@@ -43,27 +54,17 @@ export default function Home() {
   const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
   const [activeAmenities, setActiveAmenities] = useState([]);
   const [page, setPage] = useState(0);
-
-  const [floors, setFloors] = useState([]);
   const [selectedFloor, setSelectedFloor] = useState(null);
 
   useEffect(() => {
     userService.getAllBranches(1, 50)
-      .then(res => {
-        const list = res.content;
-        setBranches(Array.isArray(list) ? list : []);
-      })
+      .then(res => setBranches(Array.isArray(res.content) ? res.content : []))
       .catch(() => setBranches([]));
 
     userService.getAllAmenities(0, 100)
-      .then(res => {
-        const list = res.content;
-        setAmenities(Array.isArray(list) ? list : []);
-      })
+      .then(res => setAmenities(Array.isArray(res.content) ? res.content : []))
       .catch(() => setAmenities([]));
-  }, []);
 
-  useEffect(() => {
     userService.getAllFloors()
       .then(res => {
         const data = res.data || res;
@@ -72,55 +73,76 @@ export default function Home() {
       .catch(() => setFloors([]));
   }, []);
 
-  const loadRooms = useCallback((branchId, isActive = () => true) => {
+  const loadHomeRooms = useCallback((branchId, isActive = () => true) => {
+    userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, branchId, '', 'AVAILABLE')
+      .then(res => {
+        if (!isActive()) return;
+
+        const rooms = Array.isArray(res.content) ? res.content : [];
+        setHomeRooms(rooms.filter(isAvailableRoom));
+        setError(null);
+      })
+      .catch(err => {
+        if (!isActive()) return;
+
+        console.error('Fetch rooms error:', err);
+        setError('Không thể tải danh sách phòng. Vui lòng thử lại.');
+        setHomeRooms([]);
+      })
+      .finally(() => {
+        if (!isActive()) return;
+        setLoadingRooms(false);
+      });
+  }, []);
+
+  const loadBuildingRooms = useCallback((isActive = () => true) => {
     Promise.all([
-      userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, branchId, '', 'AVAILABLE'),
-      userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, branchId, '', 'SHARED'),
+      userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, null, '', 'AVAILABLE'),
+      userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, null, '', 'SHARED'),
     ])
       .then(([availableRes, sharedRes]) => {
         if (!isActive()) return;
 
-        const availableRooms = Array.isArray(availableRes.content) ? availableRes.content : [];
-        const sharedRooms = Array.isArray(sharedRes.content) ? sharedRes.content : [];
+        const available = Array.isArray(availableRes.content) ? availableRes.content : [];
+        const shared = Array.isArray(sharedRes.content) ? sharedRes.content : [];
 
-        const mergedRooms = [...availableRooms, ...sharedRooms].filter(
-          (room, index, self) =>
-            index === self.findIndex(item => item.roomId === room.roomId),
+        const merged = [...available, ...shared].filter(
+          (room, index, self) => index === self.findIndex(item => item.roomId === room.roomId),
         );
 
-        setAllRooms(mergedRooms.filter(isRoomVisible));
-        setError(null);
+        setBuildingRooms(merged.filter(isBuildingRoomVisible));
       })
-      .catch(error => {
+      .catch(err => {
         if (!isActive()) return;
 
-        console.error('Fetch rooms error:', error);
-        setError('Không thể tải danh sách phòng. Vui lòng thử lại.');
-        setAllRooms([]);
+        console.error('Fetch building rooms error:', err);
+        setBuildingRooms([]);
       })
       .finally(() => {
         if (!isActive()) return;
-
-        setLoadingRooms(false);
+        setLoadingBuildingRooms(false);
       });
   }, []);
 
   useEffect(() => {
     let active = true;
 
-    loadRooms(activeBranchId, () => active);
+    loadHomeRooms(activeBranchId, () => active);
 
     return () => {
       active = false;
     };
-  }, [activeBranchId, loadRooms]);
+  }, [activeBranchId, loadHomeRooms]);
 
-  const handleRetry = () => {
-    setLoadingRooms(true);
-    setError(null);
-    setPage(0);
-    loadRooms(activeBranchId);
-  };
+  useEffect(() => {
+    let active = true;
+
+    loadBuildingRooms(() => active);
+
+    return () => {
+      active = false;
+    };
+  }, [loadBuildingRooms]);
 
   const filteredFloors = useMemo(() => {
     if (!activeBranchId) return floors;
@@ -153,6 +175,13 @@ export default function Home() {
     return stillExists ? selectedFloor : defaultFloorId;
   }, [filteredFloors, selectedFloor, defaultFloorId]);
 
+  const handleRetry = () => {
+    setLoadingRooms(true);
+    setError(null);
+    setPage(0);
+    loadHomeRooms(activeBranchId);
+  };
+
   const handleBranchChange = branchId => {
     setActiveBranchId(branchId);
     setSelectedFloor(null);
@@ -168,18 +197,21 @@ export default function Home() {
     setPage(0);
   };
 
-  const filteredRooms = useMemo(() => allRooms.filter(room => {
-    if (!isRoomVisible(room)) return false;
+  const filteredRooms = useMemo(() => homeRooms.filter(room => {
+    if (!isAvailableRoom(room)) return false;
     if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
-
-    if (!activeAmenities.every(id =>
-      room.amenities?.some(a => (a.amenityId ?? a.id) === id),
-    )) {
-      return false;
-    }
+    if (!hasAmenities(room, activeAmenities)) return false;
 
     return true;
-  }), [allRooms, maxPrice, activeAmenities]);
+  }), [homeRooms, maxPrice, activeAmenities]);
+
+  const filteredBuildingRooms = useMemo(() => buildingRooms.filter(room => {
+    if (!isBuildingRoomVisible(room)) return false;
+    if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
+    if (!hasAmenities(room, activeAmenities)) return false;
+
+    return true;
+  }), [buildingRooms, maxPrice, activeAmenities]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages - 1);
@@ -190,64 +222,370 @@ export default function Home() {
 
   const sliderPercent = (maxPrice / MAX_PRICE) * 100;
 
-  const getAmenityIcon = name => {
-    const icon = Object.entries({
-      wifi: '📶',
-      'máy lạnh': '❄️',
-      'điều hòa': '❄️',
-      'nóng lạnh': '🚿',
-      wc: '🚽',
-      toilet: '🚽',
-      bếp: '🍳',
-      'gác lửng': '🪜',
-      'thang máy': '🛗',
-      'bãi xe': '🅿️',
-      'chỗ để xe': '🅿️',
-      'bảo vệ': '💂',
-    }).find(([key]) => name?.toLowerCase().includes(key))?.[1];
-
-    return icon ?? '✅';
-  };
-
   return (
-    <div style={{
-      maxWidth: 1200,
-      margin: '0 auto',
-      padding: '28px 24px 48px',
-      fontFamily: "'Be Vietnam Pro', sans-serif",
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24, gap: 6 }}>
-        {[
-          { mode: 'list', emoji: '☰', label: 'Danh sách' },
-          { mode: 'building', emoji: '🏢', label: 'Sơ đồ tòa nhà' },
-        ].map(({ mode, emoji, label }) => {
-          const isActive = viewMode === mode;
+    <div className="home-page">
+      <style>{`
+        .home-page {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 24px;
+          font-family: "Times New Roman", Times, serif;
+          color: #2f241d;
+        }
 
-          return (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 22px',
-                borderRadius: 12,
-                border: 'none',
-                fontFamily: 'inherit',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: isActive ? '#4361ee' : '#f1f5f9',
-                color: isActive ? '#fff' : '#64748b',
-                transition: 'all 0.18s',
-                boxShadow: isActive ? '0 4px 14px rgba(67,97,238,0.3)' : 'none',
-              }}
-            >
-              <span>{emoji}</span> {label}
-            </button>
-          );
-        })}
+        .home-toggle {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-bottom: 18px;
+          flex-wrap: wrap;
+        }
+
+        .home-toggle button,
+        .home-chip,
+        .home-page-btn,
+        .home-clear-btn,
+        .home-solid-btn {
+          font-family: inherit;
+          cursor: pointer;
+        }
+
+        .home-toggle button {
+          border: 1px solid #eadfd4;
+          background: #fff;
+          color: #6f5f52;
+          border-radius: 6px;
+          padding: 9px 14px;
+          font-size: 15px;
+          font-weight: 700;
+        }
+
+        .home-toggle button.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          color: #fff;
+        }
+
+        .home-branch-bar,
+        .home-filter-card {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+        }
+
+        .home-branch-bar {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          padding: 14px;
+          margin-bottom: 18px;
+        }
+
+        .home-label {
+          color: #6f5f52;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .home-chip {
+          border: 1px solid #eadfd4;
+          background: #fff;
+          color: #6f5f52;
+          border-radius: 6px;
+          padding: 7px 12px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .home-chip.active {
+          background: #fff0dc;
+          border-color: #df7a35;
+          color: #b85618;
+        }
+
+        .home-grid {
+          display: grid;
+          grid-template-columns: 1fr 280px;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .home-section-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
+          font-size: 20px;
+          font-weight: 800;
+        }
+
+        .home-count {
+          background: #fff0dc;
+          color: #b85618;
+          border: 1px solid #f0d8bd;
+          border-radius: 5px;
+          padding: 2px 8px;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .home-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .home-sidebar {
+          position: sticky;
+          top: 106px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .home-filter-card {
+          padding: 16px;
+        }
+
+        .home-filter-title {
+          font-size: 16px;
+          font-weight: 800;
+          margin-bottom: 12px;
+        }
+
+        .home-muted-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 12px;
+          color: #8b7665;
+          font-size: 14px;
+        }
+
+        .home-price {
+          color: #d86622;
+          font-weight: 900;
+        }
+
+        .home-slider {
+          position: relative;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .home-slider-track,
+        .home-slider-fill {
+          position: absolute;
+          left: 0;
+          height: 5px;
+          border-radius: 3px;
+        }
+
+        .home-slider-track {
+          right: 0;
+          background: #f0e4d8;
+        }
+
+        .home-slider-fill {
+          background: #df7a35;
+        }
+
+        .home-slider input {
+          position: absolute;
+          width: 100%;
+          height: 22px;
+          opacity: 0;
+          cursor: pointer;
+          z-index: 2;
+          margin: 0;
+        }
+
+        .home-slider-thumb {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #df7a35;
+          border: 3px solid #fff;
+          box-shadow: 0 2px 7px rgba(102,64,35,.25);
+          pointer-events: none;
+        }
+
+        .home-price-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .home-price-options button {
+          border: 1px solid #eadfd4;
+          border-radius: 5px;
+          background: #fff;
+          color: #6f5f52;
+          padding: 5px 8px;
+          font-family: inherit;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .home-price-options button.active {
+          background: #fff0dc;
+          border-color: #df7a35;
+          color: #b85618;
+        }
+
+        .home-amenity {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 0;
+          border-bottom: 1px solid #f0e4d8;
+          color: #6f5f52;
+          cursor: pointer;
+          user-select: none;
+          font-size: 15px;
+          font-weight: 600;
+        }
+
+        .home-checkbox {
+          width: 17px;
+          height: 17px;
+          border-radius: 4px;
+          border: 1.5px solid #d8c7b7;
+          background: #fff;
+          flex-shrink: 0;
+        }
+
+        .home-checkbox.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          box-shadow: inset 0 0 0 4px #fff;
+        }
+
+        .home-clear-btn,
+        .home-page-btn {
+          border: 1px solid #eadfd4;
+          border-radius: 6px;
+          background: #fff;
+          color: #6f5f52;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .home-clear-btn {
+          width: 100%;
+          margin-top: 12px;
+          padding: 9px;
+        }
+
+        .home-empty,
+        .home-error {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 42px 20px;
+          text-align: center;
+          color: #6f5f52;
+          font-size: 16px;
+        }
+
+        .home-solid-btn {
+          border: 0;
+          border-radius: 6px;
+          background: #df7a35;
+          color: #fff;
+          padding: 10px 18px;
+          font-size: 15px;
+          font-weight: 800;
+        }
+
+        .home-pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+          margin-top: 24px;
+        }
+
+        .home-page-btn {
+          padding: 7px 12px;
+        }
+
+        .home-page-btn.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          color: #fff;
+        }
+
+        .home-skeleton {
+          height: 190px;
+          border-radius: 8px;
+          background: linear-gradient(90deg,#f8f1ea 25%,#efe3d8 50%,#f8f1ea 75%);
+          background-size: 200% 100%;
+          animation: home-shimmer 1.4s infinite;
+          border: 1px solid #eadfd4;
+        }
+
+        @keyframes home-shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        @media (max-width: 980px) {
+          .home-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .home-sidebar {
+            position: static;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 640px) {
+          .home-page {
+            padding: 18px 14px 34px;
+          }
+
+          .home-toggle {
+            justify-content: stretch;
+          }
+
+          .home-toggle button {
+            flex: 1;
+          }
+
+          .home-sidebar {
+            grid-template-columns: 1fr;
+          }
+
+          .home-chip {
+            flex: 1 1 auto;
+          }
+        }
+      `}</style>
+
+      <div className="home-toggle">
+        {[
+          { mode: 'list', label: 'Danh sách' },
+          { mode: 'building', label: 'Sơ đồ tòa nhà' },
+        ].map(({ mode, label }) => (
+          <button
+            key={mode}
+            type="button"
+            className={viewMode === mode ? 'active' : ''}
+            onClick={() => setViewMode(mode)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {viewMode === 'building' && (
@@ -255,31 +593,19 @@ export default function Home() {
           branches={branches}
           activeBranchId={activeBranchId}
           onBranchChange={handleBranchChange}
-          allRooms={filteredRooms}
+          allRooms={filteredBuildingRooms}
           floors={floors}
           selectedFloor={effectiveSelectedFloor}
           onFloorChange={setSelectedFloor}
           amenities={amenities}
-          loadingRooms={loadingRooms}
+          loadingRooms={loadingBuildingRooms}
         />
       )}
 
       {viewMode === 'list' && (
         <>
-          <div style={{
-            background: '#fff',
-            borderRadius: 14,
-            padding: '16px 20px',
-            marginBottom: 24,
-            boxShadow: '0 2px 16px rgba(29,108,240,0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginRight: 4 }}>
-              📍 Chi nhánh:
-            </span>
+          <div className="home-branch-bar">
+            <span className="home-label">Chi nhánh</span>
 
             <BranchChip
               label="Tất cả"
@@ -297,68 +623,38 @@ export default function Home() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: 24, alignItems: 'start' }}>
+          <div className="home-grid">
             <div>
-              <div style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: '#1a2236',
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
+              <div className="home-section-title">
                 Danh sách phòng trọ
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#64748b',
-                  background: '#f1f4f9',
-                  padding: '2px 10px',
-                  borderRadius: 20,
-                }}>
-                  {filteredRooms.length} phòng
-                </span>
+                <span className="home-count">{filteredRooms.length} phòng</span>
               </div>
 
               {loadingRooms && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[1, 2, 3].map(i => (
-                    <div
-                      key={i}
-                      style={{
-                        height: 210,
-                        borderRadius: 14,
-                        background: '#e2e8f0',
-                        animation: 'pulse 1.5s ease-in-out infinite',
-                      }}
-                    />
-                  ))}
-                  <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+                <div className="home-list">
+                  {[1, 2, 3].map(i => <div key={i} className="home-skeleton" />)}
                 </div>
               )}
 
               {!loadingRooms && error && (
-                <div style={{ textAlign: 'center', padding: 48 }}>
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-                  <p style={{ color: '#dc2626', fontSize: 15, fontWeight: 500, marginBottom: 16 }}>
-                    {error}
-                  </p>
-                  <button onClick={handleRetry} style={solidBtn}>Thử lại</button>
+                <div className="home-error">
+                  <p>{error}</p>
+                  <button type="button" onClick={handleRetry} className="home-solid-btn">
+                    Thử lại
+                  </button>
                 </div>
               )}
 
               {!loadingRooms && !error && filteredRooms.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🏚️</div>
-                  <p style={{ fontSize: 15, fontWeight: 500 }}>
+                <div className="home-empty">
+                  <p style={{ margin: 0, fontWeight: 700 }}>
                     Không tìm thấy phòng phù hợp. Hãy thử điều chỉnh bộ lọc.
                   </p>
                 </div>
               )}
 
               {!loadingRooms && !error && pageRooms.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="home-list">
                   {pageRooms.map(room => (
                     <RoomCard key={room.roomId} room={room} tag={getRoomTag(room)} />
                   ))}
@@ -366,90 +662,55 @@ export default function Home() {
               )}
 
               {!loadingRooms && !error && totalPages > 1 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginTop: 28,
-                }}>
+                <div className="home-pagination">
                   <button
+                    type="button"
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={currentPage === 0}
-                    style={{ ...pageBtn, opacity: currentPage === 0 ? 0.4 : 1 }}
+                    className="home-page-btn"
+                    style={{ opacity: currentPage === 0 ? 0.45 : 1 }}
                   >
-                    ← Trước
+                    Trước
                   </button>
 
                   {Array.from({ length: totalPages }, (_, i) => (
                     <button
                       key={i}
+                      type="button"
                       onClick={() => setPage(i)}
-                      style={{
-                        ...pageBtn,
-                        background: currentPage === i ? '#1d6cf0' : '#fff',
-                        color: currentPage === i ? '#fff' : '#64748b',
-                        borderColor: currentPage === i ? '#1d6cf0' : '#e2e8f0',
-                        fontWeight: currentPage === i ? 700 : 500,
-                      }}
+                      className={`home-page-btn ${currentPage === i ? 'active' : ''}`}
                     >
                       {i + 1}
                     </button>
                   ))}
 
                   <button
+                    type="button"
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={currentPage === totalPages - 1}
-                    style={{ ...pageBtn, opacity: currentPage === totalPages - 1 ? 0.4 : 1 }}
+                    className="home-page-btn"
+                    style={{ opacity: currentPage === totalPages - 1 ? 0.45 : 1 }}
                   >
-                    Tiếp →
+                    Tiếp
                   </button>
                 </div>
               )}
             </div>
 
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 100 }}>
-              <div style={filterCard}>
-                <div style={filterTitle}>💰 Lọc theo giá</div>
+            <aside className="home-sidebar">
+              <div className="home-filter-card">
+                <div className="home-filter-title">Lọc theo giá</div>
 
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: 13,
-                  color: '#64748b',
-                  marginBottom: 12,
-                }}>
+                <div className="home-muted-row">
                   <span>0đ</span>
-                  <span style={{ fontWeight: 700, color: '#1d6cf0' }}>
-                    {maxPrice >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${maxPrice} triệu`}
+                  <span className="home-price">
+                    {maxPrice >= MAX_PRICE ? `${MAX_PRICE}tr+` : `Tối đa ${maxPrice} triệu`}
                   </span>
                 </div>
 
-                <div style={{
-                  position: 'relative',
-                  height: 20,
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: 14,
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    height: 6,
-                    borderRadius: 3,
-                    background: '#e2e8f0',
-                  }} />
-
-                  <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    width: `${sliderPercent}%`,
-                    height: 6,
-                    borderRadius: 3,
-                    background: '#1d6cf0',
-                  }} />
-
+                <div className="home-slider">
+                  <div className="home-slider-track" />
+                  <div className="home-slider-fill" style={{ width: `${sliderPercent}%` }} />
                   <input
                     type="range"
                     min={1}
@@ -460,113 +721,56 @@ export default function Home() {
                       setMaxPrice(Number(e.target.value));
                       setPage(0);
                     }}
-                    style={{
-                      position: 'absolute',
-                      width: '100%',
-                      opacity: 0,
-                      height: 20,
-                      cursor: 'pointer',
-                      zIndex: 2,
-                      margin: 0,
-                    }}
                   />
-
-                  <div style={{
-                    position: 'absolute',
-                    left: `calc(${sliderPercent}% - 10px)`,
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    background: '#1d6cf0',
-                    border: '3px solid #fff',
-                    boxShadow: '0 2px 6px rgba(29,108,240,0.35)',
-                    pointerEvents: 'none',
-                  }} />
+                  <div className="home-slider-thumb" style={{ left: `calc(${sliderPercent}% - 9px)` }} />
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="home-price-options">
                   {[2, 4, 6, 8, 10, MAX_PRICE].map(value => (
                     <button
                       key={value}
+                      type="button"
                       onClick={() => {
                         setMaxPrice(value);
                         setPage(0);
                       }}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        fontSize: 12,
-                        border: `1.5px solid ${maxPrice === value ? '#1d6cf0' : '#e2e8f0'}`,
-                        background: maxPrice === value ? '#e8f0fe' : '#fff',
-                        color: maxPrice === value ? '#1d6cf0' : '#64748b',
-                        fontFamily: 'inherit',
-                        fontWeight: maxPrice === value ? 600 : 500,
-                        cursor: 'pointer',
-                      }}
+                      className={maxPrice === value ? 'active' : ''}
                     >
-                      {value >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤${value}tr`}
+                      {value >= MAX_PRICE ? `${MAX_PRICE}tr+` : `${value}tr`}
                     </button>
                   ))}
                 </div>
 
                 {maxPrice < MAX_PRICE && (
                   <button
+                    type="button"
                     onClick={() => {
                       setMaxPrice(MAX_PRICE);
                       setPage(0);
                     }}
-                    style={{ ...clearBtn, marginTop: 12 }}
+                    className="home-clear-btn"
                   >
-                    ✕ Bỏ lọc giá
+                    Bỏ lọc giá
                   </button>
                 )}
               </div>
 
-              <div style={filterCard}>
-                <div style={filterTitle}>✨ Lọc theo tiện ích</div>
+              <div className="home-filter-card">
+                <div className="home-filter-title">Lọc theo tiện ích</div>
 
                 {amenities.length === 0 ? (
-                  <p style={{ fontSize: 13, color: '#94a3b8' }}>Đang tải...</p>
-                ) : amenities.map((amenity, index) => {
+                  <p style={{ fontSize: 14, color: '#9a8776', margin: 0 }}>Đang tải...</p>
+                ) : amenities.map(amenity => {
                   const id = amenity.amenityId ?? amenity.id;
                   const checked = activeAmenities.includes(id);
-                  const icon = getAmenityIcon(amenity.amenityName);
 
                   return (
                     <div
                       key={id}
                       onClick={() => toggleAmenity(id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '9px 0',
-                        borderBottom: index < amenities.length - 1 ? '1px solid #e2e8f0' : 'none',
-                        cursor: 'pointer',
-                        fontSize: 14,
-                        color: checked ? '#1a2236' : '#64748b',
-                        fontWeight: 500,
-                        userSelect: 'none',
-                      }}
+                      className="home-amenity"
                     >
-                      <div style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 5,
-                        flexShrink: 0,
-                        border: `2px solid ${checked ? '#1d6cf0' : '#e2e8f0'}`,
-                        background: checked ? '#1d6cf0' : '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        color: '#fff',
-                        fontWeight: 700,
-                      }}>
-                        {checked && '✓'}
-                      </div>
-
-                      <span style={{ fontSize: 15 }}>{icon}</span>
+                      <span className={`home-checkbox ${checked ? 'active' : ''}`} />
                       <span>{amenity.amenityName}</span>
                     </div>
                   );
@@ -574,13 +778,14 @@ export default function Home() {
 
                 {activeAmenities.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => {
                       setActiveAmenities([]);
                       setPage(0);
                     }}
-                    style={{ ...clearBtn, marginTop: 14 }}
+                    className="home-clear-btn"
                   >
-                    ✕ Bỏ lọc tiện ích
+                    Bỏ lọc tiện ích
                   </button>
                 )}
               </div>
@@ -592,76 +797,12 @@ export default function Home() {
   );
 }
 
-const filterCard = {
-  background: '#fff',
-  borderRadius: 14,
-  boxShadow: '0 2px 16px rgba(29,108,240,0.08)',
-  padding: 20,
-};
-
-const filterTitle = {
-  fontSize: 15,
-  fontWeight: 700,
-  color: '#1a2236',
-  marginBottom: 14,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-};
-
-const clearBtn = {
-  width: '100%',
-  padding: 9,
-  border: '1.5px solid #e2e8f0',
-  borderRadius: 8,
-  background: 'none',
-  color: '#64748b',
-  fontFamily: 'inherit',
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: 'pointer',
-};
-
-const pageBtn = {
-  padding: '7px 14px',
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 500,
-  border: '1.5px solid #e2e8f0',
-  background: '#fff',
-  color: '#64748b',
-  fontFamily: 'inherit',
-  cursor: 'pointer',
-};
-
-const solidBtn = {
-  background: '#1d6cf0',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 8,
-  padding: '10px 24px',
-  fontFamily: 'inherit',
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
 function BranchChip({ label, active, onClick }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      style={{
-        padding: '7px 16px',
-        borderRadius: 50,
-        fontSize: 14,
-        fontWeight: active ? 600 : 500,
-        cursor: 'pointer',
-        border: `1.5px solid ${active ? '#1d6cf0' : '#e2e8f0'}`,
-        background: active ? '#1d6cf0' : '#fff',
-        color: active ? '#fff' : '#64748b',
-        fontFamily: 'inherit',
-        transition: 'all 0.18s',
-      }}
+      className={`home-chip ${active ? 'active' : ''}`}
     >
       {label}
     </button>

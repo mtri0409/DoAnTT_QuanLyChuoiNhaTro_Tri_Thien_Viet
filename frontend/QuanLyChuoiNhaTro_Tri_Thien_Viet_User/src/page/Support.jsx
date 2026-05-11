@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 
 export default function SupportPage() {
-  // Dữ liệu cho phần Câu hỏi thường gặp (FAQ)
   const faqs = [
     {
       id: 1,
@@ -11,7 +10,7 @@ export default function SupportPage() {
     {
       id: 2,
       question: "Tôi muốn báo cáo một tin đăng lừa đảo thì làm thế nào?",
-      answer: "Tại mỗi bài đăng đều có nút 'Báo cáo vi phạm'. Bạn click vào đó, chọn lý do (ví dụ: Địa chỉ giả, sai giá, lừa đảo cọc) và gửi cho chúng tôi. Đội ngũ admin sẽ xử lý ngay lập tức.",
+      answer: "Tại mỗi bài đăng đều có nút 'Báo cáo vi phạm'. Bạn click vào đó, chọn lý do và gửi cho chúng tôi. Đội ngũ admin sẽ xử lý ngay lập tức.",
     },
     {
       id: 3,
@@ -31,130 +30,298 @@ export default function SupportPage() {
     setActiveFaq(activeFaq === id ? null : id);
   };
 
-  // CSS nội trú cho các hiệu ứng
-  const customStyles = `
-    .support-card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
-    .faq-item { border-bottom: 1px solid #e2e8f0; padding: 16px 0; cursor: pointer; transition: background 0.2s; }
-    .faq-item:last-child { border-bottom: none; }
-    .faq-question { display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #1e293b; font-size: 16px; }
-    .faq-question:hover { color: #3b82f6; }
-    .contact-link { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; text-decoration: none; color: #334155; font-weight: 600; transition: background 0.2s; }
-    .contact-link:hover { background: #f1f5f9; color: #1d4ed8; }
-    .icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-  `;
-
   return (
-    <div style={{ background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, sans-serif" }}>
-      <style>{customStyles}</style>
+    <main className="support-page">
+      <style>{`
+        .support-page {
+          min-height: 100vh;
+          background: #fffaf5;
+          color: #2f241d;
+          font-family: "Times New Roman", Times, serif;
+        }
 
-      {/* Hero Header */}
-      <div style={{ background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)", padding: "60px 20px", textAlign: "center", color: "white" }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 16px 0" }}>Hỗ trợ & Liên hệ</h1>
-        <p style={{ fontSize: 16, maxWidth: 600, margin: "0 auto", opacity: 0.9, lineHeight: 1.5 }}>
-          Cần hỗ trợ? Hãy xem qua các câu hỏi thường gặp hoặc liên hệ trực tiếp với chúng tôi qua các kênh dưới đây.
+        .support-hero {
+          background: #fff0dc;
+          border-bottom: 1px solid #f0d8bd;
+          padding: 46px 20px;
+          text-align: center;
+        }
+
+        .support-hero h1 {
+          margin: 0 0 10px;
+          color: #2f241d;
+          font-size: 36px;
+          font-weight: 700;
+        }
+
+        .support-hero p {
+          margin: 0 auto;
+          max-width: 640px;
+          color: #6f5f52;
+          font-size: 17px;
+          line-height: 1.55;
+        }
+
+        .support-wrap {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 28px 24px 48px;
+        }
+
+        .support-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 24px;
+          align-items: start;
+        }
+
+        .support-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+
+        .support-card {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+        }
+
+        .support-contact-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .support-hotline {
+          background: #fff0dc;
+          border: 1px solid #f0d8bd;
+          color: #2f241d;
+          padding: 18px;
+          border-radius: 8px;
+        }
+
+        .support-hotline-label {
+          color: #8b7665;
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+
+        .support-hotline-number {
+          color: #c96523;
+          font-size: 26px;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+
+        .support-link-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .support-contact-link {
+          display: block;
+          border: 1px solid #eadfd4;
+          background: #fff;
+          border-radius: 6px;
+          padding: 10px 12px;
+          text-decoration: none;
+          color: #2f241d;
+        }
+
+        .support-contact-link:hover {
+          background: #fff4ea;
+          color: #b85618;
+        }
+
+        .support-contact-link small {
+          display: block;
+          color: #8b7665;
+          font-size: 13px;
+          margin-bottom: 2px;
+        }
+
+        .support-card h2,
+        .support-card h3 {
+          margin: 0 0 14px;
+          color: #2f241d;
+          font-size: 22px;
+          font-weight: 700;
+        }
+
+        .faq-item {
+          border-bottom: 1px solid #f0e4d8;
+          padding: 15px 0;
+          cursor: pointer;
+        }
+
+        .faq-item:last-child {
+          border-bottom: 0;
+        }
+
+        .faq-question {
+          display: flex;
+          justify-content: space-between;
+          gap: 14px;
+          align-items: flex-start;
+          color: #2f241d;
+          font-size: 17px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        .faq-question:hover {
+          color: #c96523;
+        }
+
+        .faq-toggle {
+          color: #c96523;
+          font-size: 20px;
+          line-height: 1;
+          transition: transform .22s;
+        }
+
+        .faq-answer {
+          overflow: hidden;
+          transition: max-height .25s ease, margin-top .25s ease;
+          color: #6f5f52;
+          font-size: 16px;
+          line-height: 1.55;
+        }
+
+        .support-address {
+          color: #6f5f52;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+
+        .support-address strong {
+          color: #2f241d;
+        }
+
+        .support-map {
+          width: 100%;
+          height: 390px;
+          border: none;
+          display: block;
+          border-top: 1px solid #eadfd4;
+        }
+
+        @media (max-width: 860px) {
+          .support-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .support-hero {
+            padding: 34px 16px;
+          }
+
+          .support-hero h1 {
+            font-size: 30px;
+          }
+
+          .support-wrap {
+            padding: 22px 14px 40px;
+          }
+
+          .support-contact-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .support-map {
+            height: 320px;
+          }
+        }
+      `}</style>
+
+      <section className="support-hero">
+        <h1>Hỗ trợ và liên hệ</h1>
+        <p>
+          Cần hỗ trợ? Hãy xem các câu hỏi thường gặp hoặc liên hệ trực tiếp với chúng tôi qua các kênh bên dưới.
         </p>
-      </div>
+      </section>
 
-      <div style={{ maxWidth: 1100, margin: "-30px auto 40px", padding: "0 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 30, alignItems: "start" }}>
-          
-          {/* CỘT TRÁI - THÔNG TIN LIÊN HỆ & FAQ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-            
-            {/* Các kênh liên hệ */}
-            <div className="support-card" style={{ position: "relative", zIndex: 10, padding: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ background: "linear-gradient(135deg, #2563eb, #3b82f6)", color: "white", padding: "20px 16px", borderRadius: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, textTransform: "uppercase", opacity: 0.9 }}>Hotline Hỗ trợ</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, margin: "6px 0" }}>1900 1234</div>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>Hoạt động 24/7</div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <a href="#" className="contact-link" style={{ padding: "8px 12px" }}>
-                    <div className="icon-box" style={{ background: "#e8f0fe", color: "#1a73e8", width: 36, height: 36, fontSize: 16 }}>📘</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Fanpage</div>
-                      <div style={{ fontSize: 14 }}>fb.com/thuetro</div>
-                    </div>
-                  </a>
-                  <a href="#" className="contact-link" style={{ padding: "8px 12px" }}>
-                    <div className="icon-box" style={{ background: "#e6f8ef", color: "#059669", width: 36, height: 36, fontSize: 16 }}>💬</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Zalo OA</div>
-                      <div style={{ fontSize: 14 }}>Hỗ trợ Thuê Trọ</div>
-                    </div>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Câu hỏi thường gặp (FAQ) */}
+      <div className="support-wrap">
+        <div className="support-grid">
+          <div className="support-stack">
             <div className="support-card">
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginTop: 0, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                💡 Câu hỏi thường gặp
-              </h2>
-              <div>
-                {faqs.map((faq) => (
-                  <div key={faq.id} className="faq-item" onClick={() => toggleFaq(faq.id)}>
-                    <div className="faq-question">
-                      {faq.question}
-                      <span style={{ fontSize: 20, transform: activeFaq === faq.id ? "rotate(45deg)" : "none", transition: "transform 0.3s" }}>
-                        +
-                      </span>
-                    </div>
-                    <div style={{
-                      maxHeight: activeFaq === faq.id ? "200px" : "0",
-                      overflow: "hidden",
-                      transition: "max-height 0.3s ease-in-out",
-                      color: "#64748b",
-                      fontSize: 15,
-                      lineHeight: 1.5,
-                      marginTop: activeFaq === faq.id ? 10 : 0
-                    }}>
-                      {faq.answer}
-                    </div>
-                  </div>
-                ))}
+              <div className="support-contact-grid">
+                <div className="support-hotline">
+                  <div className="support-hotline-label">Hotline hỗ trợ</div>
+                  <div className="support-hotline-number">1900 1234</div>
+                  <div style={{ color: '#8b7665', fontSize: 14 }}>Hoạt động 24/7</div>
+                </div>
+
+                <div className="support-link-list">
+                  <a href="#" className="support-contact-link">
+                    <small>Fanpage</small>
+                    fb.com/thuetro
+                  </a>
+                  <a href="#" className="support-contact-link">
+                    <small>Zalo OA</small>
+                    Hỗ trợ Thuê Trọ
+                  </a>
+                </div>
               </div>
             </div>
 
+            <div className="support-card">
+              <h2>Câu hỏi thường gặp</h2>
+
+              {faqs.map((faq) => (
+                <div key={faq.id} className="faq-item" onClick={() => toggleFaq(faq.id)}>
+                  <div className="faq-question">
+                    <span>{faq.question}</span>
+                    <span
+                      className="faq-toggle"
+                      style={{ transform: activeFaq === faq.id ? 'rotate(45deg)' : 'none' }}
+                    >
+                      +
+                    </span>
+                  </div>
+
+                  <div
+                    className="faq-answer"
+                    style={{
+                      maxHeight: activeFaq === faq.id ? '220px' : '0',
+                      marginTop: activeFaq === faq.id ? 10 : 0,
+                    }}
+                  >
+                    {faq.answer}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* CỘT PHẢI - BẢN ĐỒ VÀ ĐỊA CHỈ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            
-            <div className="support-card" style={{ padding: 0, overflow: "hidden", position: "relative", zIndex: 10 }}>
-              <div style={{ padding: "24px 24px 20px" }}>
-                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, color: "#0f172a" }}>
-                  📍 Vị trí văn phòng
-                </h3>
-                <div style={{ marginTop: 12, fontSize: 15, color: "#475569", lineHeight: 1.6 }}>
+          <div className="support-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: 20 }}>
+              <h3>Vị trí văn phòng</h3>
+              <div className="support-address">
+                <div>
                   <strong>Trụ sở chính:</strong> Tòa nhà ABC, 123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM
                 </div>
-                <div style={{ marginTop: 8, fontSize: 14, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
-                  🕒 <strong>Giờ làm việc:</strong> 08:00 - 17:30 (Thứ 2 - Thứ 6)
+                <div style={{ marginTop: 8 }}>
+                  <strong>Giờ làm việc:</strong> 08:00 - 17:30, Thứ 2 - Thứ 6
                 </div>
               </div>
-              
-              {/* Google Maps nhúng chuẩn, có thể hoạt động thực tế */}
-              <iframe
-                title="Google Map"
-                src="https://maps.google.com/maps?q=123%20Nguyễn%20Huệ,%20Quận%201,%20Hồ%20Chí%20Minh&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                style={{
-                  width: "100%",
-                  height: 400,
-                  border: "none",
-                  display: "block",
-                  borderTop: "1px solid #f1f5f9"
-                }}
-                loading="lazy"
-              ></iframe>
             </div>
 
+            <iframe
+              title="Google Map"
+              src="https://maps.google.com/maps?q=123%20Nguyễn%20Huệ,%20Quận%201,%20Hồ%20Chí%20Minh&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              className="support-map"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

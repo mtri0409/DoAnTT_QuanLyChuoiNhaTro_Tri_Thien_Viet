@@ -108,181 +108,471 @@ export default function EnhancedNewsPage() {
     return () => clearInterval(timer);
   }, [featuredNews.length]);
 
-  const customStyles = `
-    .news-card { transition: all 0.3s ease; background: #fff; }
-    .news-card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important; }
-    .img-wrapper { overflow: hidden; border-radius: 16px 16px 0 0; }
-    .news-card:hover .card-img { transform: scale(1.08); }
-    .card-img { transition: transform 0.5s ease; }
-    .category-btn { transition: all 0.2s ease; }
-    .category-btn:hover { background: #3b82f6; color: white; }
-    .slide-dot { transition: all 0.3s ease; }
-    .trending-item:hover .trending-title { color: #3b82f6; }
-  `;
-
-  // Filter tin tức bên dưới dựa trên category
-  const displayedStandardNews = activeCategory === "Tất cả" 
-    ? standardNews 
+  const displayedStandardNews = activeCategory === "Tất cả"
+    ? standardNews
     : standardNews.filter(item => item.category === activeCategory);
 
   return (
-    <div style={{ background: "#f8fafc", minHeight: "100vh", fontFamily: "system-ui, sans-serif" }}>
-      <style>{customStyles}</style>
+    <main className="news-page">
+      <style>{`
+        .news-page {
+          min-height: 100vh;
+          background: #fffaf5;
+          font-family: "Times New Roman", Times, serif;
+          color: #2f241d;
+        }
 
+        .news-wrap {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 34px 24px 56px;
+        }
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 20px" }}>
-        
-        {/* SLIDER */}
-        <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", height: 450, marginBottom: 40, boxShadow: "0 20px 40px rgba(0,0,0,0.15)" }}>
+        .news-slider {
+          position: relative;
+          height: 420px;
+          overflow: hidden;
+          border-radius: 8px;
+          border: 1px solid #eadfd4;
+          box-shadow: 0 10px 26px rgba(72,45,25,.12);
+          margin-bottom: 28px;
+          background: #f2ebe5;
+        }
+
+        .news-slide {
+          position: absolute;
+          inset: 0;
+          transition: opacity .75s ease;
+        }
+
+        .news-slide img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .news-shade {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(47,36,29,.88), rgba(47,36,29,.28), transparent);
+        }
+
+        .news-slide-content {
+          position: absolute;
+          left: 36px;
+          right: 36px;
+          bottom: 34px;
+          color: #fff;
+          max-width: 760px;
+          text-align: left;
+        }
+
+        .news-tag {
+          display: inline-block;
+          background: #df7a35;
+          color: #fff;
+          border-radius: 5px;
+          padding: 5px 10px;
+          font-size: 13px;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .news-slide-content h2 {
+          margin: 0 0 10px;
+          font-size: 34px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+
+        .news-slide-content p {
+          margin: 0 0 14px;
+          font-size: 16px;
+          line-height: 1.55;
+          color: #f4e7dc;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .news-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          color: #eadfd4;
+          font-size: 14px;
+        }
+
+        .news-dots {
+          position: absolute;
+          right: 36px;
+          bottom: 34px;
+          z-index: 5;
+          display: flex;
+          gap: 7px;
+        }
+
+        .news-dot {
+          height: 7px;
+          border-radius: 4px;
+          background: rgba(255,255,255,.45);
+          cursor: pointer;
+          transition: width .2s, background .2s;
+        }
+
+        .news-dot.active {
+          width: 24px;
+          background: #fff;
+        }
+
+        .news-categories {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding-bottom: 10px;
+          margin-bottom: 26px;
+        }
+
+        .news-categories button {
+          border: 1px solid #eadfd4;
+          background: #fff;
+          color: #6f5f52;
+          border-radius: 6px;
+          padding: 8px 14px;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .news-categories button.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          color: #fff;
+        }
+
+        .news-main {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 24px;
+          align-items: start;
+        }
+
+        .news-heading {
+          margin: 0 0 18px;
+          font-size: 24px;
+          color: #2f241d;
+          font-weight: 700;
+        }
+
+        .news-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 18px;
+        }
+
+        .news-card {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          overflow: hidden;
+          cursor: pointer;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+          transition: transform .18s, box-shadow .18s, border-color .18s;
+          text-align: left;
+        }
+
+        .news-card:hover {
+          transform: translateY(-2px);
+          border-color: #e5c4a8;
+          box-shadow: 0 8px 22px rgba(102,64,35,.10);
+        }
+
+        .news-card-img {
+          height: 190px;
+          position: relative;
+          overflow: hidden;
+          background: #f2ebe5;
+        }
+
+        .news-card-img img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+          transition: transform .35s;
+        }
+
+        .news-card:hover img {
+          transform: scale(1.035);
+        }
+
+        .news-card-category {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #fff;
+          color: #b85618;
+          border: 1px solid #f0d8bd;
+          padding: 4px 8px;
+          border-radius: 5px;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .news-card-body {
+          padding: 16px;
+        }
+
+        .news-card-date {
+          color: #8b7665;
+          font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+
+        .news-card h4 {
+          color: #2f241d;
+          font-size: 18px;
+          font-weight: 700;
+          line-height: 1.35;
+          margin: 0 0 9px;
+        }
+
+        .news-card p {
+          color: #6f5f52;
+          font-size: 15px;
+          line-height: 1.5;
+          margin: 0;
+        }
+
+        .news-sidebar {
+          position: sticky;
+          top: 104px;
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 18px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+        }
+
+        .news-sidebar h3 {
+          margin: 0 0 16px;
+          color: #2f241d;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .news-trending {
+          display: flex;
+          gap: 12px;
+          padding: 12px 0;
+          border-bottom: 1px solid #f0e4d8;
+          cursor: pointer;
+        }
+
+        .news-trending:last-child {
+          border-bottom: 0;
+        }
+
+        .news-number {
+          color: #d7c5b4;
+          font-size: 28px;
+          font-weight: 700;
+          line-height: 1;
+          min-width: 34px;
+        }
+
+        .news-trending-title {
+          color: #2f241d;
+          font-size: 15px;
+          font-weight: 700;
+          line-height: 1.35;
+          margin: 0 0 5px;
+        }
+
+        .news-trending:hover .news-trending-title {
+          color: #c96523;
+        }
+
+        .news-trending-meta {
+          color: #8b7665;
+          font-size: 13px;
+        }
+
+        .news-banner {
+          margin-top: 22px;
+          background: #fff0dc;
+          border: 1px solid #f0d8bd;
+          border-radius: 8px;
+          padding: 18px;
+          text-align: center;
+        }
+
+        .news-banner h4 {
+          margin: 0 0 6px;
+          font-size: 18px;
+          color: #2f241d;
+        }
+
+        .news-banner p {
+          margin: 0 0 14px;
+          color: #6f5f52;
+          font-size: 14px;
+        }
+
+        .news-banner button {
+          border: 0;
+          background: #df7a35;
+          color: #fff;
+          border-radius: 6px;
+          padding: 9px 18px;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        @media (max-width: 960px) {
+          .news-main {
+            grid-template-columns: 1fr;
+          }
+
+          .news-sidebar {
+            position: static;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .news-wrap {
+            padding: 24px 14px 42px;
+          }
+
+          .news-slider {
+            height: 360px;
+          }
+
+          .news-slide-content {
+            left: 18px;
+            right: 18px;
+            bottom: 24px;
+          }
+
+          .news-slide-content h2 {
+            font-size: 25px;
+          }
+
+          .news-dots {
+            left: 18px;
+            right: auto;
+            bottom: 12px;
+          }
+        }
+      `}</style>
+
+      <div className="news-wrap">
+        <div className="news-slider">
           {featuredNews.map((slide, index) => (
             <div
               key={slide.id}
+              className="news-slide"
               style={{
-                position: "absolute",
-                inset: 0,
                 opacity: index === currentSlide ? 1 : 0,
-                transition: "opacity 0.8s ease-in-out",
                 zIndex: index === currentSlide ? 1 : 0,
               }}
             >
-              <img src={slide.image} alt={slide.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0.4) 50%, transparent 100%)" }} />
-              
-              <div style={{ position: "absolute", bottom: 0, left: 0, padding: "40px 50px", color: "white", maxWidth: 800 }}>
-                <span style={{ background: "#3b82f6", padding: "6px 12px", borderRadius: 20, fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, display: "inline-block" }}>
-                  Tâm điểm • {slide.category}
-                </span>
-                <h2 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 12px 0", lineHeight: 1.3, textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>
-                  {slide.title}
-                </h2>
-                <p style={{ fontSize: 16, color: "#cbd5e1", margin: "0 0 20px 0", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {slide.desc}
-                </p>
-                <div style={{ display: "flex", gap: 16, fontSize: 14, color: "#94a3b8", fontWeight: 500 }}>
-                  <span>📅 {slide.date}</span>
-                  <span>⏱ {slide.readTime}</span>
+              <img src={slide.image} alt={slide.title} />
+              <div className="news-shade" />
+              <div className="news-slide-content">
+                <span className="news-tag">Tâm điểm · {slide.category}</span>
+                <h2>{slide.title}</h2>
+                <p>{slide.desc}</p>
+                <div className="news-meta">
+                  <span>{slide.date}</span>
+                  <span>{slide.readTime}</span>
                 </div>
               </div>
             </div>
           ))}
 
-          <div style={{ position: "absolute", bottom: 40, right: 50, zIndex: 10, display: "flex", gap: 8 }}>
+          <div className="news-dots">
             {featuredNews.map((_, idx) => (
               <div
                 key={idx}
-                className="slide-dot"
                 onClick={() => setCurrentSlide(idx)}
-                style={{
-                  width: idx === currentSlide ? 24 : 8,
-                  height: 8,
-                  borderRadius: 4,
-                  background: idx === currentSlide ? "#3b82f6" : "rgba(255,255,255,0.4)",
-                  cursor: "pointer",
-                }}
+                className={`news-dot ${idx === currentSlide ? 'active' : ''}`}
+                style={{ width: idx === currentSlide ? 24 : 8 }}
               />
             ))}
           </div>
         </div>
 
-        {/* BỘ LỌC CATEGORY */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 32, overflowX: "auto", paddingBottom: 10 }}>
+        <div className="news-categories">
           {categories.map((cat) => (
             <button
               key={cat}
-              className="category-btn"
+              type="button"
+              className={activeCategory === cat ? "active" : ""}
               onClick={() => setActiveCategory(cat)}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 100,
-                border: "none",
-                background: activeCategory === cat ? "#1e40af" : "#fff",
-                color: activeCategory === cat ? "#fff" : "#64748b",
-                fontWeight: 600,
-                fontSize: 15,
-                cursor: "pointer",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                whiteSpace: "nowrap"
-              }}
             >
               {cat}
             </button>
           ))}
         </div>
 
-        {/* NỘI DUNG CHÍNH */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: 40 }}>
-          
-          {/* LƯỚI TIN TỨC MỚI */}
+        <div className="news-main">
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h3 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                {activeCategory === "Tất cả" ? "Tin tức mới nhất" : `Chuyên mục: ${activeCategory}`}
-              </h3>
-            </div>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24 }}>
+            <h3 className="news-heading">
+              {activeCategory === "Tất cả" ? "Tin tức mới nhất" : `Chuyên mục: ${activeCategory}`}
+            </h3>
+
+            <div className="news-grid">
               {displayedStandardNews.length > 0 ? (
                 displayedStandardNews.map((item) => (
-                  <div key={item.id} className="news-card" style={{ borderRadius: 16, border: "1px solid #e2e8f0", cursor: "pointer" }}>
-                    <div className="img-wrapper" style={{ height: 200, position: "relative" }}>
-                      <img className="card-img" src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.9)", padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#1e40af" }}>
-                        {item.category}
-                      </div>
+                  <article key={item.id} className="news-card">
+                    <div className="news-card-img">
+                      <img src={item.image} alt={item.title} />
+                      <div className="news-card-category">{item.category}</div>
                     </div>
-                    <div style={{ padding: 20 }}>
-                      <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8 }}>{item.date} • {item.readTime}</div>
-                      <h4 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", margin: "0 0 10px 0", lineHeight: 1.4 }}>
-                        {item.title}
-                      </h4>
-                      <p style={{ fontSize: 14, color: "#475569", margin: 0, lineHeight: 1.5 }}>
-                        {item.desc}
-                      </p>
+                    <div className="news-card-body">
+                      <div className="news-card-date">{item.date} · {item.readTime}</div>
+                      <h4>{item.title}</h4>
+                      <p>{item.desc}</p>
                     </div>
-                  </div>
+                  </article>
                 ))
               ) : (
-                <div style={{ color: "#64748b", padding: "20px 0" }}>Chưa có bài viết nào trong chuyên mục này.</div>
+                <div style={{ color: "#6f5f52", padding: "20px 0" }}>
+                  Chưa có bài viết nào trong chuyên mục này.
+                </div>
               )}
             </div>
           </div>
 
-          {/* SIDEBAR */}
-          <div>
-            <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: "0 4px 12px rgba(0,0,0,0.03)", border: "1px solid #e2e8f0", position: "sticky", top: 100 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", margin: "0 0 20px 0", display: "flex", alignItems: "center", gap: 8 }}>
-                🔥 Đọc nhiều tuần qua
-              </h3>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                {news.slice(0, 5).map((item, index) => (
-                  <div key={item.id} className="trending-item" style={{ display: "flex", gap: 16, cursor: "pointer" }}>
-                    <div style={{ fontSize: 32, fontWeight: 900, color: "#e2e8f0", lineHeight: 1 }}>
-                      0{index + 1}
-                    </div>
-                    <div>
-                      <h5 className="trending-title" style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", margin: "0 0 6px 0", transition: "color 0.2s" }}>
-                        {item.title}
-                      </h5>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>{item.category} • {item.date}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <aside className="news-sidebar">
+            <h3>Đọc nhiều tuần qua</h3>
 
-              {/* Banner */}
-              <div style={{ marginTop: 32, height: 200, borderRadius: 12, background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", padding: 20, textAlign: "center", flexDirection: "column" }}>
-                <h4 style={{ margin: "0 0 8px 0", fontSize: 18 }}>Đăng tin cho thuê?</h4>
-                <p style={{ margin: "0 0 16px 0", fontSize: 13, opacity: 0.9 }}>Tiếp cận 100.000+ sinh viên mỗi ngày</p>
-                <button style={{ background: "white", color: "#1e40af", border: "none", padding: "8px 20px", borderRadius: 20, fontWeight: 700, cursor: "pointer" }}>
-                  Đăng ngay
-                </button>
+            {news.slice(0, 5).map((item, index) => (
+              <div key={item.id} className="news-trending">
+                <div className="news-number">0{index + 1}</div>
+                <div>
+                  <h5 className="news-trending-title">{item.title}</h5>
+                  <div className="news-trending-meta">{item.category} · {item.date}</div>
+                </div>
               </div>
+            ))}
+
+            <div className="news-banner">
+              <h4>Đăng tin cho thuê?</h4>
+              <p>Tiếp cận người thuê nhanh hơn với thông tin rõ ràng.</p>
+              <button type="button">Đăng ngay</button>
             </div>
-          </div>
-
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

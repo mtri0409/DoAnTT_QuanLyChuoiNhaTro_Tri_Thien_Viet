@@ -3,37 +3,805 @@ import { useParams, useNavigate } from 'react-router-dom';
 import userService from '../services/userService';
 import RoomGridCard from '../components/RoomGridCard';
 
-const amenityIconMap = {
-  wifi: '📶', 'wi-fi': '📶', internet: '📶',
-  'nóng lạnh': '🚿', 'máy nước nóng': '🚿', 'nước nóng': '🚿',
-  'máy lạnh': '❄️', 'điều hòa': '❄️',
-  'wc riêng': '🚽', 'nhà vệ sinh': '🚽', toilet: '🚽',
-  'bếp riêng': '🍳', 'nhà bếp': '🍳', bếp: '🍳',
-  'gác lửng': '🪜', gác: '🪜',
-  'thang máy': '🛗',
-  'bãi xe': '🅿️', 'chỗ để xe': '🅿️', 'bãi xe máy': '🅿️',
-  'bảo vệ': '💂', 'an ninh': '💂',
-  'tủ lạnh': '🧊', camera: '📷', 'ban công': '🌿',
-};
-
-const getIcon = (name = '') => {
-  const k = name.toLowerCase();
-  return Object.entries(amenityIconMap).find(([key]) => k.includes(key))?.[1] ?? '✅';
-};
-
 const statusMap = {
-  available:   { label: 'Còn phòng', bg: '#16a34a', bgLight: '#dcfce7', text: '#15803d' },
-  occupied:    { label: 'Đã thuê',   bg: '#dc2626', bgLight: '#fee2e2', text: '#dc2626' },
-  maintenance: { label: 'Bảo trì',   bg: '#f59e0b', bgLight: '#fef3c7', text: '#b45309' },
+  available: {
+    label: 'Còn phòng',
+    bg: '#eaf7ea',
+    border: '#9fd6a4',
+    text: '#287a35',
+  },
+  occupied: {
+    label: 'Đã thuê',
+    bg: '#f4e5e3',
+    border: '#e7aaa3',
+    text: '#9b3026',
+  },
+  maintenance: {
+    label: 'Bảo trì',
+    bg: '#fff0dc',
+    border: '#efc38e',
+    text: '#a95a13',
+  },
+  shared: {
+    label: 'Ở ghép',
+    bg: '#fff0dc',
+    border: '#efc38e',
+    text: '#a95a13',
+  },
 };
 
 const fmt = (p) => (p ? Number(p).toLocaleString('vi-VN') + 'đ' : '—');
 
+const detailCss = `
+  .rd-page {
+    min-height: 100vh;
+    background: #fffaf5;
+    color: #2f241d;
+    padding: 30px 24px 52px;
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  .rd-wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .rd-top {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rd-back {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #eadfd4;
+    color: #6f5f52;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .rd-back:hover {
+    background: #fff4ea;
+    color: #b85618;
+  }
+
+  .rd-crumb {
+    color: #8b7665;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .rd-crumb strong {
+    color: #b85618;
+  }
+
+  .rd-title {
+    margin: 0;
+    color: #2f241d;
+    font-size: 30px;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+
+  .rd-status {
+    margin-left: auto;
+    border-radius: 5px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid;
+  }
+
+  .rd-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .rd-left,
+  .rd-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .rd-right {
+    position: sticky;
+    top: 104px;
+  }
+
+  .rd-card {
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(102,64,35,.05);
+  }
+
+  .rd-gallery-main {
+    position: relative;
+    height: 430px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f2ebe5;
+    border: 1px solid #f0e4d8;
+  }
+
+  .rd-gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .rd-image-count {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(47,36,29,.82);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .rd-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: 1px solid #eadfd4;
+    background: rgba(255,255,255,.94);
+    color: #3c2d23;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .rd-arrow.left {
+    left: 12px;
+  }
+
+  .rd-arrow.right {
+    right: 12px;
+  }
+
+  .rd-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+  }
+
+  .rd-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,.52);
+    cursor: pointer;
+  }
+
+  .rd-dot.active {
+    width: 22px;
+    background: #fff;
+  }
+
+  .rd-thumbs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .rd-thumb {
+    width: 76px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: .58;
+  }
+
+  .rd-thumb.active {
+    border-color: #df7a35;
+    opacity: 1;
+  }
+
+  .rd-price-card {
+    background: #fff0dc;
+    border: 1px solid #f0d8bd;
+  }
+
+  .rd-price-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .rd-small-label {
+    color: #8b7665;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .rd-price {
+    color: #d86622;
+    font-size: 34px;
+    line-height: 1.15;
+    font-weight: 700;
+  }
+
+  .rd-price span {
+    color: #6f5f52;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .rd-deposit {
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 136px;
+  }
+
+  .rd-deposit-value {
+    color: #a95a13;
+    font-size: 21px;
+    font-weight: 700;
+  }
+
+  .rd-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+    gap: 10px;
+  }
+
+  .rd-stat {
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 2px 10px rgba(102,64,35,.04);
+  }
+
+  .rd-stat-label {
+    color: #8b7665;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .rd-stat-value {
+    color: #2f241d;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .rd-section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #f0e4d8;
+  }
+
+  .rd-section-title {
+    color: #2f241d;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .rd-section-count {
+    margin-left: auto;
+    background: #fff0dc;
+    border: 1px solid #f0d8bd;
+    color: #b85618;
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .rd-desc {
+    margin: 0;
+    color: #6f5f52;
+    font-size: 17px;
+    line-height: 1.65;
+    white-space: pre-line;
+  }
+
+  .rd-amenities {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 9px;
+  }
+
+  .rd-amenity {
+    background: #fff8f0;
+    border: 1px solid #f0e4d8;
+    border-radius: 6px;
+    padding: 9px 11px;
+    color: #6f5f52;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .rd-contact {
+    background: #fff0dc;
+    border: 1px solid #f0d8bd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(102,64,35,.05);
+  }
+
+  .rd-contact-title {
+    color: #2f241d;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .rd-contact-sub {
+    color: #8b7665;
+    font-size: 15px;
+    margin-bottom: 18px;
+  }
+
+  .rd-contact-label {
+    color: #8b7665;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 7px;
+  }
+
+  .rd-phone-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 6px;
+    padding: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .rd-phone-row a {
+    color: #2f241d;
+    text-decoration: none;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .rd-copy {
+    border: 1px solid #eadfd4;
+    background: #fff8f0;
+    color: #6f5f52;
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .rd-copy.done {
+    background: #eaf7ea;
+    color: #287a35;
+    border-color: #9fd6a4;
+  }
+
+  .rd-action {
+    width: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: #df7a35;
+    color: #fff;
+    padding: 11px 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    box-sizing: border-box;
+  }
+
+  .rd-action:hover {
+    background: #c96523;
+  }
+
+  .rd-action.secondary {
+    background: #fff;
+    color: #b85618;
+    border: 1px solid #f0d8bd;
+  }
+
+  .rd-action.secondary:hover {
+    background: #fff4ea;
+  }
+
+  .rd-summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f0e4d8;
+    font-size: 15px;
+  }
+
+  .rd-summary-row:last-child {
+    border-bottom: 0;
+  }
+
+  .rd-summary-row span:first-child {
+    color: #8b7665;
+  }
+
+  .rd-summary-row span:last-child {
+    color: #2f241d;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .rd-summary-row.highlight span:last-child {
+    color: #d86622;
+  }
+
+  .rd-note {
+    background: #fff8f0;
+    border: 1px solid #f0e4d8;
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .rd-note-title {
+    color: #2f241d;
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .rd-note-row {
+    color: #6f5f52;
+    font-size: 15px;
+    padding: 5px 0;
+  }
+
+  .rd-related {
+    margin-top: 42px;
+    margin-bottom: 36px;
+  }
+
+  .rd-related-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .rd-related h2 {
+    margin: 0;
+    color: #2f241d;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .rd-related p {
+    margin: 4px 0 0;
+    color: #8b7665;
+    font-size: 16px;
+  }
+
+  .rd-related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  .rd-empty-related,
+  .rd-error-box {
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 8px;
+    padding: 36px 20px;
+    text-align: center;
+    color: #6f5f52;
+    box-shadow: 0 2px 10px rgba(102,64,35,.05);
+  }
+
+  .rd-error-box h2 {
+    margin: 0 0 8px;
+    color: #2f241d;
+    font-size: 28px;
+  }
+
+  .rd-skeleton {
+    background: linear-gradient(90deg,#f8f1ea 25%,#efe3d8 50%,#f8f1ea 75%);
+    background-size: 200% 100%;
+    animation: rd-shimmer 1.4s infinite;
+    border-radius: 8px;
+    border: 1px solid #eadfd4;
+  }
+
+  .rd-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(47,36,29,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .rd-modal {
+    background: #fff;
+    border: 1px solid #eadfd4;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 22px 56px rgba(47,36,29,.22);
+    overflow: hidden;
+    animation: rd-pop .18s ease-out;
+  }
+
+  .rd-modal-head {
+    background: #fff0dc;
+    border-bottom: 1px solid #f0d8bd;
+    padding: 20px 22px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .rd-modal-title {
+    color: #2f241d;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  .rd-modal-sub {
+    color: #6f5f52;
+    font-size: 15px;
+  }
+
+  .rd-modal-close {
+    border: 1px solid #eadfd4;
+    background: #fff;
+    color: #6f5f52;
+    border-radius: 5px;
+    width: 30px;
+    height: 30px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .rd-modal-body {
+    padding: 22px;
+  }
+
+  .rd-form {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .rd-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .rd-label {
+    display: block;
+    color: #6f5f52;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .rd-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1.5px solid #eadfd4;
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #2f241d;
+    font-family: inherit;
+    font-size: 16px;
+    outline: none;
+  }
+
+  .rd-input:focus {
+    border-color: #df7a35;
+    box-shadow: 0 0 0 3px rgba(223,122,53,.12);
+  }
+
+  .rd-error {
+    background: #f4e5e3;
+    border: 1px solid #e7aaa3;
+    color: #9b3026;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .rd-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .rd-cancel {
+    border: 1px solid #eadfd4;
+    background: #fff;
+    color: #6f5f52;
+    border-radius: 6px;
+    padding: 11px 0;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .rd-submit {
+    border: 0;
+    background: #df7a35;
+    color: #fff;
+    border-radius: 6px;
+    padding: 11px 0;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .rd-submit:disabled {
+    opacity: .62;
+    cursor: not-allowed;
+  }
+
+  .rd-success {
+    text-align: center;
+    padding: 18px 0;
+  }
+
+  .rd-success-title {
+    color: #287a35;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .rd-success-text {
+    color: #6f5f52;
+    font-size: 16px;
+    line-height: 1.55;
+    margin-bottom: 20px;
+  }
+
+  .rd-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: rd-spin .7s linear infinite;
+    margin-right: 7px;
+    vertical-align: -2px;
+  }
+
+  @keyframes rd-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes rd-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes rd-pop {
+    from { opacity: 0; transform: translateY(10px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 980px) {
+    .rd-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .rd-right {
+      position: static;
+    }
+
+    .rd-gallery-main {
+      height: 390px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .rd-page {
+      padding: 22px 14px 42px;
+    }
+
+    .rd-top {
+      flex-wrap: wrap;
+    }
+
+    .rd-status {
+      margin-left: 52px;
+    }
+
+    .rd-title {
+      font-size: 26px;
+    }
+
+    .rd-gallery-main {
+      height: 300px;
+    }
+
+    .rd-card {
+      padding: 15px;
+    }
+
+    .rd-price {
+      font-size: 29px;
+    }
+
+    .rd-form-grid,
+    .rd-modal-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .rd-related-head {
+      flex-direction: column;
+    }
+  }
+`;
+
+function DetailStyles() {
+  return <style>{detailCss}</style>;
+}
+
 function InquiryModal({ roomName, onClose }) {
-  const [form, setForm]       = useState({ name: '', phone: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
-  const [done, setDone]       = useState(false);
-  const [error, setError]     = useState('');
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -43,7 +811,6 @@ function InquiryModal({ roomName, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate bắt buộc
     if (!form.name.trim() || !form.phone.trim()) {
       setError('Vui lòng nhập họ tên và số điện thoại.');
       return;
@@ -56,11 +823,10 @@ function InquiryModal({ roomName, onClose }) {
       `Nội dung : ${form.message.trim() || '(Không có nội dung thêm)'}`,
     ].filter(Boolean).join('\n');
 
-    // payload gửi lên
     const payload = {
-      title  : `Khách hàng hỏi về phòng ${roomName || 'phòng'}`,
-      content: content,
-      type   : 'GENERAL',
+      title: `Khách hàng hỏi về phòng ${roomName || 'phòng'}`,
+      content,
+      type: 'GENERAL',
     };
 
     try {
@@ -80,177 +846,121 @@ function InquiryModal({ roomName, onClose }) {
   };
 
   return (
-    <div
-      onClick={overlayClick}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
-      }}
-    >
-      <div style={{
-        background: '#fff', borderRadius: 24, width: '100%', maxWidth: 480,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
-        overflow: 'hidden', animation: 'popIn .22s cubic-bezier(.34,1.56,.64,1)',
-      }}>
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-          padding: '22px 28px 18px',
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        }}>
+    <div className="rd-modal-overlay" onClick={overlayClick}>
+      <div className="rd-modal" onClick={e => e.stopPropagation()}>
+        <div className="rd-modal-head">
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-              💬 Hỏi thông tin phòng
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
-              {roomName
-                ? <>Phòng <strong style={{ color: '#fff' }}>{roomName}</strong></>
-                : 'Để lại thông tin, chúng tôi sẽ liên hệ lại'}
+            <div className="rd-modal-title">Hỏi thông tin phòng</div>
+            <div className="rd-modal-sub">
+              {roomName ? `Phòng ${roomName}` : 'Để lại thông tin, chúng tôi sẽ liên hệ lại'}
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.18)', border: 'none',
-            borderRadius: '50%', width: 32, height: 32,
-            color: '#fff', fontSize: 18, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, marginLeft: 12,
-          }}>×</button>
+          <button type="button" onClick={onClose} className="rd-modal-close">×</button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '24px 28px 28px' }}>
+        <div className="rd-modal-body">
           {done ? (
-            <div style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
-              <div style={{ fontWeight: 800, fontSize: 18, color: '#0f172a', marginBottom: 8 }}>
-                Gửi thành công!
+            <div className="rd-success">
+              <div className="rd-success-title">Gửi thành công</div>
+              <div className="rd-success-text">
+                Chúng tôi đã nhận được yêu cầu của bạn. Quản lý sẽ liên hệ lại sớm nhất có thể.
               </div>
-              <div style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
-                Chúng tôi đã nhận được yêu cầu của bạn.<br />
-                Quản lý sẽ liên hệ lại sớm nhất có thể.
-              </div>
-              <button onClick={onClose} style={{
-                background: '#3b82f6', color: '#fff', border: 'none',
-                borderRadius: 12, padding: '11px 32px',
-                fontFamily: 'inherit', fontWeight: 700, fontSize: 15, cursor: 'pointer',
-              }}>Đóng</button>
+              <button type="button" onClick={onClose} className="rd-submit" style={{ padding: '11px 28px' }}>
+                Đóng
+              </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <form onSubmit={handleSubmit} className="rd-form">
+              <div className="rd-form-grid">
                 <div>
-                  <label style={styles.label}>Họ tên <span style={{ color: '#ef4444' }}>*</span></label>
+                  <label className="rd-label">Họ tên *</label>
                   <input
-                    name="name" value={form.name} onChange={handleChange}
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
                     placeholder="Nguyễn Văn A"
-                    style={styles.input}
-                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                    className="rd-input"
                   />
                 </div>
+
                 <div>
-                  <label style={styles.label}>Số điện thoại <span style={{ color: '#ef4444' }}>*</span></label>
+                  <label className="rd-label">Số điện thoại *</label>
                   <input
-                    name="phone" value={form.phone} onChange={handleChange}
-                    placeholder="0912 345 678" type="tel"
-                    style={styles.input}
-                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="0912 345 678"
+                    type="tel"
+                    className="rd-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label style={styles.label}>Email <span style={{ color: '#94a3b8', fontWeight: 400 }}>(tùy chọn)</span></label>
+                <label className="rd-label">Email, tùy chọn</label>
                 <input
-                  name="email" value={form.email} onChange={handleChange}
-                  placeholder="example@email.com" type="email"
-                  style={styles.input}
-                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="example@email.com"
+                  type="email"
+                  className="rd-input"
                 />
               </div>
 
               <div>
-                <label style={styles.label}>Nội dung <span style={{ color: '#94a3b8', fontWeight: 400 }}>(tùy chọn)</span></label>
+                <label className="rd-label">Nội dung, tùy chọn</label>
                 <textarea
-                  name="message" value={form.message} onChange={handleChange}
+                  name="message"
+                  value={form.message}
+                  onChange={handleChange}
                   rows={3}
-                  placeholder="Bạn muốn hỏi gì về phòng này? VD: giờ giấc, nội quy, có thể xem phòng không..."
-                  style={{ ...styles.input, resize: 'vertical', minHeight: 80, lineHeight: 1.6 }}
-                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  placeholder="Bạn muốn hỏi gì về phòng này?"
+                  className="rd-input"
+                  style={{ resize: 'vertical', minHeight: 82, lineHeight: 1.55 }}
                 />
               </div>
 
-              {error && (
-                <div style={{
-                  background: '#fef2f2', border: '1px solid #fecaca',
-                  borderRadius: 10, padding: '10px 14px',
-                  color: '#dc2626', fontSize: 13, fontWeight: 600,
-                }}>
-                  ⚠️ {error}
-                </div>
-              )}
+              {error && <div className="rd-error">{error}</div>}
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={onClose} style={{
-                  flex: 1, background: '#f1f5f9', color: '#475569',
-                  border: '1.5px solid #e2e8f0', borderRadius: 12,
-                  padding: '12px 0', fontFamily: 'inherit',
-                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                }}>
+              <div className="rd-modal-actions">
+                <button type="button" onClick={onClose} className="rd-cancel">
                   Hủy
                 </button>
-                <button type="submit" disabled={sending} style={{
-                  flex: 2,
-                  background: sending ? '#93c5fd' : 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-                  color: '#fff', border: 'none', borderRadius: 12,
-                  padding: '12px 0', fontFamily: 'inherit',
-                  fontWeight: 700, fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  transition: 'opacity .15s',
-                }}>
-                  {sending
-                    ? <><span style={styles.spinner} /> Đang gửi...</>
-                    : '📨 Gửi yêu cầu'}
+                <button type="submit" disabled={sending} className="rd-submit">
+                  {sending ? <><span className="rd-spinner" />Đang gửi...</> : 'Gửi yêu cầu'}
                 </button>
               </div>
 
-              <div style={{ textAlign: 'center', fontSize: 11.5, color: '#94a3b8', marginTop: -4 }}>
-                Thông tin của bạn được bảo mật và chỉ dùng để liên hệ lại
+              <div style={{ textAlign: 'center', color: '#9a8776', fontSize: 13 }}>
+                Thông tin của bạn chỉ dùng để liên hệ tư vấn.
               </div>
             </form>
           )}
         </div>
       </div>
-
-      <style>{`
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(.92) translateY(12px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
 
 export default function RoomDetail() {
   const { roomId } = useParams();
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
 
-  const [room,    setRoom]    = useState(null);
+  const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
+  const [error, setError] = useState(null);
+
   const [activeImg, setActiveImg] = useState(0);
-  const [copied,    setCopied]    = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const [relatedRooms,    setRelatedRooms]    = useState([]);
-  const [loadingRelated,  setLoadingRelated]  = useState(false);
+  const [relatedRooms, setRelatedRooms] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
-  const [branchName,  setBranchName]  = useState('');
+  const [allFloors, setAllFloors] = useState([]);
+  const [allBranches, setAllBranches] = useState([]);
+
+  const [branchName, setBranchName] = useState('');
   const [floorNumber, setFloorNumber] = useState('');
   const [managerPhone, setManagerPhone] = useState('0385018194');
 
@@ -259,22 +969,27 @@ export default function RoomDetail() {
   const abortRef = useRef(false);
 
   useEffect(() => {
-    if (!roomId) { setLoading(false); return; }
+    if (!roomId) {
+      setLoading(false);
+      return;
+    }
+
     abortRef.current = false;
 
     const fetchRoom = async () => {
       try {
         setLoading(true);
+
         const res = await userService.getRoomById(roomId);
         if (abortRef.current) return;
 
-        const raw  = res.data || res;
-        let   data = null;
+        const raw = res.data || res;
+        let data = null;
 
-        if      (raw?.roomId)         data = raw;
-        else if (raw?.data?.roomId)   data = raw.data;
+        if (raw?.roomId) data = raw;
+        else if (raw?.data?.roomId) data = raw.data;
         else if (raw?.result?.roomId) data = raw.result;
-        else                          data = raw;
+        else data = raw;
 
         if (!data?.roomId) {
           setError('Dữ liệu phòng không hợp lệ.');
@@ -295,7 +1010,10 @@ export default function RoomDetail() {
     };
 
     fetchRoom();
-    return () => { abortRef.current = true; };
+
+    return () => {
+      abortRef.current = true;
+    };
   }, [roomId]);
 
   useEffect(() => {
@@ -315,22 +1033,33 @@ export default function RoomDetail() {
         if (cancelled) return;
 
         const floorRaw = floorRes.data || floorRes;
-        const allFloors = Array.isArray(floorRaw)
+        const floors = Array.isArray(floorRaw)
           ? floorRaw
           : floorRaw?.content ?? floorRaw?.data ?? [];
 
-        const branchRaw  = branchRes.data || branchRes;
-        const allBranches = branchRaw?.content ?? branchRaw?.data ?? (Array.isArray(branchRaw) ? branchRaw : []);
+        const branchRaw = branchRes.data || branchRes;
+        const branches = branchRaw?.content ?? branchRaw?.data ?? (Array.isArray(branchRaw) ? branchRaw : []);
 
-        const currentFloor = allFloors.find(f => f.floorId === room.floorId);
-        if (!currentFloor) { setLoadingRelated(false); return; }
+        setAllFloors(floors);
+        setAllBranches(branches);
+
+        const currentFloor = floors.find(f =>
+          String(f.floorId ?? f.id) === String(room.floorId),
+        );
+
+        if (!currentFloor) {
+          setLoadingRelated(false);
+          return;
+        }
 
         setFloorNumber(currentFloor.floorNumber ?? '');
 
-        const targetBranchId = currentFloor.branchId;
-        const foundBranch = allBranches.find(
-          b => b.branchId === targetBranchId || String(b.branchId) === String(targetBranchId)
+        const targetBranchId = currentFloor.branchId ?? currentFloor.branch?.branchId;
+
+        const foundBranch = branches.find(
+          b => String(b.branchId ?? b.id) === String(targetBranchId),
         );
+
         const resolvedBranchName =
           foundBranch?.branchName ??
           currentFloor.branchName ??
@@ -350,39 +1079,52 @@ export default function RoomDetail() {
           }
         }
 
-        const floorIdsInSameBranch = allFloors
-          .filter(f => f.branchId === targetBranchId || String(f.branchId) === String(targetBranchId))
-          .map(f => f.floorId);
+        const floorIdsInSameBranch = floors
+          .filter(f => String(f.branchId ?? f.branch?.branchId) === String(targetBranchId))
+          .map(f => f.floorId ?? f.id);
 
-        const roomRes  = await userService.getAllRooms(0, 50);
+        const roomRes = await userService.getAllRooms(0, 50);
         if (cancelled) return;
 
-        const roomRaw  = roomRes.data || roomRes;
-        const allRooms = roomRaw?.content ?? roomRaw?.data?.content ??
+        const roomRaw = roomRes.data || roomRes;
+        const rooms = roomRaw?.content ?? roomRaw?.data?.content ??
           (Array.isArray(roomRaw) ? roomRaw : []);
 
-        const related = allRooms.filter(r =>
+        const related = rooms.filter(r =>
           r.roomId !== room.roomId &&
-          floorIdsInSameBranch.includes(r.floorId)
+          floorIdsInSameBranch.some(fid => String(fid) === String(r.floorId)),
         );
 
         setRelatedRooms(related.slice(0, 3));
       } catch (err) {
         console.error('Fetch meta error:', err);
-        if (!cancelled) { setBranchName(''); setRelatedRooms([]); }
+        if (!cancelled) {
+          setBranchName('');
+          setRelatedRooms([]);
+          setAllFloors([]);
+          setAllBranches([]);
+        }
       } finally {
         if (!cancelled) setLoadingRelated(false);
       }
     };
 
     fetchMeta();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [room?.floorId, room?.roomId]);
 
   const getImages = () => {
     if (!room?.roomMedia?.length) return ['http://localhost:8080/images/default.jpg'];
+
     const urls = room.roomMedia
-      .filter(m => { if (!m.mediaType) return true; const t = m.mediaType.toLowerCase(); return t === 'image' || t.startsWith('image/'); })
+      .filter(m => {
+        if (!m.mediaType) return true;
+        const t = m.mediaType.toLowerCase();
+        return t === 'image' || t.startsWith('image/');
+      })
       .map(m => {
         const url = m.url ?? m.mediaUrl;
         if (!url) return null;
@@ -391,60 +1133,81 @@ export default function RoomDetail() {
         return url;
       })
       .filter(Boolean);
+
     return urls.length ? urls : ['http://localhost:8080/images/default.jpg'];
   };
 
-  const images = getImages();
-
   const copyPhone = () => {
     if (!managerPhone) return;
+
     navigator.clipboard.writeText(managerPhone.replace(/\s/g, ''));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return (
-    <div style={styles.pageWrap}>
-      <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-        <div style={{ ...styles.skeleton, height: 56, width: 200, marginBottom: 24 }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 28 }}>
-          <div>
-            <div style={{ ...styles.skeleton, height: 440, borderRadius: 20 }} />
-            <div style={{ ...styles.skeleton, height: 120, borderRadius: 16, marginTop: 20 }} />
-          </div>
-          <div>
-            <div style={{ ...styles.skeleton, height: 320, borderRadius: 20 }} />
-            <div style={{ ...styles.skeleton, height: 200, borderRadius: 16, marginTop: 16 }} />
+  if (loading) {
+    return (
+      <div className="rd-page">
+        <DetailStyles />
+        <div className="rd-wrap">
+          <div className="rd-skeleton" style={{ height: 50, width: 220, marginBottom: 20 }} />
+          <div className="rd-layout">
+            <div className="rd-left">
+              <div className="rd-skeleton" style={{ height: 430 }} />
+              <div className="rd-skeleton" style={{ height: 120 }} />
+            </div>
+            <div className="rd-right">
+              <div className="rd-skeleton" style={{ height: 300 }} />
+              <div className="rd-skeleton" style={{ height: 190 }} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  if (error) return (
-    <div style={{ ...styles.pageWrap, textAlign: 'center', paddingTop: 100 }}>
-      <div style={{ fontSize: 56, marginBottom: 16 }}>😕</div>
-      <h2 style={{ color: '#1e293b', fontWeight: 800, marginBottom: 8 }}>Không tìm thấy phòng</h2>
-      <p style={{ color: '#64748b', marginBottom: 28 }}>{error}</p>
-      <button onClick={() => navigate(-1)} style={styles.btnPrimary}>← Quay lại</button>
-    </div>
-  );
+  if (error) {
+    return (
+      <div className="rd-page">
+        <DetailStyles />
+        <div className="rd-wrap">
+          <div className="rd-error-box" style={{ marginTop: 70 }}>
+            <h2>Không tìm thấy phòng</h2>
+            <p style={{ margin: '0 0 22px', fontSize: 16 }}>{error}</p>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="rd-action"
+              style={{ width: 'auto', display: 'inline-block', padding: '10px 24px' }}
+            >
+              Quay lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!room) return null;
 
-  const statusKey     = (room.Status ?? room.status ?? '').toLowerCase();
-  const statusInfo    = statusMap[statusKey] ?? null;
-  const maxPeople     = room.maxPeople ?? room.maxOccupants ?? null;
+  const images = getImages();
+
+  const statusKey = (room.Status ?? room.status ?? '').toLowerCase();
+  const statusInfo = statusMap[statusKey] ?? null;
+
+  const maxPeople = room.maxPeople ?? room.maxOccupants ?? null;
   const currentPeople = room.currentPeople ?? room.currentOccupants ?? null;
-  const roomArea      = room.area ?? room.roomArea ?? null;
-  const roomPrice     = room.price ?? room.roomPrice ?? null;
-  const roomDeposit   = room.depositAmount ?? room.deposit ?? null;
-  const roomDesc      = room.description ?? '';
-  const roomName      = room.roomName ?? room.name ?? roomId;
-  const amenities     = room.amenities ?? [];
+  const roomArea = room.area ?? room.roomArea ?? null;
+  const roomPrice = room.price ?? room.roomPrice ?? null;
+  const roomDeposit = room.depositAmount ?? room.deposit ?? null;
+  const roomDesc = room.description ?? '';
+  const roomName = room.roomName ?? room.name ?? roomId;
+  const amenities = room.amenities ?? [];
 
   return (
-    <div style={styles.pageWrap}>
+    <div className="rd-page">
+      <DetailStyles />
+
       {showInquiry && (
         <InquiryModal
           roomName={roomName}
@@ -452,124 +1215,117 @@ export default function RoomDetail() {
         />
       )}
 
-      <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+      <div className="rd-wrap">
+        <div className="rd-top">
+          <button type="button" onClick={() => navigate(-1)} className="rd-back">
+            ‹
+          </button>
 
-        <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={styles.backBtn}
-            onMouseEnter={e => { e.currentTarget.style.background = '#e0e7ff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#f0f4ff'; }}
-          >←</button>
           <div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>
-              {branchName && <><span style={{ color: '#1d4ed8', fontWeight: 600 }}>{branchName}</span> › </>}
-              {floorNumber && <><span style={{ color: '#475569' }}>Tầng {floorNumber}</span> › </>}
-              <span style={{ color: '#475569' }}>Chi tiết</span>
+            <div className="rd-crumb">
+              {branchName && <><strong>{branchName}</strong> / </>}
+              {floorNumber && <>Tầng {floorNumber} / </>}
+              <span>Chi tiết phòng</span>
             </div>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#0f172a' }}>
-              Phòng {roomName}
-            </h1>
+            <h1 className="rd-title">Phòng {roomName}</h1>
           </div>
+
           {statusInfo && (
-            <span style={{
-              marginLeft: 'auto', background: statusInfo.bgLight,
-              color: statusInfo.text, padding: '6px 16px',
-              borderRadius: 20, fontSize: 13, fontWeight: 700,
-            }}>
-              ● {statusInfo.label}
+            <span
+              className="rd-status"
+              style={{
+                background: statusInfo.bg,
+                color: statusInfo.text,
+                borderColor: statusInfo.border,
+              }}
+            >
+              {statusInfo.label}
             </span>
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 28, alignItems: 'start' }}>
-
-          {/* ── LEFT ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            <div style={styles.card}>
-              <div style={{ position: 'relative', height: 440, borderRadius: 16, overflow: 'hidden', background: '#e2e8f0' }}>
+        <div className="rd-layout">
+          <div className="rd-left">
+            <div className="rd-card">
+              <div className="rd-gallery-main">
                 <img
                   key={images[activeImg]}
                   src={images[activeImg]}
                   alt={`Phòng ${roomName}`}
-                  onError={e => { e.target.src = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80'; }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s' }}
+                  onError={e => {
+                    e.target.src = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80';
+                  }}
                 />
-                <div style={{
-                  position: 'absolute', top: 16, right: 16,
-                  background: 'rgba(0,0,0,0.55)', color: '#fff',
-                  padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                }}>
-                  📷 {activeImg + 1}/{images.length}
+
+                <div className="rd-image-count">
+                  {activeImg + 1}/{images.length}
                 </div>
+
                 {images.length > 1 && (
                   <>
-                    <button onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)} style={styles.galleryArrow('left')}>‹</button>
-                    <button onClick={() => setActiveImg(i => (i + 1) % images.length)} style={styles.galleryArrow('right')}>›</button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveImg(i => (i - 1 + images.length) % images.length)}
+                      className="rd-arrow left"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveImg(i => (i + 1) % images.length)}
+                      className="rd-arrow right"
+                    >
+                      ›
+                    </button>
                   </>
                 )}
+
                 {images.length > 1 && (
-                  <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
+                  <div className="rd-dots">
                     {images.map((_, i) => (
-                      <div key={i} onClick={() => setActiveImg(i)} style={{
-                        width: i === activeImg ? 22 : 8, height: 8, borderRadius: 4,
-                        background: i === activeImg ? '#fff' : 'rgba(255,255,255,0.45)',
-                        cursor: 'pointer', transition: 'all 0.2s',
-                      }} />
+                      <div
+                        key={i}
+                        onClick={() => setActiveImg(i)}
+                        className={`rd-dot ${i === activeImg ? 'active' : ''}`}
+                      />
                     ))}
                   </div>
                 )}
               </div>
 
               {images.length > 1 && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto', paddingBottom: 4 }}>
+                <div className="rd-thumbs">
                   {images.map((img, i) => (
-                    <img key={i} src={img} alt={`Thumb ${i + 1}`}
+                    <img
+                      key={i}
+                      src={img}
+                      alt={`Ảnh phòng ${i + 1}`}
                       onClick={() => setActiveImg(i)}
-                      onError={e => { e.target.src = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=200&q=60'; }}
-                      style={{
-                        width: 76, height: 56, objectFit: 'cover', borderRadius: 10,
-                        flexShrink: 0, cursor: 'pointer',
-                        border: `2.5px solid ${i === activeImg ? '#3b82f6' : 'transparent'}`,
-                        opacity: i === activeImg ? 1 : 0.55, transition: 'all 0.2s',
+                      onError={e => {
+                        e.target.src = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=200&q=60';
                       }}
+                      className={`rd-thumb ${i === activeImg ? 'active' : ''}`}
                     />
                   ))}
                 </div>
               )}
             </div>
 
-            <div style={{
-              ...styles.card,
-              background: 'linear-gradient(135deg, #eff6ff 0%, #f0f4ff 100%)',
-              border: '1px solid #bfdbfe',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div className="rd-card rd-price-card">
+              <div className="rd-price-layout">
                 <div>
-                  <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600, marginBottom: 4 }}>
-                    GIÁ THUÊ HÀNG THÁNG
-                  </div>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: '#1d4ed8' }}>
+                  <div className="rd-small-label">Giá thuê hàng tháng</div>
+                  <div className="rd-price">
                     {fmt(roomPrice)}
-                    <span style={{ fontSize: 15, fontWeight: 500, color: '#64748b' }}> /tháng</span>
+                    <span> / tháng</span>
                   </div>
                 </div>
 
                 {roomDeposit && (
-                  <div style={{
-                    background: 'linear-gradient(135deg, #fffbeb 0%, #fefce8 100%)',
-                    borderRadius: 14, padding: '14px 20px',
-                    border: '1.5px solid #fde68a',
-                    textAlign: 'center', minWidth: 140,
-                  }}>
-                    <div style={{ fontSize: 11, color: '#92400e', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 4 }}>
-                      💰 TIỀN CỌC
-                    </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: '#b45309' }}>
-                      {fmt(roomDeposit)}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#d97706', marginTop: 2 }}>
+                  <div className="rd-deposit">
+                    <div className="rd-small-label">Tiền cọc</div>
+                    <div className="rd-deposit-value">{fmt(roomDeposit)}</div>
+                    <div style={{ color: '#8b7665', fontSize: 13, marginTop: 2 }}>
                       Hoàn lại khi hết hợp đồng
                     </div>
                   </div>
@@ -577,202 +1333,163 @@ export default function RoomDetail() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-              {branchName   && <StatCard emoji="🏢" label="Chi nhánh"  value={branchName} />}
-              {floorNumber  && <StatCard emoji="🏗️" label="Tầng"       value={`Tầng ${floorNumber}`} />}
-              {roomArea     && <StatCard emoji="📐" label="Diện tích"  value={`${roomArea} m²`} />}
-              {maxPeople    != null && <StatCard emoji="👥" label="Tối đa"    value={`${maxPeople} người`} />}
-              {currentPeople != null && <StatCard emoji="🧑" label="Hiện tại" value={`${currentPeople} người`} />}
+            <div className="rd-stat-grid">
+              {branchName && <StatCard label="Chi nhánh" value={branchName} />}
+              {floorNumber && <StatCard label="Tầng" value={`Tầng ${floorNumber}`} />}
+              {roomArea && <StatCard label="Diện tích" value={`${roomArea} m²`} />}
+              {maxPeople != null && <StatCard label="Tối đa" value={`${maxPeople} người`} />}
+              {currentPeople != null && <StatCard label="Hiện tại" value={`${currentPeople} người`} />}
             </div>
 
             {roomDesc && (
-              <div style={styles.card}>
-                <div style={styles.sectionHeader}>
-                  <span style={styles.sectionIcon}>📝</span>
-                  <span style={styles.sectionTitle}>Mô tả</span>
+              <div className="rd-card">
+                <div className="rd-section-head">
+                  <span className="rd-section-title">Mô tả</span>
                 </div>
-                <p style={{ margin: 0, color: '#475569', lineHeight: 1.8, fontSize: 15, whiteSpace: 'pre-line' }}>
-                  {roomDesc}
-                </p>
+                <p className="rd-desc">{roomDesc}</p>
               </div>
             )}
 
             {amenities.length > 0 && (
-              <div style={styles.card}>
-                <div style={styles.sectionHeader}>
-                  <span style={styles.sectionIcon}>✨</span>
-                  <span style={styles.sectionTitle}>Tiện ích phòng</span>
-                  <span style={{ marginLeft: 'auto', background: '#dbeafe', color: '#1d4ed8', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                    {amenities.length} tiện ích
-                  </span>
+              <div className="rd-card">
+                <div className="rd-section-head">
+                  <span className="rd-section-title">Tiện ích phòng</span>
+                  <span className="rd-section-count">{amenities.length} tiện ích</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-                  {amenities.map((a, idx) => {
-                    const colors = [
-                      { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af' },
-                      { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46' },
-                      { bg: '#fefce8', border: '#fde68a', text: '#92400e' },
-                      { bg: '#f5f3ff', border: '#ddd6fe', text: '#5b21b6' },
-                      { bg: '#fdf2f8', border: '#fbcfe8', text: '#9d174d' },
-                      { bg: '#f0fdfa', border: '#99f6e4', text: '#134e4a' },
-                    ];
-                    const c = colors[idx % colors.length];
-                    return (
-                      <div key={a.amenityId ?? a.amenityName}
-                        style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, transition: 'transform 0.15s' }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-                      >
-                        <span style={{ fontSize: 20 }}>{getIcon(a.amenityName)}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: c.text }}>{a.amenityName}</span>
-                      </div>
-                    );
-                  })}
+
+                <div className="rd-amenities">
+                  {amenities.map((a) => (
+                    <div key={a.amenityId ?? a.amenityName} className="rd-amenity">
+                      {a.amenityName}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── RIGHT sidebar ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 24 }}>
+          <aside className="rd-right">
+            <div className="rd-contact">
+              <div className="rd-contact-title">Liên hệ đặt phòng</div>
+              <div className="rd-contact-sub">Phản hồi nhanh trong ngày</div>
 
-            <div style={{
-              borderRadius: 20, overflow: 'hidden',
-              background: 'linear-gradient(145deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
-              boxShadow: '0 8px 32px rgba(37,99,235,0.3)',
-              padding: '28px 24px',
-            }}>
-              <div style={{ color: '#fff', fontWeight: 800, fontSize: 18, marginBottom: 2 }}>Liên hệ đặt phòng</div>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 24 }}>Phản hồi nhanh trong ngày</div>
-
-              <div style={{ marginBottom: 18 }}>
-                <div style={styles.contactLabel}>SỐ ĐIỆN THOẠI QUẢN LÝ</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 16px', backdropFilter: 'blur(8px)' }}>
-                  <a href={`tel:${managerPhone.replace(/\s/g, '')}`}
-                    style={{ color: '#fff', fontWeight: 700, fontSize: 18, flex: 1, textDecoration: 'none', letterSpacing: '0.5px' }}>
-                    📞 {managerPhone}
-                  </a>
-                  <button onClick={copyPhone} style={{
-                    background: copied ? 'rgba(134,239,172,0.3)' : 'rgba(255,255,255,0.18)',
-                    border: 'none', borderRadius: 8, padding: '6px 12px',
-                    cursor: 'pointer', color: '#fff', fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
-                  }}>
-                    {copied ? '✓ Đã copy' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <div style={styles.contactLabel}>NHẮN TIN ZALO</div>
-                <a href={`https://zalo.me/${managerPhone.replace(/\s/g, '')}`} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', color: '#0068ff', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  💬 Chat Zalo ngay
+              <div className="rd-contact-label">Số điện thoại quản lý</div>
+              <div className="rd-phone-row">
+                <a href={`tel:${managerPhone.replace(/\s/g, '')}`}>
+                  {managerPhone}
                 </a>
-              </div>
-
-              <div>
-                <div style={styles.contactLabel}>GỬI YÊU CẦU TƯ VẤN</div>
                 <button
-                  onClick={() => setShowInquiry(true)}
-                  style={{
-                    width: '100%', background: 'rgba(255,255,255,0.15)',
-                    border: '1.5px solid rgba(255,255,255,0.4)',
-                    borderRadius: 12, padding: '13px 0',
-                    color: '#fff', fontFamily: 'inherit',
-                    fontWeight: 700, fontSize: 15, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    transition: 'background .15s, border-color .15s',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.25)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.7)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                  type="button"
+                  onClick={copyPhone}
+                  className={`rd-copy ${copied ? 'done' : ''}`}
                 >
-                  ✉️ Hỏi thông tin phòng
+                  {copied ? 'Đã copy' : 'Copy'}
                 </button>
               </div>
 
-              <div style={{ marginTop: 14, color: 'rgba(255,255,255,0.5)', fontSize: 11, textAlign: 'center' }}>
-                Hỗ trợ 7:00 – 22:00 • T2 – CN
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <a
+                  href={`https://zalo.me/${managerPhone.replace(/\s/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rd-action"
+                >
+                  Chat Zalo ngay
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setShowInquiry(true)}
+                  className="rd-action secondary"
+                >
+                  Hỏi thông tin phòng
+                </button>
+              </div>
+
+              <div style={{ marginTop: 13, color: '#8b7665', fontSize: 13, textAlign: 'center' }}>
+                Hỗ trợ 7:00 - 22:00, Thứ 2 - Chủ nhật
               </div>
             </div>
 
-            <div style={{ ...styles.card, padding: '20px 22px' }}>
-              <div style={{ ...styles.sectionHeader, marginBottom: 14 }}>
-                <span style={styles.sectionIcon}>📋</span>
-                <span style={styles.sectionTitle}>Tóm tắt</span>
+            <div className="rd-card">
+              <div className="rd-section-head">
+                <span className="rd-section-title">Tóm tắt</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {roomName      && <SummaryRow label="Tên phòng" value={roomName} />}
-                {branchName    && <SummaryRow label="Chi nhánh" value={branchName} />}
-                {floorNumber   && <SummaryRow label="Tầng"      value={`Tầng ${floorNumber}`} />}
-                {roomArea      && <SummaryRow label="Diện tích" value={`${roomArea} m²`} />}
-                {maxPeople    != null && <SummaryRow label="Tối đa"    value={`${maxPeople} người`} />}
+
+              <div>
+                {roomName && <SummaryRow label="Tên phòng" value={roomName} />}
+                {branchName && <SummaryRow label="Chi nhánh" value={branchName} />}
+                {floorNumber && <SummaryRow label="Tầng" value={`Tầng ${floorNumber}`} />}
+                {roomArea && <SummaryRow label="Diện tích" value={`${roomArea} m²`} />}
+                {maxPeople != null && <SummaryRow label="Tối đa" value={`${maxPeople} người`} />}
                 {currentPeople != null && <SummaryRow label="Hiện tại" value={`${currentPeople} người`} />}
                 <SummaryRow label="Giá thuê" value={fmt(roomPrice)} highlight />
-                {roomDeposit && <SummaryRow label="💰 Tiền cọc" value={fmt(roomDeposit)} depositHighlight />}
-                {statusInfo && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: '1px solid #f1f5f9' }}>
-                    <span style={{ color: '#64748b', fontSize: 13 }}>Trạng thái</span>
-                    <span style={{ background: statusInfo.bg, color: '#fff', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>
-                      {statusInfo.label}
-                    </span>
-                  </div>
-                )}
+                {roomDeposit && <SummaryRow label="Tiền cọc" value={fmt(roomDeposit)} />}
+                {statusInfo && <SummaryRow label="Trạng thái" value={statusInfo.label} />}
               </div>
             </div>
 
-            <div style={{ ...styles.card, background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)', border: '1px solid #fde68a', padding: '20px 22px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 12 }}>💡 Tại sao chọn chúng tôi?</div>
-              {['Giá cả minh bạch', 'Hỗ trợ 24/7', 'Không phí trung gian', 'Xem phòng miễn phí'].map((t, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 13, color: '#78350f' }}>
-                  <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#fbbf24', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>✓</span>
-                  {t}
-                </div>
+            <div className="rd-note">
+              <div className="rd-note-title">Thông tin hỗ trợ</div>
+              {['Giá cả minh bạch', 'Hỗ trợ tư vấn hằng ngày', 'Không phí trung gian', 'Có thể đặt lịch xem phòng'].map((text) => (
+                <div key={text} className="rd-note-row">{text}</div>
               ))}
             </div>
-          </div>
+          </aside>
         </div>
 
         {loadingRelated && (
-          <div style={{ marginTop: 48, marginBottom: 40 }}>
-            <div style={{ ...styles.skeleton, height: 28, width: 300, marginBottom: 20 }} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-              {[1, 2, 3].map(i => <div key={i} style={{ ...styles.skeleton, height: 340, borderRadius: 18 }} />)}
+          <div className="rd-related">
+            <div className="rd-skeleton" style={{ height: 30, width: 270, marginBottom: 18 }} />
+            <div className="rd-related-grid">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="rd-skeleton" style={{ height: 330 }} />
+              ))}
             </div>
           </div>
         )}
 
         {!loadingRelated && relatedRooms.length > 0 && (
-          <div style={{ marginTop: 48, marginBottom: 40 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div className="rd-related">
+            <div className="rd-related-head">
               <div>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>🏠 Phòng cùng chi nhánh</h2>
-                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 14 }}>
-                  {relatedRooms.length} phòng khác tại <span style={{ color: '#1d4ed8', fontWeight: 600 }}>{branchName}</span>
+                <h2>Phòng cùng chi nhánh</h2>
+                <p>
+                  {relatedRooms.length} phòng khác tại <strong style={{ color: '#b85618' }}>{branchName}</strong>
                 </p>
               </div>
-              <button onClick={() => navigate(-1)}
-                style={{ background: '#f0f4ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#f0f4ff'; }}
+
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="rd-action secondary"
+                style={{ width: 'auto', padding: '9px 16px' }}
               >
-                Xem tất cả →
+                Xem tất cả
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-              {relatedRooms.map(r => <RoomGridCard key={r.roomId} room={r} />)}
+
+            <div className="rd-related-grid">
+              {relatedRooms.map(r => (
+                <RoomGridCard
+                  key={r.roomId}
+                  room={r}
+                  floors={allFloors}
+                  branches={allBranches}
+                />
+              ))}
             </div>
           </div>
         )}
 
         {!loadingRelated && relatedRooms.length === 0 && room && (
-          <div style={{ marginTop: 48, marginBottom: 40, textAlign: 'center', background: '#fff', borderRadius: 18, padding: '40px 20px', boxShadow: '0 1px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🏠</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Không có phòng nào khác cùng chi nhánh</div>
-            <div style={{ fontSize: 13, color: '#94a3b8' }}>Hãy xem thêm các phòng ở chi nhánh khác</div>
+          <div className="rd-empty-related" style={{ marginTop: 42 }}>
+            <div style={{ color: '#2f241d', fontSize: 18, fontWeight: 700, marginBottom: 5 }}>
+              Không có phòng nào khác cùng chi nhánh
+            </div>
+            <div style={{ fontSize: 15 }}>
+              Hãy xem thêm các phòng ở chi nhánh khác.
+            </div>
           </div>
         )}
       </div>
@@ -780,104 +1497,20 @@ export default function RoomDetail() {
   );
 }
 
-function StatCard({ emoji, label, value }) {
+function StatCard({ label, value }) {
   return (
-    <div
-      style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12, transition: 'transform 0.15s' }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-    >
-      <span style={{ fontSize: 24 }}>{emoji}</span>
-      <div>
-        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{value}</div>
-      </div>
+    <div className="rd-stat">
+      <div className="rd-stat-label">{label}</div>
+      <div className="rd-stat-value">{value}</div>
     </div>
   );
 }
 
-function SummaryRow({ label, value, highlight, depositHighlight }) {
+function SummaryRow({ label, value, highlight }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid #f8fafc' }}>
-      <span style={{ color: '#64748b', fontSize: 13 }}>{label}</span>
-      <span style={{
-        color: depositHighlight ? '#b45309' : highlight ? '#1d4ed8' : '#0f172a',
-        fontSize: 13, fontWeight: 600,
-        background: depositHighlight ? '#fef9c3' : 'transparent',
-        padding: depositHighlight ? '1px 8px' : 0,
-        borderRadius: depositHighlight ? 6 : 0,
-      }}>{value}</span>
+    <div className={`rd-summary-row ${highlight ? 'highlight' : ''}`}>
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   );
-}
-
-const styles = {
-  pageWrap: {
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%)',
-    padding: '32px 24px',
-    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-  },
-  card: {
-    background: '#fff', borderRadius: 18, padding: '24px 26px',
-    boxShadow: '0 1px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-  },
-  skeleton: {
-    background: 'linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%)',
-    backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 12,
-  },
-  backBtn: {
-    width: 42, height: 42, borderRadius: 12,
-    background: '#f0f4ff', border: '1px solid #e0e7ff',
-    color: '#3b82f6', fontSize: 18, fontWeight: 700,
-    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'background 0.15s',
-  },
-  btnPrimary: {
-    background: '#3b82f6', color: '#fff', border: 'none',
-    borderRadius: 12, padding: '12px 28px',
-    fontFamily: 'inherit', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-  },
-  sectionHeader: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    marginBottom: 18, paddingBottom: 14, borderBottom: '2px solid #f1f5f9',
-  },
-  sectionIcon:  { fontSize: 20 },
-  sectionTitle: { fontWeight: 700, fontSize: 16, color: '#0f172a' },
-  contactLabel: { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.55)', marginBottom: 8, letterSpacing: '0.5px' },
-  galleryArrow: (side) => ({
-    position: 'absolute', top: '50%', transform: 'translateY(-50%)', [side]: 14,
-    background: 'rgba(255,255,255,0.92)', border: 'none', borderRadius: '50%',
-    width: 40, height: 40, fontSize: 20, fontWeight: 600, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.12)', zIndex: 2,
-    transition: 'transform 0.15s, background 0.15s', color: '#334155',
-  }),
-  label: {
-    display: 'block', fontSize: 12, fontWeight: 700,
-    color: '#475569', marginBottom: 6, letterSpacing: '0.3px',
-  },
-  input: {
-    width: '100%', boxSizing: 'border-box',
-    background: '#f8fafc', border: '1.5px solid #e2e8f0',
-    borderRadius: 10, padding: '10px 13px',
-    fontFamily: 'inherit', fontSize: 14, color: '#0f172a',
-    outline: 'none', transition: 'border-color .15s',
-  },
-  spinner: {
-    display: 'inline-block', width: 14, height: 14,
-    border: '2px solid rgba(255,255,255,0.4)',
-    borderTopColor: '#fff', borderRadius: '50%',
-    animation: 'spin .6s linear infinite',
-  },
-};
-
-if (typeof document !== 'undefined' && !document.getElementById('room-detail-styles')) {
-  const styleEl = document.createElement('style');
-  styleEl.id = 'room-detail-styles';
-  styleEl.textContent = `
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    @keyframes spin    { to { transform: rotate(360deg); } }
-  `;
-  document.head.appendChild(styleEl);
 }

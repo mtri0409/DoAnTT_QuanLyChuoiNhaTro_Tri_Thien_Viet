@@ -15,8 +15,8 @@ const isRoomVisible = (room) => {
 
 const getRoomTag = (room) => {
   const s = (room.status ?? room.Status ?? '').toUpperCase();
-  if (s === 'AVAILABLE') return { label: 'Còn phòng', bg: '#16a34a' };
-  if (s === 'SHARED') return { label: 'Ở ghép', bg: '#f59e0b' };
+  if (s === 'AVAILABLE') return { label: 'Còn phòng', bg: '#eaf7ea', color: '#287a35' };
+  if (s === 'SHARED') return { label: 'Ở ghép', bg: '#fff0dc', color: '#a95a13' };
   return null;
 };
 
@@ -38,6 +38,7 @@ export default function SearchRoom() {
     userService.getAllBranches(1, 50)
       .then(res => setBranches(Array.isArray(res.content) ? res.content : []))
       .catch(() => setBranches([]));
+
     userService.getAllAmenities(0, 100)
       .then(res => setAmenities(Array.isArray(res.content) ? res.content : []))
       .catch(() => setAmenities([]));
@@ -51,14 +52,14 @@ export default function SearchRoom() {
 
       const [availRes, shareRes] = await Promise.all([
         userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'AVAILABLE'),
-        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'SHARED')
+        userService.getAllRooms(0, FETCH_SIZE, 'roomName', 'asc', null, activeBranchId, '', 'SHARED'),
       ]);
 
       const available = availRes.content || [];
       const shared = shareRes.content || [];
 
       const merged = [...available, ...shared].filter(
-        (room, index, self) => index === self.findIndex((t) => t.roomId === room.roomId)
+        (room, index, self) => index === self.findIndex((t) => t.roomId === room.roomId),
       );
 
       setAllRooms(merged);
@@ -76,12 +77,11 @@ export default function SearchRoom() {
   const filtered = useMemo(() => {
     return allRooms.filter(room => {
       if (!isRoomVisible(room)) return false;
-
       if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
 
       if (activeAmenities.length > 0) {
-        const hasAllAmenities = activeAmenities.every(id => 
-          room.amenities?.some(a => (a.amenityId ?? a.id) === id)
+        const hasAllAmenities = activeAmenities.every(id =>
+          room.amenities?.some(a => (a.amenityId ?? a.id) === id),
         );
         if (!hasAllAmenities) return false;
       }
@@ -107,7 +107,11 @@ export default function SearchRoom() {
 
   const setFilter = (fn) => { fn(); setPage(0); };
   const handleBranch = (id) => { setActiveBranchId(id); };
-  const toggleAmenity = (id) => setFilter(() => setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+
+  const toggleAmenity = (id) => setFilter(() =>
+    setActiveAmenities(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]),
+  );
+
   const resetAll = () => {
     setActiveBranchId(null);
     setMaxPrice(MAX_PRICE);
@@ -120,68 +124,552 @@ export default function SearchRoom() {
   const sliderPct = (maxPrice / MAX_PRICE) * 100;
 
   return (
-    <>
+    <main className="sr-page">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
-        .sr-wrap { font-family: 'Be Vietnam Pro', sans-serif; max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
-        .sr-search-bar { background: #fff; border-radius: 14px; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 18px; box-shadow: 0 2px 20px rgba(29,108,240,0.10); border: 1.5px solid #e8f0fe; }
-        .sr-search-bar input { border: none; outline: none; font-family: inherit; font-size: 15px; color: #1a2236; flex: 1; background: none; }
-        .sr-search-bar input::placeholder { color: #94a3b8; }
-        .sr-btn { background: #1d6cf0; color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .2s; }
-        .sr-btn:hover { background: #1558cc; }
-        .sr-chip { padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; font-family: inherit; transition: all .18s; }
-        .sr-chip.active { background: #1d6cf0; color: #fff; border-color: #1d6cf0; font-weight: 700; }
-        .sr-chip.green.active { background: #16a34a; border-color: #16a34a; }
-        .sr-chip.amber.active { background: #f59e0b; border-color: #f59e0b; }
-        .sr-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 16px rgba(29,108,240,0.07); }
-        .sr-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 14px; }
-        .sr-amenity-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f4f9; cursor: pointer; font-size: 14px; color: #475569; font-weight: 500; user-select: none; }
-        .sr-amenity-row:last-child { border-bottom: none; }
-        .sr-checkbox { width: 18px; height: 18px; border-radius: 5px; border: 2px solid #e2e8f0; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; font-weight: 700; flex-shrink: 0; }
-        .sr-checkbox.on { background: #1d6cf0; border-color: #1d6cf0; }
-        .sr-pg { padding: 8px 13px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; font-family: inherit; cursor: pointer; transition: all .15s; }
-        .sr-pg.active { background: #1d6cf0; color: #fff; border-color: #1d6cf0; font-weight: 700; }
-        .sr-pg:disabled { opacity: .35; cursor: not-allowed; }
-        .sr-skeleton { border-radius: 14px; background: linear-gradient(90deg,#f1f4f9 25%,#e8edf5 50%,#f1f4f9 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
-        @keyframes shimmer { 0%{background-position:200% 0}100%{background-position:-200% 0} }
+        .sr-page {
+          min-height: 100vh;
+          background: #fffaf5;
+          color: #2f241d;
+          font-family: "Times New Roman", Times, serif;
+        }
+
+        .sr-wrap {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 30px 24px 56px;
+        }
+
+        .sr-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
+
+        .sr-title {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 700;
+          color: #2f241d;
+        }
+
+        .sr-subtitle {
+          margin: 5px 0 0;
+          color: #8b7665;
+          font-size: 16px;
+        }
+
+        .sr-reset {
+          border: 1px solid #eadfd4;
+          background: #fff;
+          color: #6f5f52;
+          border-radius: 6px;
+          padding: 8px 14px;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .sr-reset:hover {
+          background: #fff4ea;
+          color: #b85618;
+        }
+
+        .sr-search-bar {
+          background: #fff;
+          border: 1.5px solid #eadfd4;
+          border-radius: 8px;
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          gap: 8px;
+          padding: 6px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+          margin-bottom: 14px;
+        }
+
+        .sr-search-bar:focus-within {
+          border-color: #df7a35;
+          box-shadow: 0 0 0 3px rgba(223,122,53,.12);
+        }
+
+        .sr-search-bar input {
+          min-width: 0;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          padding: 9px 10px;
+          color: #2f241d;
+          font-family: inherit;
+          font-size: 16px;
+        }
+
+        .sr-search-bar input::placeholder {
+          color: #a39183;
+        }
+
+        .sr-btn {
+          border: 0;
+          background: #df7a35;
+          color: #fff;
+          border-radius: 6px;
+          padding: 9px 16px;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .sr-btn:hover {
+          background: #c96523;
+        }
+
+        .sr-clear {
+          border: 0;
+          background: transparent;
+          color: #8b7665;
+          font-family: inherit;
+          font-size: 16px;
+          cursor: pointer;
+          padding: 0 6px;
+        }
+
+        .sr-chip-row,
+        .sr-branch-bar {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .sr-chip-row {
+          margin-bottom: 18px;
+        }
+
+        .sr-chip {
+          border: 1px solid #eadfd4;
+          background: #fff;
+          color: #6f5f52;
+          border-radius: 6px;
+          padding: 7px 13px;
+          font-family: inherit;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .sr-chip.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          color: #fff;
+        }
+
+        .sr-chip.green.active {
+          background: #eaf7ea;
+          border-color: #9fd6a4;
+          color: #287a35;
+        }
+
+        .sr-chip.amber.active {
+          background: #fff0dc;
+          border-color: #efc38e;
+          color: #a95a13;
+        }
+
+        .sr-branch-bar {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 14px;
+          margin-bottom: 22px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+          align-items: center;
+        }
+
+        .sr-label {
+          color: #6f5f52;
+          font-size: 15px;
+          font-weight: 700;
+          margin-right: 2px;
+        }
+
+        .sr-grid {
+          display: grid;
+          grid-template-columns: 1fr 268px;
+          gap: 22px;
+          align-items: start;
+        }
+
+        .sr-result-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .sr-result-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #2f241d;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .sr-count {
+          background: #fff0dc;
+          color: #b85618;
+          border: 1px solid #f0d8bd;
+          border-radius: 5px;
+          padding: 2px 8px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .sr-page-note {
+          color: #8b7665;
+          font-size: 14px;
+        }
+
+        .sr-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .sr-card {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+        }
+
+        .sr-card-title {
+          color: #2f241d;
+          font-size: 17px;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .sr-muted-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          color: #8b7665;
+          font-size: 15px;
+          margin-bottom: 12px;
+        }
+
+        .sr-price {
+          color: #d86622;
+          font-weight: 800;
+        }
+
+        .sr-slider {
+          position: relative;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .sr-track,
+        .sr-fill {
+          position: absolute;
+          left: 0;
+          height: 5px;
+          border-radius: 3px;
+        }
+
+        .sr-track {
+          right: 0;
+          background: #f0e4d8;
+        }
+
+        .sr-fill {
+          background: #df7a35;
+        }
+
+        .sr-slider input {
+          position: absolute;
+          width: 100%;
+          height: 22px;
+          opacity: 0;
+          cursor: pointer;
+          z-index: 2;
+          margin: 0;
+        }
+
+        .sr-thumb {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #df7a35;
+          border: 3px solid #fff;
+          box-shadow: 0 2px 7px rgba(102,64,35,.25);
+          pointer-events: none;
+        }
+
+        .sr-price-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .sr-price-options button,
+        .sr-clear-filter,
+        .sr-pg {
+          font-family: inherit;
+          cursor: pointer;
+        }
+
+        .sr-price-options button {
+          border: 1px solid #eadfd4;
+          border-radius: 5px;
+          background: #fff;
+          color: #6f5f52;
+          padding: 5px 8px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .sr-price-options button.active {
+          background: #fff0dc;
+          border-color: #df7a35;
+          color: #b85618;
+        }
+
+        .sr-clear-filter {
+          width: 100%;
+          margin-top: 12px;
+          padding: 9px;
+          border: 1px solid #eadfd4;
+          border-radius: 6px;
+          background: #fff;
+          color: #6f5f52;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .sr-clear-filter:hover {
+          background: #fff4ea;
+          color: #b85618;
+        }
+
+        .sr-amenity-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 0;
+          border-bottom: 1px solid #f0e4d8;
+          color: #6f5f52;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 600;
+          user-select: none;
+        }
+
+        .sr-amenity-row:last-child {
+          border-bottom: 0;
+        }
+
+        .sr-checkbox {
+          width: 17px;
+          height: 17px;
+          border-radius: 4px;
+          border: 1.5px solid #d8c7b7;
+          background: #fff;
+          flex-shrink: 0;
+        }
+
+        .sr-checkbox.on {
+          background: #df7a35;
+          border-color: #df7a35;
+          box-shadow: inset 0 0 0 4px #fff;
+        }
+
+        .sr-empty,
+        .sr-error {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 42px 20px;
+          text-align: center;
+          color: #6f5f52;
+          box-shadow: 0 2px 10px rgba(102,64,35,.05);
+        }
+
+        .sr-error p {
+          color: #9b3026;
+          font-weight: 700;
+        }
+
+        .sr-skeleton {
+          border-radius: 8px;
+          background: linear-gradient(90deg,#f8f1ea 25%,#efe3d8 50%,#f8f1ea 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.4s infinite;
+          border: 1px solid #eadfd4;
+        }
+
+        .sr-pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+          margin-top: 26px;
+        }
+
+        .sr-pg {
+          border: 1px solid #eadfd4;
+          border-radius: 6px;
+          background: #fff;
+          color: #6f5f52;
+          padding: 7px 12px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .sr-pg.active {
+          background: #df7a35;
+          border-color: #df7a35;
+          color: #fff;
+        }
+
+        .sr-pg:disabled {
+          opacity: .45;
+          cursor: not-allowed;
+        }
+
+        .sr-sidebar {
+          position: sticky;
+          top: 104px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .sr-legend-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .sr-legend-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #6f5f52;
+          font-size: 14px;
+        }
+
+        .sr-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .sr-contact {
+          background: #fff0dc;
+          border: 1px solid #f0d8bd;
+          border-radius: 8px;
+          padding: 16px;
+          color: #6f5f52;
+        }
+
+        .sr-contact strong {
+          color: #2f241d;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        @media (max-width: 980px) {
+          .sr-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .sr-sidebar {
+            position: static;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 640px) {
+          .sr-wrap {
+            padding: 22px 14px 42px;
+          }
+
+          .sr-search-bar {
+            grid-template-columns: 1fr;
+          }
+
+          .sr-btn {
+            width: 100%;
+          }
+
+          .sr-sidebar {
+            grid-template-columns: 1fr;
+          }
+
+          .sr-chip {
+            flex: 1 1 auto;
+          }
+
+          .sr-result-head {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+        }
       `}</style>
 
       <div className="sr-wrap">
-        {/* Header + search */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2236', margin: 0 }}>Tìm phòng trọ</h2>
-              <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>Hiển thị phòng còn trống &amp; phòng ghép còn chỗ</p>
-            </div>
-            {hasFilter && (
-              <button onClick={resetAll} style={{ background: 'none', border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '7px 14px', color: '#64748b', fontFamily: 'inherit', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                Xóa bộ lọc
-              </button>
-            )}
+        <div className="sr-header">
+          <div>
+            <h2 className="sr-title">Tìm phòng trọ</h2>
+            <p className="sr-subtitle">Hiển thị phòng còn trống và phòng ghép còn chỗ</p>
           </div>
 
-          <div className="sr-search-bar" style={{ marginBottom: 14 }}>
-            <span style={{ fontSize: 17, color: '#94a3b8' }}>🔍</span>
-            <input type="text" placeholder="Tìm theo tên phòng, mô tả..."
-              value={searchText}
-              onChange={e => setFilter(() => setSearchText(e.target.value))} />
-            {searchText && (
-              <button onClick={() => setFilter(() => setSearchText(''))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 18, padding: '0 4px' }}>✕</button>
-            )}
-            <button className="sr-btn">Tìm kiếm</button>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className={`sr-chip ${statusFilter === 'ALL' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('ALL'))}>Tất cả</button>
-            <button className={`sr-chip green ${statusFilter === 'AVAILABLE' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('AVAILABLE'))}>🟢 Còn phòng</button>
-            <button className={`sr-chip amber ${statusFilter === 'SHARED' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('SHARED'))}>🟡 Ở ghép</button>
-          </div>
+          {hasFilter && (
+            <button type="button" onClick={resetAll} className="sr-reset">
+              Xóa bộ lọc
+            </button>
+          )}
         </div>
 
-        {/* Branch */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 24, boxShadow: '0 2px 12px rgba(29,108,240,0.07)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.5px', marginRight: 4 }}>Chi nhánh</span>
+        <div className="sr-search-bar">
+          <input
+            type="text"
+            placeholder="Tìm theo tên phòng, mô tả..."
+            value={searchText}
+            onChange={e => setFilter(() => setSearchText(e.target.value))}
+          />
+          {searchText && (
+            <button type="button" onClick={() => setFilter(() => setSearchText(''))} className="sr-clear">
+              Xóa
+            </button>
+          )}
+          <button type="button" className="sr-btn">Tìm kiếm</button>
+        </div>
+
+        <div className="sr-chip-row">
+          <button className={`sr-chip ${statusFilter === 'ALL' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('ALL'))}>Tất cả</button>
+          <button className={`sr-chip green ${statusFilter === 'AVAILABLE' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('AVAILABLE'))}>Còn phòng</button>
+          <button className={`sr-chip amber ${statusFilter === 'SHARED' ? 'active' : ''}`} onClick={() => setFilter(() => setStatusFilter('SHARED'))}>Ở ghép</button>
+        </div>
+
+        <div className="sr-branch-bar">
+          <span className="sr-label">Chi nhánh</span>
           <button className={`sr-chip ${activeBranchId === null ? 'active' : ''}`} onClick={() => handleBranch(null)}>Tất cả</button>
           {branches.map(b => (
             <button key={b.branchId} className={`sr-chip ${activeBranchId === b.branchId ? 'active' : ''}`} onClick={() => handleBranch(b.branchId)}>
@@ -190,170 +678,159 @@ export default function SearchRoom() {
           ))}
         </div>
 
-        {/* Main grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 268px', gap: 24, alignItems: 'start' }}>
-          {/* LEFT */}
+        <div className="sr-grid">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2236', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="sr-result-head">
+              <div className="sr-result-title">
                 Kết quả
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#1d6cf0', background: '#e8f0fe', padding: '2px 10px', borderRadius: 20 }}>
-                  {filtered.length} phòng
-                </span>
+                <span className="sr-count">{filtered.length} phòng</span>
               </div>
               {totalPages > 1 && (
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>Trang {currentPage + 1} / {totalPages}</span>
+                <span className="sr-page-note">Trang {currentPage + 1} / {totalPages}</span>
               )}
             </div>
 
             {loading && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[1,2,3].map(i => <div key={i} className="sr-skeleton" style={{ height: 200 }} />)}
+              <div className="sr-list">
+                {[1, 2, 3].map(i => <div key={i} className="sr-skeleton" style={{ height: 200 }} />)}
               </div>
             )}
 
             {!loading && error && (
-              <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(29,108,240,0.07)' }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-                <p style={{ color: '#dc2626', fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{error}</p>
+              <div className="sr-error">
+                <p>{error}</p>
                 <button className="sr-btn" onClick={fetchRooms}>Thử lại</button>
               </div>
             )}
 
             {!loading && !error && filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '56px 24px', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(29,108,240,0.07)' }}>
-                <div style={{ fontSize: 52, marginBottom: 14 }}>🏚️</div>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a2236', marginBottom: 6 }}>Không tìm thấy phòng phù hợp</p>
-                <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+              <div className="sr-empty">
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#2f241d', margin: '0 0 6px' }}>
+                  Không tìm thấy phòng phù hợp
+                </p>
+                <p style={{ fontSize: 15, color: '#8b7665', margin: '0 0 18px' }}>
+                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                </p>
                 <button className="sr-btn" onClick={resetAll}>Xóa bộ lọc</button>
               </div>
             )}
 
             {!loading && !error && pageRooms.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="sr-list">
                 {pageRooms.map(room => <RoomCard key={room.roomId} room={room} tag={getRoomTag(room)} />)}
               </div>
             )}
 
-            {/* Pagination */}
             {!loading && !error && totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 28 }}>
-                <button className="sr-pg" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>&larr; Trước</button>
+              <div className="sr-pagination">
+                <button className="sr-pg" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>Trước</button>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button key={i} className={`sr-pg ${currentPage === i ? 'active' : ''}`} onClick={() => setPage(i)}>{i + 1}</button>
                 ))}
-                <button className="sr-pg" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>Tiếp &rarr;</button>
+                <button className="sr-pg" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>Tiếp</button>
               </div>
             )}
           </div>
 
-          {/* RIGHT sidebar */}
-          <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 100 }}>
-            {/* Price */}
+          <aside className="sr-sidebar">
             <div className="sr-card">
-              <div className="sr-label">Giá thuê</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12 }}>
-                <span style={{ color: '#94a3b8' }}>0đ</span>
-                <span style={{ fontWeight: 700, color: '#1d6cf0' }}>{maxPrice >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${maxPrice} triệu`}</span>
+              <div className="sr-card-title">Giá thuê</div>
+              <div className="sr-muted-row">
+                <span>0đ</span>
+                <span className="sr-price">{maxPrice >= MAX_PRICE ? `${MAX_PRICE}tr+` : `Tối đa ${maxPrice} triệu`}</span>
               </div>
-              <div style={{ position: 'relative', height: 20, display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-                <div style={{ position: 'absolute', inset: '7px 0', borderRadius: 3, background: '#f1f4f9' }} />
-                <div style={{ position: 'absolute', left: 0, width: `${sliderPct}%`, top: 7, bottom: 7, borderRadius: 3, background: '#1d6cf0' }} />
-                <input type="range" min={1} max={MAX_PRICE} step={1} value={maxPrice}
+
+              <div className="sr-slider">
+                <div className="sr-track" />
+                <div className="sr-fill" style={{ width: `${sliderPct}%` }} />
+                <input
+                  type="range"
+                  min={1}
+                  max={MAX_PRICE}
+                  step={1}
+                  value={maxPrice}
                   onChange={e => setFilter(() => setMaxPrice(Number(e.target.value)))}
-                  style={{ position: 'absolute', width: '100%', opacity: 0, height: 20, cursor: 'pointer', zIndex: 2, margin: 0 }} />
-                <div style={{ position: 'absolute', left: `calc(${sliderPct}% - 10px)`, width: 20, height: 20, borderRadius: '50%', background: '#1d6cf0', border: '3px solid #fff', boxShadow: '0 2px 8px rgba(29,108,240,0.35)', pointerEvents: 'none' }} />
+                />
+                <div className="sr-thumb" style={{ left: `calc(${sliderPct}% - 9px)` }} />
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+
+              <div className="sr-price-options">
                 {[2, 4, 6, 8, 10, MAX_PRICE].map(v => (
-                  <button key={v} onClick={() => setFilter(() => setMaxPrice(v))} style={{
-                    padding: '4px 10px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                    border: `1.5px solid ${maxPrice === v ? '#1d6cf0' : '#e2e8f0'}`,
-                    background: maxPrice === v ? '#e8f0fe' : '#fff',
-                    color: maxPrice === v ? '#1d6cf0' : '#64748b',
-                    fontWeight: maxPrice === v ? 700 : 500,
-                  }}>
-                    {v >= MAX_PRICE ? `${MAX_PRICE}tr+` : `≤ ${v}tr`}
+                  <button key={v} onClick={() => setFilter(() => setMaxPrice(v))} className={maxPrice === v ? 'active' : ''}>
+                    {v >= MAX_PRICE ? `${MAX_PRICE}tr+` : `${v}tr`}
                   </button>
                 ))}
               </div>
+
               {maxPrice < MAX_PRICE && (
-                <button onClick={() => setFilter(() => setMaxPrice(MAX_PRICE))} style={{ width: '100%', marginTop: 12, padding: 8, border: '1.5px solid #e2e8f0', borderRadius: 8, background: 'none', color: '#94a3b8', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>
-                  ✕ Bỏ lọc giá
+                <button onClick={() => setFilter(() => setMaxPrice(MAX_PRICE))} className="sr-clear-filter">
+                  Bỏ lọc giá
                 </button>
               )}
             </div>
 
-            {/* Amenities */}
             <div className="sr-card">
-              <div className="sr-label">Tiện ích</div>
+              <div className="sr-card-title">Tiện ích</div>
               {amenities.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#94a3b8' }}>Đang tải...</p>
-              ) : (
-                amenities.map(a => {
-                  const id = a.amenityId ?? a.id;
-                  const on = activeAmenities.includes(id);
-                  const icon = Object.entries({ wifi:'📶', 'máy lạnh':'❄️', 'điều hòa':'❄️', 'nóng lạnh':'🚿', 'wc':'🚽', 'toilet':'🚽', 'bếp':'🍳', 'gác lửng':'🪜', 'thang máy':'🛗', 'bãi xe':'🅿️', 'bảo vệ':'💂' })
-                    .find(([k]) => a.amenityName?.toLowerCase().includes(k))?.[1] ?? '✅';
-                  return (
-                    <div key={id} className="sr-amenity-row" onClick={() => toggleAmenity(id)}>
-                      <div className={`sr-checkbox ${on ? 'on' : ''}`}>{on ? '✓' : ''}</div>
-                      <span>{icon}</span>
-                      <span>{a.amenityName}</span>
-                    </div>
-                  );
-                })
-              )}
+                <p style={{ fontSize: 14, color: '#9a8776', margin: 0 }}>Đang tải...</p>
+              ) : amenities.map(a => {
+                const id = a.amenityId ?? a.id;
+                const on = activeAmenities.includes(id);
+
+                return (
+                  <div key={id} className="sr-amenity-row" onClick={() => toggleAmenity(id)}>
+                    <div className={`sr-checkbox ${on ? 'on' : ''}`} />
+                    <span>{a.amenityName}</span>
+                  </div>
+                );
+              })}
+
               {activeAmenities.length > 0 && (
-                <button onClick={() => setFilter(() => setActiveAmenities([]))} style={{ width: '100%', marginTop: 12, padding: 8, border: '1.5px solid #e2e8f0', borderRadius: 8, background: 'none', color: '#94a3b8', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>
-                  ✕ Bỏ lọc tiện ích
+                <button onClick={() => setFilter(() => setActiveAmenities([]))} className="sr-clear-filter">
+                  Bỏ lọc tiện ích
                 </button>
               )}
             </div>
 
-            {/* Legend */}
             <div className="sr-card">
-              <div className="sr-label">Chú thích</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { color: '#16a34a', title: 'Còn phòng', sub: 'Chưa có ai thuê' },
-                  { color: '#f59e0b', title: 'Ở ghép', sub: 'Còn chỗ, đang có người thuê' },
-                ].map(({ color, title, sub }) => (
-                  <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2236' }}>{title}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{sub}</div>
-                    </div>
+              <div className="sr-card-title">Chú thích</div>
+              <div className="sr-legend-list">
+                <div className="sr-legend-row">
+                  <span className="sr-dot" style={{ background: '#287a35' }} />
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#2f241d' }}>Còn phòng</div>
+                    <div style={{ fontSize: 13, color: '#8b7665' }}>Chưa có ai thuê</div>
                   </div>
-                ))}
-                <div style={{ paddingTop: 10, borderTop: '1px solid #f1f4f9', fontSize: 11, color: '#cbd5e1', lineHeight: 1.6 }}>
+                </div>
+                <div className="sr-legend-row">
+                  <span className="sr-dot" style={{ background: '#a95a13' }} />
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#2f241d' }}>Ở ghép</div>
+                    <div style={{ fontSize: 13, color: '#8b7665' }}>Còn chỗ, đang có người thuê</div>
+                  </div>
+                </div>
+                <div style={{ paddingTop: 10, borderTop: '1px solid #f0e4d8', fontSize: 13, color: '#8b7665', lineHeight: 1.5 }}>
                   Phòng bảo trì và đã đặt cọc không hiển thị ở đây.
                 </div>
               </div>
             </div>
 
-            {/* Contact */}
-            <div style={{ background: 'linear-gradient(135deg,#1d6cf0,#1558cc)', borderRadius: 14, padding: 20, color: '#fff' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, opacity: .9 }}>📞 Tư vấn miễn phí</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  ['📱', '0901 234 567'],
-                  ['💬', 'Zalo: 0901 234 567'],
-                  ['🕐', '7:00 – 22:00 mỗi ngày']
-                ].map(([ic, tx]) => (
-                  <div key={tx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                    <span>{ic}</span>{tx}
-                  </div>
-                ))}
+            <div className="sr-contact">
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#2f241d', marginBottom: 10 }}>
+                Tư vấn miễn phí
               </div>
-              <button style={{ width: '100%', marginTop: 14, padding: 10, background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 8, color: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 15 }}>
+                <span>Hotline: <strong>0901 234 567</strong></span>
+                <span>Zalo: <strong>0901 234 567</strong></span>
+                <span>Thời gian: <strong>7:00 - 22:00 mỗi ngày</strong></span>
+              </div>
+              <button className="sr-btn" style={{ width: '100%', marginTop: 14 }}>
                 Liên hệ ngay
               </button>
             </div>
           </aside>
         </div>
       </div>
-    </>
+    </main>
   );
 }
