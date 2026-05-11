@@ -2,48 +2,54 @@ package com.trithienviet.qlchuoiphongtro.service;
 
 import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 
 public interface ContractService {
 
-    ContractDTO createContract(ContractDTO dto);
+        ContractDTO createContract(ContractDTO dto);
 
-    Page<ContractDTO> getAllContracts(Pageable pageable);
+        PageResponse<ContractDTO> getAllContracts(int pageNumber, int pageSize, String sortBy, String sortOrder);
 
-    Page<ContractDTO> searchContracts(String keyword, Pageable pageable);
+        PageResponse<ContractDTO> searchContracts(String keyword, int pageNumber, int pageSize, String sortBy,
+                        String sortOrder);
 
-    ContractDTO getContractById(Long id);
+        ContractDTO getContractById(Long id);
 
-    ContractDTO updateContract(Long id, ContractDTO dto);
+        ContractDTO updateContract(Long id, ContractDTO dto);
 
-    void deleteContract(Long id);
+        void deleteContract(Long id);
 
-    void updateStatus(Long contractId, ContractStatus status);
+        void updateStatus(Long contractId, ContractStatus status);
 
-    List<ContractDTO> autoUpdateStatus();
+        List<ContractDTO> autoUpdateStatus();
 
-    Page<ContractDTO> getContractsByStatus(ContractStatus status, Pageable pageable);
+        PageResponse<ContractDTO> getContractsByStatus(ContractStatus status, int pageNumber, int pageSize,
+                        String sortBy,
+                        String sortOrder);
 
-    void terminateContract(Long contractId);
+        // [FIX] Method mới: lọc theo status + branchId phía backend (thay thế lọc
+        // client-side)
+        PageResponse<ContractDTO> filterContracts(ContractStatus status, Long branchId, int pageNumber, int pageSize,
+                        String sortBy, String sortOrder);
 
-    void addMember(Long contractId, Long profileId);
+        void terminateContract(Long contractId);
 
-    void removeMember(Long contractId, Long profileId);
+        void addMember(Long contractId, Long profileId);
 
-    List<Long> getMemberIds(Long contractId);
+        void removeMember(Long contractId, Long profileId);
 
-    List<ContractDTO> getContractsByRoom(Long roomId);
+        List<Long> getMemberIds(Long contractId);
 
-    List<ContractServiceDTO> getServicesByContract(Long contractId);
+        List<ContractDTO> getContractsByRoom(Long roomId);
 
-    void addServices(Long contractId, List<ContractServiceDTO> services);
+        List<ContractServiceDTO> getServicesByContract(Long contractId);
 
-    void updateService(Integer contractServiceId, ContractServiceDTO dto);
+        void addServices(Long contractId, List<ContractServiceDTO> services);
 
-    void deleteService(Integer contractServiceId);
+        void updateService(Integer contractServiceId, ContractServiceDTO dto);
+
+        void deleteService(Integer contractServiceId);
 }

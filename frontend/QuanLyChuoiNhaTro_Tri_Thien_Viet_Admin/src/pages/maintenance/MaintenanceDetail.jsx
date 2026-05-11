@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
@@ -19,10 +19,8 @@ import {
   FaBuilding,
   FaChevronDown,
   FaPlus,
-  FaExternalLinkAlt,
-  FaCloudUploadAlt,
-  FaTimesCircle,
-  FaImage,
+  FaEdit,
+  FaClock,
 } from "react-icons/fa";
 import apiMaintenance from "../../api/apiMaintenance";
 import apiExpenses from "../../api/apiExpenses";
@@ -32,26 +30,26 @@ import { imgURL } from "../../api/config";
 const STATUS_CONFIG = {
   PENDING: {
     label: "Chờ xử lý",
-    bg: "#fef9ec",
-    color: "#92400e",
+    badgeBg: "bg-warning-subtle",
+    badgeText: "text-warning",
     dot: "#d97706",
   },
   PROCESSING: {
     label: "Đang xử lý",
-    bg: "#eff6ff",
-    color: "#1e40af",
+    badgeBg: "bg-primary-subtle",
+    badgeText: "text-primary",
     dot: "#3b82f6",
   },
   COMPLETED: {
     label: "Hoàn thành",
-    bg: "#f0fdf4",
-    color: "#166534",
+    badgeBg: "bg-success-subtle",
+    badgeText: "text-success",
     dot: "#22c55e",
   },
   CANCELLED: {
     label: "Đã hủy",
-    bg: "#f3f4f6",
-    color: "#6b7280",
+    badgeBg: "bg-secondary-subtle",
+    badgeText: "text-secondary",
     dot: "#9ca3af",
   },
 };
@@ -67,29 +65,27 @@ const EXPENSE_CATEGORIES = [
   "Chi phí khác",
 ];
 
+/* ── StatusBadge ── */
 const StatusBadge = ({ status }) => {
   const s = STATUS_CONFIG[status] || {
     label: status,
-    bg: "#f3f4f6",
-    color: "#374151",
-    dot: "#9ca3af",
+    badgeBg: "bg-light",
+    badgeText: "text-dark",
   };
   return (
     <span
-      style={{
-        background: s.bg,
-        color: s.color,
-        padding: "5px 14px",
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 600,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-      }}
+      className={`badge rounded-pill ${s.badgeBg} ${s.badgeText} fw-semibold`}
+      style={{ fontSize: 12, padding: "6px 14px" }}
     >
       <span
-        style={{ width: 7, height: 7, borderRadius: "50%", background: s.dot }}
+        className="me-1"
+        style={{
+          display: "inline-block",
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: s.dot,
+        }}
       />
       {s.label}
     </span>
@@ -100,6 +96,7 @@ const StatusBadge = ({ status }) => {
 const Lightbox = ({ images, startIndex, onClose }) => {
   const [idx, setIdx] = useState(startIndex);
   const src = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+
   useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape") onClose();
@@ -126,20 +123,16 @@ const Lightbox = ({ images, startIndex, onClose }) => {
     >
       <button
         onClick={onClose}
+        className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
         style={{
           position: "absolute",
           top: 20,
           right: 24,
           background: "rgba(255,255,255,0.12)",
-          border: "none",
-          borderRadius: "50%",
+          color: "#fff",
           width: 40,
           height: 40,
-          color: "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          border: "none",
         }}
       >
         <FaTimes size={16} />
@@ -150,19 +143,15 @@ const Lightbox = ({ images, startIndex, onClose }) => {
             e.stopPropagation();
             setIdx(idx - 1);
           }}
+          className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
           style={{
             position: "absolute",
             left: 20,
             background: "rgba(255,255,255,0.12)",
-            border: "none",
-            borderRadius: "50%",
+            color: "#fff",
             width: 44,
             height: 44,
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            border: "none",
           }}
         >
           <FaChevronLeft size={18} />
@@ -186,19 +175,15 @@ const Lightbox = ({ images, startIndex, onClose }) => {
             e.stopPropagation();
             setIdx(idx + 1);
           }}
+          className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
           style={{
             position: "absolute",
             right: 20,
             background: "rgba(255,255,255,0.12)",
-            border: "none",
-            borderRadius: "50%",
+            color: "#fff",
             width: 44,
             height: 44,
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            border: "none",
           }}
         >
           <FaChevronRight size={18} />
@@ -245,34 +230,7 @@ const Lightbox = ({ images, startIndex, onClose }) => {
   );
 };
 
-const InfoRow = ({ label, children }) => (
-  <div
-    style={{
-      display: "flex",
-      gap: 0,
-      borderBottom: "1px solid #f3f4f6",
-      padding: "10px 0",
-    }}
-  >
-    <div
-      style={{
-        width: 140,
-        flexShrink: 0,
-        fontSize: 12,
-        color: "#9ca3af",
-        fontWeight: 500,
-        paddingTop: 1,
-      }}
-    >
-      {label}
-    </div>
-    <div style={{ flex: 1, fontSize: 13, color: "#111", fontWeight: 500 }}>
-      {children}
-    </div>
-  </div>
-);
-
-/* ══ ExpenseForm ══ */
+/* ── ExpenseForm ── */
 const ExpenseForm = ({ request, onSuccess }) => {
   const [open, setOpen] = useState(false);
   const [payer, setPayer] = useState("TENANT_FAULT");
@@ -282,32 +240,13 @@ const ExpenseForm = ({ request, onSuccess }) => {
     payeeName: "",
     description: "",
   });
-  // ── File upload state ──
   const [evidenceFile, setEvidenceFile] = useState(null);
-  const [evidencePreview, setEvidencePreview] = useState("");
-  const fileInputRef = useRef(null);
-
+  const [evidencePreview, setEvidencePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [err, setErr] = useState("");
 
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
-
-  // ── Xử lý chọn file ──
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (evidencePreview) URL.revokeObjectURL(evidencePreview);
-    setEvidenceFile(file);
-    setEvidencePreview(URL.createObjectURL(file));
-  };
-
-  const handleRemoveFile = () => {
-    if (evidencePreview) URL.revokeObjectURL(evidencePreview);
-    setEvidenceFile(null);
-    setEvidencePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
   const resolveBranchId = () =>
     request.branchId ||
@@ -320,18 +259,11 @@ const ExpenseForm = ({ request, onSuccess }) => {
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
       return setErr("Số tiền không hợp lệ");
     if (payer === "OWNER_COST" && !resolveBranchId())
-      return setErr(
-        "Không tìm thấy chi nhánh của phòng này. Vui lòng bổ sung branchId vào MaintenanceRequestDTO.",
-      );
-
+      return setErr("Không tìm thấy chi nhánh của phòng này.");
     setErr("");
     setSubmitting(true);
     try {
-      // TODO: thay bằng API upload file thật của dự án để lấy URL
-      // Ví dụ: const uploadRes = await apiUpload.upload(evidenceFile);
-      //        evidenceUrl = uploadRes.url;
       const evidenceUrl = evidenceFile ? evidenceFile.name : undefined;
-
       const payload = {
         payer,
         expenseCategory: form.expenseCategory,
@@ -343,7 +275,6 @@ const ExpenseForm = ({ request, onSuccess }) => {
           ? { maintenanceRequestId: request.requestId }
           : { branchId: resolveBranchId() }),
       };
-
       const data = await apiExpenses.create(payload);
       setResult({
         payer,
@@ -370,83 +301,36 @@ const ExpenseForm = ({ request, onSuccess }) => {
       payeeName: "",
       description: "",
     });
-    handleRemoveFile();
+    setEvidenceFile(null);
+    setEvidencePreview(null);
     setPayer("TENANT_FAULT");
   };
 
-  const inputStyle = {
-    width: "100%",
-    border: "1px solid #e5e7eb",
-    borderRadius: 8,
-    padding: "9px 12px",
-    fontSize: 13,
-    color: "#111",
-    background: "#fff",
-    outline: "none",
-    transition: "border-color 0.15s",
-    boxSizing: "border-box",
-  };
-  const labelStyle = {
-    fontSize: 11,
-    color: "#6b7280",
-    fontWeight: 600,
-    marginBottom: 5,
-    display: "block",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  };
-
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 12,
-        border: "1px solid #e5e7eb",
-        overflow: "hidden",
-        marginTop: 12,
-      }}
-    >
-      {/* Header toggle */}
+    <div className="card border-0 shadow-sm rounded-3 overflow-hidden mt-3">
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          background: "none",
-          border: "none",
-          padding: "14px 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
+        className="btn btn-white w-100 d-flex align-items-center justify-content-between p-3 border-0 bg-white"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="d-flex align-items-center gap-3">
           <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: "#f0fdf4",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="rounded-3 d-flex align-items-center justify-content-center bg-success-subtle"
+            style={{ width: 36, height: 36 }}
           >
-            <FaMoneyBillWave color="#16a34a" size={14} />
+            <FaMoneyBillWave className="text-success" size={14} />
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
+          <div className="text-start">
+            <div className="fw-bold small text-dark">
               Ghi nhận chi phí xử lý
             </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
+            <div className="text-muted" style={{ fontSize: 11 }}>
               Tạo chi phí và hóa đơn liên quan
             </div>
           </div>
         </div>
         <FaChevronDown
           size={12}
-          color="#9ca3af"
+          className="text-muted"
           style={{
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.2s",
@@ -455,544 +339,222 @@ const ExpenseForm = ({ request, onSuccess }) => {
       </button>
 
       {open && (
-        <div style={{ padding: "0 20px 20px", borderTop: "1px solid #f3f4f6" }}>
+        <div className="p-3 border-top">
           {result ? (
-            /* ── Kết quả thành công ── */
-            <div style={{ marginTop: 16 }}>
-              {result.payer === "TENANT_FAULT" ? (
-                /* TENANT_FAULT: hiện cảnh báo DRAFT, yêu cầu admin xác nhận trước khi gửi khách */
-                <div>
-                  {/* Bước 1: Đã tạo chi phí */}
-                  <div
-                    style={{
-                      background: "#f0fdf4",
-                      borderRadius: 10,
-                      padding: "12px 16px",
-                      border: "1px solid #bbf7d0",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <FaCheck color="#16a34a" size={13} />
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#166534",
-                      }}
-                    >
-                      Đã ghi nhận chi phí #{result.expenseId}
-                    </span>
-                  </div>
-
-                  {/* Bước 2: Cảnh báo hóa đơn đang ở DRAFT */}
-                  {result.invoiceId && (
-                    <div
-                      style={{
-                        background: "#fffbeb",
-                        borderRadius: 10,
-                        padding: "14px 16px",
-                        border: "1px solid #fde68a",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 8,
-                          marginBottom: 10,
-                        }}
-                      >
-                        <span style={{ fontSize: 15, flexShrink: 0 }}>⚠️</span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#92400e",
-                              marginBottom: 3,
-                            }}
-                          >
-                            Hóa đơn #{result.invoiceId} đang ở trạng thái DRAFT
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "#78350f",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            Hóa đơn <strong>chưa được gửi cho khách</strong>.
-                            Vui lòng vào xem hóa đơn, kiểm tra thông tin rồi bấm{" "}
-                            <strong>"Gửi hóa đơn"</strong> để khách nhận được
-                            yêu cầu thanh toán.
-                          </div>
-                        </div>
-                      </div>
-                      <a
-                        href={`/invoice/${result.invoiceId}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          background: "#f59e0b",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: 12,
-                          padding: "8px 14px",
-                          borderRadius: 7,
-                          textDecoration: "none",
-                          transition: "opacity 0.15s",
-                        }}
-                      >
-                        <FaFileInvoiceDollar size={12} />
-                        Xem &amp; Gửi hóa đơn #{result.invoiceId}
-                        <FaExternalLinkAlt size={9} />
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* OWNER_COST: thành công bình thường */
-                <div
-                  style={{
-                    background: "#f0fdf4",
-                    borderRadius: 10,
-                    padding: "16px 18px",
-                    border: "1px solid #bbf7d0",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <FaCheck color="#16a34a" size={14} />
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 13,
-                        color: "#166534",
-                      }}
-                    >
-                      Đã ghi nhận chi phí vận hành nội bộ
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12, color: "#374151" }}>
-                    Chi phí #{result.expenseId}
-                  </div>
-                </div>
-              )}
-
+            <div>
+              <div className="alert alert-success d-flex align-items-center gap-2 py-2 px-3 small">
+                <FaCheck size={12} /> Đã ghi nhận chi phí #{result.expenseId}
+              </div>
               <button
                 onClick={reset}
-                style={{
-                  marginTop: 12,
-                  fontSize: 12,
-                  color: "#6b7280",
-                  background: "none",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 7,
-                  padding: "7px 14px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2"
               >
                 <FaPlus size={10} /> Thêm chi phí khác
               </button>
             </div>
           ) : (
             <>
-              {/* ── Chọn loại ── */}
-              <div style={{ marginTop: 16, marginBottom: 16 }}>
-                <label style={labelStyle}>Loại chi phí</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => setPayer("TENANT_FAULT")}
-                    style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: `2px solid ${payer === "TENANT_FAULT" ? "#3b82f6" : "#e5e7eb"}`,
-                      background:
-                        payer === "TENANT_FAULT" ? "#eff6ff" : "#fafafa",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 7,
-                        marginBottom: 2,
-                      }}
+              {/* Loại chi phí */}
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Loại chi phí
+                </label>
+                <div className="d-flex gap-2">
+                  {[
+                    {
+                      val: "TENANT_FAULT",
+                      icon: <FaFileInvoiceDollar size={12} />,
+                      title: "Lỗi do khách",
+                      desc: "Tạo hóa đơn REPAIR → khách thanh toán",
+                      color: "primary",
+                    },
+                    {
+                      val: "OWNER_COST",
+                      icon: <FaBuilding size={12} />,
+                      title: "Lỗi do trọ",
+                      desc: "Ghi vào chi phí vận hành nội bộ",
+                      color: "success",
+                    },
+                  ].map((opt) => (
+                    <button
+                      key={opt.val}
+                      onClick={() => setPayer(opt.val)}
+                      className={`btn btn-sm flex-fill text-start border-2 ${payer === opt.val ? `btn-outline-${opt.color} border-${opt.color}` : "btn-outline-secondary"}`}
+                      style={{ padding: "10px 12px" }}
                     >
-                      <FaFileInvoiceDollar
-                        size={12}
-                        color={payer === "TENANT_FAULT" ? "#2563eb" : "#9ca3af"}
-                      />
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color:
-                            payer === "TENANT_FAULT" ? "#1e40af" : "#374151",
-                        }}
-                      >
-                        Lỗi do khách
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#6b7280",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      Tạo hóa đơn REPAIR → khách thanh toán
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setPayer("OWNER_COST")}
-                    style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: `2px solid ${payer === "OWNER_COST" ? "#16a34a" : "#e5e7eb"}`,
-                      background:
-                        payer === "OWNER_COST" ? "#f0fdf4" : "#fafafa",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 7,
-                        marginBottom: 2,
-                      }}
-                    >
-                      <FaBuilding
-                        size={12}
-                        color={payer === "OWNER_COST" ? "#16a34a" : "#9ca3af"}
-                      />
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: payer === "OWNER_COST" ? "#166534" : "#374151",
-                        }}
-                      >
-                        Lỗi do trọ
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#6b7280",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      Ghi vào chi phí vận hành nội bộ
-                    </div>
-                  </button>
-                </div>
-
-                {payer === "OWNER_COST" && !resolveBranchId() && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      background: "#fff7ed",
-                      border: "1px solid #fed7aa",
-                      borderRadius: 7,
-                      padding: "8px 12px",
-                      fontSize: 11,
-                      color: "#92400e",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 6,
-                    }}
-                  >
-                    <span>⚠️</span>
-                    <span>
-                      Backend chưa trả về <code>branchId</code>. Vui lòng bổ
-                      sung field <code>branchId</code> vào{" "}
-                      <code>MaintenanceRequestDTO</code>.
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Fields ── */}
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                <div>
-                  <label style={labelStyle}>
-                    Danh mục <span style={{ color: "#ef4444" }}>*</span>
-                  </label>
-                  <select
-                    value={form.expenseCategory}
-                    onChange={f("expenseCategory")}
-                    style={{ ...inputStyle, appearance: "none" }}
-                  >
-                    <option value="">Chọn danh mục...</option>
-                    {EXPENSE_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={labelStyle}>
-                    Số tiền (VNĐ) <span style={{ color: "#ef4444" }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Ví dụ: 500000"
-                    value={form.amount}
-                    onChange={f("amount")}
-                    style={inputStyle}
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Tên thợ / đơn vị</label>
-                  <input
-                    type="text"
-                    placeholder="Thợ điện Nguyễn A..."
-                    value={form.payeeName}
-                    onChange={f("payeeName")}
-                    style={inputStyle}
-                  />
-                </div>
-
-                {/* ── Upload bằng chứng ── */}
-                <div>
-                  <label style={labelStyle}>Bằng chứng (ảnh / hóa đơn)</label>
-
-                  {!evidenceFile ? (
-                    <div
-                      style={{
-                        border: "2px dashed #d1d5db",
-                        borderRadius: 8,
-                        background: "#f9fafb",
-                        padding: "16px 12px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 6,
-                        cursor: "pointer",
-                        transition: "border-color 0.15s",
-                      }}
-                      onClick={() => fileInputRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) {
-                          if (evidencePreview)
-                            URL.revokeObjectURL(evidencePreview);
-                          setEvidenceFile(file);
-                          setEvidencePreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    >
-                      <FaCloudUploadAlt size={22} color="#9ca3af" />
-                      <div style={{ fontSize: 12, color: "#6b7280" }}>
-                        Kéo thả hoặc{" "}
-                        <span style={{ color: "#2563eb", fontWeight: 600 }}>
-                          chọn file
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        {opt.icon}
+                        <span className="fw-bold" style={{ fontSize: 12 }}>
+                          {opt.title}
                         </span>
                       </div>
-                      <div style={{ fontSize: 11, color: "#9ca3af" }}>
-                        JPG, PNG, PDF — tối đa 10MB
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 8,
-                        background: "#f9fafb",
-                        padding: "10px 12px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                      }}
-                    >
-                      {/* Preview */}
-                      {evidenceFile.type.startsWith("image/") ? (
-                        <img
-                          src={evidencePreview}
-                          alt="preview"
-                          style={{
-                            width: 52,
-                            height: 52,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid #e5e7eb",
-                            flexShrink: 0,
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 6,
-                            background: "#e5e7eb",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <FaImage size={20} color="#9ca3af" />
-                        </div>
-                      )}
-                      <div style={{ flex: 1, overflow: "hidden" }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#111",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {evidenceFile.name}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#9ca3af",
-                            marginTop: 2,
-                          }}
-                        >
-                          {(evidenceFile.size / 1024).toFixed(1)} KB
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          style={{
-                            fontSize: 11,
-                            color: "#2563eb",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            cursor: "pointer",
-                            marginTop: 2,
-                          }}
-                        >
-                          Đổi file khác
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemoveFile}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 4,
-                          flexShrink: 0,
-                        }}
-                        title="Xóa file"
+                      <div
+                        className="text-muted"
+                        style={{ fontSize: 11, lineHeight: 1.4 }}
                       >
-                        <FaTimesCircle size={16} color="#ef4444" />
-                      </button>
-                    </div>
-                  )}
+                        {opt.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Input file ẩn */}
+              {/* Fields */}
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Danh mục <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-select form-select-sm"
+                  value={form.expenseCategory}
+                  onChange={f("expenseCategory")}
+                >
+                  <option value="">Chọn danh mục...</option>
+                  {EXPENSE_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Số tiền (VNĐ) <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  className="form-control form-control-sm"
+                  placeholder="Ví dụ: 500000"
+                  value={form.amount}
+                  onChange={f("amount")}
+                />
+              </div>
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Tên thợ / đơn vị
+                </label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Thợ điện Nguyễn A..."
+                  value={form.payeeName}
+                  onChange={f("payeeName")}
+                />
+              </div>
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Bằng chứng (file ảnh / hóa đơn)
+                </label>
+                <div className="d-flex align-items-center gap-2">
                   <input
-                    ref={fileInputRef}
                     type="file"
                     accept="image/*,application/pdf"
-                    style={{ display: "none" }}
-                    onChange={handleFileChange}
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Ghi chú</label>
-                  <textarea
-                    rows={2}
-                    placeholder="Mô tả chi tiết công việc sửa chữa..."
-                    value={form.description}
-                    onChange={f("description")}
-                    style={{ ...inputStyle, resize: "vertical", minHeight: 64 }}
-                  />
-                </div>
-
-                {err && (
-                  <div
-                    style={{
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      borderRadius: 7,
-                      padding: "9px 12px",
-                      fontSize: 12,
-                      color: "#b91c1c",
+                    className="form-control form-control-sm"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setEvidenceFile(file);
+                      if (evidencePreview) URL.revokeObjectURL(evidencePreview);
+                      if (file && file.type.startsWith("image/")) {
+                        setEvidencePreview(URL.createObjectURL(file));
+                      } else {
+                        setEvidencePreview(null);
+                      }
                     }}
-                  >
-                    {err}
+                  />
+                  {evidenceFile && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-light border-0"
+                      onClick={() => {
+                        setEvidenceFile(null);
+                        if (evidencePreview)
+                          URL.revokeObjectURL(evidencePreview);
+                        setEvidencePreview(null);
+                      }}
+                      title="Xóa file"
+                    >
+                      <FaTimes size={12} className="text-danger" />
+                    </button>
+                  )}
+                </div>
+                {evidenceFile && (
+                  <div className="text-muted mt-1" style={{ fontSize: 11 }}>
+                    {evidenceFile.name} —{" "}
+                    {(evidenceFile.size / 1024).toFixed(1)} KB
                   </div>
                 )}
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{
-                    background:
-                      payer === "TENANT_FAULT" ? "#2563eb" : "#16a34a",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "10px 18px",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    opacity: submitting ? 0.7 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    transition: "opacity 0.15s",
-                  }}
-                >
-                  {submitting ? (
-                    <span
-                      className="spinner-border spinner-border-sm"
-                      style={{ width: 13, height: 13 }}
+                {evidencePreview && (
+                  <div className="mt-2">
+                    <img
+                      src={evidencePreview}
+                      alt="Xem trước ảnh bằng chứng"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 200,
+                        objectFit: "contain",
+                        borderRadius: 8,
+                        border: "1px solid #e5e7eb",
+                        background: "#f9fafb",
+                        display: "block",
+                      }}
                     />
-                  ) : (
-                    <FaCheck size={12} />
-                  )}
-                  {payer === "TENANT_FAULT"
-                    ? "Tạo hóa đơn sửa chữa"
-                    : "Lưu chi phí vận hành"}
-                </button>
+                  </div>
+                )}
               </div>
+              <div className="mb-3">
+                <label
+                  className="form-label small fw-semibold text-uppercase text-muted"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Ghi chú
+                </label>
+                <textarea
+                  rows={2}
+                  className="form-control form-control-sm"
+                  placeholder="Mô tả chi tiết công việc sửa chữa..."
+                  value={form.description}
+                  onChange={f("description")}
+                  style={{ resize: "vertical" }}
+                />
+              </div>
+
+              {err && (
+                <div className="alert alert-danger py-2 px-3 small">{err}</div>
+              )}
+
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className={`btn btn-sm w-100 d-flex align-items-center justify-content-center gap-2 fw-bold ${payer === "TENANT_FAULT" ? "btn-primary" : "btn-success"}`}
+              >
+                {submitting ? (
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    style={{ width: 13, height: 13 }}
+                  />
+                ) : (
+                  <FaCheck size={12} />
+                )}
+                {payer === "TENANT_FAULT"
+                  ? "Tạo hóa đơn sửa chữa"
+                  : "Lưu chi phí vận hành"}
+              </button>
             </>
           )}
         </div>
@@ -1039,7 +601,7 @@ const MaintenanceDetail = () => {
     setDeleting(true);
     try {
       await apiMaintenance.deleteRequest(requestId);
-      navigate(-1);
+      navigate("/maintenance");
     } catch (err) {
       alert(err?.response?.data?.message || "Không thể xóa");
       setDeleting(false);
@@ -1064,9 +626,7 @@ const MaintenanceDetail = () => {
             status: "PROCESSING",
             label: "Tiếp nhận xử lý",
             icon: <FaCog size={13} />,
-            color: "#1e40af",
-            bg: "#eff6ff",
-            border: "#bfdbfe",
+            btnClass: "btn-outline-primary",
           },
         ],
         PROCESSING: [
@@ -1074,17 +634,13 @@ const MaintenanceDetail = () => {
             status: "COMPLETED",
             label: "Đánh dấu hoàn thành",
             icon: <FaCheck size={13} />,
-            color: "#166534",
-            bg: "#f0fdf4",
-            border: "#bbf7d0",
+            btnClass: "btn-outline-success",
           },
           {
             status: "CANCELLED",
             label: "Hủy yêu cầu",
             icon: <FaBan size={13} />,
-            color: "#b91c1c",
-            bg: "#fef2f2",
-            border: "#fecaca",
+            btnClass: "btn-outline-danger",
           },
         ],
       }[request.status] || []
@@ -1109,7 +665,7 @@ const MaintenanceDetail = () => {
         <p className="text-danger small">{error}</p>
         <button
           className="btn btn-sm btn-light rounded-3"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/maintenance")}
         >
           Quay lại
         </button>
@@ -1117,9 +673,7 @@ const MaintenanceDetail = () => {
     );
 
   return (
-    <div
-      style={{ background: "#f5f6fa", minHeight: "100vh", paddingBottom: 48 }}
-    >
+    <div className="container-fluid py-4">
       {lightbox.open && request?.images?.length > 0 && (
         <Lightbox
           images={request.images}
@@ -1128,225 +682,155 @@ const MaintenanceDetail = () => {
         />
       )}
 
-      {/* Top bar */}
-      <div
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "12px 0",
-        }}
-      >
-        <div className="container-fluid px-4 d-flex align-items-center justify-content-between">
+      {/* ── Header (giống ProfileDetail) ── */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex align-items-center gap-3">
           <button
-            className="btn btn-sm btn-light d-flex align-items-center gap-2 rounded-3"
-            style={{ fontSize: 12 }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/maintenance")}
+            className="btn btn-light border-0 shadow-sm rounded-circle p-2"
           >
-            <FaArrowLeft size={11} /> Quay lại danh sách
+            <FaArrowLeft className="text-muted" />
           </button>
-          <div className="d-flex align-items-center gap-3">
-            <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>
-              Yêu cầu #{request?.requestId}
+          <div>
+            <h4 className="fw-bold text-dark mb-0">CHI TIẾT BÁO HỎNG</h4>
+            <span className="badge bg-primary-subtle text-primary mt-1">
+              ID: #MR-{request?.requestId}
             </span>
-            <button
-              className="btn btn-sm d-flex align-items-center gap-2 rounded-3"
-              style={{
-                fontSize: 12,
-                background: "#fff",
-                border: "1px solid #fca5a5",
-                color: "#dc2626",
-              }}
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? (
-                <span
-                  className="spinner-border spinner-border-sm"
-                  style={{ width: 12, height: 12 }}
-                />
-              ) : (
-                <FaTrash size={11} />
-              )}
-              Xóa
-            </button>
           </div>
+        </div>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-primary shadow-sm d-flex align-items-center gap-2 px-4"
+            onClick={() => navigate(`/maintenance/${requestId}/edit`)}
+          >
+            <FaEdit size={13} /> Chỉnh sửa
+          </button>
+          <button
+            className="btn btn-outline-danger shadow-sm d-flex align-items-center gap-2"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <span
+                className="spinner-border spinner-border-sm"
+                style={{ width: 13, height: 13 }}
+              />
+            ) : (
+              <FaTrash size={13} />
+            )}
+            Xóa
+          </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="container-fluid px-4 mt-4" style={{ maxWidth: 1100 }}>
-        <div className="row g-3">
-          {/* ── Cột trái ── */}
-          <div className="col-12 col-lg-8">
-            {/* Card chính */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                overflow: "hidden",
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px 20px",
-                  borderBottom: "1px solid #f0f0f0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 8,
-                }}
-              >
-                <div className="d-flex align-items-center gap-3">
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      background: "#fef9ec",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FaTools color="#d97706" size={16} />
-                  </div>
-                  <div>
-                    <div
-                      style={{ fontWeight: 600, fontSize: 14, color: "#111" }}
-                    >
-                      Yêu cầu sửa chữa
-                    </div>
-                    <div className="d-flex align-items-center gap-3 mt-1">
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "#6b7280",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <FaHome size={10} /> {request?.roomName}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "#6b7280",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <FaUser size={10} /> {request?.creatorName || "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <StatusBadge status={request?.status} />
-              </div>
-
-              <div style={{ padding: "16px 20px" }}>
-                <div style={{ marginBottom: 20 }}>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#9ca3af",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.8,
-                      fontWeight: 600,
-                      marginBottom: 8,
-                    }}
-                  >
-                    Mô tả sự cố
-                  </div>
-                  <div
-                    style={{
-                      background: "#f9fafb",
-                      borderRadius: 8,
-                      padding: "12px 14px",
-                      fontSize: 14,
-                      lineHeight: 1.75,
-                      color: "#111",
-                      border: "1px solid #f0f0f0",
-                    }}
-                  >
-                    {request?.description}
-                  </div>
+      {/* ── Nội dung ── */}
+      <div className="row g-3">
+        {/* ── Cột trái ── */}
+        <div className="col-12 col-lg-8">
+          {/* Card chính */}
+          <div className="card border-0 shadow-sm rounded-3 mb-3">
+            <div className="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="rounded-3 d-flex align-items-center justify-content-center bg-warning-subtle"
+                  style={{ width: 44, height: 44, flexShrink: 0 }}
+                >
+                  <FaTools className="text-warning" size={18} />
                 </div>
                 <div>
-                  <InfoRow label="Ngày gửi">
-                    <span
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <FaCalendarAlt size={11} color="#d97706" />
-                      {formatDate(request?.createdAt)}
+                  <div className="fw-bold">Yêu cầu sửa chữa</div>
+                  <div className="d-flex align-items-center gap-3 mt-1">
+                    <span className="text-muted small d-flex align-items-center gap-1">
+                      <FaHome size={10} /> {request?.roomName}
                     </span>
-                  </InfoRow>
-                  {request?.updatedAt && (
-                    <InfoRow label="Cập nhật lúc">
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <FaCalendarAlt size={11} color="#9ca3af" />
-                        {formatDate(request?.updatedAt)}
-                      </span>
-                    </InfoRow>
-                  )}
-                  {request?.assetName && (
-                    <InfoRow label="Tài sản liên quan">
-                      {request.assetName}
-                    </InfoRow>
-                  )}
+                    <span className="text-muted small d-flex align-items-center gap-1">
+                      <FaUser size={10} /> {request?.creatorName || "—"}
+                    </span>
+                  </div>
                 </div>
               </div>
+              <StatusBadge status={request?.status} />
             </div>
 
-            {/* Ảnh đính kèm */}
-            {request?.images?.length > 0 && (
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: 12,
-                  border: "1px solid #e5e7eb",
-                  padding: "16px 20px",
-                  marginBottom: 12,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    fontWeight: 600,
-                    marginBottom: 12,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
+            <div className="card-body">
+              {/* Mô tả sự cố */}
+              <div className="mb-4">
+                <p
+                  className="text-muted small fw-semibold text-uppercase mb-2"
+                  style={{ letterSpacing: 0.8 }}
                 >
-                  <FaImages size={11} /> Ảnh đính kèm ({request.images.length})
+                  Mô tả sự cố
+                </p>
+                <div
+                  className="bg-light rounded-3 p-3 small"
+                  style={{ lineHeight: 1.75, color: "#111" }}
+                >
+                  {request?.description}
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              </div>
+
+              {/* Thông tin chi tiết dạng bảng */}
+              <table className="table table-borderless table-sm mb-0">
+                <tbody>
+                  <tr>
+                    <td
+                      className="text-muted small ps-0"
+                      style={{ width: 140 }}
+                    >
+                      Ngày gửi
+                    </td>
+                    <td className="small fw-semibold">
+                      <FaCalendarAlt size={11} className="text-warning me-1" />
+                      {formatDate(request?.createdAt)}
+                    </td>
+                  </tr>
+                  {request?.updatedAt && (
+                    <tr>
+                      <td className="text-muted small ps-0">Cập nhật lúc</td>
+                      <td className="small fw-semibold">
+                        <FaCalendarAlt
+                          size={11}
+                          className="text-secondary me-1"
+                        />
+                        {formatDate(request?.updatedAt)}
+                      </td>
+                    </tr>
+                  )}
+                  {request?.assetName && (
+                    <tr>
+                      <td className="text-muted small ps-0">
+                        Tài sản liên quan
+                      </td>
+                      <td className="small fw-semibold">{request.assetName}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Ảnh đính kèm */}
+          {request?.images?.length > 0 && (
+            <div className="card border-0 shadow-sm rounded-3 mb-3">
+              <div className="card-header bg-white border-0 py-3">
+                <span
+                  className="text-muted small fw-semibold text-uppercase d-flex align-items-center gap-2"
+                  style={{ letterSpacing: 0.8 }}
+                >
+                  <FaImages size={12} /> Ảnh đính kèm ({request.images.length})
+                </span>
+              </div>
+              <div className="card-body">
+                <div className="d-flex flex-wrap gap-2">
                   {request.images.map((img, i) => (
                     <div
                       key={img.imageId}
                       onClick={() => setLightbox({ open: true, index: i })}
+                      className="rounded-3 overflow-hidden border"
                       style={{
                         width: 100,
                         height: 100,
-                        borderRadius: 8,
-                        overflow: "hidden",
                         cursor: "pointer",
-                        border: "1px solid #e5e7eb",
                         transition: "transform 0.15s",
                       }}
                       onMouseEnter={(e) =>
@@ -1373,37 +857,28 @@ const MaintenanceDetail = () => {
                   ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Form ghi nhận chi phí */}
-            {showExpenseForm && (
-              <ExpenseForm request={request} onSuccess={() => {}} />
-            )}
-          </div>
+          {/* Form ghi nhận chi phí */}
+          {showExpenseForm && (
+            <ExpenseForm request={request} onSuccess={() => {}} />
+          )}
+        </div>
 
-          {/* ── Cột phải ── */}
-          <div className="col-12 col-lg-4">
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                padding: "18px 20px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "#9ca3af",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.8,
-                  fontWeight: 600,
-                  marginBottom: 12,
-                }}
+        {/* ── Cột phải ── */}
+        <div className="col-12 col-lg-4">
+          {/* Cập nhật trạng thái */}
+          <div className="card border-0 shadow-sm rounded-3 mb-3">
+            <div className="card-header bg-white border-0 py-3">
+              <p
+                className="text-muted small fw-semibold text-uppercase mb-0"
+                style={{ letterSpacing: 0.8 }}
               >
                 Cập nhật trạng thái
-              </div>
-
+              </p>
+            </div>
+            <div className="card-body">
               {canTransition ? (
                 <div className="d-flex flex-column gap-2">
                   {nextActions.map((action) => (
@@ -1411,21 +886,7 @@ const MaintenanceDetail = () => {
                       key={action.status}
                       onClick={() => handleStatusChange(action.status)}
                       disabled={updating}
-                      style={{
-                        background: action.bg,
-                        color: action.color,
-                        border: `1px solid ${action.border}`,
-                        borderRadius: 8,
-                        padding: "10px 14px",
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        opacity: updating ? 0.6 : 1,
-                        transition: "opacity 0.15s",
-                      }}
+                      className={`btn btn-sm ${action.btnClass} d-flex align-items-center gap-2 fw-semibold`}
                     >
                       {updating ? (
                         <span
@@ -1440,193 +901,134 @@ const MaintenanceDetail = () => {
                   ))}
                 </div>
               ) : (
-                <div
-                  style={{
-                    background: "#f9fafb",
-                    borderRadius: 8,
-                    padding: "12px",
-                    textAlign: "center",
-                    color: "#9ca3af",
-                    fontSize: 12,
-                    border: "1px solid #f0f0f0",
-                  }}
-                >
+                <div className="text-center text-muted small bg-light rounded-3 py-3 px-2">
                   Yêu cầu đã kết thúc
                 </div>
               )}
 
               {request?.status === "PROCESSING" && (
-                <div
-                  style={{
-                    marginTop: 14,
-                    background: "#fefce8",
-                    borderRadius: 8,
-                    padding: "10px 12px",
-                    border: "1px solid #fef08a",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#854d0e",
-                      fontWeight: 600,
-                      marginBottom: 4,
-                    }}
-                  >
-                    💡 Gợi nhắc
-                  </div>
-                  <div
-                    style={{ fontSize: 11, color: "#713f12", lineHeight: 1.5 }}
-                  >
-                    Đừng quên ghi nhận chi phí xử lý bên dưới sau khi hoàn tất
-                    sửa chữa.
-                  </div>
+                <div className="alert alert-warning py-2 px-3 mt-3 small mb-0">
+                  <div className="fw-bold mb-1">💡 Gợi nhắc</div>
+                  Đừng quên ghi nhận chi phí xử lý bên dưới sau khi hoàn tất sửa
+                  chữa.
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* Timeline */}
-              <div
-                style={{
-                  marginTop: 24,
-                  borderTop: "1px solid #f0f0f0",
-                  paddingTop: 18,
-                }}
+          {/* Timeline */}
+          <div className="card border-0 shadow-sm rounded-3">
+            <div className="card-header bg-white border-0 py-3">
+              <p
+                className="text-muted small fw-semibold text-uppercase mb-0"
+                style={{ letterSpacing: 0.8 }}
               >
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    fontWeight: 600,
-                    marginBottom: 14,
-                  }}
-                >
-                  Tiến trình
-                </div>
-                {["PENDING", "PROCESSING", "COMPLETED"].map((s, i) => {
-                  const statuses = [
-                    "PENDING",
-                    "PROCESSING",
-                    "COMPLETED",
-                    "CANCELLED",
-                  ];
-                  const currentIdx = statuses.indexOf(request?.status);
-                  const stepIdx = [
-                    "PENDING",
-                    "PROCESSING",
-                    "COMPLETED",
-                  ].indexOf(s);
-                  const isCancelled = request?.status === "CANCELLED";
-                  const isDone = !isCancelled && currentIdx > stepIdx;
-                  const isCurrent = !isCancelled && request?.status === s;
-                  const cfg = STATUS_CONFIG[s];
-                  return (
-                    <div
-                      key={s}
-                      style={{
-                        display: "flex",
-                        gap: 12,
-                        marginBottom: i < 2 ? 10 : 0,
-                      }}
-                    >
+                Tiến trình
+              </p>
+            </div>
+            <div className="card-body pt-2">
+              {["PENDING", "PROCESSING", "COMPLETED"].map((s, i) => {
+                const statuses = [
+                  "PENDING",
+                  "PROCESSING",
+                  "COMPLETED",
+                  "CANCELLED",
+                ];
+                const currentIdx = statuses.indexOf(request?.status);
+                const stepIdx = ["PENDING", "PROCESSING", "COMPLETED"].indexOf(
+                  s,
+                );
+                const isCancelled = request?.status === "CANCELLED";
+                const isDone = !isCancelled && currentIdx > stepIdx;
+                const isCurrent = !isCancelled && request?.status === s;
+                const cfg = STATUS_CONFIG[s];
+                return (
+                  <div
+                    key={s}
+                    className="d-flex gap-3"
+                    style={{ marginBottom: i < 2 ? 8 : 0 }}
+                  >
+                    <div className="d-flex flex-column align-items-center">
                       <div
+                        className="rounded-circle d-flex align-items-center justify-content-center"
                         style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
+                          width: 24,
+                          height: 24,
+                          flexShrink: 0,
+                          background: isDone
+                            ? cfg.dot
+                            : isCurrent
+                              ? "#fff"
+                              : "#f3f4f6",
+                          border: `2px solid ${isCurrent ? cfg.dot : isDone ? cfg.dot : "#e5e7eb"}`,
                         }}
                       >
-                        <div
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            background: isDone
-                              ? cfg.dot
-                              : isCurrent
-                                ? cfg.bg
-                                : "#f3f4f6",
-                            border: `2px solid ${isCurrent ? cfg.dot : isDone ? cfg.dot : "#e5e7eb"}`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {isDone && <FaCheck size={9} color="#fff" />}
-                          {isCurrent && (
-                            <span
-                              style={{
-                                width: 7,
-                                height: 7,
-                                borderRadius: "50%",
-                                background: cfg.dot,
-                              }}
-                            />
-                          )}
-                        </div>
-                        {i < 2 && (
-                          <div
+                        {isDone && <FaCheck size={9} color="#fff" />}
+                        {isCurrent && (
+                          <span
                             style={{
-                              width: 2,
-                              height: 18,
-                              background: isDone ? cfg.dot : "#e5e7eb",
-                              marginTop: 2,
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              background: cfg.dot,
+                              display: "block",
                             }}
                           />
                         )}
                       </div>
-                      <div style={{ paddingTop: 2 }}>
-                        <p
+                      {i < 2 && (
+                        <div
                           style={{
-                            fontSize: 12,
-                            marginBottom: 0,
-                            fontWeight: isCurrent ? 600 : 400,
-                            color: isCurrent
-                              ? cfg.color
-                              : isDone
-                                ? "#374151"
-                                : "#9ca3af",
+                            width: 2,
+                            height: 18,
+                            background: isDone ? cfg.dot : "#e5e7eb",
+                            marginTop: 2,
                           }}
-                        >
-                          {cfg.label}
-                        </p>
-                      </div>
+                        />
+                      )}
                     </div>
-                  );
-                })}
-                {request?.status === "CANCELLED" && (
-                  <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                    <div
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: "50%",
-                        background: STATUS_CONFIG.CANCELLED.bg,
-                        border: `2px solid ${STATUS_CONFIG.CANCELLED.dot}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FaBan size={9} color={STATUS_CONFIG.CANCELLED.dot} />
-                    </div>
-                    <div style={{ paddingTop: 2 }}>
+                    <div style={{ paddingTop: 3 }}>
                       <p
+                        className="mb-0 small"
                         style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: STATUS_CONFIG.CANCELLED.color,
-                          marginBottom: 0,
+                          fontWeight: isCurrent ? 600 : 400,
+                          color: isCurrent
+                            ? cfg.dot
+                            : isDone
+                              ? "#374151"
+                              : "#9ca3af",
                         }}
                       >
-                        Đã hủy
+                        {cfg.label}
                       </p>
                     </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
+              {request?.status === "CANCELLED" && (
+                <div className="d-flex gap-3 mt-2">
+                  <div
+                    className="rounded-circle d-flex align-items-center justify-content-center"
+                    style={{
+                      width: 24,
+                      height: 24,
+                      background: STATUS_CONFIG.CANCELLED.badgeBg,
+                      border: `2px solid ${STATUS_CONFIG.CANCELLED.dot}`,
+                    }}
+                  >
+                    <FaBan size={9} color={STATUS_CONFIG.CANCELLED.dot} />
+                  </div>
+                  <p
+                    className="mb-0 small fw-bold"
+                    style={{
+                      color: STATUS_CONFIG.CANCELLED.dot,
+                      paddingTop: 3,
+                    }}
+                  >
+                    Đã hủy
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

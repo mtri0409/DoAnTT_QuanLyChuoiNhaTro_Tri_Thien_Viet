@@ -11,6 +11,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import apiContract from "../../api/apiContract";
+import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -38,7 +39,7 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-// Format mã hợp đồng: HD-00001 (tránh trùng dạng số thuần)
+// Format mã hợp đồng: HD-00001
 const formatContractCode = (id) => {
   if (!id) return "N/A";
   return `HD-${String(id).padStart(5, "0")}`;
@@ -64,37 +65,66 @@ const ListContract = () => {
   // Filter trạng thái
   const [filterStatus, setFilterStatus] = useState("");
 
+  // Filter chi nhánh
+  const [branches, setBranches] = useState([]);
+  const [filterBranch, setFilterBranch] = useState(""); // branchId dạng string
+
   // Sort
   const [sortBy, setSortBy] = useState("contractId");
   const [sortOrder, setSortOrder] = useState("desc");
 
+  // ====================== FETCH BRANCHES ======================
+  useEffect(() => {
+    const loadBranches = async () => {
+      try {
+        const res = await apiBranches.getAllBranches(
+          1,
+          1000,
+          "branchId",
+          "asc",
+          "",
+        );
+        const list =
+          res?.content || res?.data?.content || res?.data || res || [];
+        setBranches(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error("Lỗi tải chi nhánh:", err);
+        setBranches([]);
+      }
+    };
+    loadBranches();
+  }, []);
+
   // ====================== FETCH DATA ======================
+  // [FIX] Toàn bộ logic fetch đều đi qua filterContracts khi có filterBranch hoặc filterStatus.
+  // Search vẫn dùng searchContracts riêng (không kết hợp branchId — nếu cần, mở rộng backend sau).
   const fetchContracts = async () => {
     setLoading(true);
     try {
-      const pageForBackend = currentPage - 1; // Backend dùng 0-based
-
       let response;
 
       if (appliedSearch.trim()) {
+        // Khi search: gọi endpoint search (pageNumber 1-based, backend tự -1)
         response = await apiContract.searchContracts(
           appliedSearch.trim(),
-          pageForBackend,
+          currentPage,
           10,
           sortBy,
           sortOrder,
         );
-      } else if (filterStatus) {
-        response = await apiContract.getContractsByStatus(
-          filterStatus,
-          pageForBackend,
+      } else if (filterBranch || filterStatus) {
+        // [FIX] Khi có filter chi nhánh hoặc trạng thái: gọi endpoint filter backend
+        response = await apiContract.filterContracts(
+          filterStatus || null,
+          filterBranch ? Number(filterBranch) : null,
+          currentPage,
           10,
           sortBy,
           sortOrder,
         );
       } else {
         response = await apiContract.getAllContracts(
-          pageForBackend,
+          currentPage,
           10,
           sortBy,
           sortOrder,
@@ -104,12 +134,7 @@ const ListContract = () => {
       setData(response);
     } catch (err) {
       console.error("Lỗi tải hợp đồng:", err);
-      setData({
-        content: [],
-        pageNumber: 0,
-        totalPages: 0,
-        totalElements: 0,
-      });
+      setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
     } finally {
       setLoading(false);
     }
@@ -118,14 +143,24 @@ const ListContract = () => {
   // ====================== EFFECTS ======================
   useEffect(() => {
     fetchContracts();
-  }, [currentPage, appliedSearch, filterStatus, sortBy, sortOrder]);
+  }, [
+    currentPage,
+    appliedSearch,
+    filterStatus,
+    filterBranch,
+    sortBy,
+    sortOrder,
+  ]);
 
   // ====================== HANDLERS ======================
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setCurrentPage(1);
     setAppliedSearch(searchTerm);
-    setFilterStatus(""); // Tắt filter khi search
+    // [FIX] Không tắt filter chi nhánh khi search nữa để UX nhất quán
+    // (nếu muốn kết hợp search + branch thì mở rộng backend sau)
+    setFilterStatus("");
+    setFilterBranch("");
   };
 
   const handleClearSearch = () => {
@@ -134,14 +169,22 @@ const ListContract = () => {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (e) => {
+  const handleStatusChange = (e) => {
     setFilterStatus(e.target.value);
-    setAppliedSearch(""); // Tắt search khi filter
+    setAppliedSearch("");
     setSearchTerm("");
     setCurrentPage(1);
   };
 
-  // Nhất quán với ListProfile: nhận page (0-based từ Pagination) → +1 để lưu
+  // [FIX] Lọc chi nhánh giờ là server-side, không cần filter client-side nữa
+  const handleBranchChange = (e) => {
+    setFilterBranch(e.target.value);
+    setAppliedSearch("");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
+  // Pagination component trả về 0-based → +1 để lưu vào currentPage (1-based)
   const handlePageChange = (page) => {
     setCurrentPage(page + 1);
   };
@@ -158,7 +201,6 @@ const ListContract = () => {
       setLoading(true);
       await apiContract.deleteContract(id);
       alert("Xóa hợp đồng thành công!");
-
       if (data.content.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       } else {
@@ -187,6 +229,9 @@ const ListContract = () => {
       setAutoUpdating(false);
     }
   };
+
+  // [FIX] Không còn lọc client-side theo chi nhánh — dữ liệu đã được lọc từ backend
+  const displayedContent = data.content || [];
 
   return (
     <div className="container-fluid py-4">
@@ -248,12 +293,28 @@ const ListContract = () => {
           </form>
 
           {/* Filter & Sort */}
-          <div className="d-flex gap-2 flex-nowrap align-items-center">
+          <div className="d-flex gap-2 flex-nowrap align-items-center flex-wrap">
+            {/* [FIX] Lọc theo chi nhánh — gọi backend, không filter client-side */}
+            <select
+              className="form-select form-select-sm border-0 bg-light"
+              style={{ minWidth: "180px" }}
+              value={filterBranch}
+              onChange={handleBranchChange}
+              title="Lọc theo chi nhánh"
+            >
+              <option value="">Tất cả chi nhánh</option>
+              {branches.map((b) => (
+                <option key={b.branchId} value={b.branchId}>
+                  {b.branchName || b.name || `Chi nhánh #${b.branchId}`}
+                </option>
+              ))}
+            </select>
+
             <select
               className="form-select form-select-sm border-0 bg-light"
               style={{ minWidth: "160px" }}
               value={filterStatus}
-              onChange={handleFilterChange}
+              onChange={handleStatusChange}
             >
               <option value="">Tất cả trạng thái</option>
               <option value="ACTIVE">Đang hiệu lực</option>
@@ -294,6 +355,7 @@ const ListContract = () => {
         </div>
 
         {/* BẢNG DỮ LIỆU */}
+        {/* [FIX] Bỏ cột "Chi nhánh" khỏi bảng — chỉ dùng để lọc */}
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
@@ -315,8 +377,8 @@ const ListContract = () => {
                     Đang tải...
                   </td>
                 </tr>
-              ) : data.content && data.content.length > 0 ? (
-                data.content.map((item) => {
+              ) : displayedContent.length > 0 ? (
+                displayedContent.map((item) => {
                   const badge = getStatusBadge(item.status);
                   return (
                     <tr key={item.contractId}>
@@ -334,6 +396,7 @@ const ListContract = () => {
                             (item.roomId ? `Phòng #${item.roomId}` : "N/A")}
                         </span>
                       </td>
+                      {/* [FIX] Đã xóa cột Chi nhánh */}
                       <td className="small">{formatDate(item.startDate)}</td>
                       <td className="small">{formatDate(item.endDate)}</td>
                       <td className="small fw-semibold text-dark">
@@ -376,13 +439,6 @@ const ListContract = () => {
                           >
                             <FaEdit className="text-primary" />
                           </button>
-                          {/* <button
-                            className="btn btn-sm btn-light border-0"
-                            title="Xóa"
-                            onClick={() => handleDelete(item.contractId)}
-                          >
-                            <FaTrash className="text-danger" />
-                          </button> */}
                         </div>
                       </td>
                     </tr>
@@ -399,7 +455,7 @@ const ListContract = () => {
           </table>
         </div>
 
-        {/* PHÂN TRANG - nhất quán với ListProfile */}
+        {/* PHÂN TRANG */}
         <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
           <small className="text-muted">
             Tổng: {data.totalElements} hợp đồng

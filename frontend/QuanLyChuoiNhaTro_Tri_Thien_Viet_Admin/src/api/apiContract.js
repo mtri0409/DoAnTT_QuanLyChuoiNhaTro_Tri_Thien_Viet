@@ -18,6 +18,27 @@ const apiContract = {
     });
   },
 
+  // [FIX] Lọc hợp đồng theo status + branchId phía backend (thay thế lọc client-side)
+  filterContracts: (
+    status = null,
+    branchId = null,
+    pageNumber = 0,
+    pageSize = 10,
+    sortBy = "contractId",
+    sortOrder = "desc",
+  ) => {
+    return axiosClient.get("/admin/contracts/filter", {
+      params: {
+        ...(status ? { status } : {}),
+        ...(branchId ? { branchId } : {}),
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortOrder,
+      },
+    });
+  },
+
   // Tìm kiếm hợp đồng (có phân trang + sort)
   searchContracts: (
     keyword,

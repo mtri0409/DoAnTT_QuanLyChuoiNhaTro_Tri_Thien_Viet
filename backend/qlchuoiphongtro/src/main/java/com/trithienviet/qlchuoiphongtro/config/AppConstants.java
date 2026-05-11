@@ -34,8 +34,8 @@ public class AppConstants {
             "/api/amenities/**",
             "/api/contracts",
             "/api/maintenance/images/**",
-
             // "/api/admocr/**",
+            "/api/admin/expenses/evidence/**",
 
             "/error"
     };

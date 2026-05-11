@@ -27,5 +27,7 @@ public class ContractDTO {
     private Long representativeId;
     private List<Long> memberIds;
     private ContractStatus status;
+    private Long branchId;
+    private String branchName;
     private List<ContractServiceDTO> contractServices;
 }

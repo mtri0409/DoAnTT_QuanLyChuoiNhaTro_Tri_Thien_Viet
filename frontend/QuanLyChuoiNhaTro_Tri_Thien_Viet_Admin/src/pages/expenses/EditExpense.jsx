@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaCheck,
-  FaBuilding,
-  FaFileInvoiceDollar,
-  FaTools,
-  FaExclamationCircle,
+  FaSync,
   FaCloudUploadAlt,
   FaTimesCircle,
   FaImage,
-  FaPlus,
+  FaExclamationCircle,
   FaTag,
   FaUser,
   FaCalendarAlt,
   FaMoneyBillWave,
+  FaExternalLinkAlt,
 } from "react-icons/fa";
 import apiExpenses from "../../api/apiExpenses";
-import apiBranch from "../../api/apiBranches";
 import axiosInstance from "../../api/axios";
 
 const EXPENSE_CATEGORIES = [
@@ -69,38 +66,66 @@ const FieldLabel = ({ children, required }) => (
   </label>
 );
 
-// ══ CreateExpense ══════════════════════════════════════════════════════════════
-const CreateExpense = () => {
+// ── MetaBadge (thông tin readonly của expense) ────────────────────────────────
+const MetaBadge = ({ label, value, colorClass = "bg-light text-dark" }) => (
+  <div
+    className={`rounded-3 px-3 py-2 ${colorClass} border d-flex align-items-center gap-2`}
+  >
+    <span className="text-muted small">{label}:</span>
+    <span className="fw-semibold small">{value}</span>
+  </div>
+);
+
+// ══ EditExpense ════════════════════════════════════════════════════════════════
+const EditExpense = () => {
+  const { expenseId: id } = useParams();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [branches, setBranches] = useState([]);
-  const [evidenceFile, setEvidenceFile] = useState(null);
-  const [evidencePreview, setEvidencePreview] = useState("");
-  const fileInputRef = useRef(null);
+  const [expense, setExpense] = useState(null);
 
   const [form, setForm] = useState({
-    payer: "OWNER_COST",
     expenseCategory: "",
     amount: "",
-    paymentDate: "",
     payeeName: "",
     description: "",
-    maintenanceRequestId: "",
-    branchId: "",
+    paymentDate: "",
   });
 
+  const [evidenceFile, setEvidenceFile] = useState(null);
+  const [evidencePreview, setEvidencePreview] = useState("");
+  const [existingEvidenceUrl, setExistingEvidenceUrl] = useState("");
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
-    const fetchBranches = async () => {
+    const fetchExpense = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       try {
-        const res = await apiBranch.getAllBranches(0, 50);
-        setBranches(res.content || []);
+        const res = await apiExpenses.getById(id);
+        const data = res?.data || res;
+        setExpense(data);
+        setForm({
+          expenseCategory: data.expenseCategory || "",
+          amount: data.amount || "",
+          payeeName: data.payeeName || "",
+          description: data.description || "",
+          paymentDate: data.paymentDate ? data.paymentDate.slice(0, 16) : "",
+        });
+        setExistingEvidenceUrl(data.evidenceUrl || "");
       } catch {
-        /* ignore */
+        setExpense(null);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchBranches();
-  }, []);
+    fetchExpense();
+  }, [id]);
 
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
@@ -110,6 +135,7 @@ const CreateExpense = () => {
     if (evidencePreview) URL.revokeObjectURL(evidencePreview);
     setEvidenceFile(file);
     setEvidencePreview(URL.createObjectURL(file));
+    setExistingEvidenceUrl("");
   };
 
   const handleRemoveFile = () => {
@@ -123,15 +149,11 @@ const CreateExpense = () => {
     e.preventDefault();
     setError("");
     if (!form.amount || Number(form.amount) <= 0)
-      return setError("Số tiền phải lớn hơn 0.");
-    if (form.payer === "TENANT_FAULT" && !form.maintenanceRequestId)
-      return setError("Lỗi khách cần nhập mã yêu cầu sửa chữa.");
-    if (form.payer === "OWNER_COST" && !form.branchId)
-      return setError("Chi phí trọ cần chọn chi nhánh.");
+      return setError("Số tiền không hợp lệ.");
 
     setSaving(true);
     try {
-      let evidenceUrl;
+      let evidenceUrl = existingEvidenceUrl || undefined;
       if (evidenceFile) {
         const formData = new FormData();
         formData.append("file", evidenceFile);
@@ -143,40 +165,72 @@ const CreateExpense = () => {
         evidenceUrl = (uploadRes?.data || uploadRes).url;
       }
 
-      await apiExpenses.create({
-        payer: form.payer,
+      await apiExpenses.update(id, {
         expenseCategory: form.expenseCategory || undefined,
         amount: Number(form.amount),
         paymentDate: form.paymentDate || undefined,
         payeeName: form.payeeName || undefined,
         evidenceUrl,
         description: form.description || undefined,
-        maintenanceRequestId: form.maintenanceRequestId
-          ? Number(form.maintenanceRequestId)
-          : undefined,
-        branchId: form.branchId ? Number(form.branchId) : undefined,
       });
-      alert("Tạo chi phí thành công!");
-      navigate("/expenses");
+
+      alert("Cập nhật chi phí thành công!");
+      navigate(`/expenses/${id}/detail`);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Không thể tạo chi phí. Vui lòng thử lại.",
+          "Không thể cập nhật. Vui lòng thử lại.",
       );
     } finally {
       setSaving(false);
     }
   };
 
-  const isTenantFault = form.payer === "TENANT_FAULT";
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="container-fluid py-5 text-center">
+        <FaSync
+          className="text-muted"
+          style={{ animation: "spin 1s linear infinite", fontSize: 24 }}
+        />
+        <div className="text-muted mt-2 small">Đang tải...</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!expense) {
+    return (
+      <div className="container-fluid py-5 text-center">
+        <div className="text-muted mb-3" style={{ fontSize: 40 }}>
+          🔍
+        </div>
+        <h6 className="fw-bold">Không tìm thấy chi phí</h6>
+        <p className="text-muted small">
+          Chi phí #{id} không tồn tại hoặc đã bị xóa.
+        </p>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={() => navigate("/expenses")}
+        >
+          Quay lại danh sách
+        </button>
+      </div>
+    );
+  }
+
+  const isTenantFault = expense.payer === "TENANT_FAULT";
 
   return (
     <div className="container-fluid py-4">
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
       {/* Header */}
       <div className="d-flex align-items-center gap-2 mb-4">
         <button
-          onClick={() => navigate("/expenses")}
+          onClick={() => navigate(`/expenses/${id}/detail`)}
           className="btn btn-sm btn-light border"
           title="Quay lại"
         >
@@ -184,10 +238,11 @@ const CreateExpense = () => {
         </button>
         <FaMoneyBillWave className="text-secondary fs-5" />
         <div>
-          <h4 className="fw-bold text-dark mb-0">Tạo chi phí mới</h4>
-          <p className="text-muted small mb-0">
-            Ghi nhận chi phí sửa chữa hoặc vận hành
-          </p>
+          <h4 className="fw-bold text-dark mb-0">
+            Chỉnh sửa chi phí{" "}
+            <span className="text-muted fw-normal">#{expense.expenseId}</span>
+          </h4>
+          <p className="text-muted small mb-0">Cập nhật thông tin chi phí</p>
         </div>
       </div>
 
@@ -195,177 +250,65 @@ const CreateExpense = () => {
         <div className="card border-0 shadow-sm rounded-3">
           <div className="card-body p-4">
             <div className="row g-4">
-              {/* ── CỘT TRÁI: Loại chi phí + Đối tượng ── */}
-              <div className="col-lg-5">
-                {/* Loại chi phí */}
-                <div className="card border-0 shadow-sm rounded-3 mb-4">
+              {/* ── CỘT TRÁI: Thông tin readonly ── */}
+              <div className="col-lg-4">
+                <div className="card border-0 shadow-sm rounded-3 h-100">
                   <div className="card-header bg-white border-0 py-3">
                     <SectionHeader
-                      icon={FaFileInvoiceDollar}
-                      title="Loại chi phí"
-                      subtitle="Chọn đối tượng chịu chi phí"
+                      icon={isTenantFault ? FaExternalLinkAlt : FaTag}
+                      title="Thông tin không thể sửa"
+                      subtitle="Chỉ đọc"
                     />
                   </div>
-                  <div className="card-body pt-0 px-4 pb-4">
-                    <div className="d-flex flex-column gap-2">
-                      {/* OWNER_COST */}
-                      <div
-                        className={`p-3 rounded-3 border d-flex align-items-center gap-3 ${
-                          form.payer === "OWNER_COST"
-                            ? "border-success bg-success-subtle"
-                            : "bg-light border-0"
-                        }`}
-                        style={{ cursor: "pointer", transition: "all 0.15s" }}
-                        onClick={() =>
-                          setForm((p) => ({
-                            ...p,
-                            payer: "OWNER_COST",
-                            maintenanceRequestId: "",
-                          }))
-                        }
-                      >
-                        <div
-                          className={`rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 ${
-                            form.payer === "OWNER_COST"
-                              ? "bg-success text-white"
-                              : "bg-white border"
-                          }`}
-                          style={{ width: 22, height: 22 }}
-                        >
-                          {form.payer === "OWNER_COST" && <FaCheck size={10} />}
-                        </div>
-                        <FaBuilding
-                          size={15}
-                          color={
-                            form.payer === "OWNER_COST" ? "#16a34a" : "#94a3b8"
-                          }
-                        />
-                        <div>
-                          <div
-                            className="fw-bold small"
-                            style={{
-                              color:
-                                form.payer === "OWNER_COST"
-                                  ? "#16a34a"
-                                  : "#374151",
-                            }}
-                          >
-                            Chi phí trọ
-                          </div>
-                          <div className="text-muted" style={{ fontSize: 11 }}>
-                            Vận hành nội bộ
-                          </div>
-                        </div>
+                  <div className="card-body pt-0 px-4 pb-4 d-flex flex-column gap-3">
+                    {/* Payer badge */}
+                    <div
+                      className={`rounded-3 p-3 text-white text-center`}
+                      style={{
+                        background: isTenantFault
+                          ? "linear-gradient(135deg,#3b82f6,#2563eb)"
+                          : "linear-gradient(135deg,#16a34a,#15803d)",
+                      }}
+                    >
+                      <div className="small fw-bold mb-1">
+                        {isTenantFault ? "Lỗi khách" : "Chi phí trọ"}
                       </div>
-
-                      {/* TENANT_FAULT */}
-                      <div
-                        className={`p-3 rounded-3 border d-flex align-items-center gap-3 ${
-                          isTenantFault
-                            ? "border-primary bg-primary-subtle"
-                            : "bg-light border-0"
-                        }`}
-                        style={{ cursor: "pointer", transition: "all 0.15s" }}
-                        onClick={() =>
-                          setForm((p) => ({
-                            ...p,
-                            payer: "TENANT_FAULT",
-                            branchId: "",
-                          }))
-                        }
-                      >
-                        <div
-                          className={`rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 ${
-                            isTenantFault
-                              ? "bg-primary text-white"
-                              : "bg-white border"
-                          }`}
-                          style={{ width: 22, height: 22 }}
-                        >
-                          {isTenantFault && <FaCheck size={10} />}
-                        </div>
-                        <FaFileInvoiceDollar
-                          size={15}
-                          color={isTenantFault ? "#3b82f6" : "#94a3b8"}
-                        />
-                        <div>
-                          <div
-                            className="fw-bold small"
-                            style={{
-                              color: isTenantFault ? "#3b82f6" : "#374151",
-                            }}
-                          >
-                            Lỗi khách
-                          </div>
-                          <div className="text-muted" style={{ fontSize: 11 }}>
-                            Phát sinh hóa đơn sửa chữa
-                          </div>
-                        </div>
+                      <div style={{ fontSize: 11, opacity: 0.85 }}>
+                        {isTenantFault
+                          ? "Phát sinh hóa đơn sửa chữa"
+                          : "Vận hành nội bộ"}
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Đối tượng liên kết */}
-                <div className="card border-0 shadow-sm rounded-3">
-                  <div className="card-header bg-white border-0 py-3">
-                    <SectionHeader
-                      icon={isTenantFault ? FaTools : FaBuilding}
-                      title={isTenantFault ? "Yêu cầu sửa chữa" : "Chi nhánh"}
-                    />
-                  </div>
-                  <div className="card-body pt-0 px-4 pb-4">
-                    {isTenantFault ? (
-                      <div>
-                        <FieldLabel required>Mã yêu cầu bảo trì</FieldLabel>
-                        <div className="input-group">
-                          <span className="input-group-text bg-light border-0 text-primary">
-                            <FaTools size={11} />
-                          </span>
-                          <input
-                            type="number"
-                            className="form-control bg-light border-0 py-2"
-                            placeholder="Nhập ID yêu cầu bảo trì..."
-                            value={form.maintenanceRequestId}
-                            onChange={f("maintenanceRequestId")}
-                            min={1}
-                          />
-                        </div>
-                        <div
-                          className="text-muted mt-1"
-                          style={{ fontSize: 11 }}
-                        >
-                          Hệ thống sẽ tự tạo hóa đơn REPAIR cho khách thuê.
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <FieldLabel required>Chi nhánh</FieldLabel>
-                        <div className="input-group">
-                          <span className="input-group-text bg-light border-0 text-success">
-                            <FaBuilding size={11} />
-                          </span>
-                          <select
-                            className="form-select bg-light border-0 py-2"
-                            value={form.branchId}
-                            onChange={f("branchId")}
-                          >
-                            <option value="">Chọn chi nhánh...</option>
-                            {branches.map((b) => (
-                              <option key={b.branchId} value={b.branchId}>
-                                {b.branchName}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
+                    {expense.branchName && (
+                      <MetaBadge label="Chi nhánh" value={expense.branchName} />
                     )}
+                    {expense.maintenanceRequestId && (
+                      <MetaBadge
+                        label="Yêu cầu SC"
+                        value={`#${expense.maintenanceRequestId}`}
+                      />
+                    )}
+                    {expense.invoiceId && (
+                      <MetaBadge
+                        label="Hóa đơn"
+                        value={`#${expense.invoiceId}`}
+                        colorClass="bg-info-subtle text-dark"
+                      />
+                    )}
+
+                    <div className="mt-auto pt-2 border-top">
+                      <p className="text-muted mb-0" style={{ fontSize: 11 }}>
+                        Loại chi phí, chi nhánh và hóa đơn không thể thay đổi
+                        sau khi tạo.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* ── CỘT PHẢI: Thông tin chi tiết ── */}
-              <div className="col-lg-7">
+              {/* ── CỘT PHẢI: Form chỉnh sửa ── */}
+              <div className="col-lg-8">
                 <div className="card border-0 shadow-sm rounded-3 h-100">
                   <div className="card-header bg-white border-0 py-3">
                     <SectionHeader icon={FaTag} title="Thông tin chi phí" />
@@ -373,7 +316,7 @@ const CreateExpense = () => {
                   <div className="card-body pt-0 px-4 pb-4 d-flex flex-column">
                     <div className="row g-3">
                       {/* Danh mục */}
-                      <div className="col-12 col-md-6">
+                      <div className="col-12">
                         <FieldLabel>Danh mục</FieldLabel>
                         <select
                           className="form-select bg-light border-0 py-2"
@@ -395,28 +338,20 @@ const CreateExpense = () => {
                         <input
                           type="number"
                           className="form-control bg-light border-0 py-2"
-                          placeholder="VD: 500000"
                           value={form.amount}
                           onChange={f("amount")}
                           min={1}
+                          placeholder="VD: 500000"
                         />
-                      </div>
-
-                      {/* Tên thợ */}
-                      <div className="col-12 col-md-6">
-                        <FieldLabel>Tên thợ / Đơn vị</FieldLabel>
-                        <div className="input-group">
-                          <span className="input-group-text bg-light border-0">
-                            <FaUser size={11} className="text-muted" />
-                          </span>
-                          <input
-                            type="text"
-                            className="form-control bg-light border-0 py-2"
-                            placeholder="VD: Thợ điện Minh Tuấn"
-                            value={form.payeeName}
-                            onChange={f("payeeName")}
-                          />
-                        </div>
+                        {isTenantFault && expense.invoiceId && (
+                          <div
+                            className="text-muted mt-1"
+                            style={{ fontSize: 11 }}
+                          >
+                            Thay đổi số tiền sẽ cập nhật hóa đơn #
+                            {expense.invoiceId} (nếu còn DRAFT/PENDING).
+                          </div>
+                        )}
                       </div>
 
                       {/* Ngày thanh toán */}
@@ -435,9 +370,72 @@ const CreateExpense = () => {
                         </div>
                       </div>
 
-                      {/* Upload bằng chứng */}
+                      {/* Tên thợ */}
+                      <div className="col-12">
+                        <FieldLabel>Tên thợ / Đơn vị thực hiện</FieldLabel>
+                        <div className="input-group">
+                          <span className="input-group-text bg-light border-0">
+                            <FaUser size={11} className="text-muted" />
+                          </span>
+                          <input
+                            type="text"
+                            className="form-control bg-light border-0 py-2"
+                            placeholder="VD: Thợ điện Minh Tuấn"
+                            value={form.payeeName}
+                            onChange={f("payeeName")}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Bằng chứng */}
                       <div className="col-12">
                         <FieldLabel>Bằng chứng (ảnh / hóa đơn)</FieldLabel>
+
+                        {/* Bằng chứng hiện tại */}
+                        {existingEvidenceUrl && !evidenceFile && (
+                          <div
+                            className="rounded-3 border p-3 d-flex align-items-center gap-3 mb-2"
+                            style={{ background: "#f8fafc" }}
+                          >
+                            <div
+                              className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{
+                                width: 48,
+                                height: 48,
+                                background: "#e2e8f0",
+                              }}
+                            >
+                              <FaImage size={20} className="text-muted" />
+                            </div>
+                            <div className="flex-fill overflow-hidden">
+                              <div className="fw-semibold small text-dark">
+                                Bằng chứng hiện tại
+                              </div>
+                              <a
+                                href={existingEvidenceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary small text-decoration-none text-truncate d-block"
+                                style={{ fontSize: 11 }}
+                              >
+                                {existingEvidenceUrl}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-light border-0 flex-shrink-0"
+                              onClick={() => setExistingEvidenceUrl("")}
+                              title="Xóa bằng chứng cũ"
+                            >
+                              <FaTimesCircle
+                                className="text-danger"
+                                size={14}
+                              />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Upload mới */}
                         {!evidenceFile ? (
                           <div
                             className="rounded-3 d-flex flex-column align-items-center justify-content-center gap-2 py-4"
@@ -457,6 +455,7 @@ const CreateExpense = () => {
                                   URL.revokeObjectURL(evidencePreview);
                                 setEvidenceFile(file);
                                 setEvidencePreview(URL.createObjectURL(file));
+                                setExistingEvidenceUrl("");
                               }
                             }}
                           >
@@ -467,7 +466,7 @@ const CreateExpense = () => {
                             <div className="small text-muted">
                               Kéo thả hoặc{" "}
                               <span className="text-primary fw-semibold">
-                                chọn file
+                                chọn file mới
                               </span>
                             </div>
                             <div
@@ -538,6 +537,7 @@ const CreateExpense = () => {
                             </button>
                           </div>
                         )}
+
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -575,7 +575,7 @@ const CreateExpense = () => {
                         <button
                           type="button"
                           className="btn btn-light border px-4 fw-semibold"
-                          onClick={() => navigate("/expenses")}
+                          onClick={() => navigate(`/expenses/${id}/detail`)}
                           disabled={saving}
                         >
                           Hủy bỏ
@@ -592,7 +592,7 @@ const CreateExpense = () => {
                             </>
                           ) : (
                             <>
-                              <FaPlus size={12} /> Tạo chi phí
+                              <FaCheck size={12} /> Lưu thay đổi
                             </>
                           )}
                         </button>
@@ -609,4 +609,4 @@ const CreateExpense = () => {
   );
 };
 
-export default CreateExpense;
+export default EditExpense;

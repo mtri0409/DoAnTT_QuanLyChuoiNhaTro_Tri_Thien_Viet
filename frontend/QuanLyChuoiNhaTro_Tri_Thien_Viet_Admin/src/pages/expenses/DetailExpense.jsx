@@ -4,7 +4,6 @@ import {
   FaArrowLeft,
   FaEdit,
   FaTrash,
-  FaMoneyBillWave,
   FaBuilding,
   FaFileInvoiceDollar,
   FaTools,
@@ -14,21 +13,9 @@ import {
   FaTag,
   FaInfoCircle,
   FaSync,
-  FaCheck,
-  FaTimes,
 } from "react-icons/fa";
 import apiExpenses from "../../api/apiExpenses";
-
-const EXPENSE_CATEGORIES = [
-  "Sửa điện",
-  "Sửa nước",
-  "Sửa điều hòa",
-  "Sửa cửa / khóa",
-  "Sơn tường",
-  "Thay thiết bị",
-  "Vệ sinh",
-  "Chi phí khác",
-];
+import axiosInstance from "../../api/axios";
 
 const fmt = (amount) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -43,178 +30,50 @@ const fmtDate = (dt) =>
       })
     : "—";
 
-// ── EditModal (inline trong trang detail) ──────────────────────────────────────
-const EditModal = ({ expense, onClose, onSaved }) => {
-  const [form, setForm] = useState({
-    expenseCategory: expense.expenseCategory || "",
-    amount: expense.amount || "",
-    payeeName: expense.payeeName || "",
-    evidenceUrl: expense.evidenceUrl || "",
-    description: expense.description || "",
-    paymentDate: expense.paymentDate ? expense.paymentDate.slice(0, 16) : "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+/**
+ * Xây dựng URL đầy đủ để load ảnh bằng chứng.
+ *
+ * Backend có thể trả evidenceUrl theo 3 dạng:
+ *   1. Tên file thô:   "Screenshot 2026-05-07.png"
+ *   2. Path tương đối: "/api/admin/expenses/evidence/uuid.jpg"
+ *   3. URL đầy đủ:     "https://..."
+ *
+ * Endpoint GET ảnh: GET /api/admin/expenses/evidence/{fileName}
+ */
+const buildEvidenceUrl = (evidenceUrl) => {
+  if (!evidenceUrl) return "";
 
-  const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  // Dạng 3: URL đầy đủ → dùng luôn
+  if (/^https?:\/\//i.test(evidenceUrl)) return evidenceUrl;
 
-  const handleSave = async () => {
-    if (!form.amount || Number(form.amount) <= 0)
-      return setErr("Số tiền không hợp lệ");
-    setSaving(true);
-    try {
-      const res = await apiExpenses.update(expense.expenseId, {
-        expenseCategory: form.expenseCategory || undefined,
-        amount: Number(form.amount),
-        paymentDate: form.paymentDate || undefined,
-        payeeName: form.payeeName || undefined,
-        evidenceUrl: form.evidenceUrl || undefined,
-        description: form.description || undefined,
-      });
-      onSaved(res?.data || res);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Không thể cập nhật");
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Lấy origin của backend từ axiosInstance baseURL
+  // VD baseURL = "http://localhost:8080/api" → origin = "http://localhost:8080"
+  const base = (axiosInstance.defaults.baseURL || "").replace(/\/+$/, "");
+  const originMatch = base.match(/^(https?:\/\/[^/]+)/);
+  const origin = originMatch ? originMatch[1] : "";
 
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 9000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-    >
-      <div
-        className="card border-0 shadow-lg"
-        style={{ width: "100%", maxWidth: 500, borderRadius: 16 }}
-      >
-        <div className="card-header bg-white border-0 d-flex align-items-center justify-content-between pt-4 px-4 pb-3">
-          <div>
-            <h6 className="fw-bold mb-0">Chỉnh sửa chi phí</h6>
-            <p className="text-muted small mb-0">#{expense.expenseId}</p>
-          </div>
-          <button
-            className="btn btn-sm btn-light rounded-circle"
-            onClick={onClose}
-          >
-            <FaTimes size={13} />
-          </button>
-        </div>
-        <div className="card-body px-4 pb-4">
-          <div className="row g-3">
-            <div className="col-12">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Danh mục
-              </label>
-              <select
-                className="form-select form-select-sm bg-light border-0"
-                value={form.expenseCategory}
-                onChange={f("expenseCategory")}
-              >
-                <option value="">Chọn danh mục...</option>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Số tiền (VNĐ) *
-              </label>
-              <input
-                type="number"
-                className="form-control form-control-sm bg-light border-0"
-                value={form.amount}
-                onChange={f("amount")}
-                min={1}
-              />
-            </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Ngày thanh toán
-              </label>
-              <input
-                type="datetime-local"
-                className="form-control form-control-sm bg-light border-0"
-                value={form.paymentDate}
-                onChange={f("paymentDate")}
-              />
-            </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Tên thợ / Đơn vị
-              </label>
-              <input
-                type="text"
-                className="form-control form-control-sm bg-light border-0"
-                value={form.payeeName}
-                onChange={f("payeeName")}
-              />
-            </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Link bằng chứng
-              </label>
-              <input
-                type="text"
-                className="form-control form-control-sm bg-light border-0"
-                value={form.evidenceUrl}
-                onChange={f("evidenceUrl")}
-              />
-            </div>
-            <div className="col-12">
-              <label className="form-label small fw-semibold text-muted text-uppercase">
-                Ghi chú
-              </label>
-              <textarea
-                rows={2}
-                className="form-control form-control-sm bg-light border-0"
-                value={form.description}
-                onChange={f("description")}
-              />
-            </div>
-            {err && (
-              <div className="col-12">
-                <div className="alert alert-danger py-2 small mb-0">{err}</div>
-              </div>
-            )}
-            <div className="col-12 d-flex gap-2 pt-1">
-              <button
-                className="btn btn-light flex-fill"
-                onClick={onClose}
-                disabled={saving}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? (
-                  <span className="spinner-border spinner-border-sm" />
-                ) : (
-                  <FaCheck size={11} />
-                )}
-                Lưu thay đổi
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Dạng 2: path có sẵn /api/... → ghép origin + path
+  if (evidenceUrl.startsWith("/api/")) {
+    return `${origin}${evidenceUrl}`;
+  }
+
+  // Dạng 2 khác: path tương đối bắt đầu bằng /
+  if (evidenceUrl.startsWith("/")) {
+    return `${origin}${evidenceUrl}`;
+  }
+
+  // Dạng 1: tên file thô → build đường dẫn chuẩn đến endpoint evidence
+  // GET /api/admin/expenses/evidence/{fileName}
+  return `${origin}/api/admin/expenses/evidence/${encodeURIComponent(evidenceUrl)}`;
 };
+
+/**
+ * Kiểm tra evidenceUrl có phải ảnh không.
+ * Hỗ trợ: tên file thô, path /evidence/..., URL đầy đủ.
+ */
+const isImageUrl = (url) =>
+  /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) ||
+  url.includes("/evidence/");
 
 // ── InfoRow ────────────────────────────────────────────────────────────────────
 const InfoRow = ({ icon, label, children }) => (
@@ -239,6 +98,138 @@ const InfoRow = ({ icon, label, children }) => (
   </div>
 );
 
+// ── EvidenceViewer ─────────────────────────────────────────────────────────────
+// Fetch ảnh qua axiosInstance để đảm bảo đúng auth header & base URL.
+// evidenceUrl có thể là: tên file thô, path /api/..., hoặc URL đầy đủ.
+const EvidenceViewer = ({ evidenceUrl }) => {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [status, setStatus] = useState("loading"); // "loading" | "ok" | "error"
+
+  useEffect(() => {
+    if (!evidenceUrl) {
+      setStatus("error");
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl = null;
+
+    const load = async () => {
+      setStatus("loading");
+      setBlobUrl(null);
+      try {
+        let axiosPath;
+        if (/^https?:\/\//i.test(evidenceUrl)) {
+          // URL đầy đủ → fetch trực tiếp
+          const res = await fetch(evidenceUrl);
+          if (!res.ok) throw new Error("fetch failed");
+          const blob = await res.blob();
+          if (!cancelled) {
+            objectUrl = URL.createObjectURL(blob);
+            setBlobUrl(objectUrl);
+            setStatus("ok");
+          }
+          return;
+        } else if (evidenceUrl.startsWith("/api/")) {
+          // Path có /api prefix → bỏ /api vì baseURL đã có sẵn
+          axiosPath = evidenceUrl.replace(/^\/api/, "");
+        } else if (evidenceUrl.startsWith("/")) {
+          axiosPath = evidenceUrl;
+        } else {
+          // Tên file thô → build path đến endpoint evidence
+          axiosPath = `/admin/expenses/evidence/${encodeURIComponent(evidenceUrl)}`;
+        }
+
+        const res = await axiosInstance.get(axiosPath, {
+          responseType: "blob",
+        });
+        const blob = res.data || res;
+        if (!cancelled) {
+          objectUrl = URL.createObjectURL(blob);
+          setBlobUrl(objectUrl);
+          setStatus("ok");
+        }
+      } catch {
+        if (!cancelled) setStatus("error");
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [evidenceUrl]);
+
+  if (!evidenceUrl) return null;
+
+  if (status === "loading") {
+    return (
+      <div
+        className="rounded-3 border d-flex align-items-center justify-content-center gap-2 mt-2"
+        style={{ height: 120, background: "#f8fafc", color: "#94a3b8" }}
+      >
+        <span className="spinner-border spinner-border-sm" />
+        <span className="small">Đang tải ảnh...</span>
+      </div>
+    );
+  }
+
+  if (status === "ok" && blobUrl) {
+    return (
+      <div className="mt-2">
+        <img
+          src={blobUrl}
+          alt="Bằng chứng"
+          className="rounded-3 border"
+          style={{
+            width: "100%",
+            maxHeight: 480,
+            objectFit: "contain",
+            display: "block",
+            background: "#f8fafc",
+            cursor: "zoom-in",
+          }}
+          onClick={() => window.open(blobUrl, "_blank")}
+          title="Nhấn để xem full size"
+        />
+        <div
+          className="text-muted mt-1 d-flex align-items-center gap-1"
+          style={{ fontSize: 11 }}
+        >
+          <FaExternalLinkAlt size={9} />
+          Nhấn vào ảnh để xem full size
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback khi không load được
+  const fallbackUrl = buildEvidenceUrl(evidenceUrl);
+  return (
+    <div className="mt-2">
+      <div
+        className="rounded-3 border d-flex flex-column align-items-center justify-content-center gap-2 py-4"
+        style={{ background: "#f8fafc", color: "#94a3b8" }}
+      >
+        <FaExternalLinkAlt size={18} />
+        <span className="small text-muted">
+          Không thể hiển thị ảnh trực tiếp
+        </span>
+        <a
+          href={fallbackUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
+        >
+          <FaExternalLinkAlt size={10} /> Xem bằng chứng
+        </a>
+      </div>
+    </div>
+  );
+};
+
 // ══ Trang chính ═══════════════════════════════════════════════════════════════
 const DetailExpense = () => {
   const { expenseId: id } = useParams();
@@ -246,7 +237,6 @@ const DetailExpense = () => {
 
   const [expense, setExpense] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editOpen, setEditOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const fetchDetail = async () => {
@@ -322,22 +312,13 @@ const DetailExpense = () => {
 
   return (
     <div className="container-fluid py-4">
-      {editOpen && (
-        <EditModal
-          expense={expense}
-          onClose={() => setEditOpen(false)}
-          onSaved={(updated) => {
-            setExpense(updated);
-            setEditOpen(false);
-          }}
-        />
-      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
           <button
-            className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+            className="btn btn-sm btn-light border d-flex align-items-center gap-2"
             onClick={() => navigate("/expenses")}
           >
             <FaArrowLeft size={12} /> Quay lại
@@ -355,7 +336,7 @@ const DetailExpense = () => {
         <div className="d-flex gap-2">
           <button
             className="btn btn-outline-primary btn-sm d-flex align-items-center gap-2"
-            onClick={() => setEditOpen(true)}
+            onClick={() => navigate(`/expenses/${expense.expenseId}/edit`)}
           >
             <FaEdit size={12} /> Chỉnh sửa
           </button>
@@ -378,9 +359,9 @@ const DetailExpense = () => {
       </div>
 
       <div className="row g-4">
-        {/* Cột trái: thông tin chính */}
+        {/* Cột trái */}
         <div className="col-12 col-lg-8">
-          {/* Tổng tiền nổi bật */}
+          {/* Tổng tiền */}
           <div
             className="card border-0 shadow-sm rounded-3 mb-4 text-white"
             style={{
@@ -450,14 +431,7 @@ const DetailExpense = () => {
                   icon={<FaExternalLinkAlt size={13} />}
                   label="Bằng chứng"
                 >
-                  <a
-                    href={expense.evidenceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary text-decoration-none d-inline-flex align-items-center gap-1"
-                  >
-                    Xem bằng chứng <FaExternalLinkAlt size={10} />
-                  </a>
+                  <EvidenceViewer evidenceUrl={expense.evidenceUrl} />
                 </InfoRow>
               )}
             </div>
@@ -466,7 +440,6 @@ const DetailExpense = () => {
 
         {/* Cột phải: liên kết */}
         <div className="col-12 col-lg-4">
-          {/* Chi nhánh */}
           {expense.branchName && (
             <div className="card border-0 shadow-sm rounded-3 mb-3">
               <div className="card-body p-3">
@@ -488,7 +461,6 @@ const DetailExpense = () => {
             </div>
           )}
 
-          {/* Yêu cầu bảo trì */}
           {expense.maintenanceRequestId && (
             <div className="card border-0 shadow-sm rounded-3 mb-3">
               <div className="card-body p-3">
@@ -517,7 +489,6 @@ const DetailExpense = () => {
             </div>
           )}
 
-          {/* Hóa đơn liên kết */}
           {expense.invoiceId && (
             <div className="card border-0 shadow-sm rounded-3 mb-3">
               <div className="card-body p-3">
@@ -542,7 +513,6 @@ const DetailExpense = () => {
             </div>
           )}
 
-          {/* Không có liên kết nào */}
           {!expense.branchName &&
             !expense.maintenanceRequestId &&
             !expense.invoiceId && (
@@ -557,8 +527,6 @@ const DetailExpense = () => {
             )}
         </div>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
