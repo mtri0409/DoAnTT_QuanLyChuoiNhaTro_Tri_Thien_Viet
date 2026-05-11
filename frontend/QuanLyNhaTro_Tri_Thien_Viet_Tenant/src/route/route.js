@@ -19,6 +19,8 @@ import ListMaintenanceRequest from "../pages/maintenance-request/ListMaintenance
 import MaintenanceRequestDetail from "../pages/maintenance-request/MaintenanceRequestDetail";
 import TenantContractDetail from "../pages/contract/ContractDetail";
 
+import CreateMaintenanceRequest from "../pages/maintenance-request/CreateRequestModal";
+
 const AdminRoute = [
   { path: "/", component: Home },
   { path: "user/profile/:id", component: ProfileDetail },
@@ -37,6 +39,7 @@ const AdminRoute = [
   { path: "user/posts/:postId/edit", component: EditPost },
   { path: "user/posts/:postId", component: PostDetail },
   { path: "user/requests", component: ListMaintenanceRequest },
+  { path: "user/requests/create", component: CreateMaintenanceRequest },
   { path: "user/requests/:requestId", component: MaintenanceRequestDetail },
 
   { path: "user/profile/:id", component: ProfileDetail },

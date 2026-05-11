@@ -111,9 +111,20 @@ public class InvoiceServiceImpl implements InvoiceService {
         Deposit deposit = depositRepo.findById(depositId)
                 .orElseThrow(() -> new RuntimeException("Deposit not found: " + depositId));
 
-        // Không cho tạo 2 hóa đơn cọc cho cùng 1 deposit
+        // Nếu deposit còn gắn invoice cũ đã kết thúc → unlink để tạo invoice mới
         if (deposit.getInvoice() != null) {
-            throw new RuntimeException("Deposit already has an invoice");
+            Invoice oldInvoice = deposit.getInvoice();
+            String oldStatus = oldInvoice.getStatus();
+            if (STATUS_PAID.equals(oldStatus) || STATUS_REFUNDED.equals(oldStatus)
+                    || STATUS_CANCELLED.equals(oldStatus)) {
+                oldInvoice.setDeposit(null);
+                invoiceRepo.save(oldInvoice);
+                deposit.setInvoice(null);
+            } else {
+                throw new RuntimeException(
+                        "Deposit still has an active invoice (status=" + oldStatus
+                                + "). Cannot create new deposit invoice.");
+            }
         }
 
         LocalDate now = LocalDate.now();
@@ -205,8 +216,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         invoice.setStatus(STATUS_REFUNDED);
 
+        // Sau khi hoàn cọc: deposit về PENDING + unlink contract
+        // để phòng sẵn sàng nhận hợp đồng mới
         if (invoice.getDeposit() != null) {
-            invoice.getDeposit().setStatus("REFUNDED");
+            Deposit deposit = invoice.getDeposit();
+            deposit.setStatus("PENDING");
+            deposit.setContract(null);
         }
 
         invoiceRepo.save(invoice);
