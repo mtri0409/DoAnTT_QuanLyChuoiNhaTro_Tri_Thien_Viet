@@ -6,7 +6,7 @@ public class NotificationConstant {
     public static final String TYPE_SYSTEM = "SYSTEM";
     public static final String TYPE_CONTRACT = "CONTRACT";
     public static final String TYPE_BILL = "BILL";
-     public static final String TYPE_OVER_BILL = "Over BILL";
+    public static final String TYPE_OVER_BILL = "Over BILL";
     public static final String TYPE_ACCOUNT = "ACCOUNT";
     public static final String TYPE_MAINTENANCE = "MAINTENANCE";
     public static final String TYPE_PROFILE_UPDATE = "PROFILE_UPDATE";
@@ -14,12 +14,15 @@ public class NotificationConstant {
     public static final String CONTRACT_CREATED_TITLE = "Hợp đồng thuê phòng mới";
     public static final String CONTRACT_CREATED_CONTENT = "Chào %s! Hợp đồng thuê phòng %s của bạn đã được khởi tạo thành công. Vui lòng kiểm tra lại thông tin.";
 
-     public static final String CONTRACT_ACTIVE_TITLE = "Hợp đồng được kích hoạt";
+    public static final String CONTRACT_ACTIVE_TITLE = "Hợp đồng được kích hoạt";
     public static final String CONTRACT_ACTIVE_CONTENT = "Chào %s! Hợp đồng thuê phòng %s của bạn đã được kích hoạt từ hôm nay. Vui lòng kiểm tra lại thông tin.";
-
 
     public static final String CONTRACT_EXPIRING_TITLE = "Hợp đồng sắp hết hạn";
     public static final String CONTRACT_EXPIRING_CONTENT = "Hợp đồng phòng %s của bạn sẽ hết hạn vào ngày %s. Vui lòng liên hệ quản lý để gia hạn.";
+
+    // --- MẪU THÔNG BÁO HỢP ĐỒNG (tiếp theo) ---
+    public static final String CONTRACT_TERMINATED_TITLE = "Hợp đồng bị chấm dứt trước hạn";
+    public static final String CONTRACT_TERMINATED_CONTENT = "Chào %s! Hợp đồng thuê phòng %s của bạn đã bị chấm dứt trước hạn. Vui lòng liên hệ quản lý để biết thêm chi tiết.";
 
     // --- MẪU THÔNG BÁO HÓA ĐƠN ---
     public static final String BILL_NEW_TITLE = "Hóa đơn tiền phòng mới";
@@ -38,4 +41,5 @@ public class NotificationConstant {
 
     public static final String PROFILE_INCOMPLETE_TITLE = "Cập nhật thông tin hồ sơ";
     public static final String PROFILE_INCOMPLETE_CONTENT = "Chào %s! Hồ sơ của bạn hiện đang thiếu thông tin quan trọng (CCCD/Ảnh định danh). Vui lòng cập nhật trước ngày %s để đảm bảo quyền lợi lưu trú.";
+
 }

@@ -35,7 +35,7 @@ public interface ContractService {
         PageResponse<ContractDTO> filterContracts(ContractStatus status, Long branchId, int pageNumber, int pageSize,
                         String sortBy, String sortOrder);
 
-        void terminateContract(Long contractId);
+        void terminateContract(Long contractId, String reason);
 
         void addMember(Long contractId, Long profileId);
 

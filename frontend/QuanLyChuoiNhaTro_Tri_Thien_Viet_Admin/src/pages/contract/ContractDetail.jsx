@@ -24,6 +24,7 @@ import {
   FaExclamationTriangle,
   FaInfoCircle,
   FaTint,
+  FaBan,
 } from "react-icons/fa";
 import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
@@ -41,6 +42,7 @@ const STATUS_BADGE = {
   EXPIRED: { cls: "bg-danger-subtle text-danger", label: "Hết hạn" },
   PENDING: { cls: "bg-warning-subtle text-warning", label: "Chờ duyệt" },
   CANCELLED: { cls: "bg-secondary-subtle text-secondary", label: "Đã hủy" },
+  TERMINATED: { cls: "bg-danger-subtle text-danger", label: "Đã chấm dứt" },
 };
 const getStatusBadge = (s) =>
   STATUS_BADGE[s] || { cls: "bg-light text-dark", label: s || "N/A" };
@@ -130,6 +132,11 @@ const ContractDetail = () => {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
 
+  // ---- Terminate states ----
+  const [terminating, setTerminating] = useState(false);
+  const [showTerminateModal, setShowTerminateModal] = useState(false);
+  const [terminateReason, setTerminateReason] = useState("");
+
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -215,6 +222,25 @@ const ContractDetail = () => {
     }
   };
 
+  const handleTerminate = async () => {
+    if (!terminateReason.trim()) {
+      alert("Vui lòng nhập lý do chấm dứt hợp đồng.");
+      return;
+    }
+    try {
+      setTerminating(true);
+      await apiContract.terminateContract(id, terminateReason.trim());
+      setShowTerminateModal(false);
+      setTerminateReason("");
+      setContract(await apiContract.getContractById(id));
+      alert("Hợp đồng đã được chấm dứt thành công.");
+    } catch {
+      alert("Có lỗi xảy ra khi chấm dứt hợp đồng!");
+    } finally {
+      setTerminating(false);
+    }
+  };
+
   const monthlyServices = services.filter((s) => !isMeterService(s));
   const meterServices = services.filter((s) => isMeterService(s));
   const totalMonthlySvcCost = monthlyServices.reduce(
@@ -267,7 +293,7 @@ const ContractDetail = () => {
 
   return (
     <div className="container-fluid py-4">
-      {/* ── HEADER (đồng bộ ListContract) ── */}
+      {/* ── HEADER ── */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
@@ -319,6 +345,15 @@ const ContractDetail = () => {
             )}
             Xuất PDF
           </button>
+          {/* Nút Chấm dứt — chỉ hiện khi hợp đồng còn hoạt động */}
+          {["ACTIVE", "PENDING"].includes(contract.status) && (
+            <button
+              className="btn btn-outline-danger shadow-sm"
+              onClick={() => setShowTerminateModal(true)}
+            >
+              <FaBan size={13} className="me-1" /> Chấm dứt
+            </button>
+          )}
           <button
             className="btn btn-primary shadow-sm"
             onClick={() => navigate(`/contracts/${id}/update`)}
@@ -696,6 +731,87 @@ const ContractDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* ── TERMINATE MODAL ── */}
+      {showTerminateModal && (
+        <div
+          className="d-flex align-items-center justify-content-center"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+          }}
+          onClick={() => {
+            setShowTerminateModal(false);
+            setTerminateReason("");
+          }}
+        >
+          <div
+            className="bg-white rounded-3 shadow-lg p-4"
+            style={{ maxWidth: 440, width: "100%" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <div
+                className="d-flex align-items-center justify-content-center rounded-2 bg-danger-subtle"
+                style={{ width: 32, height: 32 }}
+              >
+                <FaBan size={14} className="text-danger" />
+              </div>
+              <h6 className="fw-bold text-dark mb-0">Chấm dứt hợp đồng</h6>
+            </div>
+
+            <p className="text-muted small mb-3 mt-2">
+              Hành động này sẽ đặt hợp đồng{" "}
+              <strong>{formatContractCode(contract.contractId)}</strong> sang
+              trạng thái <span className="text-danger fw-semibold">Đã hủy</span>
+              . Không thể hoàn tác.
+            </p>
+
+            <label className="form-label small fw-medium">
+              Lý do chấm dứt <span className="text-danger">*</span>
+            </label>
+            <textarea
+              className="form-control form-control-sm mb-3"
+              rows={3}
+              placeholder="Ví dụ: Khách thuê yêu cầu rời đi trước hạn..."
+              value={terminateReason}
+              onChange={(e) => setTerminateReason(e.target.value)}
+              autoFocus
+            />
+
+            <div className="d-flex justify-content-end gap-2">
+              <button
+                className="btn btn-sm btn-light border"
+                onClick={() => {
+                  setShowTerminateModal(false);
+                  setTerminateReason("");
+                }}
+                disabled={terminating}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={handleTerminate}
+                disabled={terminating || !terminateReason.trim()}
+              >
+                {terminating ? (
+                  <span
+                    className="spinner-border spinner-border-sm me-1"
+                    style={{ width: 11, height: 11 }}
+                  />
+                ) : (
+                  <FaBan size={11} className="me-1" />
+                )}
+                Xác nhận chấm dứt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

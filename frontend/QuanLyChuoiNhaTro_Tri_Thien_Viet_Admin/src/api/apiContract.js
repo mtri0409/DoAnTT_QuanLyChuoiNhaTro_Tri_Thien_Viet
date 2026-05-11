@@ -147,6 +147,10 @@ const apiContract = {
   deleteService: (id) => {
     return axiosClient.delete(`/public/contracts/services/${id}`);
   },
+
+  terminateContract: (id, reason = null) => {
+    return axiosClient.post(`/admin/contracts/${id}/terminate`, { reason });
+  },
 };
 
 export default apiContract;

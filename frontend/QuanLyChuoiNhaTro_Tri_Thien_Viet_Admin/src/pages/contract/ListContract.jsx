@@ -21,6 +21,7 @@ const STATUS_BADGE = {
   EXPIRED: { cls: "bg-danger-subtle text-danger", label: "Hết hạn" },
   PENDING: { cls: "bg-warning-subtle text-warning", label: "Chờ duyệt" },
   CANCELLED: { cls: "bg-secondary-subtle text-secondary", label: "Đã hủy" },
+  TERMINATED: { cls: "bg-danger-subtle text-danger", label: "Đã chấm dứt" },
 };
 
 const getStatusBadge = (status) =>
@@ -321,6 +322,7 @@ const ListContract = () => {
               <option value="EXPIRED">Hết hạn</option>
               <option value="PENDING">Chờ duyệt</option>
               <option value="CANCELLED">Đã hủy</option>
+              <option value="TERMINATED">Đã chấm dứt</option>
             </select>
 
             <select
