@@ -1,0 +1,201 @@
+/* pages/tenant/InvoiceDetail.css */
+/* Chỉ giữ lại các styles đặc biệt mà Bootstrap không có */
+
+/* Animation cho card */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invoice-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Custom progress bar - Bootstrap không có tùy chỉnh chiều cao dễ dàng */
+.progress-custom {
+  height: 6px;
+  border-radius: 4px;
+}
+
+.progress-bar-custom {
+  background-color: #198754;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Custom fonts và letter spacing (Bootstrap không hỗ trợ letter-spacing mặc định) */
+.invoice-amount-value {
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 576px) {
+  .invoice-amount-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Hover effect cho button (nếu muốn custom thêm) */
+.invoice-payment-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+/* Custom scrollbar cho details nếu cần */
+.invoice-details-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar styles (nếu cần) */
+.invoice-details-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* pages/tenant/invoice.css */
+/* Dùng chung cho cả InvoiceDetail và ListInvoice */
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invoice-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Custom letter spacing (Bootstrap không hỗ trợ) */
+.invoice-title {
+  letter-spacing: -0.3px;
+}
+
+.invoice-amount {
+  letter-spacing: -0.5px;
+}
+
+.invoice-sidebar-title {
+  letter-spacing: 1px;
+}
+
+/* Custom progress bar */
+.progress-custom {
+  height: 6px;
+  border-radius: 4px;
+}
+
+.progress-bar-custom {
+  background-color: #198754;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Status dot */
+.invoice-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+
+.invoice-status-dot.need-pay {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.19);
+}
+
+/* Hover transition */
+.invoice-item {
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.invoice-item:hover {
+  background-color: #f8fafc;
+}
+
+/* Border left for status */
+.invoice-item.overdue {
+  border-left: 3px solid #ef4444;
+}
+
+.invoice-item.need-pay {
+  border-left: 3px solid #f59e0b;
+}
+
+/* Action bar slide animation */
+.invoice-action-bar {
+  overflow: hidden;
+  transition: max-height 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.invoice-action-bar.show {
+  max-height: 48px;
+}
+
+.invoice-action-bar.hide {
+  max-height: 0;
+}
+
+/* Custom scrollbar for details */
+.invoice-details-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.invoice-details-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.invoice-details-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Icon wrapper */
+.invoice-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .invoice-amount {
+    font-size: 1.5rem !important;
+  }
+}

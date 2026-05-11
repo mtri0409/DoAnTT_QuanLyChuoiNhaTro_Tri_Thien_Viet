@@ -12,163 +12,29 @@ import {
   FaUser,
   FaPhone,
   FaIdCard,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaClock,
-  FaBan,
   FaBolt,
   FaTint,
   FaHome,
 } from "react-icons/fa";
-import apiContract from "../../api/apiContract";
-import apiProfile from "../../api/apiProfile";
 
-// ====================== CONSTANTS ======================
-const METER_UNITS = ["kwh", "kWh", "KWH", "m³", "m3", "M3", "m^3"];
-const isMeterService = (svc) =>
-  METER_UNITS.some(
-    (u) => (svc.unitAtSigning || "").trim().toLowerCase() === u.toLowerCase(),
-  );
-
-// ====================== HELPERS ======================
-const STATUS_CONFIG = {
-  ACTIVE: {
-    cls: "bg-success-subtle text-success border border-success border-opacity-25",
-    label: "Đang hiệu lực",
-    icon: <FaCheckCircle />,
-  },
-  EXPIRED: {
-    cls: "bg-danger-subtle text-danger border border-danger border-opacity-25",
-    label: "Hết hạn",
-    icon: <FaTimesCircle />,
-  },
-  PENDING: {
-    cls: "bg-warning-subtle text-warning border border-warning border-opacity-25",
-    label: "Chờ duyệt",
-    icon: <FaClock />,
-  },
-  CANCELLED: {
-    cls: "bg-secondary-subtle text-secondary border border-secondary border-opacity-25",
-    label: "Đã hủy",
-    icon: <FaBan />,
-  },
-};
-
-const getStatusConfig = (status) =>
-  STATUS_CONFIG[status] || {
-    cls: "bg-light text-dark border",
-    label: status || "N/A",
-    icon: null,
-  };
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return "N/A";
-  return new Date(dateStr).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
-
-const formatCurrency = (amount) => {
-  if (amount == null) return "N/A";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(amount);
-};
-
-const formatContractCode = (id) => {
-  if (!id) return "N/A";
-  return `HD-${String(id).padStart(5, "0")}`;
-};
-
-// ====================== INFO CARD ======================
-const InfoCard = ({ icon, title, children }) => (
-  <div className="card border-0 shadow-sm rounded-4 mb-4">
-    <div className="card-header bg-white border-0 py-3 px-4">
-      <div className="d-flex align-items-center gap-2">
-        <div className="p-2 rounded-3 bg-primary-subtle text-primary">
-          {icon}
-        </div>
-        <h6 className="fw-bold mb-0 text-primary">{title}</h6>
-      </div>
-    </div>
-    <div className="card-body px-4 pt-0">{children}</div>
-  </div>
-);
-
-const InfoRow = ({ icon, label, value, highlight }) => (
-  <div className="d-flex align-items-start py-2 border-bottom border-light">
-    <div className="text-muted me-3 mt-1" style={{ width: 18, flexShrink: 0 }}>
-      {icon}
-    </div>
-    <div className="flex-grow-1">
-      <div className="small text-muted mb-1">{label}</div>
-      <div
-        className={`fw-semibold ${highlight ? "text-primary fs-6" : "text-dark"}`}
-      >
-        {value}
-      </div>
-    </div>
-  </div>
-);
+import { formatContractCode, formatCurrency, formatDate, getStatusConfig, isMeterService } from "../../utils/contractUtils";
+import { InfoCard } from "../../components/common/InfoCard";
+import { InfoRow } from "../../components/common/InfoRow";
+import LoadingSpinner from "../../components/common/LoadingSpiner";
+import useContractDetail from "../../../hooks/useContractDetail";
+import ErrorState from "../../components/common/ErrorState";
 
 // ====================== MAIN COMPONENT ======================
 const TenantContractDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [contract, setContract] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // ====================== FETCH ======================
-  useEffect(() => {
-    const fetchContractData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [contractRes, memberIdsRes, servicesRes] = await Promise.all([
-          apiContract.getContractById(id),
-          apiContract.getMembers(id),
-          apiContract.getServices(id),
-        ]);
-
-        setContract(contractRes);
-
-        // Fetch profile từng thành viên
-        const memberIds = Array.isArray(memberIdsRes) ? memberIdsRes : [];
-        if (memberIds.length > 0) {
-          const results = await Promise.allSettled(
-            memberIds.map((pid) => apiProfile.getProfileById(pid)),
-          );
-          setMembers(
-            results.filter((r) => r.status === "fulfilled").map((r) => r.value),
-          );
-        } else {
-          setMembers([]);
-        }
-
-        const rawSvcs = servicesRes?.services ?? servicesRes;
-        setServices(Array.isArray(rawSvcs) ? rawSvcs : []);
-      } catch (err) {
-        console.error("Lỗi tải chi tiết hợp đồng:", err);
-        setError("Không thể tải thông tin hợp đồng. Vui lòng thử lại.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContractData();
-  }, [id]);
+  const { contract, members, services, loading, error } = useContractDetail(id);
 
   // ====================== COMPUTED ======================
   const monthlyServices = services.filter((s) => !isMeterService(s));
   const meterServices = services.filter((s) => isMeterService(s));
-
   const totalMonthlySvcCost = monthlyServices.reduce(
     (sum, s) => sum + Number(s.priceAtSigning ?? 0),
     0,
@@ -177,37 +43,11 @@ const TenantContractDetail = () => {
 
   // ====================== LOADING / ERROR ======================
   if (loading) {
-    return (
-      <div className="container py-5">
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ minHeight: 400 }}
-        >
-          <div className="text-center">
-            <div className="spinner-border text-primary mb-3" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="text-muted">Đang tải thông tin hợp đồng...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner/>
   }
 
   if (error || !contract) {
-    return (
-      <div className="container py-4">
-        <div className="alert alert-danger rounded-4 shadow-sm">
-          <strong>Lỗi:</strong> {error || "Không tìm thấy hợp đồng."}
-        </div>
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => navigate(-1)}
-        >
-          <FaArrowLeft className="me-2" /> Quay lại
-        </button>
-      </div>
-    );
+    return <ErrorState message={error || "Lỗi không tìm thấy hợp đồng"}/>
   }
 
   const statusCfg = getStatusConfig(contract.status);
@@ -340,7 +180,7 @@ const TenantContractDetail = () => {
         {meterServices.length > 0 && (
           <div className="mt-3 pt-2">
             <div className="small fw-semibold text-secondary mb-2">
-              📌 Điện, nước (tính theo chỉ số thực tế):
+               Điện, nước (tính theo chỉ số thực tế):
             </div>
             {meterServices.map((svc, idx) => {
               const isElec = (svc.unitAtSigning || "").toLowerCase().includes("kwh");
@@ -357,7 +197,7 @@ const TenantContractDetail = () => {
               );
             })}
             <div className="mt-2 small text-muted bg-light p-2 rounded">
-              ⚡ Chi phí điện, nước sẽ được tính riêng dựa trên chỉ số thực tế hàng tháng
+               Chi phí điện, nước sẽ được tính riêng dựa trên chỉ số thực tế hàng tháng
             </div>
           </div>
         )}

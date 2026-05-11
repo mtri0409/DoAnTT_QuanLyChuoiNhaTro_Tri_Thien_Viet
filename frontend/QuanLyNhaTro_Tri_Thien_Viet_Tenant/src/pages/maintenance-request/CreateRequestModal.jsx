@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import apiMaintenanceRequest from "../../api/apiMaintenanceaRequest";
 import apiRoom from "../../api/apiRoom";
+import { notify } from "../../utils/swalUtils";
 
 const MIN_DESC = 10;
 const MAX_DESC = 1000;
@@ -101,12 +102,14 @@ export default function CreateMaintenanceRequest() {
       navigate("/user/requests", {
         state: { success: "Gửi yêu cầu sửa chữa thành công!" },
       });
+      notify("Gửi yêu cầu sửa chữa thành công!");
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.response?.data ||
         "Lỗi khi gửi yêu cầu. Thử lại sau.";
       setApiError(typeof msg === "string" ? msg : JSON.stringify(msg));
+      notify("Gửi yêu cầu sửa chữa thất bại!","error");
     } finally {
       setSubmitting(false);
     }
