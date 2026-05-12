@@ -62,15 +62,7 @@ export const TABS = [
   { key: "PAID", label: "Đã thanh toán" },
   { key: "CANCELLED", label: "Đã hủy" },
 ];
-//==========HElPER=======
-export const fmt = (num) =>
-  num != null ? Number(num).toLocaleString("vi-VN") + " ₫" : "—";
 
-export const fmtDate = (str) => {
-  if (!str) return "—";
-  const d = new Date(str);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-};
 
 export const isOverdue = (dueDateStr, status) => {
   if (!dueDateStr || ["PAID", "CANCELLED", "REFUNDED"].includes(status))

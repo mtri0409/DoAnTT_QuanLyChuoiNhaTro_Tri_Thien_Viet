@@ -141,7 +141,7 @@ export default function CreateMaintenanceRequest() {
         <button
           type="submit"
           form="create-request-form"
-          className="btn btn-warning text-dark d-flex align-items-center gap-2 px-4 shadow-sm fw-semibold"
+          className="btn btn-primary text-white d-flex align-items-center gap-2 px-4 shadow-sm fw-semibold"
           disabled={submitting || loadingRooms || !selectedRoom}
         >
           {submitting ? (
@@ -168,7 +168,7 @@ export default function CreateMaintenanceRequest() {
         <div className="col-lg-4">
           <div className="card border-0 shadow-sm rounded-4 p-4">
             <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
-              <FaHome className="text-warning" /> Phòng của bạn
+              <FaHome className="text-primary" /> Phòng của bạn
             </h6>
 
             {loadingRooms ? (
@@ -177,7 +177,7 @@ export default function CreateMaintenanceRequest() {
                 tải...
               </div>
             ) : roomError ? (
-              <div className="alert alert-warning py-2 small rounded-3">
+              <div className="alert alert-primary py-2 small rounded-3">
                 {roomError}
               </div>
             ) : rooms.length === 0 ? (
@@ -185,7 +185,7 @@ export default function CreateMaintenanceRequest() {
                 Bạn chưa đang thuê phòng nào. Vui lòng liên hệ quản lý.
               </div>
             ) : rooms.length === 1 ? (
-              <div className="d-inline-flex align-items-center gap-2 bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 small">
+              <div className="d-inline-flex align-items-center gap-2 bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 small">
                 <FaHome size={13} />
                 <span className="fw-semibold">{rooms[0].roomName}</span>
                 <FaCheckCircle size={12} className="ms-1" />
@@ -218,15 +218,15 @@ export default function CreateMaintenanceRequest() {
 
             {/* Tips box */}
             {selectedRoom && (
-              <div className="mt-4 rounded-3 p-3 bg-warning bg-opacity-10 border border-warning-subtle">
+              <div className="mt-4 rounded-3 p-3 bg-primary bg-opacity-10 border border-primary-subtle">
                 <p
-                  className="mb-2 fw-semibold text-warning-emphasis"
+                  className="mb-2 fw-semibold text-primary-emphasis"
                   style={{ fontSize: 12 }}
                 >
                   💡 Mẹo để được xử lý nhanh
                 </p>
                 <ul
-                  className="mb-0 ps-3 text-warning-emphasis"
+                  className="mb-0 ps-3 text-primary-emphasis"
                   style={{ fontSize: 12 }}
                 >
                   <li className="mb-1">
@@ -246,7 +246,7 @@ export default function CreateMaintenanceRequest() {
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm rounded-4 p-4">
             <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
-              <FaEdit className="text-warning" /> Nội dung yêu cầu
+              <FaEdit className="text-primary" /> Nội dung yêu cầu
             </h6>
 
             <form id="create-request-form" onSubmit={handleSubmit} noValidate>

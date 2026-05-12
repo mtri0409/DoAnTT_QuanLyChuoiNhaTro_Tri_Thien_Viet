@@ -10,11 +10,13 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
-import { fmt, fmtDate, isOverdue, STATUS_META, TYPE_META } from "../../utils/invoiceUtils";
+import { isOverdue, STATUS_META, TYPE_META } from "../../utils/invoiceUtils";
 import LoadingSpinner from "../../components/common/LoadingSpiner";
 import ErrorState from "../../components/common/ErrorState";
 import useInvoiceDetail from "../../../hooks/useInvoiceDetail";
 import "../invoice/invoice.css";
+import { formatCurrency } from "../../utils/priceUtils";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function InvoiceDetail() {
   const { invoiceId } = useParams();
@@ -78,14 +80,14 @@ export default function InvoiceDetail() {
                 <div className="bg-light rounded-3 p-3 mb-4">
                   <div className="text-muted small mb-1">Tổng số tiền</div>
                   <div className="fw-bold invoice-amount-value" style={{ fontSize: 28, color: "#1e293b" }}>
-                    {fmt(invoice.totalAmount)}
+                    {formatCurrency(invoice.totalAmount)}
                   </div>
 
                   {invoice.status === "PARTIAL" && invoice.paidAmount > 0 && (
                     <div className="mt-3">
                       <div className="d-flex justify-content-between small mb-1">
-                        <span className="text-success fw-semibold">Đã nộp: {fmt(invoice.paidAmount)}</span>
-                        <span className="text-danger fw-semibold">Còn lại: {fmt(remainAmount)}</span>
+                        <span className="text-success fw-semibold">Đã nộp: {formatCurrency(invoice.paidAmount)}</span>
+                        <span className="text-danger fw-semibold">Còn lại: {formatCurrency(remainAmount)}</span>
                       </div>
                       <div className="progress-custom">
                         <div className="progress" style={{ height: 6, borderRadius: 4 }}>
@@ -102,7 +104,7 @@ export default function InvoiceDetail() {
 
                   {overdue && (
                     <div className="alert alert-danger py-2 px-3 mt-3 mb-0 small rounded-3">
-                      ⚠️ Hóa đơn đã <strong>quá hạn thanh toán</strong> ({fmtDate(invoice.dueDate)}). Vui lòng thanh toán sớm.
+                      ⚠️ Hóa đơn đã <strong>quá hạn thanh toán</strong> ({formatDate(invoice.dueDate)}). Vui lòng thanh toán sớm.
                     </div>
                   )}
                 </div>
@@ -113,12 +115,12 @@ export default function InvoiceDetail() {
                     <div className="small text-muted mb-1">Hạn thanh toán</div>
                     <div className={`fw-semibold small d-flex align-items-center gap-1 ${overdue ? "text-danger" : ""}`}>
                       <FaCalendarAlt size={11} />
-                      {fmtDate(invoice.dueDate)}
+                      {formatDate(invoice.dueDate)}
                     </div>
                   </div>
                   <div className="col-6">
                     <div className="small text-muted mb-1">Ngày tạo</div>
-                    <div className="fw-semibold small">{fmtDate(invoice.createdAt)}</div>
+                    <div className="fw-semibold small">{formatDate(invoice.createdAt)}</div>
                   </div>
                   {invoice.roomName && (
                     <div className="col-6">
@@ -146,7 +148,7 @@ export default function InvoiceDetail() {
                   {invoice.status === "PAID" && invoice.paidAt && (
                     <div className="col-6">
                       <div className="small text-muted mb-1">Thời gian thanh toán</div>
-                      <div className="fw-semibold small">{fmtDate(invoice.paidAt)}</div>
+                      <div className="fw-semibold small">{formatDate(invoice.paidAt)}</div>
                     </div>
                   )}
                 </div>
@@ -165,11 +167,11 @@ export default function InvoiceDetail() {
                             </div>
                             {item.quantity && item.unitPrice && (
                               <div className="text-muted" style={{ fontSize: 11 }}>
-                                {item.quantity} × {fmt(item.unitPrice)}
+                                {item.quantity} × {formatCurrency(item.unitPrice)}
                               </div>
                             )}
                           </div>
-                          <div className="fw-bold small">{fmt(item.subTotal)}</div>
+                          <div className="fw-bold small">{formatCurrency(item.subTotal)}</div>
                         </div>
                       ))}
                     </div>
@@ -211,7 +213,7 @@ export default function InvoiceDetail() {
                   <div className="bg-warning bg-opacity-25 rounded-3 p-3 mb-3 text-center">
                     <div className="text-warning-emphasis small fw-semibold mb-1">Số tiền cần thanh toán</div>
                     <div className="fw-bold" style={{ fontSize: 22, color: "#d97706" }}>
-                      {fmt(remainAmount)}
+                      {formatCurrency(remainAmount)}
                     </div>
                   </div>
 
@@ -249,7 +251,7 @@ export default function InvoiceDetail() {
                   {invoice.totalAmount && (
                     <div className="d-flex justify-content-between align-items-center">
                       <span className="text-muted small">Tổng cộng</span>
-                      <span className="small fw-bold">{fmt(invoice.totalAmount)}</span>
+                      <span className="small fw-bold">{formatCurrency(invoice.totalAmount)}</span>
                     </div>
                   )}
                 </div>

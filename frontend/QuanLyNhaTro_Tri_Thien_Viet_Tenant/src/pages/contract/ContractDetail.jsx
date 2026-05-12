@@ -17,12 +17,13 @@ import {
   FaHome,
 } from "react-icons/fa";
 
-import { formatContractCode, formatCurrency, formatDate, getStatusConfig, isMeterService } from "../../utils/contractUtils";
+import { formatContractCode, formatCurrency, getStatusConfig, isMeterService } from "../../utils/contractUtils";
 import { InfoCard } from "../../components/common/InfoCard";
 import { InfoRow } from "../../components/common/InfoRow";
 import LoadingSpinner from "../../components/common/LoadingSpiner";
 import useContractDetail from "../../../hooks/useContractDetail";
 import ErrorState from "../../components/common/ErrorState";
+import { formatDate } from "../../utils/dateUtils";
 
 // ====================== MAIN COMPONENT ======================
 const TenantContractDetail = () => {

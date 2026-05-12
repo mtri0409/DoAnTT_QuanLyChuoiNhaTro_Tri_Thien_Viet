@@ -8,7 +8,9 @@ import {
   FaCreditCard,
   FaCheckCircle,
 } from "react-icons/fa";
-import { fmt, fmtDate, isDueSoon, isOverdue, STATUS_META, TYPE_META } from "../../utils/invoiceUtils";
+import { isDueSoon, isOverdue, STATUS_META, TYPE_META } from "../../utils/invoiceUtils";
+import { formatDate } from "../../utils/dateUtils";
+import { formatCurrency } from "../../utils/priceUtils";
 
 const InvoiceCard = ({ invoice, isHover, onMouseEnter, onMouseLeave }) => {
   const navigate = useNavigate();
@@ -79,11 +81,11 @@ const InvoiceCard = ({ invoice, isHover, onMouseEnter, onMouseLeave }) => {
           {/* Amount + due */}
           <div className="d-flex align-items-center gap-3 flex-wrap mb-1">
             <span className="fw-bold fs-5 text-dark invoice-amount">
-              {fmt(invoice.totalAmount)}
+              {formatCurrency(invoice.totalAmount)}
             </span>
             {invoice.status === "PARTIAL" && invoice.paidAmount > 0 && (
               <span className="text-success small fw-semibold">
-                Đã nộp: {fmt(invoice.paidAmount)}
+                Đã nộp: {formatCurrency(invoice.paidAmount)}
               </span>
             )}
           </div>
@@ -110,7 +112,7 @@ const InvoiceCard = ({ invoice, isHover, onMouseEnter, onMouseLeave }) => {
                   overdue ? "text-danger" : dueSoon ? "text-warning" : ""
                 }`}
               >
-                {fmtDate(invoice.dueDate)}
+                {formatDate(invoice.dueDate)}
               </span>
             </span>
             <span className="text-secondary">#{invoice.invoiceId}</span>

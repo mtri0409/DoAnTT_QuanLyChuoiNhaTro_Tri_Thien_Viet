@@ -9,7 +9,7 @@ import {
   FaCreditCard,
   FaCheckCircle,
 } from "react-icons/fa";
-import { fmt, fmtDate, isDueSoon, isOverdue, STATUS_META, TABS, TYPE_META } from "../../utils/invoiceUtils";
+import { STATUS_META, TABS, TYPE_META } from "../../utils/invoiceUtils";
 import LoadingSpinner from "../../components/common/LoadingSpiner";
 import useInvoiceList from "../../../hooks/useInvoiceList";
 import "./invoice.css"; // Import CSS dùng chung
@@ -18,7 +18,6 @@ import InvoiceCard from "../../components/invoice/InvoiceCard";
 
 
 export default function ListInvoice() {
-  const navigate = useNavigate();
 
   const {
     invoices,
