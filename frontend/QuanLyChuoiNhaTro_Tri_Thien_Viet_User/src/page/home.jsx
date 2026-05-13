@@ -199,7 +199,7 @@ export default function Home() {
 
   const filteredRooms = useMemo(() => homeRooms.filter(room => {
     if (!isAvailableRoom(room)) return false;
-    if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
+    if (maxPrice < MAX_PRICE && (room.price ?? 0) / 1_000_000 > maxPrice) return false;
     if (!hasAmenities(room, activeAmenities)) return false;
 
     return true;
@@ -207,7 +207,7 @@ export default function Home() {
 
   const filteredBuildingRooms = useMemo(() => buildingRooms.filter(room => {
     if (!isBuildingRoomVisible(room)) return false;
-    if ((room.price ?? 0) / 1_000_000 > maxPrice) return false;
+    if (maxPrice < MAX_PRICE && (room.price ?? 0) / 1_000_000 > maxPrice) return false;
     if (!hasAmenities(room, activeAmenities)) return false;
 
     return true;

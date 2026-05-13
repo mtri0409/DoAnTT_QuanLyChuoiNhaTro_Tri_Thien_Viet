@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import userService from '../services/userService';
 import RoomGridCard from '../components/RoomGridCard';
+import { imgURL } from '../services/userConfig';
 
 const statusMap = {
   available: {
@@ -1046,18 +1047,20 @@ export default function RoomDetail() {
         );
 
         if (!currentFloor) {
-          setLoadingRelated(false);
-          return;
-        }
-
-        if (!currentFloor?.branchId) {
-          console.log("Không tìm thấy floor hoặc branchId");
+          setFloorNumber('');
           setRelatedRooms([]);
           return;
         }
 
+        setFloorNumber(currentFloor.floorNumber ?? '');
+
         const targetBranchId = currentFloor.branchId ?? currentFloor.branch?.branchId;
 
+        if (targetBranchId == null) {
+          console.log("Không tìm thấy floor hoặc branchId");
+          setRelatedRooms([]);
+          return;
+        }
         const foundBranch = branches.find(
           b => String(b.branchId ?? b.id) === String(targetBranchId),
         );
@@ -1122,27 +1125,34 @@ export default function RoomDetail() {
     };
   }, [room?.floorId, room?.roomId]);
 
-  const getImages = () => {
-    if (!room?.roomMedia?.length) return ['http://localhost:8080/images/default.jpg'];
+  const normalizeImageUrl = (url) => {
+    if (!url || url.includes('storage.troapp.vn')) return null;
 
-    const urls = room.roomMedia
+    if (url.startsWith('/images')) return `${imgURL}${url}`;
+
+    return url.startsWith('http') ? url : `${imgURL}${url}`;
+  };
+
+  const getImages = () => {
+    const media = room?.roomMedia;
+
+    if (!media || media.length === 0) {
+      return [`${imgURL}/images/default.jpg`];
+    }
+
+    const urls = media
       .filter(m => {
         if (!m.mediaType) return true;
-        const t = m.mediaType.toLowerCase();
-        return t === 'image' || t.startsWith('image/');
+
+        const type = m.mediaType.toLowerCase();
+        return type === 'image' || type.startsWith('image/');
       })
-      .map(m => {
-        const url = m.url ?? m.mediaUrl;
-        if (!url) return null;
-        if (url.includes('storage.troapp.vn')) return null;
-        if (url.startsWith('/images')) return `http://localhost:8080${url}`;
-        return url;
-      })
-      .map((m) => m.url ?? m.mediaUrl)
+      .map(m => normalizeImageUrl(m.url ?? m.mediaUrl))
       .filter(Boolean);
 
-    return urls.length ? urls : ['http://localhost:8080/images/default.jpg'];
+    return urls.length ? urls : [`${imgURL}/images/default.jpg`];
   };
+
 
   const copyPhone = () => {
     if (!managerPhone) return;
