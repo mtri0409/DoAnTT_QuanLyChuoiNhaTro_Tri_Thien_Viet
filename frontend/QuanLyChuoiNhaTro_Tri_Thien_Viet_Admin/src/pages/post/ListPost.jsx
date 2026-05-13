@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import apiPost from "../../api/apiPost";
 import apiBranch from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
 
 const STATUS_CONFIG = {
   ACTIVE: {
@@ -90,10 +91,10 @@ const ListPost = () => {
     try {
       setLoading(true);
       await apiPost.adminDeletePost(postId);
-      alert("Xóa bài đăng thành công!");
+      toast.success("Xóa bài đăng thành công!");
       fetchPosts();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa!");
+      toast.error(err.response?.data?.message || "Lỗi khi xóa!");
     } finally {
       setLoading(false);
     }

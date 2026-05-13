@@ -12,6 +12,7 @@ import apiRoom from "../../api/apiRoom";
 import apiFloor from "../../api/apiFloor";
 import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
 
 const RoomList = () => {
   const PAGE_SIZE = 5;
@@ -173,9 +174,9 @@ const RoomList = () => {
     try {
       await apiFloor.deleteFloor(floorId);
       fetchFilters();
-      alert("Xóa tầng thành công!");
+      toast.success("Xóa tầng thành công!");
     } catch (err) {
-      alert("Lỗi khi xóa tầng: " + err.message);
+      toast.error("Lỗi khi xóa tầng: " + err.message);
     }
   };
 

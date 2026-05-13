@@ -28,6 +28,7 @@ import apiContract from "../../api/apiContract";
 import apiUser from "../../api/apiUser";
 import apiServices from "../../api/apiService";
 import apiRoom from "../../api/apiRoom";
+import { toast } from "react-toastify";
 
 // ─── STEP INDICATOR ───────────────────────────────────────────────────────────
 const StepIndicator = ({ currentStep }) => {
@@ -269,7 +270,7 @@ const FastContract = () => {
           setProfileErrors(d);
         }
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setSubmitting(false);
@@ -322,7 +323,7 @@ const FastContract = () => {
         createdProfile?.profileId ?? createdProfile?.id ?? null;
 
       if (!representativeId) {
-        alert("Lỗi: không lấy được ID người đại diện. Vui lòng thử lại.");
+        toast.error("Lỗi: không lấy được ID người đại diện. Vui lòng thử lại.");
         setSubmitting(false);
         return;
       }
@@ -360,17 +361,17 @@ const FastContract = () => {
         }
       }
 
-      alert("🎉 Tạo hợp đồng thành công!");
+      toast.success("Tạo hợp đồng thành công!");
       navigate(`/contracts/${contractId}/detail`);
     } catch (err) {
       const res = err.response;
       console.log(res);
       if (res?.status === 400) {
-        alert(res.data?.message || "Dữ liệu không hợp lệ.");
+        toast.error(res.data?.message || "Dữ liệu không hợp lệ.");
       } else if (res?.status === 409) {
-        alert("Phòng này đã có hợp đồng đang hoạt động!");
+        toast.error("Phòng này đã có hợp đồng đang hoạt động!");
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối Server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
       }
     } finally {
       setSubmitting(false);

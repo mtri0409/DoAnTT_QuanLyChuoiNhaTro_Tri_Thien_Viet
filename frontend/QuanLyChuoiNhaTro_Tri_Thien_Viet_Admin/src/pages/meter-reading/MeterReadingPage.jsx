@@ -25,8 +25,7 @@ import apiInvoice from "../../api/apiInvoice";
 import apiContract from "../../api/apiContract";
 import Lightbox from "../../components/Lightbox";
 import CreateInvoice from "../../components/CreateInvoice";
-import ImageCapture from "../../components/WaterImageCapture";
-
+import ImageCapture from "../../components/readings/WaterImageCapture"
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const CURRENT_YEAR = new Date().getFullYear();
 

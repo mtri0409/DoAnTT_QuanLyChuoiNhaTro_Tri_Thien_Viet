@@ -1,7 +1,7 @@
 // components/ImageCapture.jsx
 import React, { useState, useRef } from 'react';
 import { FaCamera, FaImage, FaTrash, FaMagic } from 'react-icons/fa';
-import apiMeterReading from '../api/apiMeterReading';
+import apiMeterReading from '../../api/apiMeterReading';
 
 const ImageCapture = ({ serviceColor, serviceId, onFile, onRemove, onOCRComplete, imagePreview, imageName, imageSize, isSaved }) => {
   const [ocrLoading, setOcrLoading] = useState(false);

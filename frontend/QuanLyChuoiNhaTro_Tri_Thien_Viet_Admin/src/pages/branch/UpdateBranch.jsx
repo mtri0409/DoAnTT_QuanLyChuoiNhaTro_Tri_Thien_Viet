@@ -5,6 +5,7 @@ import {
   FaSave, FaExclamationCircle 
 } from 'react-icons/fa';
 import apiBranches from '../../api/apiBranches';
+import { toast } from 'react-toastify';
 
 const UpdateBranch = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const UpdateBranch = () => {
 
     } catch (err) {
       console.error(err);
-      alert("Không tìm thấy chi nhánh!");
+      toast.error("Không tìm thấy chi nhánh!");
       navigate('/branches/1');
     } finally {
       setInitLoading(false);
@@ -63,7 +64,7 @@ const UpdateBranch = () => {
       const res = await apiBranches.updateBranch(id, formData);
       console.log(res);
 
-      alert("Cập nhật chi nhánh thành công!");
+      toast.success("Cập nhật chi nhánh thành công!");
       navigate('/branches/1');
 
     } catch (err) {
@@ -75,10 +76,10 @@ const UpdateBranch = () => {
         if (backendErrors) {
           setErrors(backendErrors);
         } else {
-          alert(err.response.data.message || "Dữ liệu không hợp lệ.");
+          toast.error(err.response.data.message || "Dữ liệu không hợp lệ.");
         }
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối server.");
       }
 
     } finally {

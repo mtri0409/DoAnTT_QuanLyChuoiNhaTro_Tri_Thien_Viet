@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
 import apiServices from '../../api/apiService';
+import { toast } from 'react-toastify';
 
 const UpdateService = () => {
   const navigate = useNavigate();
@@ -62,11 +63,11 @@ const UpdateService = () => {
         is_active: formData.isActive
       });
 
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
       navigate('/services/1');
 
     } catch {
-      alert("Lỗi!");
+      toast.error("Lỗi cập nhập !");
     } finally {
       setLoading(false);
     }

@@ -14,6 +14,7 @@ import apiContract from "../../api/apiContract";
 import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 // Mapping trạng thái sang màu badge
 const STATUS_BADGE = {
@@ -220,11 +221,11 @@ const ListContract = () => {
     try {
       setAutoUpdating(true);
       await apiContract.autoUpdateStatus();
-      alert("Đã cập nhật trạng thái hợp đồng thành công!");
+      toast.success("Đã cập nhật trạng thái hợp đồng thành công!");
       fetchContracts();
     } catch (err) {
       console.error("Lỗi auto-update:", err);
-      alert("Có lỗi xảy ra khi tự động cập nhật!");
+      toast.error("Có lỗi xảy ra khi tự động cập nhật!");
     } finally {
       setAutoUpdating(false);
     }

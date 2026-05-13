@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import apiExpenses from "../../api/apiExpenses";
 import axiosInstance from "../../api/axios";
+import { toast } from "react-toastify";
 
 const EXPENSE_CATEGORIES = [
   "Sửa điện",
@@ -174,7 +175,7 @@ const EditExpense = () => {
         description: form.description || undefined,
       });
 
-      alert("Cập nhật chi phí thành công!");
+      toast.success("Cập nhật chi phí thành công!");
       navigate(`/expenses/${id}/detail`);
     } catch (err) {
       setError(

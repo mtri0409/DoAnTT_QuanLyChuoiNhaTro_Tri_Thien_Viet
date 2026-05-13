@@ -5,6 +5,7 @@ import {
   FaSave, FaExclamationCircle 
 } from 'react-icons/fa';
 import apiBranches from '../../api/apiBranches';
+import { toast } from 'react-toastify';
 
 const CreateBranch = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const CreateBranch = () => {
       const res = await apiBranches.createBranch(formData);
       console.log(res);
 
-      alert("Tạo chi nhánh thành công!");
+      toast.success("Tạo chi nhánh thành công!");
       navigate('/branches');
 
     } catch (err) {
@@ -49,10 +50,10 @@ const CreateBranch = () => {
         if (backendErrors) {
           setErrors(backendErrors);
         } else {
-          alert(err.response.data.message || "Dữ liệu không hợp lệ.");
+          toast.error(err.response.data.message || "Dữ liệu không hợp lệ.");
         }
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối server.");
       }
 
     } finally {

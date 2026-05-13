@@ -20,6 +20,7 @@ import {
 } from "react-icons/fa";
 import apiInvoice from "../../api/apiInvoice";
 import { exportInvoiceToPDF } from "../../utils/exportInvoice";
+import { toast } from "react-toastify";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const STATUS_META = {
@@ -112,7 +113,7 @@ export default function InvoiceDetail() {
       const res = await apiInvoice.getById(invoiceId);
       setInvoice(res);
     } catch {
-      alert("Không tìm thấy hóa đơn");
+      toast.error("Không tìm thấy hóa đơn");
       navigate("/invoice");
     } finally {
       setLoading(false);
@@ -130,7 +131,7 @@ export default function InvoiceDetail() {
       const res = await fn(invoiceId);
       setInvoice(res);
     } catch (err) {
-      alert(err.response?.data?.message || `Lỗi: ${label}`);
+      toast.error(err.response?.data?.message || `Lỗi: ${label}`);
     } finally {
       setActionLoading(false);
     }
@@ -138,7 +139,7 @@ export default function InvoiceDetail() {
 
   const handleDepositPayment = async () => {
     if (!depositAmount || isNaN(depositAmount) || Number(depositAmount) <= 0) {
-      alert("Vui lòng nhập số tiền hợp lệ");
+      toast.warn("Vui lòng nhập số tiền hợp lệ");
       return;
     }
     setDepositLoading(true);
@@ -151,7 +152,7 @@ export default function InvoiceDetail() {
       setShowDepositModal(false);
       setDepositAmount("");
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi ghi nhận thanh toán cọc");
+      toast.error(err.response?.data?.message || "Lỗi ghi nhận thanh toán cọc");
     } finally {
       setDepositLoading(false);
     }
