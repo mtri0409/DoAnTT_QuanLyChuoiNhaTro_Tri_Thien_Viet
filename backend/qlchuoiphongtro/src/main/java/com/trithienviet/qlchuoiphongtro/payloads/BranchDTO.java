@@ -13,4 +13,5 @@ public class BranchDTO {
     private  Integer branchId;
     private String branchName;
     private String address;
+    private Long managerId;
 }

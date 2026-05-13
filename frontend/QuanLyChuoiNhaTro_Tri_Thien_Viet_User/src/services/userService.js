@@ -27,12 +27,12 @@ const userService = {
   getAllRooms: (
     pageNumber = 0,
     pageSize = 10,
-    sortBy = "roomName",
-    sortOrder = "asc",
+    sortBy = 'roomName',
+    sortOrder = 'asc',
     floorId = null,
     branchId = null,
-    search = "",
-    status = null,
+    search = '',
+    status = null
   ) => {
     const url = `/rooms`;
     return axiosClient.get(url, {
@@ -45,7 +45,7 @@ const userService = {
         ...(branchId && { branchId: branchId }),
         ...(search && { search: search }),
         ...(status && { status }),
-      },
+      }
     });
   },
 
@@ -56,27 +56,22 @@ const userService = {
   getMediaByRoomId: (roomId) => {
     return axiosClient.get(`/room-media/room/${roomId}`);
   },
-  getActivePosts: (
-    pageNumber = 0,
-    pageSize = 10,
-    roomId = null,
-    branchId = null,
-  ) => {
-    return axiosClient.get("/public/roommate-posts", {
-      params: {
-        pageNumber,
-        pageSize,
-        ...(roomId && { roomId }),
-        ...(branchId && { branchId }),
-      },
-    });
-  },
-  getPostById: (postId) => {
-    return axiosClient.get(`/public/roommate-posts/${postId}`);
+  getProfileById: (id) => {
+    return axiosClient.get(`/profiles/${id}`);
   },
   getAllFloors: () => {
-    return axiosClient.get("/floors");
+    const url = `/floors`;
+    return axiosClient.get(url);
   },
+  createManualNotification: (profileId = 0, branchId = 0, data) => {
+    return axiosClient.post(`/notification/send-manual`, data, {
+      params: {
+        profileId: profileId || 0, // Nếu không có thì gửi 0
+        branchId: branchId || 0    // Nếu không có thì gửi 0
+      }
+    });
+  },
+
 };
 
 export default userService;

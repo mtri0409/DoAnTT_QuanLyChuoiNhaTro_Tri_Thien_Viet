@@ -12,7 +12,7 @@ const apiNotification = {
     });
   },
   createManualNotification:(profileId=0,branchId=0,data) => {
-    return axiosInstance.post(`/admin/notification/send-manual`, data, {
+    return axiosInstance.post(`/notification/send-manual`, data, {
       params: {
         profileId: profileId || 0, // Nếu không có thì gửi 0
         branchId: branchId || 0    // Nếu không có thì gửi 0

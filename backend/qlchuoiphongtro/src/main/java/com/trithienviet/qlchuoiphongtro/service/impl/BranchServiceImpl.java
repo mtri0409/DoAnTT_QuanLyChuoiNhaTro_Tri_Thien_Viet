@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.trithienviet.qlchuoiphongtro.entity.Branch;
+import com.trithienviet.qlchuoiphongtro.entity.Profile;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
 import com.trithienviet.qlchuoiphongtro.payloads.BranchDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.repo.BranchRepo;
+import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.service.BranchService;
 
 import org.modelmapper.ModelMapper;
@@ -25,10 +27,14 @@ public class BranchServiceImpl implements BranchService {
     private BranchRepo branchRepo;
 
     @Autowired
+    private ProfileRepo profileRepo;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Override
-    public PageResponse<BranchDTO> getAllBranches(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public PageResponse<BranchDTO> getAllBranches(Integer pageNumber, Integer pageSize, String sortBy,
+            String sortOrder) {
 
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
@@ -67,24 +73,41 @@ public class BranchServiceImpl implements BranchService {
     public BranchDTO createBranch(BranchDTO branchDTO) {
         Branch branch = modelMapper.map(branchDTO, Branch.class);
 
-        Branch saved = branchRepo.save(branch);
+        if (branchDTO.getManagerId() != null) {
+            Profile manager = profileRepo.findById(branchDTO.getManagerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Profile", "id", branchDTO.getManagerId()));
+            branch.setManager(manager);
+        }
 
-        return modelMapper.map(saved, BranchDTO.class);
+        Branch saved = branchRepo.save(branch);
+        BranchDTO result = modelMapper.map(saved, BranchDTO.class);
+        if (saved.getManager() != null)
+            result.setManagerId(saved.getManager().getProfileId());
+        return result;
     }
 
     @Transactional
     @Override
     public BranchDTO updateBranch(Long id, BranchDTO branchDTO) {
-
         Branch branch = branchRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Branch", "id", id));
 
         branch.setBranchName(branchDTO.getBranchName());
         branch.setAddress(branchDTO.getAddress());
 
-        Branch updated = branchRepo.save(branch);
+        if (branchDTO.getManagerId() != null) {
+            Profile manager = profileRepo.findById(branchDTO.getManagerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Profile", "id", branchDTO.getManagerId()));
+            branch.setManager(manager);
+        } else {
+            branch.setManager(null); // Cho phép xóa manager
+        }
 
-        return modelMapper.map(updated, BranchDTO.class);
+        Branch updated = branchRepo.save(branch);
+        BranchDTO result = modelMapper.map(updated, BranchDTO.class);
+        if (updated.getManager() != null)
+            result.setManagerId(updated.getManager().getProfileId());
+        return result;
     }
 
     @Transactional
