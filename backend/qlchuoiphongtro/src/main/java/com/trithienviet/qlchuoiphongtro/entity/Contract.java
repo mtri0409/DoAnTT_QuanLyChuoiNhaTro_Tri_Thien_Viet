@@ -60,6 +60,12 @@ public class Contract {
     @Column(nullable = false)
     private ContractStatus status;
 
+    @Column
+    private LocalDateTime terminatedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String terminationReason;
+
     @Min(value = 1, message = "Billing day must be at least 1")
     @Max(value = 31, message = "Billing day cannot be greater than 31")
     private Integer billingDay; // lưu ngày sẽ tính tiền

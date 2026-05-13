@@ -1,6 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.service.impl;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,8 +66,81 @@ public class ContractServiceImpl implements ContractService {
 
     // ==================== terminateContract ====================
     @Override
-    public void terminateContract(Long contractId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    @Transactional
+    public void terminateContract(Long contractId, String reason) {
+
+        // 1. Load contract
+        Contract contract = contractRepo.findById(contractId)
+                .orElseThrow(() -> new RuntimeException("Contract not found: " + contractId));
+
+        // 2. Validate: chỉ cho phép ACTIVE → TERMINATED
+        if (contract.getStatus() != ContractStatus.ACTIVE) {
+            throw new IllegalArgumentException(
+                    "Only ACTIVE contracts can be terminated. Current status: " + contract.getStatus());
+        }
+
+        // ── 3. Cập nhật Contract ──────────────────────────────────────────────────
+        contract.setStatus(ContractStatus.TERMINATED);
+        contract.setTerminatedAt(LocalDateTime.now());
+        contract.setTerminationReason(reason);
+
+        // ── 4. Cập nhật Room: OCCUPIED → AVAILABLE ───────────────────────────────
+        Room room = contract.getRoom();
+        room.setStatus(RoomStatus.AVAILABLE);
+        roomRepo.save(room);
+
+        // ── 5. Cập nhật Deposit: ACTIVE → PENDING, tách khỏi contract ────────────
+        depositRepo.findTopByRoom_RoomIdAndStatus(room.getRoomId(), "ACTIVE")
+                .ifPresent(deposit -> {
+                    deposit.setStatus("PENDING");
+                    deposit.setContract(null);
+                    depositRepo.save(deposit);
+                });
+
+        // ── 6. Cập nhật RoomMember: isStaying → false (giữ record lịch sử) ───────
+        List<RoomMember> members = roomMemberRepo.findByContract_ContractId(contractId);
+        members.forEach(m -> m.setIsStaying(false));
+        roomMemberRepo.saveAll(members);
+
+        // ── 7. Huỷ Invoice chưa thanh toán (DRAFT / UNPAID) ──────────────────────
+        if (contract.getInvoices() != null) {
+            contract.getInvoices().stream()
+                    .filter(inv -> "DRAFT".equals(inv.getStatus()) || "UNPAID".equals(inv.getStatus()))
+                    .forEach(inv -> {
+                        inv.setStatus("CANCELLED");
+                    });
+            // Cascade sẽ save, hoặc dùng invoiceRepo.saveAll() nếu không có cascade
+        }
+
+        // ── 8. Lưu contract (sau khi tất cả side-effects đã xử lý) ───────────────
+        contractRepo.save(contract);
+
+        // ── 9. Notification + Email cho representative ────────────────────────────
+        Profile representative = contract.getRepresentative();
+        if (representative != null) {
+
+            // Email
+            String emailTemplate = EmailTemplate.getContractTerminated(
+                    representative.getFullName(),
+                    room.getRoomName(),
+                    reason != null ? reason : "Không có lý do cụ thể");
+            emailService.sendHtmlEmail(
+                    representative.getEmail(),
+                    "THÔNG BÁO CHẤM DỨT HỢP ĐỒNG TRƯỚC HẠN",
+                    emailTemplate);
+
+            // In-app notification
+            String title = NotificationConstant.CONTRACT_TERMINATED_TITLE;
+            String content = String.format(
+                    NotificationConstant.CONTRACT_TERMINATED_CONTENT,
+                    representative.getFullName(),
+                    room.getRoomName());
+            notificationService.sendSystemNotification(
+                    representative.getProfileId(),
+                    title,
+                    content,
+                    NotificationConstant.TYPE_CONTRACT);
+        }
     }
 
     // ==================== Helper build Pageable & PageResponse

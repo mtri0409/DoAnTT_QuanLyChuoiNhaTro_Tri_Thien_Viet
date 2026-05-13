@@ -20,6 +20,7 @@ import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.TerminateContractRequest;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -188,5 +189,14 @@ public class ContractController {
     public ResponseEntity<Map<String, String>> deleteService(@PathVariable Integer id) {
         contractService.deleteService(id);
         return ResponseEntity.ok(Map.of("message", "Delete contract service successfully"));
+    }
+
+    @PostMapping("/admin/contracts/{id}/terminate")
+    public ResponseEntity<String> terminate(
+            @PathVariable Long id,
+            @RequestBody(required = false) TerminateContractRequest request) {
+        String reason = (request != null) ? request.getReason() : null;
+        contractService.terminateContract(id, reason);
+        return ResponseEntity.ok("Contract terminated successfully");
     }
 }
