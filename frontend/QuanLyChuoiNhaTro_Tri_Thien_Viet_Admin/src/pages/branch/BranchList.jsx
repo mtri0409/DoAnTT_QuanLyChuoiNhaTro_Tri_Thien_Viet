@@ -7,6 +7,7 @@ import apiProfile from '../../api/apiProfile';
 import apiRoom from '../../api/apiRoom';
 import Pagination from '../../components/Pagination';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const BranchList = () => {
   const PAGE_SIZE = 5; 
@@ -90,9 +91,9 @@ const BranchList = () => {
     try {
       await apiBranches.deleteBranch(branchId);
       fetchBranches(currentPage, search);
-      alert('Xóa chi nhánh thành công!');
+      toast.success('Xóa chi nhánh thành công!');
     } catch (err) {
-      alert('Lỗi khi xóa chi nhánh: ' + (err.response?.data?.message || err.message));
+      toast.error('Lỗi khi xóa chi nhánh: ' + (err.response?.data?.message || err.message));
     } finally {
       setDeleting(null);
     }

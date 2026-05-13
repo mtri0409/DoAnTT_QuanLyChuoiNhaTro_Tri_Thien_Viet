@@ -25,6 +25,8 @@ import {
 import apiMaintenance from "../../api/apiMaintenance";
 import apiExpenses from "../../api/apiExpenses";
 import { imgURL } from "../../api/config";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 /* ── Status config ── */
 const STATUS_CONFIG = {
@@ -588,22 +590,29 @@ const MaintenanceDetail = () => {
     setUpdating(true);
     try {
       const updated = await apiMaintenance.updateStatus(requestId, newStatus);
+      toast.success("Cập nhập trạng thái thành công !")
       setRequest(updated);
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể cập nhật");
+      toast.error(err?.response?.data?.message || "Không thể cập nhật");
     } finally {
       setUpdating(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Xóa yêu cầu này vĩnh viễn?")) return;
+  const result = await confirmAction({
+        title: ' Xóa yêu cầu bảo trì',
+        text: ` Bạn có chắc xóa yêu cầu này không ?`,
+        icon: 'info'
+      });
+    if(!result.isConfirmed) return;
     setDeleting(true);
     try {
       await apiMaintenance.deleteRequest(requestId);
+      toast.success("Xóa yêu cầu thành công !")
       navigate("/maintenance");
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể xóa");
+      toast.error(err?.response?.data?.message || "Không thể xóa");
       setDeleting(false);
     }
   };

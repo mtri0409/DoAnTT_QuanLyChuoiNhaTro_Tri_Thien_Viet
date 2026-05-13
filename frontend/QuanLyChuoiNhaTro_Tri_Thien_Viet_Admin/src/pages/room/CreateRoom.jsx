@@ -10,6 +10,7 @@ import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
 import apiAmenity from '../../api/apiAmenity';
 import apiRoomMedia from '../../api/apiRoomMedia';
+import { toast } from 'react-toastify';
 
 const CreateRoom = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const CreateRoom = () => {
         setAllAmenities(amenityData?.content || []);
       } catch (err) {
         console.error('Fetch filters error:', err);
-        alert('Lỗi khi tải dữ liệu!');
+        toast.error('Lỗi khi tải dữ liệu!');
       }
     };
     fetchFilters();
@@ -135,15 +136,15 @@ const CreateRoom = () => {
         setUploading(false);
       }
 
-      alert('Tạo phòng thành công!');
+      toast.success('Tạo phòng thành công!');
       navigate('/rooms/1');
     } catch (err) {
       console.error('Lỗi API:', err);
       if (err.response?.status === 400) {
         const be = err.response.data;
-        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : alert(be?.message || 'Dữ liệu không hợp lệ.');
+        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : toast.error(be?.message || 'Dữ liệu không hợp lệ.');
       } else {
-        alert('Lỗi hệ thống hoặc mất kết nối Server.');
+        toast.error('Lỗi hệ thống hoặc mất kết nối Server.');
       }
     } finally {
       setLoading(false);

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import apiBranches from '../../api/apiBranches';
 import apiProfile from '../../api/apiProfile';
+import { toast } from 'react-toastify';
 
 const FontLink = () => (
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -257,7 +258,7 @@ const UpdateBranch = () => {
       })
       .catch(err => {
         console.error(err);
-        alert('Không tìm thấy chi nhánh!');
+        toast.error('Không tìm thấy chi nhánh!');
         navigate('/branches');
       })
       .finally(() => {
@@ -305,15 +306,15 @@ const UpdateBranch = () => {
 
     try {
       await apiBranches.updateBranch(id, formData);
-      alert('Cập nhật chi nhánh thành công!');
+      toast.success('Cập nhật chi nhánh thành công!');
       navigate('/branches');
     } catch (err) {
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
         if (backendErrors && typeof backendErrors === 'object') setErrors(backendErrors);
-        else alert(err.response.data?.message || 'Dữ liệu không hợp lệ.');
+        else toast.error(err.response.data?.message || 'Dữ liệu không hợp lệ.');
       } else {
-        alert('Lỗi hệ thống hoặc mất kết nối server.');
+        toast.error('Lỗi hệ thống hoặc mất kết nối server.');
       }
     } finally {
       setLoading(false);

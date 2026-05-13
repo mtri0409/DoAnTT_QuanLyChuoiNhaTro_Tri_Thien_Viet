@@ -19,6 +19,8 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import apiPost from "../../api/apiPost";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 const STATUS_CONFIG = {
   ACTIVE: {
@@ -99,18 +101,18 @@ const PostDetail = () => {
   }, [postId]);
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Bạn có chắc muốn xóa bài đăng #${postId}? Thao tác này không thể hoàn tác!`,
-      )
-    )
-      return;
+   const result = await confirmAction({
+          title: 'Xóa bài viết',
+          text: ` Bạn có chắc xóa bài viết này ?  ?`,
+          icon: 'info'
+        });
+    if(!result.isConfirmed) return;
     try {
       await apiPost.adminDeletePost(postId);
-      alert("Xóa bài đăng thành công!");
+      toast.success("Xóa bài đăng thành công!");
       navigate("/posts");
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa!");
+      toast.error(err.response?.data?.message || "Lỗi khi xóa!");
     }
   };
 
@@ -139,10 +141,10 @@ const PostDetail = () => {
     if (!window.confirm("Bạn muốn đăng lại bài này?")) return;
     try {
       await apiPost.repost(postId);
-      alert("Đăng lại thành công! Bài mới đã được tạo.");
+      toast.success("Đăng lại thành công! Bài mới đã được tạo.");
       navigate("/posts");
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi đăng lại!");
+      toast.error(err.response?.data?.message || "Lỗi khi đăng lại!");
     }
   };
 

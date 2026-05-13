@@ -16,6 +16,8 @@ import apiMaintenance from "../../api/apiMaintenance";
 import apiBranches from "../../api/apiBranches";
 import apiFloor from "../../api/apiFloor";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 /* ── Status config ── */
 const STATUS_CONFIG = {
@@ -274,19 +276,25 @@ const ListMaintenance = () => {
         };
       });
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể cập nhật trạng thái");
+      toast.error(err?.response?.data?.message || "Không thể cập nhật trạng thái");
     } finally {
       setUpdatingId(null);
     }
   };
 
   const handleDelete = async (requestId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa yêu cầu này?")) return;
+     const result = await confirmAction({
+        title: 'Xóa yêu cầu bảo trì',
+        text: `Bạn có xóa yêu cầu này không ?`,
+        icon: 'info'
+      });
+    if(!result.isConfirmed) return;
     try {
       await apiMaintenance.deleteRequest(requestId);
       fetchData();
+      toast.success("Xóa yêu cầu thành công !")
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể xóa");
+      toast.error(err?.response?.data?.message || "Không thể xóa");
     }
   };
 

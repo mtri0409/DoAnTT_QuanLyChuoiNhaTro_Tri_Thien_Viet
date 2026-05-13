@@ -20,6 +20,7 @@ import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
 import apiServices from "../../api/apiService";
 import apiRoom from "../../api/apiRoom";
+import { toast } from "react-toastify";
 
 // ====================== SECTION HEADER (đồng bộ ContractDetail) ======================
 const SectionHeader = ({ icon: Icon, title, action }) => (
@@ -435,7 +436,7 @@ const UpdateContract = () => {
         }
       } catch (err) {
         console.error("Lỗi tải hợp đồng:", err);
-        alert("Không thể tải thông tin hợp đồng!");
+        toast.error("Không thể tải thông tin hợp đồng!");
         navigate("/contracts");
       } finally {
         setLoadingData(false);
@@ -533,7 +534,7 @@ const UpdateContract = () => {
     try {
       setSubmitting(true);
       await apiContract.updateContract(id, payload);
-      alert("Cập nhật hợp đồng thành công!");
+      toast.success("Cập nhật hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
       console.error("Lỗi cập nhật hợp đồng:", err);
@@ -543,7 +544,7 @@ const UpdateContract = () => {
         "Có lỗi xảy ra khi cập nhật hợp đồng!";
       if (err.response?.status === 400 && typeof err.response.data === "object")
         setErrors(err.response.data);
-      else alert(typeof msg === "string" ? msg : JSON.stringify(msg));
+      else toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setSubmitting(false);
     }

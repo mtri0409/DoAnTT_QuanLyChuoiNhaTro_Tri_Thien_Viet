@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import apiExpenses from "../../api/apiExpenses";
 import axiosInstance from "../../api/axios";
+import { toast } from "react-toastify";
 
 const fmt = (amount) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -267,10 +268,10 @@ const DetailExpense = () => {
     setDeleting(true);
     try {
       await apiExpenses.delete(id);
-      alert("Xóa thành công!");
+      toast.success("Xóa thành công!");
       navigate("/expenses");
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể xóa");
+      toast.error(err?.response?.data?.message || "Không thể xóa");
       setDeleting(false);
     }
   };

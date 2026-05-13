@@ -1,14 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaBed,
-  FaFileSignature, FaBuilding, FaLayerGroup, FaChevronDown,
-  FaChevronRight, FaTimes, FaCheck, FaFilter
-} from 'react-icons/fa';
-import apiRoom from '../../api/apiRoom';
-import apiFloor from '../../api/apiFloor';
-import apiBranches from '../../api/apiBranches';
-import Pagination from '../../components/Pagination';
+  FaPlus,
+  FaSearch,
+  FaEdit,
+  FaTrash,
+  FaEye,
+  FaBed,
+  FaFileSignature,
+  FaBuilding,
+  FaLayerGroup,
+  FaChevronDown,
+  FaChevronRight,
+  FaTimes,
+  FaCheck,
+  FaFilter,
+} from "react-icons/fa";
+import apiRoom from "../../api/apiRoom";
+import apiFloor from "../../api/apiFloor";
+import apiBranches from "../../api/apiBranches";
+import Pagination from "../../components/Pagination";
 
 const FontLink = () => (
   <link
@@ -79,34 +90,71 @@ const css = `
 `;
 
 /* ─── Add/Edit Floor Modal ──────────────────────────────────── */
-const FloorModal = ({ mode, floorData, branches, onConfirm, onClose, loading }) => {
+const FloorModal = ({
+  mode,
+  floorData,
+  branches,
+  onConfirm,
+  onClose,
+  loading,
+}) => {
   const [data, setData] = useState(floorData);
-  const isEdit = mode === 'edit';
+  const isEdit = mode === "edit";
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="rl-modal" onClick={e => e.stopPropagation()}>
-        <h2>{isEdit ? '✏️ Sửa tầng' : '➕ Thêm tầng mới'}</h2>
+      <div className="rl-modal" onClick={(e) => e.stopPropagation()}>
+        <h2>{isEdit ? "✏️ Sửa tầng" : "➕ Thêm tầng mới"}</h2>
         <div style={{ marginBottom: 16 }}>
-          <label className="rl-label">Số tầng <span style={{ color: '#ef4444' }}>*</span></label>
-          <input className="rl-input" style={{ width: '100%', boxSizing: 'border-box' }}
-            type="number" min="0" placeholder="VD: 1, 2, 3…"
+          <label className="rl-label">
+            Số tầng <span style={{ color: "#ef4444" }}>*</span>
+          </label>
+          <input
+            className="rl-input"
+            style={{ width: "100%", boxSizing: "border-box" }}
+            type="number"
+            min="0"
+            placeholder="VD: 1, 2, 3…"
             value={data.floorNumber}
-            onChange={e => setData({ ...data, floorNumber: e.target.value })} />
+            onChange={(e) => setData({ ...data, floorNumber: e.target.value })}
+          />
         </div>
         <div style={{ marginBottom: 24 }}>
-          <label className="rl-label">Chi nhánh <span style={{ color: '#ef4444' }}>*</span></label>
-          <select className="rl-select" value={data.branchId}
+          <label className="rl-label">
+            Chi nhánh <span style={{ color: "#ef4444" }}>*</span>
+          </label>
+          <select
+            className="rl-select"
+            value={data.branchId}
             disabled={isEdit}
-            onChange={e => setData({ ...data, branchId: e.target.value })}>
+            onChange={(e) => setData({ ...data, branchId: e.target.value })}
+          >
             <option value="">-- Chọn chi nhánh --</option>
-            {branches.map(b => <option key={b.branchId} value={b.branchId}>{b.branchName}</option>)}
+            {branches.map((b) => (
+              <option key={b.branchId} value={b.branchId}>
+                {b.branchName}
+              </option>
+            ))}
           </select>
-          {isEdit && <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 5 }}>Chi nhánh không thể thay đổi</p>}
+          {isEdit && (
+            <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 5 }}>
+              Chi nhánh không thể thay đổi
+            </p>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="rl-btn rl-btn-ghost" onClick={onClose} disabled={loading}>Hủy</button>
-          <button className="rl-btn rl-btn-primary" onClick={() => onConfirm(data)} disabled={loading}>
-            {loading ? '⏳' : isEdit ? 'Cập nhật' : 'Thêm tầng'}
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            className="rl-btn rl-btn-ghost"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Hủy
+          </button>
+          <button
+            className="rl-btn rl-btn-primary"
+            onClick={() => onConfirm(data)}
+            disabled={loading}
+          >
+            {loading ? "⏳" : isEdit ? "Cập nhật" : "Thêm tầng"}
           </button>
         </div>
       </div>
@@ -157,10 +205,16 @@ const RoomList = () => {
         selectedBranch === "all" ? null : selectedBranch,
         search,
       );
+
       const d = res.data || res;
-      setData(d || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
-    } catch { setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 }); }
-    finally { setLoading(false); }
+      setData(
+        d || { content: [], pageNumber: 0, totalPages: 0, totalElements: 0 },
+      );
+    } catch {
+      setData({ content: [], pageNumber: 0, totalPages: 0, totalElements: 0 });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchFilters = async () => {
@@ -169,26 +223,31 @@ const RoomList = () => {
         apiFloor.getAllFloors(),
         apiBranches.getAllBranches(1, 100),
       ]);
-      setFloors(Array.isArray(floorRes.data || floorRes) ? (floorRes.data || floorRes) : []);
+      setFloors(
+        Array.isArray(floorRes.data || floorRes)
+          ? floorRes.data || floorRes
+          : [],
+      );
       const bl = (branchRes.data || branchRes)?.content || [];
       setBranches(bl);
-    } catch { setBranches([]); setFloors([]); }
+    } catch {
+      setBranches([]);
+      setFloors([]);
+    }
   };
 
-  const getStatus = r => (r.Status || r.status || '').toUpperCase();
-  const isAvailable = r => getStatus(r) === 'AVAILABLE';
+  const getStatus = (r) => (r.Status || r.status || "").toUpperCase();
+  const isAvailable = (r) => getStatus(r) === "AVAILABLE";
 
   const handleDeleteRoom = async (roomId, roomName) => {
     if (!window.confirm(`Xóa phòng "${roomName}"?`)) return;
     setDeletingRoom(roomId);
+
     try {
       await apiRoom.deleteRoom(roomId);
       fetchRooms();
-      alert("Xóa phòng thành công!");
     } catch (err) {
-      alert(
-        "Lỗi khi xóa phòng: " + (err.response?.data?.message || err.message),
-      );
+      alert("Lỗi: " + (err.response?.data?.message || err.message));
     } finally {
       setDeletingRoom(null);
     }
@@ -196,58 +255,82 @@ const RoomList = () => {
 
   /* floor crud */
   const handleSaveFloor = async (d) => {
-    if (!d.floorNumber || (!d.branchId && floorModal.mode === 'add')) { alert('Điền đầy đủ!'); return; }
+    if (!d.floorNumber || (!d.branchId && floorModal.mode === "add")) {
+      alert("Điền đầy đủ!");
+      return;
+    }
     setSavingFloor(true);
     try {
-      if (floorModal.mode === 'add') {
-        await apiFloor.createFloor({ floorNumber: +d.floorNumber, branchId: +d.branchId });
+      if (floorModal.mode === "add") {
+        await apiFloor.createFloor({
+          floorNumber: +d.floorNumber,
+          branchId: +d.branchId,
+        });
       } else {
-        await apiFloor.updateFloor(floorModal.data.floorId, { floorNumber: +d.floorNumber, branchId: +d.branchId });
+        await apiFloor.updateFloor(floorModal.data.floorId, {
+          floorNumber: +d.floorNumber,
+          branchId: +d.branchId,
+        });
       }
       await fetchFilters();
       setFloorModal(null);
-    } catch (err) { alert('Lỗi: ' + err.message); }
-    finally { setSavingFloor(false); }
+    } catch (err) {
+      alert("Lỗi: " + err.message);
+    } finally {
+      setSavingFloor(false);
+    }
   };
 
   const handleDeleteFloor = async (floor) => {
     if (!window.confirm(`Xóa tầng ${floor.floorNumber}?`)) return;
-    try { await apiFloor.deleteFloor(floor.floorId); await fetchFilters(); }
-    catch (err) { alert('Lỗi: ' + err.message); }
+    try {
+      await apiFloor.deleteFloor(floor.floorId);
+      await fetchFilters();
+    } catch (err) {
+      alert("Lỗi: " + err.message);
+    }
   };
 
   /* effects */
-  useEffect(() => { fetchFilters(); }, []);
+  useEffect(() => {
+    fetchFilters();
+  }, []);
 
   useEffect(() => {
-    if (selectedBranch === 'all') setFilteredFloors(floors);
+    if (selectedBranch === "all") setFilteredFloors(floors);
     else {
-      setFilteredFloors(floors.filter(f => f.branchId === parseInt(selectedBranch)));
-      setSelectedFloor('');
+      setFilteredFloors(
+        floors.filter((f) => f.branchId === parseInt(selectedBranch)),
+      );
+      setSelectedFloor("");
     }
   }, [selectedBranch, floors]);
 
-  useEffect(() => { setCurrentPage(0); }, [search, selectedFloor, selectedBranch]);
-  useEffect(() => { fetchRooms(); }, [currentPage, search, selectedFloor, selectedBranch]);
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [search, selectedFloor, selectedBranch]);
+  useEffect(() => {
+    fetchRooms();
+  }, [currentPage, search, selectedFloor, selectedBranch]);
 
-  const getFloorLabel = id => {
-    if (!id || !floors.length) return '—';
-    const f = floors.find(f => f.floorId === id);
-    return f ? `Tầng ${f.floorNumber}` : '—';
+  const getFloorLabel = (id) => {
+    if (!id || !floors.length) return "—";
+    const f = floors.find((f) => f.floorId === id);
+    return f ? `Tầng ${f.floorNumber}` : "—";
   };
 
   const branchName = (id) => {
-    const b = branches.find(b => String(b.branchId) === String(id));
-    return b?.branchName || '';
+    const b = branches.find((b) => String(b.branchId) === String(id));
+    return b?.branchName || "";
   };
 
   /* navigate to create contract with room pre-filled */
   const handleCreateContract = (room) => {
-    const branch = branches.find(b => {
-      const fl = floors.find(f => f.floorId === room.floorId);
+    const branch = branches.find((b) => {
+      const fl = floors.find((f) => f.floorId === room.floorId);
       return fl && String(b.branchId) === String(fl.branchId);
     });
-    navigate('/contracts/create', { state: { room, branch } });
+    navigate("/contracts/create", { state: { room, branch } });
   };
 
   /* ── Render ── */
@@ -267,57 +350,141 @@ const RoomList = () => {
         />
       )}
 
-      <div className="rl-root" style={{ padding: '28px 24px' }}>
+      <div className="rl-root" style={{ padding: "28px 24px" }}>
         {/* ── Header ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 28,
+          }}
+        >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <div style={{ width: 36, height: 36, background: '#4361ee', borderRadius: 10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 4,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: "#4361ee",
+                  borderRadius: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <FaBed color="#fff" size={17} />
               </div>
-              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a', letterSpacing: '-.02em' }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  letterSpacing: "-.02em",
+                }}
+              >
                 Quản lý phòng
               </h1>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>
+            <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>
               Danh sách toàn bộ phòng trong hệ thống
             </p>
           </div>
-          <Link to="/rooms/create" className="rl-btn rl-btn-primary" style={{ textDecoration: 'none' }}>
+          <Link
+            to="/rooms/create"
+            className="rl-btn rl-btn-primary"
+            style={{ textDecoration: "none" }}
+          >
             <FaPlus size={12} /> Thêm phòng
           </Link>
         </div>
-
         {/* ── Filter card ── */}
         <div className="rl-card" style={{ padding: 20, marginBottom: 16 }}>
           {/* Row 1: Search + branch pills */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 14,
+            }}
+          >
             {/* Search */}
-            <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
-              <FaSearch style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
-                color: '#94a3b8', fontSize: 13 }} />
-              <input className="rl-input" style={{ paddingLeft: 34, width: '100%', boxSizing: 'border-box' }}
-                placeholder="Tìm tên phòng…" value={search}
-                onChange={e => setSearch(e.target.value)} />
+            <div
+              style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}
+            >
+              <FaSearch
+                style={{
+                  position: "absolute",
+                  left: 11,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#94a3b8",
+                  fontSize: 13,
+                }}
+              />
+              <input
+                className="rl-input"
+                style={{
+                  paddingLeft: 34,
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+                placeholder="Tìm tên phòng…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
 
             {/* Branch pills */}
-            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginRight: 2 }}>Chi nhánh:</span>
+            <div
+              style={{
+                display: "flex",
+                gap: 7,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#94a3b8",
+                  fontWeight: 600,
+                  marginRight: 2,
+                }}
+              >
+                Chi nhánh:
+              </span>
               <button
-                className={`branch-pill ${selectedBranch === 'all' ? 'active' : 'inactive'}`}
-                onClick={() => { setSelectedBranch('all'); setShowFloorPanel(false); }}>
+                className={`branch-pill ${selectedBranch === "all" ? "active" : "inactive"}`}
+                onClick={() => {
+                  setSelectedBranch("all");
+                  setShowFloorPanel(false);
+                }}
+              >
                 Tất cả
               </button>
-              {branches.map(b => (
-                <button key={b.branchId}
-                  className={`branch-pill ${String(selectedBranch) === String(b.branchId) ? 'active' : 'inactive'}`}
+              {branches.map((b) => (
+                <button
+                  key={b.branchId}
+                  className={`branch-pill ${String(selectedBranch) === String(b.branchId) ? "active" : "inactive"}`}
                   onClick={() => {
                     const id = String(b.branchId);
                     setSelectedBranch(id);
-                    setShowFloorPanel(String(selectedBranch) !== id ? true : !showFloorPanel);
-                  }}>
+                    setShowFloorPanel(
+                      String(selectedBranch) !== id ? true : !showFloorPanel,
+                    );
+                  }}
+                >
                   <FaBuilding size={10} /> {b.branchName}
                 </button>
               ))}
@@ -325,75 +492,180 @@ const RoomList = () => {
           </div>
 
           {/* Row 2: Floor chips (only when branch selected) */}
-          {selectedBranch !== 'all' && (
-            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>Tầng:</span>
+          {selectedBranch !== "all" && (
+            <div
+              style={{
+                display: "flex",
+                gap: 7,
+                flexWrap: "wrap",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>
+                Tầng:
+              </span>
               <button
-                className={`floor-chip ${selectedFloor === '' ? 'active' : ''}`}
-                onClick={() => setSelectedFloor('')}>Tất cả</button>
-              {filteredFloors.map(f => (
-                <button key={f.floorId}
-                  className={`floor-chip ${String(selectedFloor) === String(f.floorId) ? 'active' : ''}`}
-                  onClick={() => setSelectedFloor(String(f.floorId) === String(selectedFloor) ? '' : String(f.floorId))}>
+                className={`floor-chip ${selectedFloor === "" ? "active" : ""}`}
+                onClick={() => setSelectedFloor("")}
+              >
+                Tất cả
+              </button>
+              {filteredFloors.map((f) => (
+                <button
+                  key={f.floorId}
+                  className={`floor-chip ${String(selectedFloor) === String(f.floorId) ? "active" : ""}`}
+                  onClick={() =>
+                    setSelectedFloor(
+                      String(f.floorId) === String(selectedFloor)
+                        ? ""
+                        : String(f.floorId),
+                    )
+                  }
+                >
                   T.{f.floorNumber}
                 </button>
               ))}
               {/* Toggle floor management */}
               <button
-                style={{ marginLeft: 'auto', fontSize: 12, color: '#4361ee', background: 'none', border: 'none',
-                  cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}
-                onClick={() => setShowFloorPanel(v => !v)}>
+                style={{
+                  marginLeft: "auto",
+                  fontSize: 12,
+                  color: "#4361ee",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+                onClick={() => setShowFloorPanel((v) => !v)}
+              >
                 <FaLayerGroup size={12} />
                 Quản lý tầng
-                {showFloorPanel ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+                {showFloorPanel ? (
+                  <FaChevronDown size={10} />
+                ) : (
+                  <FaChevronRight size={10} />
+                )}
               </button>
             </div>
           )}
 
           {/* Floor management panel */}
-          {selectedBranch !== 'all' && showFloorPanel && (
+          {selectedBranch !== "all" && showFloorPanel && (
             <div className="floor-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <span
+                  style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}
+                >
                   Tầng — {branchName(selectedBranch)}
                 </span>
-                <button className="rl-btn rl-btn-primary" style={{ fontSize: 12, padding: '6px 12px' }}
-                  onClick={() => setFloorModal({ mode: 'add', data: { floorNumber: '', branchId: selectedBranch } })}>
+                <button
+                  className="rl-btn rl-btn-primary"
+                  style={{ fontSize: 12, padding: "6px 12px" }}
+                  onClick={() =>
+                    setFloorModal({
+                      mode: "add",
+                      data: { floorNumber: "", branchId: selectedBranch },
+                    })
+                  }
+                >
                   <FaPlus size={10} /> Thêm tầng
                 </button>
               </div>
 
               {filteredFloors.length === 0 ? (
-                <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: '12px 0' }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "#94a3b8",
+                    textAlign: "center",
+                    padding: "12px 0",
+                  }}
+                >
                   Chưa có tầng nào trong chi nhánh này
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {filteredFloors.map(floor => (
-                    <div key={floor.floorId}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        background: '#fff', borderRadius: 10, padding: '8px 14px',
-                        border: '1.5px solid #e2e8f0' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  {filteredFloors.map((floor) => (
+                    <div
+                      key={floor.floorId}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "8px 14px",
+                        border: "1.5px solid #e2e8f0",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
+                      >
                         Tầng {floor.floorNumber}
                       </span>
-                      <div style={{ display: 'flex', gap: 4 }}>
+                      <div style={{ display: "flex", gap: 4 }}>
                         <button
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 7px',
-                            borderRadius: 7, color: '#4361ee', fontSize: 12 }}
-                          onMouseEnter={e => e.currentTarget.style.background='#eef0fd'}
-                          onMouseLeave={e => e.currentTarget.style.background='none'}
-                          onClick={() => setFloorModal({ mode: 'edit', data: { ...floor, branchId: floor.branchId } })}
-                          title="Sửa tầng">
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "4px 7px",
+                            borderRadius: 7,
+                            color: "#4361ee",
+                            fontSize: 12,
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#eef0fd")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "none")
+                          }
+                          onClick={() =>
+                            setFloorModal({
+                              mode: "edit",
+                              data: { ...floor, branchId: floor.branchId },
+                            })
+                          }
+                          title="Sửa tầng"
+                        >
                           <FaEdit size={13} />
                         </button>
                         <button
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 7px',
-                            borderRadius: 7, color: '#ef4444', fontSize: 12 }}
-                          onMouseEnter={e => e.currentTarget.style.background='#fee2e2'}
-                          onMouseLeave={e => e.currentTarget.style.background='none'}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "4px 7px",
+                            borderRadius: 7,
+                            color: "#ef4444",
+                            fontSize: 12,
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#fee2e2")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "none")
+                          }
                           onClick={() => handleDeleteFloor(floor)}
-                          title="Xóa tầng">
+                          title="Xóa tầng"
+                        >
                           <FaTrash size={13} />
                         </button>
                       </div>
@@ -406,122 +678,260 @@ const RoomList = () => {
         </div>
 
         {/* ── Table card ── */}
-        <div className="rl-card" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="rl-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="rl-card" style={{ overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              className="rl-table"
+              style={{ width: "100%", borderCollapse: "collapse" }}
+            >
               <thead>
                 <tr>
-                  <td colSpan="8" className="text-center py-5">
-                    <div
-                      className="spinner-border spinner-border-sm text-primary"
-                      role="status"
-                    />
-                    <span className="ms-2">Đang tải...</span>
-                  </td>
                   <th>Phòng</th>
                   <th>Tầng</th>
                   <th>Giá thuê</th>
                   <th>Tiền cọc</th>
                   <th>Người thuê</th>
                   <th>Mô tả</th>
-                  <th style={{ textAlign: 'center' }}>Trạng thái</th>
-                  <th style={{ textAlign: 'right', paddingRight: 20 }}>Thao tác</th>
+                  <th style={{ textAlign: "center" }}>Trạng thái</th>
+                  <th style={{ textAlign: "right", paddingRight: 20 }}>
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '56px 0', color: '#94a3b8' }}>
-                      <div style={{ display: 'inline-block', width: 28, height: 28, border: '3px solid #e2e8f0',
-                        borderTopColor: '#4361ee', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                    <td
+                      colSpan="8"
+                      style={{
+                        textAlign: "center",
+                        padding: "56px 0",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "inline-block",
+                          width: 28,
+                          height: 28,
+                          border: "3px solid #e2e8f0",
+                          borderTopColor: "#4361ee",
+                          borderRadius: "50%",
+                          animation: "spin 0.7s linear infinite",
+                        }}
+                      />
                       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
                     </td>
                   </tr>
                 ) : data.content?.length > 0 ? (
-                  data.content.map(item => {
+                  data.content.map((item) => {
                     const available = isAvailable(item);
                     return (
                       <tr key={item.roomId} className="rl-row-in">
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: 10,
-                              background: available ? '#dcfce7' : '#f1f5f9',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <FaBed color={available ? '#16a34a' : '#94a3b8'} size={15} />
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 10,
+                                background: available ? "#dcfce7" : "#f1f5f9",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <FaBed
+                                color={available ? "#16a34a" : "#94a3b8"}
+                                size={15}
+                              />
                             </div>
-                            <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>{item.roomName}</span>
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: "#0f172a",
+                                fontSize: 14,
+                              }}
+                            >
+                              {item.roomName}
+                            </span>
                           </div>
                         </td>
-                        <td style={{ color: '#64748b', fontSize: 13 }}>{getFloorLabel(item.floorId)}</td>
+                        <td style={{ color: "#64748b", fontSize: 13 }}>
+                          {getFloorLabel(item.floorId)}
+                        </td>
                         <td>
                           <span className="money">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                            {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                            }).format(item.price)}
                           </span>
                         </td>
                         <td>
-                          {item.depositAmount
-                            ? <span className="deposit-badge">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.depositAmount)}
-                              </span>
-                            : <span style={{ color: '#cbd5e1' }}>—</span>}
+                          {item.depositAmount ? (
+                            <span className="deposit-badge">
+                              {new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(item.depositAmount)}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#cbd5e1" }}>—</span>
+                          )}
                         </td>
                         <td>
-                          <span style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
-                            {item.currentPeople}<span style={{ color: '#cbd5e1', fontWeight: 400 }}>/{item.maxPeople}</span>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              color: "#475569",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {item.currentPeople}
+                            <span style={{ color: "#cbd5e1", fontWeight: 400 }}>
+                              /{item.maxPeople}
+                            </span>
                           </span>
                         </td>
                         <td>
-                          <span style={{ fontSize: 12.5, color: '#94a3b8', display: 'block',
-                            maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                            title={item.description}>
-                            {item.description || '—'}
+                          <span
+                            style={{
+                              fontSize: 12.5,
+                              color: "#94a3b8",
+                              display: "block",
+                              maxWidth: 140,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={item.description}
+                          >
+                            {item.description || "—"}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className={`rl-tag ${available ? 'rl-tag-available'
-                            : getStatus(item) === 'OCCUPIED' ? 'rl-tag-occupied' : 'rl-tag-other'}`}>
-                            {available
-                              ? <><FaCheck size={9} /> Có sẵn</>
-                              : getStatus(item) === 'OCCUPIED' ? '📌 Đã thuê'
-                              : getStatus(item) || 'N/A'}
+                        <td style={{ textAlign: "center" }}>
+                          <span
+                            className={`rl-tag ${
+                              available
+                                ? "rl-tag-available"
+                                : getStatus(item) === "OCCUPIED"
+                                  ? "rl-tag-occupied"
+                                  : "rl-tag-other"
+                            }`}
+                          >
+                            {available ? (
+                              <>
+                                <FaCheck size={9} /> Có sẵn
+                              </>
+                            ) : getStatus(item) === "OCCUPIED" ? (
+                              "📌 Đã thuê"
+                            ) : (
+                              getStatus(item) || "N/A"
+                            )}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'right', paddingRight: 20 }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                        <td style={{ textAlign: "right", paddingRight: 20 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 4,
+                            }}
+                          >
                             {available && (
-                              <button className="action-icon sign" title="Tạo hợp đồng"
-                                style={{ color: '#7c3aed' }}
-                                onMouseEnter={e => e.currentTarget.style.background='#f5f3ff'}
-                                onMouseLeave={e => e.currentTarget.style.background='transparent'}
-                                onClick={() => handleCreateContract(item)}>
+                              <button
+                                className="action-icon sign"
+                                title="Tạo hợp đồng"
+                                style={{ color: "#7c3aed" }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#f5f3ff")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background =
+                                    "transparent")
+                                }
+                                onClick={() => handleCreateContract(item)}
+                              >
                                 <FaFileSignature size={14} />
                               </button>
                             )}
-                            <Link to={`/rooms/${item.roomId}/detail`}
-                              className="action-icon view" title="Xem chi tiết"
-                              style={{ color: '#2563eb', display: 'flex', alignItems: 'center' }}
-                              onMouseEnter={e => e.currentTarget.style.background='#eff6ff'}
-                              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                            <Link
+                              to={`/rooms/${item.roomId}/detail`}
+                              className="action-icon view"
+                              title="Xem chi tiết"
+                              style={{
+                                color: "#2563eb",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#eff6ff")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background =
+                                  "transparent")
+                              }
+                            >
                               <FaEye size={14} />
                             </Link>
-                            <Link to={`/rooms/${item.roomId}/update`}
-                              className="action-icon edit" title="Chỉnh sửa"
-                              style={{ color: '#16a34a', display: 'flex', alignItems: 'center' }}
-                              onMouseEnter={e => e.currentTarget.style.background='#f0fdf4'}
-                              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                            <Link
+                              to={`/rooms/${item.roomId}/update`}
+                              className="action-icon edit"
+                              title="Chỉnh sửa"
+                              style={{
+                                color: "#16a34a",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#f0fdf4")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background =
+                                  "transparent")
+                              }
+                            >
                               <FaEdit size={14} />
                             </Link>
-                            <button className="action-icon del" title="Xóa"
-                              style={{ color: '#ef4444' }}
-                              onMouseEnter={e => e.currentTarget.style.background='#fef2f2'}
-                              onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                            <button
+                              className="action-icon del"
+                              title="Xóa"
+                              style={{ color: "#ef4444" }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#fef2f2")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background =
+                                  "transparent")
+                              }
                               disabled={deletingRoom === item.roomId}
-                              onClick={() => handleDeleteRoom(item.roomId, item.roomName)}>
-                              {deletingRoom === item.roomId
-                                ? <span style={{ width: 14, height: 14, border: '2px solid #fca5a5',
-                                    borderTopColor: '#ef4444', borderRadius: '50%',
-                                    display: 'inline-block', animation: 'spin .6s linear infinite' }} />
-                                : <FaTrash size={13} />}
+                              onClick={() =>
+                                handleDeleteRoom(item.roomId, item.roomName)
+                              }
+                            >
+                              {deletingRoom === item.roomId ? (
+                                <span
+                                  style={{
+                                    width: 14,
+                                    height: 14,
+                                    border: "2px solid #fca5a5",
+                                    borderTopColor: "#ef4444",
+                                    borderRadius: "50%",
+                                    display: "inline-block",
+                                    animation: "spin .6s linear infinite",
+                                  }}
+                                />
+                              ) : (
+                                <FaTrash size={13} />
+                              )}
                             </button>
                           </div>
                         </td>
@@ -533,8 +943,18 @@ const RoomList = () => {
                     <td colSpan="8">
                       <div className="empty-state">
                         <div className="empty-icon">🛏️</div>
-                        <p style={{ fontWeight: 600, color: '#475569', marginBottom: 4 }}>Không có phòng nào</p>
-                        <p style={{ fontSize: 13, color: '#94a3b8' }}>Thay đổi bộ lọc hoặc thêm phòng mới</p>
+                        <p
+                          style={{
+                            fontWeight: 600,
+                            color: "#475569",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Không có phòng nào
+                        </p>
+                        <p style={{ fontSize: 13, color: "#94a3b8" }}>
+                          Thay đổi bộ lọc hoặc thêm phòng mới
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -544,15 +964,34 @@ const RoomList = () => {
           </div>
 
           {/* Footer */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '14px 20px', borderTop: '1px solid #f1f5f9' }}>
-            <span style={{ fontSize: 12.5, color: '#94a3b8' }}>
-              Tổng <strong style={{ color: '#0f172a' }}>{data.totalElements || 0}</strong> phòng
-              {' · '}Trang <strong style={{ color: '#0f172a' }}>{currentPage + 1}</strong>/{data.totalPages || 1}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "14px 20px",
+              borderTop: "1px solid #f1f5f9",
+            }}
+          >
+            <span style={{ fontSize: 12.5, color: "#94a3b8" }}>
+              Tổng{" "}
+              <strong style={{ color: "#0f172a" }}>
+                {data.totalElements || 0}
+              </strong>{" "}
+              phòng
+              {" · "}Trang{" "}
+              <strong style={{ color: "#0f172a" }}>{currentPage + 1}</strong>/
+              {data.totalPages || 1}
             </span>
             {data.totalPages > 1 && (
-              <Pagination currentPage={currentPage} totalPages={data.totalPages}
-                onPageChange={p => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={data.totalPages}
+                onPageChange={(p) => {
+                  setCurrentPage(p);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
             )}
           </div>
         </div>

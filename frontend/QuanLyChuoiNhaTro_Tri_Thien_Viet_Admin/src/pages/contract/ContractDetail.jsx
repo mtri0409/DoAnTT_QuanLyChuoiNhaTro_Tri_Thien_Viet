@@ -29,6 +29,7 @@ import {
 import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
 import apiUser from "../../api/apiUser";
+import { toast } from "react-toastify";
 
 // ====================== CONSTANTS ======================
 const METER_UNITS = ["kwh", "kWh", "KWH", "m³", "m3", "M3", "m^3"];
@@ -202,7 +203,7 @@ const ContractDetail = () => {
       setExporting(true);
       await exportContractToPDF({ contract, members, services, adminProfile });
     } catch {
-      alert("Có lỗi khi xuất file PDF!");
+      toast.error("Có lỗi khi xuất file PDF!");
     } finally {
       setExporting(false);
     }
@@ -214,9 +215,9 @@ const ContractDetail = () => {
       setUpdatingStatus(true);
       await apiContract.autoUpdateStatus();
       setContract(await apiContract.getContractById(id));
-      alert("Đã cập nhật trạng thái thành công!");
+      toast.success("Đã cập nhật trạng thái thành công!");
     } catch {
-      alert("Có lỗi xảy ra khi cập nhật trạng thái!");
+      toast.error("Có lỗi xảy ra khi cập nhật trạng thái!");
     } finally {
       setUpdatingStatus(false);
     }
@@ -224,7 +225,7 @@ const ContractDetail = () => {
 
   const handleTerminate = async () => {
     if (!terminateReason.trim()) {
-      alert("Vui lòng nhập lý do chấm dứt hợp đồng.");
+      toast.error("Vui lòng nhập lý do chấm dứt hợp đồng.");
       return;
     }
     try {
@@ -233,9 +234,9 @@ const ContractDetail = () => {
       setShowTerminateModal(false);
       setTerminateReason("");
       setContract(await apiContract.getContractById(id));
-      alert("Hợp đồng đã được chấm dứt thành công.");
+      toast.success("Hợp đồng đã được chấm dứt thành công.");
     } catch {
-      alert("Có lỗi xảy ra khi chấm dứt hợp đồng!");
+      toast.error("Có lỗi xảy ra khi chấm dứt hợp đồng!");
     } finally {
       setTerminating(false);
     }

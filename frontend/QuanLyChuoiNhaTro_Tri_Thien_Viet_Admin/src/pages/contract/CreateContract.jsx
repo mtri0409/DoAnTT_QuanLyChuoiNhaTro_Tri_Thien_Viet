@@ -20,6 +20,7 @@ import apiProfile from "../../api/apiProfile";
 import apiServices from "../../api/apiService";
 import apiRoom from "../../api/apiRoom";
 import apiBranches from "../../api/apiBranches";
+import { toast } from "react-toastify";
 
 // ====================== SECTION HEADER (đồng bộ ContractDetail) ======================
 const SectionHeader = ({ icon: Icon, title, action }) => (
@@ -504,14 +505,14 @@ const CreateContract = () => {
     try {
       setSubmitting(true);
       await apiContract.createContract(payload);
-      alert("Tạo hợp đồng thành công!");
+      toast.success("Tạo hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
       const msg =
         err.response?.data?.message || err.response?.data || "Có lỗi xảy ra!";
       if (err.response?.status === 400 && typeof err.response.data === "object")
         setErrors(err.response.data);
-      else alert(typeof msg === "string" ? msg : JSON.stringify(msg));
+      else toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setSubmitting(false);
     }

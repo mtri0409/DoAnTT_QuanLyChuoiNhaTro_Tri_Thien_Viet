@@ -11,6 +11,7 @@ import apiFloor from '../../api/apiFloor';
 import apiBranches from '../../api/apiBranches';
 import apiAmenity from '../../api/apiAmenity';
 import apiRoomMedia from '../../api/apiRoomMedia';
+import { toast } from 'react-toastify';
 
 const UpdateRoom = () => {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ const UpdateRoom = () => {
 
       } catch (err) {
         console.error('Fetch error:', err);
-        alert('Lỗi khi tải dữ liệu phòng!');
+        toast.error('Lỗi khi tải dữ liệu phòng!');
         navigate('/rooms/1');
       } finally {
         setInitialLoading(false);
@@ -178,9 +179,9 @@ const UpdateRoom = () => {
     setLoading(true);
     setErrors({});
 
-    if (!formData.roomName.trim()) { alert('Vui lòng nhập tên phòng!'); setLoading(false); return; }
-    if (!selectedBranchId) { alert('Vui lòng chọn chi nhánh!'); setLoading(false); return; }
-    if (!formData.floorId) { alert('Vui lòng chọn tầng!'); setLoading(false); return; }
+    if (!formData.roomName.trim()) { toast.warn('Vui lòng nhập tên phòng!'); setLoading(false); return; }
+    if (!selectedBranchId) { toast.warn('Vui lòng chọn chi nhánh!'); setLoading(false); return; }
+    if (!formData.floorId) { toast.warn('Vui lòng chọn tầng!'); setLoading(false); return; }
 
     try {
       await apiRoom.updateRoom(roomId, formData);
@@ -195,15 +196,15 @@ const UpdateRoom = () => {
         setUploading(false);
       }
 
-      alert('Cập nhật phòng thành công!');
+      toast.success('Cập nhật phòng thành công!');
       navigate('/rooms/1');
     } catch (err) {
       console.error('Lỗi API:', err);
       if (err.response?.status === 400) {
         const be = err.response.data;
-        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : alert(be?.message || 'Dữ liệu không hợp lệ.');
+        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : toast.error(be?.message || 'Dữ liệu không hợp lệ.');
       } else {
-        alert('Lỗi hệ thống hoặc mất kết nối Server.');
+        toast.error('Lỗi hệ thống hoặc mất kết nối Server.');
       }
     } finally {
       setLoading(false);

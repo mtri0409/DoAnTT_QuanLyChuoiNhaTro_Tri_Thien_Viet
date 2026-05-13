@@ -4,6 +4,7 @@ import {
   FaTools, FaArrowLeft, FaSave, FaExclamationCircle 
 } from 'react-icons/fa';
 import apiService from '../../api/apiService';
+import { toast } from 'react-toastify';
 
 const CreateService = () => {
   const navigate = useNavigate();
@@ -49,14 +50,14 @@ const CreateService = () => {
         is_active: formData.isActive // map đúng DB
       });
 
-      alert("Tạo dịch vụ thành công!");
+      toast.success("Tạo dịch vụ thành công!");
       navigate('/services/1');
 
     } catch (err) {
       if (err.response?.status === 400) {
         setErrors(err.response.data);
       } else {
-        alert("Lỗi hệ thống.");
+        toast.error("Lỗi hệ thống.");
       }
     } finally {
       setLoading(false);

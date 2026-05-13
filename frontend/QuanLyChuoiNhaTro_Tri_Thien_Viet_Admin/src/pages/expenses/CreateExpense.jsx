@@ -19,6 +19,7 @@ import {
 import apiExpenses from "../../api/apiExpenses";
 import apiBranch from "../../api/apiBranches";
 import axiosInstance from "../../api/axios";
+import { toast } from "react-toastify";
 
 const EXPENSE_CATEGORIES = [
   "Sửa điện",
@@ -156,7 +157,7 @@ const CreateExpense = () => {
           : undefined,
         branchId: form.branchId ? Number(form.branchId) : undefined,
       });
-      alert("Tạo chi phí thành công!");
+      toast.error("Tạo chi phí thành công!");
       navigate("/expenses");
     } catch (err) {
       setError(

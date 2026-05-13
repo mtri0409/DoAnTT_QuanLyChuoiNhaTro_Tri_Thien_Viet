@@ -20,6 +20,7 @@ import {
 } from "react-icons/fa";
 import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
+import { toast } from "react-toastify";
 
 // ====================== HELPERS ======================
 const formatContractCode = (id) =>
@@ -69,7 +70,7 @@ const AddMemberModal = ({ contractId, existingIds, onAdded, onClose }) => {
       onAdded(profile);
     } catch (err) {
       const msg = err.response?.data?.message || "Không thể thêm thành viên!";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setAdding(null);
     }
@@ -304,7 +305,7 @@ const ContractMember = () => {
       setMembers((prev) => prev.filter((m) => (m.profileId ?? m.id) !== pid));
     } catch (err) {
       const msg = err.response?.data?.message || "Không thể xóa thành viên!";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setRemovingId(null);
     }

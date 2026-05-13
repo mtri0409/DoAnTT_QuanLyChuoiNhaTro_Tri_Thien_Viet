@@ -17,6 +17,8 @@ import {
 } from "react-icons/fa";
 import apiExpenses from "../../api/apiExpenses";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
+import { confirmAction } from "../../utils/swalUtils";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PAYER_TABS = [
@@ -186,17 +188,20 @@ const ListExpenses = () => {
   };
 
   const handleDelete = async (id) => {
-    if (
-      !window.confirm("Xóa chi phí này? Hóa đơn liên kết (nếu có) sẽ bị hủy.")
-    )
-      return;
+    const result = await confirmAction({
+        title: 'Khôi phục hồ sơ',
+        text: `Bạn có chắc chi phí này không ?`,
+        icon: 'info'
+      });
+    if(!result.isConfirmed) return
     setDeletingId(id);
     try {
       await apiExpenses.delete(id);
       setExpenses((prev) => prev.filter((e) => e.expenseId !== id));
       setTotalElements((t) => t - 1);
+      toast.success("Xóa chi phí thành công")
     } catch (err) {
-      alert(err?.response?.data?.message || "Không thể xóa");
+      toast.error(err?.response?.data?.message || "Không thể xóa");
     } finally {
       setDeletingId(null);
     }

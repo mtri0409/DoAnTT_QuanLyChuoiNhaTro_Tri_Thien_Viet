@@ -3,6 +3,7 @@ import { FaToolbox, FaSearch, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import apiServices from '../../api/apiService';
 import Pagination from '../../components/Pagination';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const ServiceList = () => {
     const PAGE_SIZE = 6;
@@ -42,10 +43,10 @@ const ServiceList = () => {
         try {
             await apiServices.deleteService(id);
             fetchServices();
-            alert('Xóa dịch vụ thành công!');
+            toast.success('Xóa dịch vụ thành công!');
         } catch (err) {
             console.error(err);
-            alert('Lỗi khi xóa: ' + (err.response?.data?.message || err.message));
+            toast.error('Lỗi khi xóa: ' + (err.response?.data?.message || err.message));
         } finally {
             setDeletingService(null);
         }

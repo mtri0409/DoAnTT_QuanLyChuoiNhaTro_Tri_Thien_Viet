@@ -5,6 +5,7 @@ import {
   FaSave, FaExclamationCircle 
 } from 'react-icons/fa';
 import apiAmenity from '../../api/apiAmenity';
+import { toast } from 'react-toastify';
 
 const CreateAmenity = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const CreateAmenity = () => {
       const res = await apiAmenity.createAmenity(formData);
       console.log(res);
 
-      alert("Thêm tiện ích thành công!");
+      toast.success("Thêm tiện ích thành công!");
       navigate('/amenities/1');
 
     } catch (err) {
@@ -49,10 +50,10 @@ const CreateAmenity = () => {
         if (backendErrors) {
           setErrors(backendErrors);
         } else {
-          alert(err.response.data.message || "Dữ liệu không hợp lệ.");
+          toast.error(err.response.data.message || "Dữ liệu không hợp lệ.");
         }
       } else {
-        alert("Lỗi hệ thống hoặc mất kết nối server.");
+        toast.error("Lỗi hệ thống hoặc mất kết nối server.");
       }
 
     } finally {

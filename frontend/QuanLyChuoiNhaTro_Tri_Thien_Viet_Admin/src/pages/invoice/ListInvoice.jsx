@@ -19,6 +19,7 @@ import {
 import apiInvoice from "../../api/apiInvoice";
 import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const TYPE_OPTIONS = [
@@ -208,7 +209,7 @@ export default function ListInvoice() {
       await action(invoiceId);
       await fetchInvoices();
     } catch (err) {
-      alert(err.response?.data?.message || `Lỗi thực hiện: ${label}`);
+      toast.error(err.response?.data?.message || `Lỗi thực hiện: ${label}`);
     } finally {
       setActionLoading(null);
     }
@@ -218,11 +219,11 @@ export default function ListInvoice() {
     setGenLoading(true);
     try {
       const res = await apiInvoice.autoGenerate(genMonth, genYear);
-      alert(`✅ Đã tạo ${res.length} hóa đơn tháng ${genMonth}/${genYear}`);
+      toast.success(` Đã tạo ${res.length} hóa đơn tháng ${genMonth}/${genYear}`);
       setShowGenModal(false);
       fetchInvoices();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi tạo hóa đơn");
+      toast.error(err.response?.data?.message || "Lỗi tạo hóa đơn");
     } finally {
       setGenLoading(false);
     }
@@ -232,11 +233,11 @@ export default function ListInvoice() {
     setSendLoading(true);
     try {
       const res = await apiInvoice.sendAll(sendMonth, sendYear);
-      alert(`✅ Đã gửi ${res.length} hóa đơn kỳ ${sendMonth}/${sendYear}`);
+      toast.success(` Đã gửi ${res.length} hóa đơn kỳ ${sendMonth}/${sendYear}`);
       setShowSendModal(false);
       fetchInvoices();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi gửi hóa đơn hàng loạt");
+      toast.error(err.response?.data?.message || "Lỗi khi gửi hóa đơn hàng loạt");
     } finally {
       setSendLoading(false);
     }

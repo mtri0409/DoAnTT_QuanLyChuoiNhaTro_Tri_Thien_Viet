@@ -44,6 +44,7 @@ import apiFloor from "../../api/apiFloor";
 import apiBranches from "../../api/apiBranches";
 import apiContract from "../../api/apiContract";
 import apiProfile from "../../api/apiProfile";
+import { toast } from "react-toastify";
 
 const RoomDetail = () => {
   const navigate = useNavigate();
@@ -293,11 +294,11 @@ const RoomDetail = () => {
       return;
     try {
       await apiRoom.deleteRoom(roomId);
-      alert("Xóa phòng thành công!");
+      toast.success("Xóa phòng thành công!");
       navigate("/rooms/1");
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Lỗi khi xóa phòng!");
+      toast.error("Lỗi khi xóa phòng!");
     }
   };
 
