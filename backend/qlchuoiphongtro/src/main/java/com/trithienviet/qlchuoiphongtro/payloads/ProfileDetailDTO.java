@@ -29,9 +29,9 @@ public class ProfileDetailDTO {
     private Boolean isActice;
     private List<VehicleLoadDTO> vehicles;
 
-    private String roomName; // Chỉ lấy số phòng để hiển thị nhanh
+    private String roomName;
     private String branchName;
-    private Long activeContractId; 
+    private Long activeContractId;
     private LocalDate contractEndDate;
     private String roleName;
 }

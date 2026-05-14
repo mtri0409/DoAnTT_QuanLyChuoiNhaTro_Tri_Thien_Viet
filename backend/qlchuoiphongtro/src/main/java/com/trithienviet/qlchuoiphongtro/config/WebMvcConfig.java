@@ -11,11 +11,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${file.upload-dir:uploads/room-images}")
     private String uploadDir;
 
+    @Value("${project.image.post:images/posts}")
+    private String postImageDir;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Khi gọi: http://localhost:8080/images/abc.jpg
         // Spring tìm file trong: uploads/room-images/abc.jpg
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:" + uploadDir + "/");
+
+        registry.addResourceHandler("/images/posts/**")
+                .addResourceLocations("file:" + postImageDir + "/");
     }
 }
