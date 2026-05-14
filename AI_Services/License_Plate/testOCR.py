@@ -19,7 +19,7 @@ print("[INFO] Đã tải xong YOLO và VietOCR!")
 # ==========================================
 # 2. XỬ LÝ ẢNH
 # ==========================================
-TEST_FILE = "Dieu_0474.png"  # Đổi lại tên file ảnh xe máy của bạn
+TEST_FILE = "Dieu_0095.png"  # Đổi lại tên file ảnh xe máy của bạn
 img = cv2.imread(TEST_FILE)
 
 if img is None:

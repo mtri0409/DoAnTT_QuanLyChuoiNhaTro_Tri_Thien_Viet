@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt, 
   FaCalendarAlt, FaArrowLeft, FaEdit, FaMotorcycle, 
-  FaHome, FaFileContract, FaCloudUploadAlt, FaKey, FaUserEdit 
+  FaHome, FaFileContract, FaCloudUploadAlt, FaKey, FaUserEdit,
+  FaCamera, FaTimes
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import { notify } from '../../utils/swalUtils';
@@ -12,15 +13,51 @@ const ProfileDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // State quản lý dữ liệu
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // State quản lý trạng thái upload riêng biệt cho 2 nút
   const [uploadingFront, setUploadingFront] = useState(false);
   const [uploadingBack, setUploadingBack] = useState(false);
+  
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraType, setCameraType] = useState(null);
+  const [stream, setStream] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  // 1. Lấy dữ liệu chi tiết hồ sơ
+  const handleUploadFront = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      setUploadingFront(true);
+      await apiProfile.uploadFrontImage(id, formData);
+      await fetchDetail();
+      notify("Cập nhật mặt trước thành công!");
+    } catch (err) {
+      notify("Lỗi upload mặt trước!", "error");
+    } finally {
+      setUploadingFront(false);
+    }
+  };
+
+  const handleUploadBack = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      setUploadingBack(true);
+      await apiProfile.uploadBackImage(id, formData);
+      await fetchDetail();
+      notify("Cập nhật mặt sau thành công!");
+    } catch (err) {
+      notify("Lỗi upload mặt sau!", "error");
+    } finally {
+      setUploadingBack(false);
+    }
+  };
+
   const fetchDetail = async () => {
     try {
       setLoading(true);
@@ -37,53 +74,146 @@ const ProfileDetail = () => {
     fetchDetail();
   }, [id]);
 
-  // 2. Hàm upload mặt trước (API 1)
-  const handleUploadFront = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('image', file);
-    console.log(formData);
+  // FIX: Gán stream vào video SAU KHI modal đã render xong
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch((err) => {
+        console.error("Lỗi play video:", err);
+      });
+    }
+  }, [stream, showCamera]); // showCamera là dependency để chạy lại sau khi modal render
+
+  const openCamera = async (type) => {
+
+     console.log('mediaDevices:', navigator.mediaDevices);
+  console.log('getUserMedia:', navigator.mediaDevices?.getUserMedia);
+  console.log('isSecureContext:', window.isSecureContext);
+
+    setCameraType(type);
+    setShowCamera(true); // render modal trước
+
     try {
-      setUploadingFront(true);
-      // Gọi đúng API mặt trước của ní ở đây
-     const response= await apiProfile.uploadFrontImage(id, formData); 
-     console.log(response);
-      await fetchDetail(); // Refresh dữ liệu
-      notify("Cập nhật mặt trước thành công!");
+      if (!navigator.mediaDevices?.getUserMedia) {
+        notify("Trình duyệt của bạn không hỗ trợ camera!", "error");
+        setShowCamera(false);
+        return;
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+
+      // Set stream → useEffect sẽ gán vào videoRef sau khi modal đã render
+      setStream(mediaStream);
+
     } catch (err) {
-      notify("Lỗi upload mặt trước :>!");
-    } finally {
-      setUploadingFront(false);
+      console.error("Lỗi mở camera:", err);
+      const messages = {
+        NotAllowedError: "Bạn chưa cho phép truy cập camera! Vui lòng cấp quyền và tải lại trang.",
+        NotFoundError: "Không tìm thấy camera trên thiết bị của bạn!",
+        NotReadableError: "Camera đang được ứng dụng khác sử dụng!",
+        OverconstrainedError: "Không tìm thấy camera phù hợp!",
+      };
+      notify(messages[err.name] || "Không thể mở camera: " + err.message, "error");
+      setShowCamera(false);
+      setCameraType(null);
     }
   };
 
-  // 3. Hàm upload mặt sau (API 2)
-  const handleUploadBack = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('image', file);
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
 
-    try {
-      setUploadingBack(true);
-      // Gọi đúng API mặt sau của ní ở đây
-      await apiProfile.uploadBackImage(id, formData); 
-      await fetchDetail(); // Refresh dữ liệu
-      notify("Cập nhật mặt sau thành công!");
-    } catch (err) {
-      notify("Lỗi upload mặt sau!","error");
-    } finally {
-      setUploadingBack(false);
-    }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('image', blob, 'camera-capture.jpg');
+
+      try {
+        if (cameraType === 'front') {
+          setUploadingFront(true);
+          await apiProfile.uploadFrontImage(id, formData);
+        } else {
+          setUploadingBack(true);
+          await apiProfile.uploadBackImage(id, formData);
+        }
+        await fetchDetail();
+        notify(`Cập nhật ${cameraType === 'front' ? 'mặt trước' : 'mặt sau'} thành công!`);
+        closeCamera();
+      } catch (err) {
+        notify("Lỗi upload ảnh từ camera!", "error");
+      } finally {
+        setUploadingFront(false);
+        setUploadingBack(false);
+      }
+    }, 'image/jpeg', 0.9);
   };
 
-  if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary"></div><p>Đang tải dữ liệu...</p></div>;
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+    setCameraType(null);
+  };
+
+  if (loading) return (
+    <div className="text-center py-5">
+      <div className="spinner-border text-primary"></div>
+      <p>Đang tải dữ liệu...</p>
+    </div>
+  );
   if (!profile) return <div className="text-center py-5">Không tìm thấy hồ sơ!</div>;
 
   return (
     <div className="container-fluid py-4 animate__animated animate__fadeIn">
-      {/* --- BẢNG ĐIỀU KHIỂN TRÊN CÙNG --- */}
+
+      {/* Modal Camera */}
+      {showCamera && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content bg-dark rounded-4">
+              <div className="modal-header border-0">
+                <h5 className="text-white">
+                  Chụp ảnh {cameraType === 'front' ? 'mặt trước' : 'mặt sau'}
+                </h5>
+                <button className="btn-close btn-close-white" onClick={closeCamera} />
+              </div>
+              <div className="modal-body text-center">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="rounded-3 w-100"
+                  style={{ maxHeight: '60vh', objectFit: 'cover' }}
+                />
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+              </div>
+              <div className="modal-footer border-0 justify-content-center gap-3">
+                <button className="btn btn-secondary" onClick={closeCamera}>
+                  <FaTimes /> Hủy
+                </button>
+                <button
+                  className="btn btn-primary btn-lg rounded-circle"
+                  style={{ width: 60, height: 60 }}
+                  onClick={capturePhoto}
+                >
+                  <FaCamera size={24} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm">
         <div className="d-flex align-items-center gap-3">
           <button onClick={() => navigate(-1)} className="btn btn-light border-0 rounded-circle p-2 shadow-sm">
@@ -95,19 +225,17 @@ const ProfileDetail = () => {
           </div>
         </div>
         <div className="d-flex gap-2">
-           <button onClick={() => navigate(`/user/profile/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
-             <FaUserEdit /> Cập nhật
-           </button>
-           <button 
-            onClick={() => navigate(`/user/change-password`)}
-              className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">
-             <FaKey /> Đổi mật khẩu
-           </button>
+          <button onClick={() => navigate(`/user/profile/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
+            <FaUserEdit /> Cập nhật
+          </button>
+          <button onClick={() => navigate(`/user/change-password`)} className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">
+            <FaKey /> Đổi mật khẩu
+          </button>
         </div>
       </div>
 
       <div className="row g-4">
-        {/* --- CỘT TRÁI: AVATAR & THÔNG TIN CƠ BẢN --- */}
+        {/* CỘT TRÁI */}
         <div className="col-lg-4">
           <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 text-center">
             <div className="bg-primary p-5">
@@ -137,20 +265,18 @@ const ProfileDetail = () => {
           </div>
 
           {/* XE CỘ */}
-         <div className="card border-0 shadow-sm rounded-4 p-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="fw-bold mb-0 d-flex align-items-center gap-2">
                 <FaMotorcycle className="text-warning"/> Biển số xe
               </h6>
-              {/* Nút Chỉnh sửa chung */}
-              <button 
+              <button
                 onClick={() => navigate(`/user/manager-vehicle/${profile.profileId}`)}
                 className="btn btn-sm btn-light text-primary fw-bold border-0 shadow-none p-0"
               >
                 <FaEdit className="me-1"/> Chỉnh sửa
               </button>
             </div>
-
             <div className="d-flex flex-wrap gap-2">
               {profile.vehicles?.length > 0 ? (
                 profile.vehicles.map((v, i) => (
@@ -159,13 +285,13 @@ const ProfileDetail = () => {
                   </span>
                 ))
               ) : (
-                <span className="text-muted small italic">Chưa đăng ký</span>
+                <span className="text-muted small">Chưa đăng ký</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* --- CỘT PHẢI: CHI TIẾT CCCD & UPLOAD ẢNH --- */}
+        {/* CỘT PHẢI */}
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
             <h6 className="fw-bold mb-4 border-bottom pb-3 d-flex align-items-center gap-2">
@@ -190,33 +316,42 @@ const ProfileDetail = () => {
               </div>
             </div>
 
-            {/* PHẦN UPLOAD 2 ẢNH RIÊNG BIỆT */}
             <h6 className="fw-bold mb-3 text-secondary">Ảnh giấy tờ tùy thân</h6>
             <div className="row g-4">
               {/* MẶT TRƯỚC */}
-              <div className="col-md-6 text-center">
+              <div className="col-md-6">
                 <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '220px' }}>
                   {profile.idFrontImage ? (
                     <img src={`http://localhost:8080/api/public/profile/image/${profile.idFrontImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt trước" />
                   ) : <span className="text-muted small">Trống mặt trước</span>}
                 </div>
-                <input type="file" id="frontImg" hidden onChange={handleUploadFront} accept="image/*" />
-                <label htmlFor="frontImg" className={`btn btn-sm w-100 py-2 ${uploadingFront ? 'btn-secondary' : 'btn-primary'} rounded-3 shadow-sm`}>
-                  {uploadingFront ? <span className="spinner-border spinner-border-sm"></span> : <><FaCloudUploadAlt /> Thêm ảnh mặt trước</>}
-                </label>
+                <div className="d-flex gap-2">
+                  <input type="file" id="frontImg" hidden onChange={handleUploadFront} accept="image/*" />
+                  <label htmlFor="frontImg" className={`btn btn-sm flex-grow-1 py-2 ${uploadingFront ? 'btn-secondary' : 'btn-primary'} rounded-3 shadow-sm`}>
+                    {uploadingFront ? <span className="spinner-border spinner-border-sm"></span> : <><FaCloudUploadAlt /> Tải lên</>}
+                  </label>
+                  <button onClick={() => openCamera('front')} className="btn btn-sm btn-outline-primary rounded-3" disabled={uploadingFront}>
+                    <FaCamera /> Chụp
+                  </button>
+                </div>
               </div>
 
               {/* MẶT SAU */}
-              <div className="col-md-6 text-center">
+              <div className="col-md-6">
                 <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '220px' }}>
                   {profile.idBackImage ? (
                     <img src={`http://localhost:8080/api/public/profile/image/${profile.idBackImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt sau" />
                   ) : <span className="text-muted small">Trống mặt sau</span>}
                 </div>
-                <input type="file" id="backImg" hidden onChange={handleUploadBack} accept="image/*" />
-                <label htmlFor="backImg" className={`btn btn-sm w-100 py-2 ${uploadingBack ? 'btn-secondary' : 'btn-dark'} rounded-3 shadow-sm`}>
-                  {uploadingBack ? <span className="spinner-border spinner-border-sm"></span> : <><FaCloudUploadAlt /> Thêm ảnh mặt sau</>}
-                </label>
+                <div className="d-flex gap-2">
+                  <input type="file" id="backImg" hidden onChange={handleUploadBack} accept="image/*" />
+                  <label htmlFor="backImg" className={`btn btn-sm flex-grow-1 py-2 ${uploadingBack ? 'btn-secondary' : 'btn-dark'} rounded-3 shadow-sm`}>
+                    {uploadingBack ? <span className="spinner-border spinner-border-sm"></span> : <><FaCloudUploadAlt /> Tải lên</>}
+                  </label>
+                  <button onClick={() => openCamera('back')} className="btn btn-sm btn-outline-dark rounded-3" disabled={uploadingBack}>
+                    <FaCamera /> Chụp
+                  </button>
+                </div>
               </div>
             </div>
           </div>

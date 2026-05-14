@@ -1,23 +1,11 @@
-=== Smart Parking AI — 2026-05-12 18:38:14 ===
+=== Smart Parking AI — 2026-05-14 00:24:36 ===
 Biển số - Thời điểm đọc
 ----------------------------------------
-HUSINSU - 18:38:16
-OXISOGJ - 18:38:16
-MYSTYSU - 18:38:17
-GXISOGIST - 18:38:18
-AGXISOGIT - 18:38:18
-AGXIS OGJ - 18:38:19
-KHOSZIK - 18:38:20
-moszik - 18:38:20
-PHILAPOSQUEO - 18:38:21
-TRAPOSJEO - 18:38:22
-KH05 271 - 18:38:23
-EPOS JEO - 18:38:23
-KHO5ZIK - 18:38:24
-KHOSZZK - 18:38:25
-FILZHY - 18:38:27
-EYGINBG - 18:38:29
-EYGINEG - 18:38:29
-AVOB HVF - 18:38:32
+CHYSIVSU - 00:24:39
+GXISOGI - 00:24:40
+GXISOGJ - 00:24:41
+KHOSZIK - 00:24:42
+APOSJEO - 00:24:42
+KHOS ZZV - 00:24:43
 ----------------------------------------
-Kết thúc lúc: 2026-05-12 18:38:32
+Kết thúc lúc: 2026-05-14 00:24:43

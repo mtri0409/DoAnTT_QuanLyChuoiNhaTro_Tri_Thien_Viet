@@ -980,6 +980,7 @@ export default function RoomDetail() {
         setLoading(true);
 
         const res = await userService.getRoomById(roomId);
+        console.log(res)
         if (abortRef.current) return;
 
         const raw = res.data || res;

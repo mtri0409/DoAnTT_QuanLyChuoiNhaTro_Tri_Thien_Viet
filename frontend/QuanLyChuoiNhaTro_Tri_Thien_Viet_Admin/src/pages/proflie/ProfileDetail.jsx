@@ -42,7 +42,7 @@ const ProfileDetail = () => {
             <span className="badge bg-primary-subtle text-primary mt-1">ID: #PR-{profile.profileId}</span>
           </div>
         </div>
-        <button onClick={() => navigate(`/admin/profiles/edit/${id}`)} className="btn btn-primary d-flex align-items-center gap-2 shadow-sm px-4">
+        <button onClick={() => navigate(`/admin/profiles/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 shadow-sm px-4">
           <FaEdit /> Chỉnh sửa hồ sơ
         </button>
       </div>
