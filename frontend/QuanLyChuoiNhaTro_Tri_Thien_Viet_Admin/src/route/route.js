@@ -52,7 +52,13 @@ import CreateExpense from "../pages/expenses/CreateExpense";
 import SystemSettings from "../pages/setting/SystemSettings";
 import MaintenanceEdit from "../pages/maintenance/MaintenanceEdit";
 import EditExpense from "../pages/expenses/EditExpense";
-
+import ListNewsPost from "../pages/post/ListNewsPost";
+import NewsPostForm from "../pages/post/NewsPostForm";
+import NewsPostDetail from "../pages/post/NewsPostDetail";
+import PostCategoryManager from "../pages/post/PostCategoryManager";
+import CreatePostCategory from "../pages/post/CreatePostCategory";
+import UpdatePostCategory from "../pages/post/UpdatePostCategory";
+import NewsPostEditForm from "../pages/post/NewsPostEditForm";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -110,6 +116,14 @@ const AdminRoute = [
   //post
   { path: "/posts", component: ListPost },
   { path: "/posts/:postId/detail", component: PostDetail },
+  { path: "/news-posts", component: ListNewsPost },
+  { path: "/news-posts", component: ListNewsPost },
+  { path: "/news-posts/create", component: NewsPostForm },
+  { path: "/news-posts/:postId/edit", component: NewsPostEditForm },
+  { path: "/news-posts/:postId", component: NewsPostDetail },
+  { path: "/post-categories", component: PostCategoryManager },
+  { path: "/post-categories/create", component: CreatePostCategory },
+  { path: "/post-categories/:categoryId/edit", component: UpdatePostCategory },
 
   { path: "/notifications", component: ListNotification },
   { path: "/notifications/create", component: CreateNotification },
@@ -125,9 +139,8 @@ const AdminRoute = [
   { path: "/expenses/:expenseId/detail", component: DetailExpense },
 
   //setting
-  {path :"/setting",component: SystemSettings},
+  { path: "/setting", component: SystemSettings },
 
   { path: "/expenses/:expenseId/edit", component: EditExpense },
-
 ];
 export default AdminRoute;
