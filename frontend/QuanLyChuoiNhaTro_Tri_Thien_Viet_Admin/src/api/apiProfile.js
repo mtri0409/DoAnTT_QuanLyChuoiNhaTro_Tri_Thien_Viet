@@ -93,5 +93,20 @@ const apiProfile = {
     return axiosInstance.get(`public/profiles/${id}`);
   },
   restoreProfile: (id) => axiosInstance.patch(`/admin/profile/restore/${id}`),
+   uploadFrontImage: (id, formData) => {
+    return axiosInstance.put(`/public/profiles/${id}/idfrontimage`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Ép kiểu dữ liệu là form-data
+      },
+    });
+  },
+  
+  uploadBackImage: (id, formData) => {
+    return axiosInstance.put(`/public/profiles/${id}/idbackimage`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
 };
 export default apiProfile;
