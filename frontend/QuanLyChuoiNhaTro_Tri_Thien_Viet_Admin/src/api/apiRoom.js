@@ -9,7 +9,8 @@ const apiRoom = {
         floorId = null,
         branchId = null,
         search = '',
-        status     = null
+        status = null,
+        maxPeople = null
     ) => {
         const url = `/rooms`;
         return axiosInstance.get(url, {
@@ -18,10 +19,11 @@ const apiRoom = {
                 pageSize: pageSize,
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                ...(floorId && { floorId: floorId }),      
-                ...(branchId && { branchId: branchId }),   
-                ...(search && { search: search }),   
-                ...(status   && { status }),       
+                ...(floorId && { floorId: floorId }),
+                ...(branchId && { branchId: branchId }),
+                ...(search && { search: search }),
+                ...(status && { status: status }),
+                ...(maxPeople && { maxPeople: maxPeople }),
             }
         });
     },
