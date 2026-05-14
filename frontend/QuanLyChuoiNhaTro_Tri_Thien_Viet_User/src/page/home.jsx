@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import RoomCard from '../components/RoomCard';
 import BuildingView from '../components/buildingview';
+import PostList from '../components/PostList';
 import userService from '../services/userService';
 
 const MAX_PRICE = 20;
@@ -267,7 +268,8 @@ export default function Home() {
         }
 
         .home-branch-bar,
-        .home-filter-card {
+        .home-filter-card,
+        .home-post-panel {
           background: #fff;
           border: 1px solid #eadfd4;
           border-radius: 8px;
@@ -312,6 +314,13 @@ export default function Home() {
           align-items: start;
         }
 
+        .home-main-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 34px;
+          min-width: 0;
+        }
+
         .home-section-title {
           display: flex;
           align-items: center;
@@ -335,6 +344,48 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: 14px;
+        }
+
+        .home-divider {
+          border-top: 1px dashed #d8c7b7;
+        }
+
+        .home-post-panel {
+          padding: 18px;
+        }
+
+        .home-post-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #f0e4d8;
+        }
+
+        .home-post-title {
+          color: #2f241d;
+          font-size: 20px;
+          font-weight: 800;
+          margin-bottom: 3px;
+        }
+
+        .home-post-sub {
+          color: #8b7665;
+          font-size: 14px;
+          line-height: 1.45;
+        }
+
+        .home-post-badge {
+          flex-shrink: 0;
+          background: #fff0dc;
+          border: 1px solid #f0d8bd;
+          color: #b85618;
+          border-radius: 5px;
+          padding: 4px 9px;
+          font-size: 13px;
+          font-weight: 800;
         }
 
         .home-sidebar {
@@ -532,6 +583,13 @@ export default function Home() {
           border: 1px solid #eadfd4;
         }
 
+        .home-info-text {
+          color: #6f5f52;
+          font-size: 14px;
+          line-height: 1.65;
+          margin: 0;
+        }
+
         @keyframes home-shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
@@ -568,6 +626,10 @@ export default function Home() {
 
           .home-chip {
             flex: 1 1 auto;
+          }
+
+          .home-post-head {
+            flex-direction: column;
           }
         }
       `}</style>
@@ -624,77 +686,95 @@ export default function Home() {
           </div>
 
           <div className="home-grid">
-            <div>
-              <div className="home-section-title">
-                Danh sách phòng trọ
-                <span className="home-count">{filteredRooms.length} phòng</span>
-              </div>
-
-              {loadingRooms && (
-                <div className="home-list">
-                  {[1, 2, 3].map(i => <div key={i} className="home-skeleton" />)}
+            <div className="home-main-stack">
+              <section>
+                <div className="home-section-title">
+                  Danh sách phòng trọ
+                  <span className="home-count">{filteredRooms.length} phòng</span>
                 </div>
-              )}
 
-              {!loadingRooms && error && (
-                <div className="home-error">
-                  <p>{error}</p>
-                  <button type="button" onClick={handleRetry} className="home-solid-btn">
-                    Thử lại
-                  </button>
-                </div>
-              )}
+                {loadingRooms && (
+                  <div className="home-list">
+                    {[1, 2, 3].map(i => <div key={i} className="home-skeleton" />)}
+                  </div>
+                )}
 
-              {!loadingRooms && !error && filteredRooms.length === 0 && (
-                <div className="home-empty">
-                  <p style={{ margin: 0, fontWeight: 700 }}>
-                    Không tìm thấy phòng phù hợp. Hãy thử điều chỉnh bộ lọc.
-                  </p>
-                </div>
-              )}
-
-              {!loadingRooms && !error && pageRooms.length > 0 && (
-                <div className="home-list">
-                  {pageRooms.map(room => (
-                    <RoomCard key={room.roomId} room={room} tag={getRoomTag(room)} />
-                  ))}
-                </div>
-              )}
-
-              {!loadingRooms && !error && totalPages > 1 && (
-                <div className="home-pagination">
-                  <button
-                    type="button"
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
-                    disabled={currentPage === 0}
-                    className="home-page-btn"
-                    style={{ opacity: currentPage === 0 ? 0.45 : 1 }}
-                  >
-                    Trước
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setPage(i)}
-                      className={`home-page-btn ${currentPage === i ? 'active' : ''}`}
-                    >
-                      {i + 1}
+                {!loadingRooms && error && (
+                  <div className="home-error">
+                    <p>{error}</p>
+                    <button type="button" onClick={handleRetry} className="home-solid-btn">
+                      Thử lại
                     </button>
-                  ))}
+                  </div>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={currentPage === totalPages - 1}
-                    className="home-page-btn"
-                    style={{ opacity: currentPage === totalPages - 1 ? 0.45 : 1 }}
-                  >
-                    Tiếp
-                  </button>
+                {!loadingRooms && !error && filteredRooms.length === 0 && (
+                  <div className="home-empty">
+                    <p style={{ margin: 0, fontWeight: 700 }}>
+                      Không tìm thấy phòng phù hợp. Hãy thử điều chỉnh bộ lọc.
+                    </p>
+                  </div>
+                )}
+
+                {!loadingRooms && !error && pageRooms.length > 0 && (
+                  <div className="home-list">
+                    {pageRooms.map(room => (
+                      <RoomCard key={room.roomId} room={room} tag={getRoomTag(room)} />
+                    ))}
+                  </div>
+                )}
+
+                {!loadingRooms && !error && totalPages > 1 && (
+                  <div className="home-pagination">
+                    <button
+                      type="button"
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={currentPage === 0}
+                      className="home-page-btn"
+                      style={{ opacity: currentPage === 0 ? 0.45 : 1 }}
+                    >
+                      Trước
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setPage(i)}
+                        className={`home-page-btn ${currentPage === i ? 'active' : ''}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentPage === totalPages - 1}
+                      className="home-page-btn"
+                      style={{ opacity: currentPage === totalPages - 1 ? 0.45 : 1 }}
+                    >
+                      Tiếp
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              <div className="home-divider" />
+
+              <section className="home-post-panel">
+                <div className="home-post-head">
+                  <div>
+                    <div className="home-post-title">Bảng tin ghép phòng</div>
+                    <div className="home-post-sub">
+                      Các bài đăng tìm bạn ở ghép theo chi nhánh đang chọn.
+                    </div>
+                  </div>
+                  <span className="home-post-badge">Bài đăng</span>
                 </div>
-              )}
+
+                <PostList activeBranchId={activeBranchId} />
+              </section>
             </div>
 
             <aside className="home-sidebar">
@@ -788,6 +868,14 @@ export default function Home() {
                     Bỏ lọc tiện ích
                   </button>
                 )}
+              </div>
+
+              <div className="home-filter-card">
+                <div className="home-filter-title">Tìm bạn ghép phòng</div>
+                <p className="home-info-text">
+                  Bảng tin hiển thị các bài đăng của người thuê đang muốn tìm bạn ghép.
+                  Chọn chi nhánh để xem bài đăng phù hợp hơn.
+                </p>
               </div>
             </aside>
           </div>
