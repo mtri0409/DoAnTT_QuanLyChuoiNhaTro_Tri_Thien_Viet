@@ -5,47 +5,56 @@ import {
   FaTimes, FaCogs, FaMotorcycle, FaFileContract, FaServicestack,
   FaWifi, FaCalculator, FaBell, FaRegNewspaper, FaWrench, FaBars,
   FaChartLine, FaMoneyBillWave, FaUserCog, FaClipboardList, FaBoxes,
+  FaChevronDown,
 } from "react-icons/fa";
 import { useSystemSetting } from "../context/SystemSettingContext";
 
 const NAV_ITEMS = [
-  { title: "Dashboard", path: "/", icon: <FaHome />, group: "main", priority: 1 },
-  { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract />, group: "core", priority: 2 },
-  { title: "Người thuê", path: "/profiles", icon: <FaUsers />, group: "core", priority: 2 },
-  { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed />, group: "core", priority: 2 },
-  { title: "Quản lý xe", path: "/vehicles", icon: <FaMotorcycle />, group: "core", priority: 2 },
-  { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar />, group: "finance", priority: 3 },
-  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator />, group: "finance", priority: 3 },
-  { title: "Chi phí", path: "/expenses", icon: <FaMoneyBillWave />, group: "finance", priority: 3 },
-  { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack />, group: "service", priority: 4 },
-  { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi />, group: "service", priority: 4 },
-  { title: "Báo hỏng", path: "/maintenance", icon: <FaWrench />, group: "operation", priority: 5 },
-  { title: "Quản lý Bài đăng", path: "/posts", icon: <FaRegNewspaper />, group: "operation", priority: 5 },
-  { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding />, group: "system", priority: 6 },
-  { title: "Tài khoản", path: "/users", icon: <FaUserCog />, group: "system", priority: 6 },
-  { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings", priority: 7 },
-  { title: "Thông báo", path: "/notifications", icon: <FaBell />, group: "settings", priority: 7 },
+  { title: "Dashboard", path: "/", icon: <FaHome />, group: "main" },
+  { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract />, group: "core" },
+  { title: "Người thuê", path: "/profiles", icon: <FaUsers />, group: "core" },
+  { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed />, group: "core" },
+  { title: "Quản lý xe", path: "/vehicles", icon: <FaMotorcycle />, group: "core" },
+  { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar />, group: "finance" },
+  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator />, group: "finance" },
+  { title: "Chi phí", path: "/expenses", icon: <FaMoneyBillWave />, group: "finance" },
+  { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack />, group: "service" },
+  { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi />, group: "service" },
+  { title: "Báo hỏng", path: "/maintenance", icon: <FaWrench />, group: "operation" },
+  { title: "Quản lý Bài đăng", path: "/posts", icon: <FaRegNewspaper />, group: "operation" },
+  { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding />, group: "system" },
+  { title: "Tài khoản", path: "/users", icon: <FaUserCog />, group: "system" },
+  { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings" },
+  { title: "Thông báo", path: "/notifications", icon: <FaBell />, group: "settings" },
 ];
 
 const GROUP_CONFIG = {
-  main: { label: "TỔNG QUAN", icon: <FaChartLine size={12} /> },
-  core: { label: "QUẢN LÝ CHÍNH", icon: <FaClipboardList size={12} /> },
-  finance: { label: "TÀI CHÍNH", icon: <FaMoneyBillWave size={12} /> },
-  service: { label: "DỊCH VỤ", icon: <FaBoxes size={12} /> },
-  operation: { label: "VẬN HÀNH", icon: <FaWrench size={12} /> },
-  system: { label: "HỆ THỐNG", icon: <FaBuilding size={12} /> },
-  settings: { label: "CÀI ĐẶT", icon: <FaCogs size={12} /> },
+  main:      { label: "Tổng quan",      icon: <FaChartLine size={14} />,     color: "#60a5fa" },
+  core:      { label: "Quản lý chính",  icon: <FaClipboardList size={14} />, color: "#34d399" },
+  finance:   { label: "Tài chính",      icon: <FaMoneyBillWave size={14} />, color: "#fbbf24" },
+  service:   { label: "Dịch vụ",        icon: <FaBoxes size={14} />,         color: "#a78bfa" },
+  operation: { label: "Vận hành",       icon: <FaWrench size={14} />,        color: "#fb923c" },
+  system:    { label: "Hệ thống",       icon: <FaBuilding size={14} />,      color: "#94a3b8" },
+  settings:  { label: "Cài đặt",        icon: <FaCogs size={14} />,          color: "#94a3b8" },
 };
+
+const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings"];
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  const getInitialOpen = () => {
+    const activeItem = NAV_ITEMS.find(i => i.path === location.pathname);
+    return activeItem ? { [activeItem.group]: true } : { main: true };
+  };
+  const [openGroups, setOpenGroups] = useState(getInitialOpen);
+
   let settings = { name: "TTV" };
-  
   try {
     const context = useSystemSetting();
     settings = context?.settings || { name: "TTV" };
-  } catch (error){null}
+  } catch (e) { null }
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -53,152 +62,135 @@ const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const toggleGroup = (key) => {
+    setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const groupedItems = {};
   NAV_ITEMS.forEach((item) => {
     if (!groupedItems[item.group]) groupedItems[item.group] = [];
     groupedItems[item.group].push(item);
   });
-  const groupOrder = ["main", "core", "finance", "service", "operation", "system", "settings"];
 
   return (
     <>
       <style>{`
-        .sidebar {
-          background: linear-gradient(180deg, #0f172a 0%, #0f172a 100%);
-          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-        }
-        .sidebar-nav {
-          overflow-y: auto;
-          overflow-x: hidden;
-          scrollbar-width: thin;
-        }
-        .sidebar-nav::-webkit-scrollbar {
-          width: 4px;
-        }
-        .sidebar-nav::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
-        }
-        .sidebar-nav::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-        }
-        .sidebar-link {
-          transition: all 0.2s ease;
-          position: relative;
-        }
-        .sidebar-link::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 3px;
-          height: 0;
-          background: #3b82f6;
-          border-radius: 0 4px 4px 0;
-          transition: height 0.2s ease;
-        }
-        .sidebar-link.active::before {
-          height: 60%;
-        }
-        .sidebar-link.active {
-          background: rgba(59, 130, 246, 0.15);
-          color: #3b82f6;
-        }
-        .sidebar-link:hover:not(.active) {
-          background: rgba(255, 255, 255, 0.05);
-          color: #e2e8f0;
-        }
-        .sidebar-group-title {
-          transition: opacity 0.2s;
-          letter-spacing: 0.5px;
-        }
-        .sidebar-divider {
-          margin: 0.75rem 1rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .logo-wrapper {
-          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        }
+       
       `}</style>
 
-      {/* Overlay & Mobile Toggle giữ nguyên */}
       {showMobile && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-md-none" style={{ zIndex: 199 }} onClick={toggleMobile} />
+        <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-md-none"
+          style={{ zIndex: 199 }} onClick={toggleMobile} />
       )}
       {isMobile && !showMobile && (
-        <button className="btn btn-primary position-fixed d-flex align-items-center justify-content-center d-md-none shadow" style={{ bottom: 20, right: 20, zIndex: 150, borderRadius: "50%", width: 50, height: 50 }} onClick={toggleMobile}>
+        <button className="btn btn-primary position-fixed d-flex align-items-center justify-content-center d-md-none shadow"
+          style={{ bottom: 20, right: 20, zIndex: 150, borderRadius: "50%", width: 50, height: 50 }}
+          onClick={toggleMobile}>
           <FaBars size={20} />
         </button>
       )}
 
-      {/* Sidebar */}
-      <div className={`sidebar text-white d-flex flex-column ${isCollapsed ? "collapsed" : ""}`} style={{
-        width: isCollapsed ? "80px" : "280px",
-        height: "100vh",
-        flexShrink: 0,
-        position: isMobile ? "fixed" : "sticky",
-        top: 0,
-        left: 0,
-        zIndex: 200,
-        transform: isMobile && !showMobile ? "translateX(-100%)" : "translateX(0)",
-        transition: "width 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
-      }}>
+      <div className="sidebar text-white d-flex flex-column"
+        style={{
+          width: isCollapsed ? "68px" : "268px",
+          height: "100vh",
+          flexShrink: 0,
+          position: isMobile ? "fixed" : "sticky",
+          top: 0, left: 0, zIndex: 200,
+          transform: isMobile && !showMobile ? "translateX(-100%)" : "translateX(0)",
+          transition: "width 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+          overflow: "hidden",
+        }}>
+
         {/* Logo */}
-        <div className="logo-wrapper d-flex align-items-center gap-2 px-3 border-bottom" style={{ minHeight: 72, flexShrink: 0, borderBottomColor: "rgba(255,255,255,0.08)" }}>
-          <div className="rounded-3 bg-primary d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0 shadow-lg" style={{ width: 40, height: 40, fontSize: 18 }}>
+        <div className="d-flex align-items-center gap-2 px-3"
+          style={{ minHeight: 68, flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="rounded-3 bg-primary d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+            style={{ width: 38, height: 38, fontSize: 17 }}>
             T
           </div>
-          <span className="fw-bold text-white" style={{ fontSize: 14, whiteSpace: "nowrap", opacity: isCollapsed ? 0 : 1, transition: "opacity 0.2s" }}>
+          <span className="fw-semibold" style={{
+            fontSize: 15, color: "#e2e8f0", whiteSpace: "nowrap",
+            opacity: isCollapsed ? 0 : 1, transition: "opacity 0.2s",
+          }}>
             {settings.name || "TTV"}
           </span>
           {isMobile && (
-            <button className="btn btn-link text-white ms-auto p-0" onClick={toggleMobile} style={{ opacity: isCollapsed ? 0 : 1 }}>
+            <button className="btn btn-link ms-auto p-0"
+              style={{ color: "#64748b", opacity: isCollapsed ? 0 : 1 }}
+              onClick={toggleMobile}>
               <FaTimes />
             </button>
           )}
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-grow-1 p-3 sidebar-nav">
-          {groupOrder.map((groupKey) => {
+        {/* Nav */}
+        <nav className="flex-grow-1 sidebar-nav" style={{ padding: "10px 8px" }}>
+          {GROUP_ORDER.map((groupKey) => {
             const items = groupedItems[groupKey];
             if (!items?.length) return null;
             const group = GROUP_CONFIG[groupKey];
-            
+            const isOpen = !!openGroups[groupKey];
+            const hasActive = items.some(i => i.path === location.pathname);
+
             return (
-              <div key={groupKey}>
-                {!isCollapsed && (
-                  <div className="sidebar-group-title d-flex align-items-center gap-2 px-2 mb-2" style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>
-                    {group?.icon}
-                    <span className="text-uppercase">{group?.label}</span>
+              <div key={groupKey} style={{ marginBottom: 4 }}>
+
+                {isCollapsed ? (
+                  <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "10px 4px 8px" }} />
+                ) : (
+                  <div className="group-header" onClick={() => toggleGroup(groupKey)}>
+                    <span style={{ color: group.color, flexShrink: 0 }}>{group.icon}</span>
+                    <span className="group-label" style={{ color: hasActive ? "#e2e8f0" : "#64748b" }}>
+                      {group.label}
+                    </span>
+                    <FaChevronDown className={`group-chevron ${isOpen ? "open" : ""}`} />
                   </div>
                 )}
-                {isCollapsed && <div className="sidebar-divider" />}
-                
-                {items.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      to={item.path}
-                      key={item.path}
-                      className={`sidebar-link d-flex align-items-center gap-3 rounded-lg mb-1 text-decoration-none ${isActive ? "active" : "text-secondary"}`}
-                      style={{ padding: "10px 14px", fontSize: 14 }}
-                      onClick={() => isMobile && toggleMobile()}
-                    >
-                      <span className="flex-shrink-0 text-center" style={{ fontSize: 18, width: 22 }}>{item.icon}</span>
-                      <span style={{ whiteSpace: "nowrap", opacity: isCollapsed ? 0 : 1, transition: "opacity 0.2s" }}>{item.title}</span>
-                    </Link>
-                  );
-                })}
+
+                <div className={`group-items ${isCollapsed || isOpen ? "open" : "closed"}`}>
+                  {items.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        to={item.path}
+                        key={item.path}
+                        className={`sidebar-link ${isActive ? "active" : ""}`}
+                        style={{
+                          paddingLeft: isCollapsed ? "10px" : "20px",
+                          "--accent": group.color,
+                          color: isActive ? "#f1f5f9" : "#94a3b8",
+                        }}
+                        onClick={() => isMobile && toggleMobile()}
+                      >
+                        <span style={{
+                          fontSize: 16,
+                          width: 20,
+                          textAlign: "center",
+                          flexShrink: 0,
+                          color: isActive ? group.color : "#475569",
+                          transition: "color 0.15s",
+                        }}>
+                          {item.icon}
+                        </span>
+                        <span className="link-label" style={{ opacity: isCollapsed ? 0 : 1 }}>
+                          {item.title}
+                        </span>
+                        {isActive && !isCollapsed && (
+                          <span className="active-dot ms-auto" style={{ background: group.color }} />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+
               </div>
             );
           })}
         </nav>
-        
+
         {!isCollapsed && (
-          <div className="px-3 py-3 border-top" style={{ fontSize: 11, color: "#475569", borderTopColor: "rgba(255,255,255,0.08)" }}>
+          <div className="px-3 py-3" style={{ fontSize: 12, color: "#334155", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
             <div>© 2024 TTV System</div>
             <div>Version 1.0.0</div>
           </div>

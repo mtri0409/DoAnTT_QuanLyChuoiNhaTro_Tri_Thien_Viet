@@ -5,7 +5,7 @@ import TenantLayout from "./layout/TenantLayout";
 import { AuthProvider } from "./context/AuthProvider";
 import Login from "./pages/auth/Login";
 import { SystemSettingProvider } from "./context/SystemSettingProvider";
-
+import "./index.css"
 
 function App() {
   return (

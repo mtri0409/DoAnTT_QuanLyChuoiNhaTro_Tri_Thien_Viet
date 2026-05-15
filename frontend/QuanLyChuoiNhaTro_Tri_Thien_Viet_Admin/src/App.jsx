@@ -8,7 +8,7 @@ import { AuthProvider } from "./context/AuthProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import SystemSettingProvider from "./context/SystemSettingProvider";
-
+import "./index.css"
 function App() {
   return (
     <SystemSettingProvider> 
