@@ -1,116 +1,233 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import NewsCard from "../components/NewsCard";
+import userService from "../services/userService";
+import { imgURL } from "../services/userConfig";
 
-export default function EnhancedNewsPage() {
-  const news = [
-    {
-      id: 1,
-      title: "Dự báo giá phòng trọ 2026 tăng nhẹ tại khu vực trung tâm TP.HCM",
-      desc: "Theo khảo sát mới nhất, giá phòng trọ khu vực trung tâm tăng từ 5-10% do nhu cầu đổ về thành phố sau Tết tăng vọt.",
-      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1000&auto=format&fit=crop",
-      date: "09/04/2026",
-      category: "Thị trường",
-      readTime: "5 phút",
-      isFeatured: true,
-    },
-    {
-      id: 2,
-      title: "Top 5 khu vực thuê phòng giá rẻ, an ninh tốt cho tân sinh viên",
-      desc: "Các khu vực lân cận Làng Đại học, Gò Vấp và Quận 9 vẫn là lựa chọn hàng đầu với mức giá hợp lý và tiện ích đầy đủ.",
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1000&auto=format&fit=crop",
-      date: "08/04/2026",
-      category: "Cẩm nang",
-      readTime: "3 phút",
-      isFeatured: true,
-    },
-    {
-      id: 3,
-      title: "Xu hướng 'Sleepbox' cao cấp: Giải pháp cho người độc thân",
-      desc: "Mô hình hộp ngủ phiên bản nâng cấp với đầy đủ tiện nghi khép kín đang thu hút giới văn phòng trẻ tuổi.",
-      image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=1000&auto=format&fit=crop",
-      date: "07/04/2026",
-      category: "Xu hướng",
-      readTime: "4 phút",
-      isFeatured: true,
-    },
-    {
-      id: 4,
-      title: "Kinh nghiệm đàm phán giá thuê nhà nguyên căn để ở ghép",
-      desc: "Những mẹo nhỏ giúp bạn thương lượng được mức giá tốt nhất khi thuê nhà nguyên căn và chia phòng.",
-      image: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=1000&auto=format&fit=crop",
-      date: "06/04/2026",
-      category: "Kinh nghiệm",
-      readTime: "6 phút",
-      isFeatured: false,
-    },
-    {
-      id: 5,
-      title: "Cẩn thận với những chiêu trò lừa đảo cọc phòng trọ đầu năm",
-      desc: "Nhiều đối tượng lợi dụng nhu cầu tìm trọ cao điểm để thực hiện các hành vi lừa đảo tinh vi.",
-      image: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=1000&auto=format&fit=crop",
-      date: "05/04/2026",
-      category: "Cảnh báo",
-      readTime: "8 phút",
-      isFeatured: false,
-    },
-    {
-      id: 6,
-      title: "Cải tạo phòng trọ 15m2 cũ thành 'Studio' chuẩn Hàn Quốc",
-      desc: "Chỉ với 5 triệu đồng, cô gái trẻ đã biến căn phòng trọ xập xệ thành không gian sống cực chill.",
-      image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=1000&auto=format&fit=crop",
-      date: "04/04/2026",
-      category: "Decor",
-      readTime: "4 phút",
-      isFeatured: false,
-    },
-    {
-      id: 7,
-      title: "Bí quyết tiết kiệm điện nước mùa nắng nóng cho sinh viên ở trọ",
-      desc: "Áp dụng ngay những mẹo nhỏ này để hóa đơn tiền điện không còn là nỗi ám ảnh mỗi tháng hè.",
-      image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000&auto=format&fit=crop",
-      date: "03/04/2026",
-      category: "Cẩm nang",
-      readTime: "4 phút",
-      isFeatured: false,
-    },
-    {
-      id: 8,
-      title: "Đánh giá chi tiết khu vực trọ quanh Đại học Bách Khoa TP.HCM",
-      desc: "Phân tích ưu nhược điểm, mức giá trung bình và các tiện ích xung quanh khu vực Quận 10 và Tân Bình.",
-      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop",
-      date: "02/04/2026",
-      category: "Thị trường",
-      readTime: "7 phút",
-      isFeatured: false,
-    },
-    {
-      id: 9,
-      title: "5 điều khoản 'bắt buộc phải có' trong hợp đồng thuê phòng",
-      desc: "Đừng vội đặt bút ký nếu hợp đồng thuê nhà của bạn chưa có đầy đủ các điều khoản bảo vệ quyền lợi này.",
-      image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1000&auto=format&fit=crop",
-      date: "01/04/2026",
-      category: "Kinh nghiệm",
-      readTime: "6 phút",
-      isFeatured: false,
-    },
-  ];
+const FETCH_SIZE = 100;
 
-  const featuredNews = news.filter((item) => item.isFeatured);
-  const standardNews = news.filter((item) => !item.isFeatured);
-  const categories = ["Tất cả", "Thị trường", "Cẩm nang", "Xu hướng", "Kinh nghiệm", "Decor", "Cảnh báo"];
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1000&auto=format&fit=crop";
+
+const getContent = res => {
+  if (Array.isArray(res?.content)) return res.content;
+  if (Array.isArray(res?.data?.content)) return res.data.content;
+  if (Array.isArray(res)) return res;
+
+  return [];
+};
+
+const buildImageUrl = url => {
+  if (!url) return DEFAULT_IMAGE;
+  if (url.startsWith("http")) return url;
+
+  const base = imgURL.endsWith("/") ? imgURL.slice(0, -1) : imgURL;
+  const path = url.startsWith("/") ? url : `/${url}`;
+
+  return `${base}${path}`;
+};
+
+const getImage = item => {
+  return buildImageUrl(
+    item.thumbnailUrl ??
+      item.thumbnail_url ??
+      item.imageUrl ??
+      item.image_url ??
+      item.image
+  );
+};
+
+const formatDate = value => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("vi-VN");
+};
+
+export default function NewsPage() {
+  const navigate = useNavigate();
+  const { slug } = useParams();
+
+  const [banners, setBanners] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [activeCategory, setActiveCategory] = useState("Tất cả");
+  const [loadingNews, setLoadingNews] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev === featuredNews.length - 1 ? 0 : prev + 1));
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [featuredNews.length]);
+    let active = true;
 
-  const displayedStandardNews = activeCategory === "Tất cả"
-    ? standardNews
-    : standardNews.filter(item => item.category === activeCategory);
+    Promise.all([
+      userService.getNewsPosts({
+        pageNumber: 1,
+        pageSize: FETCH_SIZE,
+        type: "BANNER",
+      }),
+      userService.getNewsPosts({
+        pageNumber: 1,
+        pageSize: FETCH_SIZE,
+        type: "ARTICLE",
+      }),
+      userService.getNewsCategories(),
+    ])
+      .then(([bannerRes, articleRes, categoryRes]) => {
+        if (!active) return;
+
+        console.log("RAW BANNER RES:", bannerRes);
+        console.log("RAW ARTICLE RES:", articleRes);
+        console.log("RAW CATEGORY RES:", categoryRes);
+
+        const bannerData = getContent(bannerRes);
+        const articleData = getContent(articleRes);
+        const categoryData = getContent(categoryRes);
+
+        console.log("NEWS BANNERS:", bannerData);
+        console.log("NEWS ARTICLES:", articleData);
+        console.log("NEWS CATEGORIES:", categoryData);
+
+        setBanners(bannerData);
+        setArticles(articleData);
+        setCategories(
+          categoryData
+            .filter(category => category.active !== false)
+            .sort(
+              (a, b) =>
+                (a.displayOrder ?? a.display_order ?? 0) -
+                (b.displayOrder ?? b.display_order ?? 0)
+            )
+        );
+
+        setError(null);
+      })
+      .catch(err => {
+        if (!active) return;
+
+        console.error("Fetch news error:", err);
+        setBanners([]);
+        setArticles([]);
+        setCategories([]);
+        setError("Không thể tải tin tức. Vui lòng thử lại.");
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingNews(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (banners.length === 0) return;
+
+    const timer = setInterval(() => {
+      setCurrentSlide(prev => {
+        const next = prev + 1;
+        return next >= banners.length ? 0 : next;
+      });
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  const activeCategory = useMemo(() => {
+    if (!slug) return null;
+
+    return categories.find(category => category.slug === slug) ?? null;
+  }, [slug, categories]);
+
+  const displayedArticles = useMemo(() => {
+    if (!activeCategory) return articles;
+
+    return articles.filter(article => {
+      if (article.categorySlug) {
+        return article.categorySlug === activeCategory.slug;
+      }
+
+      if (article.categoryId) {
+        return String(article.categoryId) === String(activeCategory.categoryId);
+      }
+
+      return false;
+    });
+  }, [articles, activeCategory]);
+
+  const trendingArticles = useMemo(() => {
+    return [...articles]
+      .sort((a, b) => {
+        if ((a.pinned ?? false) !== (b.pinned ?? false)) {
+          return a.pinned ? -1 : 1;
+        }
+
+        const dateA = new Date(a.publishedAt ?? a.createdAt ?? 0).getTime();
+        const dateB = new Date(b.publishedAt ?? b.createdAt ?? 0).getTime();
+
+        return dateB - dateA;
+      })
+      .slice(0, 5);
+  }, [articles]);
+
+  const safeCurrentSlide = banners.length
+    ? Math.min(currentSlide, banners.length - 1)
+    : 0;
+
+  const handleCategoryChange = category => {
+    if (!category) {
+      navigate("/tin-tuc");
+      return;
+    }
+
+    navigate(`/tin-tuc/danh-muc/${category.slug}`);
+  };
+
+  const handleRetry = () => {
+    setLoadingNews(true);
+    setError(null);
+
+    Promise.all([
+      userService.getNewsPosts({
+        pageNumber: 1,
+        pageSize: FETCH_SIZE,
+        type: "BANNER",
+      }),
+      userService.getNewsPosts({
+        pageNumber: 1,
+        pageSize: FETCH_SIZE,
+        type: "ARTICLE",
+      }),
+      userService.getNewsCategories(),
+    ])
+      .then(([bannerRes, articleRes, categoryRes]) => {
+        setBanners(getContent(bannerRes));
+        setArticles(getContent(articleRes));
+        setCategories(
+          getContent(categoryRes)
+            .filter(category => category.active !== false)
+            .sort(
+              (a, b) =>
+                (a.displayOrder ?? a.display_order ?? 0) -
+                (b.displayOrder ?? b.display_order ?? 0)
+            )
+        );
+        setError(null);
+      })
+      .catch(err => {
+        console.error("Fetch news error:", err);
+        setBanners([]);
+        setArticles([]);
+        setCategories([]);
+        setError("Không thể tải tin tức. Vui lòng thử lại.");
+      })
+      .finally(() => {
+        setLoadingNews(false);
+      });
+  };
 
   return (
     <main className="news-page">
@@ -424,7 +541,8 @@ export default function EnhancedNewsPage() {
           font-size: 14px;
         }
 
-        .news-banner button {
+        .news-banner button,
+        .news-retry-btn {
           border: 0;
           background: #df7a35;
           color: #fff;
@@ -434,6 +552,37 @@ export default function EnhancedNewsPage() {
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
+        }
+
+        .news-empty,
+        .news-error {
+          background: #fff;
+          border: 1px solid #eadfd4;
+          border-radius: 8px;
+          padding: 32px 20px;
+          color: #6f5f52;
+          font-size: 16px;
+          text-align: center;
+        }
+
+        .news-error p,
+        .news-empty p {
+          margin: 0 0 14px;
+          font-weight: 700;
+        }
+
+        .news-skeleton {
+          min-height: 190px;
+          border-radius: 8px;
+          border: 1px solid #eadfd4;
+          background: linear-gradient(90deg,#f8f1ea 25%,#efe3d8 50%,#f8f1ea 75%);
+          background-size: 200% 100%;
+          animation: news-shimmer 1.4s infinite;
+        }
+
+        @keyframes news-shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
 
         @media (max-width: 960px) {
@@ -474,51 +623,94 @@ export default function EnhancedNewsPage() {
       `}</style>
 
       <div className="news-wrap">
-        <div className="news-slider">
-          {featuredNews.map((slide, index) => (
-            <div
-              key={slide.id}
-              className="news-slide"
-              style={{
-                opacity: index === currentSlide ? 1 : 0,
-                zIndex: index === currentSlide ? 1 : 0,
-              }}
-            >
-              <img src={slide.image} alt={slide.title} />
-              <div className="news-shade" />
-              <div className="news-slide-content">
-                <span className="news-tag">Tâm điểm · {slide.category}</span>
-                <h2>{slide.title}</h2>
-                <p>{slide.desc}</p>
-                <div className="news-meta">
-                  <span>{slide.date}</span>
-                  <span>{slide.readTime}</span>
+        {loadingNews && <div className="news-slider news-skeleton" />}
+
+        {!loadingNews && error && (
+          <div className="news-error" style={{ marginBottom: 28 }}>
+            <p>{error}</p>
+            <button type="button" onClick={handleRetry} className="news-retry-btn">
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {!loadingNews && !error && banners.length > 0 && (
+          <div className="news-slider">
+            {banners.map((slide, index) => (
+              <div
+                key={slide.postId}
+                className="news-slide"
+                onClick={() => navigate(`/tin-tuc/${slide.slug}`)}
+                style={{
+                  opacity: index === safeCurrentSlide ? 1 : 0,
+                  zIndex: index === safeCurrentSlide ? 1 : 0,
+                }}
+              >
+                <img
+                  src={getImage(slide)}
+                  alt={slide.title || "Banner tin tức"}
+                  onError={e => {
+                    e.currentTarget.src = DEFAULT_IMAGE;
+                  }}
+                />
+
+                <div className="news-shade" />
+
+                <div className="news-slide-content">
+                  <span className="news-tag">
+                    Tâm điểm · {slide.categoryName ?? "Tin tức"}
+                  </span>
+
+                  <h2>{slide.title}</h2>
+
+                  <p>
+                    {slide.summary ?? "Khám phá thông tin mới nhất về phòng trọ."}
+                  </p>
+
+                  <div className="news-meta">
+                    <span>{formatDate(slide.publishedAt ?? slide.createdAt)}</span>
+                    <span>5 phút</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-
-          <div className="news-dots">
-            {featuredNews.map((_, idx) => (
-              <div
-                key={idx}
-                onClick={() => setCurrentSlide(idx)}
-                className={`news-dot ${idx === currentSlide ? 'active' : ''}`}
-                style={{ width: idx === currentSlide ? 24 : 8 }}
-              />
             ))}
+
+            <div className="news-dots">
+              {banners.map((_, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`news-dot ${idx === safeCurrentSlide ? "active" : ""}`}
+                  style={{ width: idx === safeCurrentSlide ? 24 : 8 }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {!loadingNews && !error && banners.length === 0 && (
+          <div className="news-empty" style={{ marginBottom: 28 }}>
+            <p>Chưa có banner tin tức.</p>
+          </div>
+        )}
 
         <div className="news-categories">
-          {categories.map((cat) => (
+          <button
+            type="button"
+            className={!activeCategory ? "active" : ""}
+            onClick={() => handleCategoryChange(null)}
+          >
+            Tất cả
+          </button>
+
+          {categories.map(category => (
             <button
-              key={cat}
+              key={category.categoryId}
               type="button"
-              className={activeCategory === cat ? "active" : ""}
-              onClick={() => setActiveCategory(cat)}
+              className={activeCategory?.slug === category.slug ? "active" : ""}
+              onClick={() => handleCategoryChange(category)}
             >
-              {cat}
+              {category.name}
             </button>
           ))}
         </div>
@@ -526,44 +718,72 @@ export default function EnhancedNewsPage() {
         <div className="news-main">
           <div>
             <h3 className="news-heading">
-              {activeCategory === "Tất cả" ? "Tin tức mới nhất" : `Chuyên mục: ${activeCategory}`}
+              {!activeCategory
+                ? "Tin tức mới nhất"
+                : `Chuyên mục: ${activeCategory.name}`}
             </h3>
 
-            <div className="news-grid">
-              {displayedStandardNews.length > 0 ? (
-                displayedStandardNews.map((item) => (
-                  <article key={item.id} className="news-card">
-                    <div className="news-card-img">
-                      <img src={item.image} alt={item.title} />
-                      <div className="news-card-category">{item.category}</div>
-                    </div>
-                    <div className="news-card-body">
-                      <div className="news-card-date">{item.date} · {item.readTime}</div>
-                      <h4>{item.title}</h4>
-                      <p>{item.desc}</p>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div style={{ color: "#6f5f52", padding: "20px 0" }}>
-                  Chưa có bài viết nào trong chuyên mục này.
-                </div>
-              )}
-            </div>
+            {loadingNews && (
+              <div className="news-grid">
+                {[1, 2, 3, 4, 5, 6].map(item => (
+                  <div key={item} className="news-skeleton" />
+                ))}
+              </div>
+            )}
+
+            {!loadingNews && !error && (
+              <div className="news-grid">
+                {displayedArticles.length > 0 ? (
+                  displayedArticles.map(item => (
+                    <NewsCard key={item.postId} item={item} />
+                  ))
+                ) : (
+                  <div style={{ color: "#6f5f52", padding: "20px 0" }}>
+                    Chưa có bài viết nào trong chuyên mục này.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <aside className="news-sidebar">
             <h3>Đọc nhiều tuần qua</h3>
 
-            {news.slice(0, 5).map((item, index) => (
-              <div key={item.id} className="news-trending">
-                <div className="news-number">0{index + 1}</div>
-                <div>
-                  <h5 className="news-trending-title">{item.title}</h5>
-                  <div className="news-trending-meta">{item.category} · {item.date}</div>
-                </div>
+            {loadingNews && (
+              <>
+                {[1, 2, 3, 4, 5].map(item => (
+                  <div
+                    key={item}
+                    className="news-skeleton"
+                    style={{ minHeight: 62, marginBottom: 10 }}
+                  />
+                ))}
+              </>
+            )}
+
+            {!loadingNews && !error && trendingArticles.length > 0 && (
+              <>
+                {trendingArticles.map((item, index) => (
+                  <div key={item.postId} className="news-trending" onClick={() => navigate(`/tin-tuc/${item.slug}`)}>
+                    <div className="news-number">0{index + 1}</div>
+
+                    <div>
+                      <h5 className="news-trending-title">{item.title}</h5>
+                      <div className="news-trending-meta">
+                        {item.categoryName ?? "Tin tức"} ·{" "}
+                        {formatDate(item.publishedAt ?? item.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {!loadingNews && !error && trendingArticles.length === 0 && (
+              <div style={{ color: "#6f5f52", fontSize: 14 }}>
+                Chưa có bài viết nổi bật.
               </div>
-            ))}
+            )}
 
             <div className="news-banner">
               <h4>Đăng tin cho thuê?</h4>

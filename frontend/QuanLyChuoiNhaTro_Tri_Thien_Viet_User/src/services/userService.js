@@ -71,6 +71,31 @@ const userService = {
       }
     });
   },
+  getNewsPosts: (params = {}) => {
+  const {
+    pageNumber = 1,
+    pageSize = 100,
+    type = null,
+    categoryId = null,
+  } = params;
+
+  return axiosClient.get("/public/posts", {
+    params: {
+      pageNumber,
+      pageSize,
+      type: type || undefined,
+      categoryId: categoryId || undefined,
+    },
+  });
+},
+
+getNewsCategories: () => {
+  return axiosClient.get("/public/post-categories");
+},
+
+getNewsPostBySlug: slug => {
+  return axiosClient.get(`/public/posts/slug/${slug}`);
+},
 
 };
 
