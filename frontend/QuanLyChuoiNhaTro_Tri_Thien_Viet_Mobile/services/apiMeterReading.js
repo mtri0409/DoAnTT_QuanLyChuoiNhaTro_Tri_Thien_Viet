@@ -42,12 +42,20 @@ const apiMeterReading = {
     const formData = new FormData();
     const filename = imageUri.split("/").pop();
     const ext = filename?.split(".").pop()?.toLowerCase() || "jpg";
+
+    // Bước 1: Chỉ append thông tin file vào FormData (hàm append chỉ nhận tối đa 3 tham số: key, value, filename)
     formData.append("file", {
       uri: imageUri,
       name: filename || `meter_${Date.now()}.${ext}`,
       type: `image/${ext === "jpg" ? "jpeg" : ext}`,
+    }); // Đóng ngoặc hàm append tại đây
+
+    // Bước 2: Truyền headers vào tham số thứ 3 của hàm axiosInstance.post
+    return axiosInstance.post("/admin/ocr/water", formData, {
+      headers: { 
+        "Content-Type": "multipart/form-data" 
+      },
     });
-    return axiosInstance.post("/admin/ocr/water", formData);
   },
 
   ocrElectricity: (imageUri) => {
@@ -58,7 +66,10 @@ const apiMeterReading = {
       uri: imageUri,
       name: filename || `meter_${Date.now()}.${ext}`,
       type: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    });
+    }),
+     {
+        headers: { "Content-Type": "multipart/form-data" },
+      };
     return axiosInstance.post("/admin/ocr/electricity", formData);
   },
 };
