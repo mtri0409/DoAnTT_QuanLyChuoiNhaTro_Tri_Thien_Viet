@@ -59,6 +59,8 @@ import PostCategoryManager from "../pages/post/PostCategoryManager";
 import CreatePostCategory from "../pages/post/CreatePostCategory";
 import UpdatePostCategory from "../pages/post/UpdatePostCategory";
 import NewsPostEditForm from "../pages/post/NewsPostEditForm";
+import ListParkingLog from "../pages/park/ParkingLog";
+import CameraDashboard from "../pages/park/CameraDashboard";
 
 const AdminRoute = [
   { path: "/", component: Dashboard },
@@ -140,6 +142,8 @@ const AdminRoute = [
 
   //setting
   { path: "/setting", component: SystemSettings },
+  { path: "/parks", component: ListParkingLog },
+  { path: "/camera", component: CameraDashboard },
 
   { path: "/expenses/:expenseId/edit", component: EditExpense },
 ];

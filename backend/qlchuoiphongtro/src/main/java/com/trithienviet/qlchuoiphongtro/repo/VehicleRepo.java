@@ -15,7 +15,7 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
 
     // 1. Kiểm tra biển số (Dùng đúng tên biến licensePlate trong Entity)
     boolean existsByLicensePlate(String licensePlate);
-
+    
     // 2. Tìm xe theo ID của xe và status (Dùng vehicleId khớp với @Id trong Vehicle)
     Optional<Vehicle> findByVehicleIdAndStatusFalse(Long vehicleId);
 
@@ -23,7 +23,7 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
     // Tên biến trong Vehicle là 'owner', tên biến ID trong Profile là 'profileId'
     // Kết hợp lại thành: Owner + ProfileId
     List<Vehicle> findByOwnerProfileIdAndStatusFalse(Long profileId);
-
+    Optional<Vehicle> findByLicensePlate(String licensePlate);
     // 4. Kiểm tra biển số chưa xóa
     boolean existsByLicensePlateAndStatusFalse(String licensePlate);
 

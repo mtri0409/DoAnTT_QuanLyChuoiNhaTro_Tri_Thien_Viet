@@ -22,7 +22,7 @@ public class OCRServiceImpl implements OCRService {
     private RestTemplate restTemplate;
 
     // Nên để config trong application.properties thay vì hardcode
-    private final String PYTHON_OCR_URL = "http://localhost:8000/ocr";
+    private final String PYTHON_OCR_URL = "http://localhost:8000/api";
 
   @Override
     public String scanMeterImage(MultipartFile file) {
@@ -34,7 +34,7 @@ public class OCRServiceImpl implements OCRService {
             body.add("file", file.getResource());
 
             // Thêm tham số debug=true vào URL để Python trả về chi tiết các box tìm được
-            String urlWithDebug = PYTHON_OCR_URL + "?debug=true&expected_digits=5";
+            String urlWithDebug = PYTHON_OCR_URL +"/water-meter" + "?debug=true&expected_digits=5";
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 

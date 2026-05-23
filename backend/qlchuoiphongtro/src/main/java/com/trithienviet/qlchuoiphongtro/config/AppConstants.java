@@ -38,7 +38,8 @@ public class AppConstants {
             "/api/maintenance/images/**",
             // "/api/admocr/**",
             "/api/admin/expenses/evidence/**",
-
+            "/ws-parking/**",
+            "/api/ai/**",
             "/error"
     };
     public static final String[] USER_URLS = { "/api/user/**" };

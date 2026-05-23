@@ -6,6 +6,7 @@ import {
   FaWifi, FaCalculator, FaBell, FaRegNewspaper, FaWrench, FaBars,
   FaChartLine, FaMoneyBillWave, FaUserCog, FaClipboardList, FaBoxes,
   FaChevronDown,
+  FaCamera,
 } from "react-icons/fa";
 import { useSystemSetting } from "../context/SystemSettingContext";
 
@@ -26,6 +27,9 @@ const NAV_ITEMS = [
   { title: "Tài khoản", path: "/users", icon: <FaUserCog />, group: "system" },
   { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings" },
   { title: "Thông báo", path: "/notifications", icon: <FaBell />, group: "settings" },
+  { title: "Bãi xe", path: "/parks", icon: <FaUserCog />, group: "security" },
+    { title: "Bãi xe", path: "/camera", icon: <FaCamera />, group: "security" },
+
 ];
 
 const GROUP_CONFIG = {
@@ -35,10 +39,11 @@ const GROUP_CONFIG = {
   service:   { label: "Dịch vụ",        icon: <FaBoxes size={14} />,         color: "#a78bfa" },
   operation: { label: "Vận hành",       icon: <FaWrench size={14} />,        color: "#fb923c" },
   system:    { label: "Hệ thống",       icon: <FaBuilding size={14} />,      color: "#94a3b8" },
+  security:    { label: "An ninh",       icon: <FaBuilding size={14} />,      color: "#94a3b8" },
   settings:  { label: "Cài đặt",        icon: <FaCogs size={14} />,          color: "#94a3b8" },
 };
 
-const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings"];
+const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings","security"];
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();

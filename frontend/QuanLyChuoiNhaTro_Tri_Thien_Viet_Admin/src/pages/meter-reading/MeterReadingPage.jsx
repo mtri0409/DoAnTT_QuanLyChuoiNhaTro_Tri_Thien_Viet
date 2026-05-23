@@ -595,6 +595,8 @@ export default function MeterReadingPage() {
                                     onFile={({ file, preview }) => handleImageFile(room.roomId, svc.id, { file, preview })}
                                     onRemove={() => removeImage(room.roomId, svc.id)}
                                     onOCRComplete={(value) => handleOCRValue(room.roomId, svc.id, value)}
+                                     overlayType="rectangle"    // "rectangle" hoặc "circle"
+                                    aspectRatio={4/3}    
                                   />
 
                                   {/* Xem ảnh đã lưu (Lightbox) */}

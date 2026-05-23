@@ -42,4 +42,13 @@ public class NotificationConstant {
     public static final String PROFILE_INCOMPLETE_TITLE = "Cập nhật thông tin hồ sơ";
     public static final String PROFILE_INCOMPLETE_CONTENT = "Chào %s! Hồ sơ của bạn hiện đang thiếu thông tin quan trọng (CCCD/Ảnh định danh). Vui lòng cập nhật trước ngày %s để đảm bảo quyền lợi lưu trú.";
 
+
+        // constant/NotificationConstant.java
+    public static final String VEHICLE_EXIT_ALERT_TITLE = "CẢNH BÁO XE RỜI BÃI";
+    public static final String VEHICLE_EXIT_ALERT_CONTENT = "Xe %s - Phòng %s đã rời khỏi bãi lúc %s. Vui lòng kiểm tra!";
+
+    public static final String UNKNOWN_VEHICLE_TITLE = "CẢNH BÁO XE LẠ";
+    public static final String UNKNOWN_VEHICLE_CONTENT = "Phát hiện xe lạ %s khỏi bãi. Biển số: %s - Thời gian: %s";
+
+    public static final String TYPE_VEHICLE_ALERT = "VEHICLE_ALERT";
 }
