@@ -30,4 +30,4 @@ pip install -r requirements.txt
 
 ### Bước 3: Chạy server
 
-python main.py || py main.py
+python ai_services.py || py ai_services.py

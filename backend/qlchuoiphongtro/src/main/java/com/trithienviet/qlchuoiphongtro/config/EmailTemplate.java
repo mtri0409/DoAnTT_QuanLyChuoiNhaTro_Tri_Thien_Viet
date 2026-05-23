@@ -335,4 +335,49 @@ public class EmailTemplate {
                 "  </div>" +
                 "</div>";
     }
+
+        // utils/EmailTemplate.java
+    public static String getVehicleExitAlert(String fullName, String licensePlate, String roomName, String exitTime) {
+        return String.format(
+            "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
+            + "<div style='background-color: #dc3545; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;'>"
+            + "<h2 style='color: white; margin: 0;'>⚠️ CẢNH BÁO XE RỜI BÃI</h2>"
+            + "</div>"
+            + "<div style='padding: 20px;'>"
+            + "<p style='font-size: 16px; color: #333;'>Kính gửi anh/chị <strong>%s</strong>,</p>"
+            + "<p>Hệ thống ghi nhận xe của quý khách có biển số <strong style='color: #dc3545;'>%s</strong> "
+            + "đã rời khỏi bãi xe vào lúc <strong>%s</strong>.</p>"
+            + "<div style='background-color: #f8f9fa; padding: 12px; border-radius: 8px; margin: 15px 0;'>"
+            + "<p style='margin: 5px 0;'><strong>🏠 Phòng:</strong> %s</p>"
+            + "<p style='margin: 5px 0;'><strong>🚗 Biển số:</strong> %s</p>"
+            + "<p style='margin: 5px 0;'><strong>⏰ Thời gian:</strong> %s</p>"
+            + "</div>"
+            + "<p>Nếu đây không phải là bạn hoặc có nghi vấn, vui lòng kiểm tra lại hoặc liên hệ với ban quản lý ngay lập tức.</p>"
+            + "<hr style='margin: 20px 0; border-color: #e0e0e0;'>"
+            + "<p style='color: #666; font-size: 12px;'>Đây là email tự động từ hệ thống quản lý nhà trọ. Vui lòng không phản hồi email này.</p>"
+            + "</div>"
+            + "</div>",
+            fullName, licensePlate, exitTime, roomName, licensePlate, exitTime
+        );
+    }
+
+    public static String getUnknownVehicleAlert(String licensePlate, String direction, String time) {
+        String action = direction.equals("IN") ? "vào" : "ra";
+        return String.format(
+            "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;'>"
+            + "<div style='background-color: #ff9800; padding: 15px; text-align: center; border-radius: 8px 8px 0 0;'>"
+            + "<h2 style='color: white; margin: 0;'>🚨 PHÁT HIỆN XE LẠ</h2>"
+            + "</div>"
+            + "<div style='padding: 20px;'>"
+            + "<p>Hệ thống ghi nhận một xe <strong>chưa đăng ký</strong> đã %s khỏi bãi.</p>"
+            + "<div style='background-color: #fff3e0; padding: 12px; border-radius: 8px; margin: 15px 0;'>"
+            + "<p style='margin: 5px 0;'><strong>🚗 Biển số:</strong> %s</p>"
+            + "<p style='margin: 5px 0;'><strong>📅 Thời gian:</strong> %s</p>"
+            + "</div>"
+            + "<p>Vui lòng kiểm tra camera an ninh để xác minh.</p>"
+            + "</div>"
+            + "</div>",
+            action, licensePlate, time
+        );
+    }
 }

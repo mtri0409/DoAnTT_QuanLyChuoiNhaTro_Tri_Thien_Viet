@@ -45,7 +45,7 @@ public class RoomMediaServiceImpl implements RoomMediaService {
     private FileService fileService;
 
     // ← Thư mục lưu ảnh — dùng chung với FileService
-    @Value("${file.upload-dir:uploads/room-images}")
+    @Value("${path.images.room}")
     private String uploadDir;
 
     // ========== GET ALL WITH PAGINATION ==========

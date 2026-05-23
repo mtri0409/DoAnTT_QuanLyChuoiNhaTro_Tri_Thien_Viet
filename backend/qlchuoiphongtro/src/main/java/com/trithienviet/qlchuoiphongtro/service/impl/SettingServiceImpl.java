@@ -28,7 +28,7 @@ public class SettingServiceImpl implements SettingService {
 
     @Autowired
     private ModelMapper modelMapper;
-    @Value("${path.upload.system}")
+    @Value("${path.images.system}")
     private String path;
 
     @Autowired 
