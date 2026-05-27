@@ -30,4 +30,5 @@ public class ContractDTO {
     private Long branchId;
     private String branchName;
     private List<ContractServiceDTO> contractServices;
+    
 }
