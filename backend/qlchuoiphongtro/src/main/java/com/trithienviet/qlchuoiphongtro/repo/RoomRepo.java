@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.RoomStatus;
-import com.trithienviet.qlchuoiphongtro.payloads.BranchDashboardStatsDTO;
 
 @Repository
 public interface RoomRepo extends JpaRepository<Room, Long> {
@@ -32,7 +31,6 @@ public interface RoomRepo extends JpaRepository<Room, Long> {
             @Param("floorId") Long floorId,
             @Param("branchId") Long branchId,
             Pageable pageable);
-
 
     // Search by roomName
     Page<Room> findByRoomNameContainingIgnoreCase(String roomName, Pageable pageable);
@@ -58,7 +56,6 @@ public interface RoomRepo extends JpaRepository<Room, Long> {
             @Param("floorId") Long floorId,
             @Param("branchId") Long branchId,
             Pageable pageable);
-
 
     // Lấy danh sách Room theo Status (Không phân trang)
     List<Room> findByStatus(@Param("status") RoomStatus roomStatus);
@@ -114,5 +111,22 @@ public interface RoomRepo extends JpaRepository<Room, Long> {
             @Param("floorId") Long floorId,
             @Param("branchId") Long branchId,
             @Param("status") RoomStatus status,
+            Pageable pageable);
+
+    // Search + Floor + Branch + Status + MaxPeople
+    @Query("""
+            SELECT r FROM Room r
+            WHERE (:search IS NULL OR :search = '' OR LOWER(r.roomName) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (:floorId IS NULL OR r.floor.floorId = :floorId)
+            AND (:branchId IS NULL OR r.floor.branch.branchId = :branchId)
+            AND (:status IS NULL OR r.status = :status)
+            AND (:maxPeople IS NULL OR r.maxPeople <= :maxPeople)
+            """)
+    Page<Room> findRoomsWithFilters(
+            @Param("search") String search,
+            @Param("floorId") Long floorId,
+            @Param("branchId") Long branchId,
+            @Param("status") RoomStatus status,
+            @Param("maxPeople") Integer maxPeople,
             Pageable pageable);
 }

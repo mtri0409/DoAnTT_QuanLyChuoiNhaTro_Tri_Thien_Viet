@@ -13,7 +13,8 @@ public interface RoomService {
             Long floorId,
             Long branchId,
             String search,
-            String status
+            String status,
+            Integer maxPeople
     );
     
     RoomDTO getRoomById(Long roomId);

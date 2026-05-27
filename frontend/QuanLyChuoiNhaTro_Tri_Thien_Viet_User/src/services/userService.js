@@ -63,6 +63,24 @@ const userService = {
     const url = `/floors`;
     return axiosClient.get(url);
   },
+  getActivePosts: (
+    pageNumber = 0,
+    pageSize = 10,
+    roomId = null,
+    branchId = null,
+  ) => {
+    return axiosClient.get("/public/roommate-posts", {
+      params: {
+        pageNumber,
+        pageSize,
+        ...(roomId && { roomId }),
+        ...(branchId && { branchId }),
+      },
+    });
+  },
+  getPostById: (postId) => {
+    return axiosClient.get(`/public/roommate-posts/${postId}`);
+  },
   createManualNotification: (profileId = 0, branchId = 0, data) => {
     return axiosClient.post(`/notification/send-manual`, data, {
       params: {

@@ -49,10 +49,11 @@ public class RoomController {
             @RequestParam(required = false) Long floorId,
             @RequestParam(required = false) Long branchId,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer maxPeople) {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
                 pageNumber, pageSize, sortBy, sortOrder,
-                floorId, branchId, search, status);
+                floorId, branchId, search, status, maxPeople);
 
         return new ResponseEntity<>(page, HttpStatus.OK);
     }
@@ -63,7 +64,7 @@ public class RoomController {
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
-                pageNumber, pageSize, "roomName", "asc", null, null, search, null);
+                pageNumber, pageSize, "roomName", "asc", null, null, search, null, null);
         return ResponseEntity.ok(page);
     }
 }

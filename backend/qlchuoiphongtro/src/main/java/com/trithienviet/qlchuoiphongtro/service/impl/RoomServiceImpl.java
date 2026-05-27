@@ -50,7 +50,7 @@ public class RoomServiceImpl implements RoomService {
             Integer pageNumber, Integer pageSize,
             String sortBy, String sortOrder,
             Long floorId, Long branchId, String search,
-            String status) {
+            String status, Integer maxPeople) {
 
         Sort sort = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
@@ -65,7 +65,13 @@ public class RoomServiceImpl implements RoomService {
             }
         }
 
-        Page<Room> page = queryRooms(search, floorId, branchId, statusFilter, pageable);
+        Page<Room> page = roomRepo.findRoomsWithFilters(
+                search,
+                floorId,
+                branchId,
+                statusFilter,
+                maxPeople,
+                pageable);
 
         List<RoomDTO> roomDTOs = page.getContent().stream()
                 .map(this::mapRoomToDTO)
@@ -79,47 +85,6 @@ public class RoomServiceImpl implements RoomService {
         response.setTotalPages(page.getTotalPages());
         response.setLastPage(page.isLast());
         return response;
-    }
-
-    private Page<Room> queryRooms(String search, Long floorId, Long branchId,
-            RoomStatus status, Pageable pageable) {
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasStatus = status != null;
-
-        if (hasSearch) {
-            if (floorId != null && branchId != null)
-                return hasStatus
-                        ? roomRepo.findBySearchFloorBranchAndStatus(search, floorId, branchId, status, pageable)
-                        : roomRepo.findBySearchFloorAndBranch(search, floorId, branchId, pageable);
-            if (floorId != null)
-                return hasStatus
-                        ? roomRepo.findBySearchFloorAndStatus(search, floorId, status, pageable)
-                        : roomRepo.findBySearchAndFloor(search, floorId, pageable);
-            if (branchId != null)
-                return hasStatus
-                        ? roomRepo.findBySearchBranchAndStatus(search, branchId, status, pageable)
-                        : roomRepo.findBySearchAndBranch(search, branchId, pageable);
-            return hasStatus
-                    ? roomRepo.findByRoomNameContainingIgnoreCaseAndStatus(search, status, pageable)
-                    : roomRepo.findByRoomNameContainingIgnoreCase(search, pageable);
-        }
-
-        if (floorId != null && branchId != null)
-            return hasStatus
-                    ? roomRepo.findByFloorBranchAndStatus(floorId, branchId, status, pageable)
-                    : roomRepo.findByFloorAndBranch(floorId, branchId, pageable);
-        if (floorId != null)
-            return hasStatus
-                    ? roomRepo.findByFloor_FloorIdAndStatus(floorId, status, pageable)
-                    : roomRepo.findByFloor_FloorId(floorId, pageable);
-        if (branchId != null)
-            return hasStatus
-                    ? roomRepo.findByFloor_Branch_BranchIdAndStatus(branchId, status, pageable)
-                    : roomRepo.findByFloor_Branch_BranchId(branchId, pageable);
-
-        return hasStatus
-                ? roomRepo.findByStatus(status, pageable)
-                : roomRepo.findAll(pageable);
     }
 
     // ========== GET BY ID ==========

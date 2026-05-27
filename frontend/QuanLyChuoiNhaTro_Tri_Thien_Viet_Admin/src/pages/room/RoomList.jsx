@@ -46,7 +46,10 @@ const css = `
     font-size:12px;font-weight:600; }
   .rl-tag-available { background:#dcfce7;color:#16a34a; }
   .rl-tag-occupied  { background:#fef9c3;color:#b45309; }
-  .rl-tag-other     { background:#f1f5f9;color:#64748b; }
+  .rl-tag-maintenance { background:#fee2e2;color:#dc2626; }
+  .rl-tag-deposit { background:#ede9fe;color:#7c3aed; }
+  .rl-tag-shared { background:#dbeafe;color:#2563eb; }
+  .rl-tag-other { background:#f1f5f9;color:#64748b; }
   .rl-input { background:#f4f6fb;border:1.5px solid transparent;border-radius:10px;
     font-family:inherit;font-size:13px;padding:8px 12px;outline:none;transition:.15s; }
   .rl-input:focus { border-color:#4361ee;background:#fff; }
@@ -75,6 +78,16 @@ const css = `
   .rl-select { width:100%;background:#f4f6fb;border:1.5px solid transparent;border-radius:10px;
     font-family:inherit;font-size:13px;padding:9px 12px;outline:none;transition:.15s;cursor:pointer; }
   .rl-select:focus { border-color:#4361ee;background:#fff; }
+  .rl-filter-box { display:flex;align-items:flex-end;gap:10px;margin-left:auto;flex-wrap:wrap; }
+  .rl-filter-item { display:flex;flex-direction:column;gap:5px; }
+  .rl-filter-title { font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8; }
+  .people-filter { display:flex;align-items:center;background:#f4f6fb;border-radius:10px;border:1.5px solid transparent;overflow:hidden;transition:.15s;height:36px; }
+  .people-filter:focus-within { border-color:#4361ee;background:#fff; }
+  .people-btn { width:32px;height:34px;border:none;background:transparent;color:#4361ee;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit; }
+  .people-btn:hover { background:#eef0fd; }
+  .people-input { width:54px;height:34px;border:none;background:transparent;text-align:center;outline:none;font-family:inherit;font-size:13px;font-weight:700;color:#0f172a; }
+  .people-input::-webkit-inner-spin-button,
+  .people-input::-webkit-outer-spin-button { -webkit-appearance:none;margin:0; }
   .action-icon { background:transparent;border:none;padding:6px 8px;border-radius:8px;cursor:pointer;transition:.15s; }
   .action-icon:hover.view  { background:#eff6ff; }
   .action-icon:hover.edit  { background:#f0fdf4; }
@@ -167,6 +180,14 @@ const RoomList = () => {
   const navigate = useNavigate();
   const PAGE_SIZE = 8;
 
+  const STATUS_OPTIONS = [
+    { value: "AVAILABLE", label: "Có sẵn" },
+    { value: "OCCUPIED", label: "Đã thuê" },
+    { value: "MAINTENANCE", label: "Bảo trì" },
+    { value: "DEPOSITED", label: "Đã đặt cọc" },
+    { value: "SHARED", label: "Ở ghép" },
+  ];
+
   const [data, setData] = useState({
     content: [],
     pageNumber: 0,
@@ -179,6 +200,8 @@ const RoomList = () => {
   const [search, setSearch] = useState("");
   const [selectedFloor, setSelectedFloor] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [maxPeopleFilter, setMaxPeopleFilter] = useState("");
 
   const [floors, setFloors] = useState([]);
   const [filteredFloors, setFilteredFloors] = useState([]);
@@ -204,6 +227,8 @@ const RoomList = () => {
         selectedFloor || null,
         selectedBranch === "all" ? null : selectedBranch,
         search,
+        selectedStatus === "all" ? null : selectedStatus,
+        maxPeopleFilter || null,
       );
 
       const d = res.data || res;
@@ -238,6 +263,42 @@ const RoomList = () => {
 
   const getStatus = (r) => (r.Status || r.status || "").toUpperCase();
   const isAvailable = (r) => getStatus(r) === "AVAILABLE";
+
+  const getStatusLabel = (status) => {
+    const s = (status || "").toUpperCase();
+    if (s === "AVAILABLE") return "Có sẵn";
+    if (s === "OCCUPIED") return "Đã thuê";
+    if (s === "MAINTENANCE") return "Bảo trì";
+    if (s === "DEPOSIT" || s === "DEPOSITED") return "Đã đặt cọc";
+    if (s === "SHARED") return "Ở ghép";
+    return s || "N/A";
+  };
+
+  const getStatusClass = (status) => {
+    const s = (status || "").toUpperCase();
+    if (s === "AVAILABLE") return "rl-tag-available";
+    if (s === "OCCUPIED") return "rl-tag-occupied";
+    if (s === "MAINTENANCE") return "rl-tag-maintenance";
+    if (s === "DEPOSIT" || s === "DEPOSITED") return "rl-tag-deposit";
+    if (s === "SHARED") return "rl-tag-shared";
+    return "rl-tag-other";
+  };
+
+  const handleMaxPeopleChange = (value) => {
+    const onlyNumber = value.replace(/[^\d]/g, "");
+    setMaxPeopleFilter(onlyNumber);
+  };
+
+  const decreaseMaxPeople = () => {
+    if (maxPeopleFilter === "") return;
+    const next = Math.max(1, Number(maxPeopleFilter) - 1);
+    setMaxPeopleFilter(String(next));
+  };
+
+  const increaseMaxPeople = () => {
+    const next = Number(maxPeopleFilter || 0) + 1;
+    setMaxPeopleFilter(String(next));
+  };
 
   const handleDeleteRoom = async (roomId, roomName) => {
     if (!window.confirm(`Xóa phòng "${roomName}"?`)) return;
@@ -308,10 +369,18 @@ const RoomList = () => {
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [search, selectedFloor, selectedBranch]);
+  }, [search, selectedFloor, selectedBranch, selectedStatus, maxPeopleFilter]);
+
   useEffect(() => {
     fetchRooms();
-  }, [currentPage, search, selectedFloor, selectedBranch]);
+  }, [
+    currentPage,
+    search,
+    selectedFloor,
+    selectedBranch,
+    selectedStatus,
+    maxPeopleFilter,
+  ]);
 
   const getFloorLabel = (id) => {
     if (!id || !floors.length) return "—";
@@ -406,13 +475,14 @@ const RoomList = () => {
             <FaPlus size={12} /> Thêm phòng
           </Link>
         </div>
+
         {/* ── Filter card ── */}
         <div className="rl-card" style={{ padding: 20, marginBottom: 16 }}>
-          {/* Row 1: Search + branch pills */}
+          {/* Row 1: Search + status + maxPeople */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-end",
               gap: 12,
               flexWrap: "wrap",
               marginBottom: 14,
@@ -445,53 +515,102 @@ const RoomList = () => {
               />
             </div>
 
-            {/* Branch pills */}
-            <div
-              style={{
-                display: "flex",
-                gap: 7,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 12,
-                  color: "#94a3b8",
-                  fontWeight: 600,
-                  marginRight: 2,
-                }}
-              >
-                Chi nhánh:
-              </span>
-              <button
-                className={`branch-pill ${selectedBranch === "all" ? "active" : "inactive"}`}
-                onClick={() => {
-                  setSelectedBranch("all");
-                  setShowFloorPanel(false);
-                }}
-              >
-                Tất cả
-              </button>
-              {branches.map((b) => (
-                <button
-                  key={b.branchId}
-                  className={`branch-pill ${String(selectedBranch) === String(b.branchId) ? "active" : "inactive"}`}
-                  onClick={() => {
-                    const id = String(b.branchId);
-                    setSelectedBranch(id);
-                    setShowFloorPanel(
-                      String(selectedBranch) !== id ? true : !showFloorPanel,
-                    );
-                  }}
+            {/* Right filters */}
+            <div className="rl-filter-box">
+              <div className="rl-filter-item">
+                <span className="rl-filter-title">Trạng thái</span>
+                <select
+                  className="rl-select"
+                  style={{ width: 150, height: 36, padding: "7px 10px" }}
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                  <FaBuilding size={10} /> {b.branchName}
-                </button>
-              ))}
+                  <option value="all">Tất cả</option>
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rl-filter-item">
+                <span className="rl-filter-title">Số người tối đa</span>
+                <div className="people-filter">
+                  <button
+                    type="button"
+                    className="people-btn"
+                    onClick={decreaseMaxPeople}
+                  >
+                    -
+                  </button>
+                  <input
+                    className="people-input"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Tất cả"
+                    value={maxPeopleFilter}
+                    onChange={(e) => handleMaxPeopleChange(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="people-btn"
+                    onClick={increaseMaxPeople}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Row 2: Floor chips (only when branch selected) */}
+          {/* Row 2: Branch pills */}
+          <div
+            style={{
+              display: "flex",
+              gap: 7,
+              flexWrap: "wrap",
+              alignItems: "center",
+              marginBottom: selectedBranch !== "all" ? 14 : 0,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12,
+                color: "#94a3b8",
+                fontWeight: 600,
+                marginRight: 2,
+              }}
+            >
+              Chi nhánh:
+            </span>
+            <button
+              className={`branch-pill ${selectedBranch === "all" ? "active" : "inactive"}`}
+              onClick={() => {
+                setSelectedBranch("all");
+                setShowFloorPanel(false);
+              }}
+            >
+              Tất cả
+            </button>
+            {branches.map((b) => (
+              <button
+                key={b.branchId}
+                className={`branch-pill ${String(selectedBranch) === String(b.branchId) ? "active" : "inactive"}`}
+                onClick={() => {
+                  const id = String(b.branchId);
+                  setSelectedBranch(id);
+                  setShowFloorPanel(
+                    String(selectedBranch) !== id ? true : !showFloorPanel,
+                  );
+                }}
+              >
+                <FaBuilding size={10} /> {b.branchName}
+              </button>
+            ))}
+          </div>
+
+          {/* Row 3: Floor chips (only when branch selected) */}
           {selectedBranch !== "all" && (
             <div
               style={{
@@ -526,6 +645,7 @@ const RoomList = () => {
                   T.{f.floorNumber}
                 </button>
               ))}
+
               {/* Toggle floor management */}
               <button
                 style={{
@@ -726,6 +846,8 @@ const RoomList = () => {
                 ) : data.content?.length > 0 ? (
                   data.content.map((item) => {
                     const available = isAvailable(item);
+                    const status = getStatus(item);
+
                     return (
                       <tr key={item.roomId} className="rl-row-in">
                         <td>
@@ -818,23 +940,13 @@ const RoomList = () => {
                           </span>
                         </td>
                         <td style={{ textAlign: "center" }}>
-                          <span
-                            className={`rl-tag ${
-                              available
-                                ? "rl-tag-available"
-                                : getStatus(item) === "OCCUPIED"
-                                  ? "rl-tag-occupied"
-                                  : "rl-tag-other"
-                            }`}
-                          >
+                          <span className={`rl-tag ${getStatusClass(status)}`}>
                             {available ? (
                               <>
-                                <FaCheck size={9} /> Có sẵn
+                                <FaCheck size={9} /> {getStatusLabel(status)}
                               </>
-                            ) : getStatus(item) === "OCCUPIED" ? (
-                              "📌 Đã thuê"
                             ) : (
-                              getStatus(item) || "N/A"
+                              getStatusLabel(status)
                             )}
                           </span>
                         </td>
