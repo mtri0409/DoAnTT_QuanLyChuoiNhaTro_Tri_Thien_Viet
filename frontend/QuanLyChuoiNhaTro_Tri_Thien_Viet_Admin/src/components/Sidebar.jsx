@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi />, group: "service" },
   { title: "Báo hỏng", path: "/maintenance", icon: <FaWrench />, group: "operation" },
   { title: "Quản lý Bài đăng", path: "/posts", icon: <FaRegNewspaper />, group: "operation" },
+    { title: "Quản lý tin tức", path: "/news-posts", icon: <FaRegNewspaper />, group: "operation" },
   { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding />, group: "system" },
   { title: "Tài khoản", path: "/users", icon: <FaUserCog />, group: "system" },
   { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings" },
