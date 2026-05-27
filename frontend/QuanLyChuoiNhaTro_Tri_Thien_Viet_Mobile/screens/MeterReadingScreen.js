@@ -14,11 +14,13 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { useRouter } from "expo-router";
 import apiBranches from "../services/apiBranches";
 import apiFloor from "../services/apiFloor";
 import apiRoom from "../services/apiRoom";
 import apiMeterReading from "../services/apiMeterReading";
 import ImageCapture from "../components/readings/ImageCapture";
+import { useAuth } from "../context/AuthContext";
 
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const CURRENT_YEAR = new Date().getFullYear();
@@ -48,7 +50,7 @@ const STATUS_CONFIG = {
   pending: { label: "• Chưa ghi", color: "#6b7280", bg: "#f9fafb" },
 };
 
-// ─── Picker Modal đơn giản ───────────────────────────────────────────────────
+// ─── Picker Modal ─────────────────────────────────────────────────────────────
 function PickerModal({
   visible,
   title,
@@ -114,6 +116,39 @@ function PickerModal({
   );
 }
 
+// ─── Logout Modal ──────────────────────────────────────────────────────────────
+function LogoutModal({ visible, onConfirm, onCancel }) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
+      <View style={styles.logoutOverlay}>
+        <View style={styles.logoutSheet}>
+          <Text style={styles.logoutIcon}>👋</Text>
+          <Text style={styles.logoutTitle}>Đăng xuất?</Text>
+          <Text style={styles.logoutSub}>
+            Bạn có chắc muốn đăng xuất khỏi hệ thống?
+          </Text>
+          <View style={styles.logoutBtns}>
+            <TouchableOpacity style={styles.logoutCancelBtn} onPress={onCancel}>
+              <Text style={styles.logoutCancelText}>Huỷ</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutConfirmBtn}
+              onPress={onConfirm}
+            >
+              <Text style={styles.logoutConfirmText}>Đăng xuất</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Service Card ─────────────────────────────────────────────────────────────
 function ServiceCard({
   svc,
@@ -143,7 +178,6 @@ function ServiceCard({
         },
       ]}
     >
-      {/* Header */}
       <View style={styles.serviceHeader}>
         <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
         <Text style={[styles.serviceLabel, { color: svc.color }]}>
@@ -156,7 +190,6 @@ function ServiceCard({
         )}
       </View>
 
-      {/* Kỳ trước / tiêu thụ */}
       <View style={styles.statsRow}>
         <View>
           <Text style={styles.statsLabel}>Kỳ trước</Text>
@@ -174,7 +207,6 @@ function ServiceCard({
         )}
       </View>
 
-      {/* Input + Lưu */}
       <View style={styles.inputRow}>
         <TextInput
           style={[
@@ -208,7 +240,6 @@ function ServiceCard({
 
       {hasError && <Text style={styles.errorText}>⚠ {rd?.errMsg}</Text>}
 
-      {/* Image + OCR */}
       <ImageCapture
         serviceColor={svc.color}
         serviceId={svc.id}
@@ -227,6 +258,7 @@ function RoomCard({
   room,
   expanded,
   readings,
+  roomStatusCache,
   onToggle,
   onUpdateReading,
   onSave,
@@ -234,19 +266,23 @@ function RoomCard({
   onRemove,
   onOCR,
 }) {
+  // Ưu tiên dùng readings state nếu đã load, fallback về cache từ server
   const roomStatus = (() => {
     const r = readings[room.roomId];
-    if (!r) return "pending";
-    const statuses = SERVICES.map((s) => r[s.id]?.status);
-    if (statuses.every((s) => s === "saved")) return "done";
-    if (statuses.some((s) => s === "saved")) return "partial";
-    return "pending";
+    if (r) {
+      // Đã load full data → tính từ state
+      const statuses = SERVICES.map((s) => r[s.id]?.status);
+      if (statuses.every((s) => s === "saved")) return "done";
+      if (statuses.some((s) => s === "saved")) return "partial";
+      return "pending";
+    }
+    // Chưa mở → dùng cache status từ server
+    return roomStatusCache[room.roomId] ?? "pending";
   })();
   const statusCfg = STATUS_CONFIG[roomStatus];
 
   return (
     <View style={[styles.roomCard, expanded && styles.roomCardExpanded]}>
-      {/* Room Header */}
       <TouchableOpacity
         style={styles.roomHeader}
         onPress={() => onToggle(room.roomId)}
@@ -281,7 +317,6 @@ function RoomCard({
         </Text>
       </TouchableOpacity>
 
-      {/* Expanded content */}
       {expanded && (
         <View style={styles.roomBody}>
           {!readings[room.roomId] ? (
@@ -314,6 +349,9 @@ function RoomCard({
 
 // ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
 export default function MeterReadingScreen() {
+  const { logout, user } = useAuth();
+  const router = useRouter();
+
   const [branches, setBranches] = useState([]);
   const [floors, setFloors] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -323,11 +361,13 @@ export default function MeterReadingScreen() {
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [readings, setReadings] = useState({});
+  // ✅ FIX: Cache trạng thái phòng từ server (không cần mở phòng mới biết)
+  const [roomStatusCache, setRoomStatusCache] = useState({});
   const [expandedRooms, setExpandedRooms] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Picker modal states
   const [showBranchPicker, setShowBranchPicker] = useState(false);
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -351,12 +391,12 @@ export default function MeterReadingScreen() {
   }, []);
 
   // Load floors khi đổi chi nhánh
-  // Dòng 354-378 — sửa lại
   useEffect(() => {
     setSelectedFloor(null);
     setFloors([]);
     setRooms([]);
     setReadings({});
+    setRoomStatusCache({});
     setExpandedRooms({});
     if (!selectedBranch) return;
 
@@ -374,25 +414,19 @@ export default function MeterReadingScreen() {
           floorName: f.floorName ?? f.name ?? `Tầng ${f.floorId ?? f.id}`,
         }));
 
-        // Lọc theo chi nhánh
         const filtered = all.filter(
           (f) => String(f.branchId) === String(selectedBranch),
         );
-
-        // ✅ Đánh số lại tầng theo thứ tự 1, 2, 3... trong chi nhánh này
         const reIndexed = filtered
-          .sort((a, b) => a.floorId - b.floorId) // sort theo floorId gốc
-          .map((f, index) => ({
-            ...f,
-            floorName: `Tầng ${index + 1}`,
-          }));
+          .sort((a, b) => a.floorId - b.floorId)
+          .map((f, index) => ({ ...f, floorName: `Tầng ${index + 1}` }));
 
         setFloors(reIndexed);
       })
       .catch(() => setFloors([]));
   }, [selectedBranch]);
 
-  // Load rooms
+  // ✅ FIX: Load rooms + fetch trạng thái tất cả phòng ngầm
   useEffect(() => {
     if (!selectedBranch) {
       setRooms([]);
@@ -400,7 +434,9 @@ export default function MeterReadingScreen() {
     }
     setLoadingRooms(true);
     setReadings({});
+    setRoomStatusCache({});
     setExpandedRooms({});
+
     apiRoom
       .getAllRooms(
         0,
@@ -411,24 +447,55 @@ export default function MeterReadingScreen() {
         selectedBranch || null,
         searchRoom,
       )
-      .then((res) => {
+      .then(async (res) => {
         const list = (res.content || []).map((r) => ({
           ...r,
           roomId: r.roomId ?? r.id,
         }));
         setRooms(list);
+
+        // ✅ Fetch trạng thái tất cả phòng ngầm (không block UI)
+        fetchAllRoomStatuses(list, month, year);
       })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
   }, [selectedBranch, selectedFloor, searchRoom]);
 
-  // Reset readings khi đổi kỳ
+  // Reset khi đổi kỳ
   useEffect(() => {
     setReadings({});
     setExpandedRooms({});
+    setRoomStatusCache({});
+    if (rooms.length > 0) {
+      fetchAllRoomStatuses(rooms, month, year);
+    }
   }, [month, year]);
 
-  // Load data 1 phòng
+  // ✅ FIX: Hàm fetch trạng thái nhẹ cho tất cả phòng (chỉ lấy status, không load full)
+  const fetchAllRoomStatuses = useCallback(async (roomList, m, y) => {
+    const results = await Promise.allSettled(
+      roomList.map((room) =>
+        apiMeterReading.getByRoomAndPeriod(room.roomId, m, y),
+      ),
+    );
+
+    const newCache = {};
+    results.forEach((result, idx) => {
+      const roomId = roomList[idx].roomId;
+      if (result.status === "fulfilled") {
+        const existing = Array.isArray(result.value) ? result.value : [];
+        const savedServices = existing.filter((r) => r.newValue != null).length;
+        if (savedServices === 0) newCache[roomId] = "pending";
+        else if (savedServices >= SERVICES.length) newCache[roomId] = "done";
+        else newCache[roomId] = "partial";
+      } else {
+        newCache[roomId] = "pending";
+      }
+    });
+    setRoomStatusCache(newCache);
+  }, []);
+
+  // Load full data 1 phòng khi mở
   const loadRoomData = useCallback(
     async (roomId) => {
       const initReadings = {};
@@ -517,9 +584,8 @@ export default function MeterReadingScreen() {
     }));
   };
 
-  const removeImage = (roomId, serviceId) => {
+  const removeImage = (roomId, serviceId) =>
     handleFile(roomId, serviceId, null);
-  };
 
   const handleOCRValue = (roomId, serviceId, val) => {
     updateReading(roomId, serviceId, "newValue", String(val));
@@ -547,17 +613,28 @@ export default function MeterReadingScreen() {
         year,
         r.imageUri,
       );
-      setReadings((prev) => ({
-        ...prev,
-        [roomId]: {
-          ...prev[roomId],
-          [serviceId]: {
-            ...prev[roomId][serviceId],
-            status: "saved",
-            savedValue: val,
+      setReadings((prev) => {
+        const updated = {
+          ...prev,
+          [roomId]: {
+            ...prev[roomId],
+            [serviceId]: {
+              ...prev[roomId][serviceId],
+              status: "saved",
+              savedValue: val,
+            },
           },
-        },
-      }));
+        };
+        // ✅ Cập nhật luôn roomStatusCache sau khi lưu thành công
+        const statuses = SERVICES.map((s) => updated[roomId][s.id]?.status);
+        const newStatus = statuses.every((s) => s === "saved")
+          ? "done"
+          : statuses.some((s) => s === "saved")
+            ? "partial"
+            : "pending";
+        setRoomStatusCache((c) => ({ ...c, [roomId]: newStatus }));
+        return updated;
+      });
     } catch (err) {
       const msg = err?.response?.data?.message || "Lỗi lưu chỉ số";
       Alert.alert("Lỗi", msg);
@@ -575,32 +652,52 @@ export default function MeterReadingScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+    router.replace("/login");
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setReadings({});
+    setExpandedRooms({});
+    await fetchAllRoomStatuses(rooms, month, year);
+    setRefreshing(false);
+  };
+
   const filteredRooms = rooms.filter(
     (r) =>
       !searchRoom ||
       r.roomName?.toLowerCase().includes(searchRoom.toLowerCase()),
   );
 
+  // ✅ Stats tính từ cache (không cần mở phòng)
   const statsMap = {
     Tổng: filteredRooms.length,
     Xong: filteredRooms.filter((r) => {
       const rd = readings[r.roomId];
-      return rd && SERVICES.every((s) => rd[s.id]?.status === "saved");
+      if (rd) return SERVICES.every((s) => rd[s.id]?.status === "saved");
+      return roomStatusCache[r.roomId] === "done";
     }).length,
     Dở: filteredRooms.filter((r) => {
       const rd = readings[r.roomId];
+      if (rd)
+        return (
+          SERVICES.some((s) => rd[s.id]?.status === "saved") &&
+          !SERVICES.every((s) => rd[s.id]?.status === "saved")
+        );
+      return roomStatusCache[r.roomId] === "partial";
+    }).length,
+    Chưa: filteredRooms.filter((r) => {
+      const rd = readings[r.roomId];
+      if (rd) return SERVICES.every((s) => rd[s.id]?.status !== "saved");
       return (
-        rd &&
-        SERVICES.some((s) => rd[s.id]?.status === "saved") &&
-        !SERVICES.every((s) => rd[s.id]?.status === "saved")
+        !roomStatusCache[r.roomId] || roomStatusCache[r.roomId] === "pending"
       );
     }).length,
-    Chưa: filteredRooms.filter(
-      (r) =>
-        !readings[r.roomId] ||
-        SERVICES.every((s) => readings[r.roomId]?.[s.id]?.status !== "saved"),
-    ).length,
   };
+
   const STAT_COLORS = {
     Tổng: "#3b82f6",
     Xong: "#16a34a",
@@ -658,26 +755,45 @@ export default function MeterReadingScreen() {
         onSelect={(v) => setYear(Number(v))}
         onClose={() => setShowYearPicker(false)}
       />
+      <LogoutModal
+        visible={showLogoutModal}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => {}} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>⚡ Ghi Chỉ Số Điện – Nước</Text>
-          <Text style={styles.pageSubtitle}>
-            Chọn chi nhánh → mở phòng → nhập chỉ số
-          </Text>
+          <View style={styles.pageHeaderRow}>
+            <View>
+              <Text style={styles.pageTitle}>⚡ Ghi Chỉ Số Điện – Nước</Text>
+              <Text style={styles.pageSubtitle}>
+                Chọn chi nhánh → mở phòng → nhập chỉ số
+              </Text>
+            </View>
+            {/* ✅ Nút đăng xuất */}
+            <TouchableOpacity
+              style={styles.logoutBtn}
+              onPress={() => setShowLogoutModal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.logoutBtnText}>Đăng Xuất →</Text>
+            </TouchableOpacity>
+          </View>
+          {user?.userName && (
+            <Text style={styles.userLabel}>👤 {user.userName}</Text>
+          )}
         </View>
 
         {/* Filter card */}
         <View style={styles.filterCard}>
-          {/* Chi nhánh */}
           <TouchableOpacity
             style={styles.filterBtn}
             onPress={() => setShowBranchPicker(true)}
@@ -696,7 +812,6 @@ export default function MeterReadingScreen() {
           </TouchableOpacity>
 
           <View style={styles.filterRow}>
-            {/* Tầng */}
             <TouchableOpacity
               style={[
                 styles.filterBtn,
@@ -717,7 +832,6 @@ export default function MeterReadingScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Kỳ */}
             <View
               style={[
                 styles.filterBtn,
@@ -743,7 +857,6 @@ export default function MeterReadingScreen() {
             </View>
           </View>
 
-          {/* Search */}
           <View style={styles.searchBox}>
             <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
@@ -800,6 +913,7 @@ export default function MeterReadingScreen() {
               room={room}
               expanded={!!expandedRooms[room.roomId]}
               readings={readings}
+              roomStatusCache={roomStatusCache}
               onToggle={toggleRoom}
               onUpdateReading={updateReading}
               onSave={handleSave}
@@ -821,6 +935,11 @@ const styles = StyleSheet.create({
 
   // Header
   pageHeader: { marginBottom: 16 },
+  pageHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   pageTitle: {
     fontSize: 20,
     fontWeight: "700",
@@ -828,6 +947,69 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   pageSubtitle: { fontSize: 13, color: "#6b7280" },
+  userLabel: { fontSize: 12, color: "#9ca3af", marginTop: 4 },
+
+  // Logout button (header)
+  logoutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 4,
+  },
+  logoutBtnIcon: { fontSize: 14 },
+  logoutBtnText: { fontSize: 12, fontWeight: "700", color: "#dc2626" },
+
+  // Logout modal
+  logoutOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  logoutSheet: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 28,
+    alignItems: "center",
+    width: "100%",
+  },
+  logoutIcon: { fontSize: 40, marginBottom: 12 },
+  logoutTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 6,
+  },
+  logoutSub: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  logoutBtns: { flexDirection: "row", gap: 12, width: "100%" },
+  logoutCancelBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutCancelText: { fontSize: 15, fontWeight: "600", color: "#374151" },
+  logoutConfirmBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutConfirmText: { fontSize: 15, fontWeight: "700", color: "#fff" },
 
   // Filter card
   filterCard: {
@@ -921,10 +1103,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  roomCardExpanded: {
-    borderWidth: 1.5,
-    borderColor: "#93c5fd",
-  },
+  roomCardExpanded: { borderWidth: 1.5, borderColor: "#93c5fd" },
   roomHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -944,7 +1123,6 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   statusBadgeText: { fontSize: 11, fontWeight: "600" },
   chevron: { fontSize: 22, color: "#9ca3af", fontWeight: "300" },
-
   roomBody: {
     borderTopWidth: 1,
     borderTopColor: "#f3f4f6",
@@ -961,18 +1139,12 @@ const styles = StyleSheet.create({
   loadingText: { color: "#9ca3af", fontSize: 13 },
 
   // Service card
-  serviceCard: {
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1.5,
-    gap: 8,
-  },
+  serviceCard: { borderRadius: 10, padding: 12, borderWidth: 1.5, gap: 8 },
   serviceHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
   serviceEmoji: { fontSize: 16 },
   serviceLabel: { fontSize: 14, fontWeight: "700", flex: 1 },
   savedBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
   savedBadgeText: { fontSize: 11, fontWeight: "600", color: "#16a34a" },
-
   statsRow: { flexDirection: "row", justifyContent: "space-between" },
   statsLabel: {
     fontSize: 10,
@@ -983,7 +1155,6 @@ const styles = StyleSheet.create({
   },
   statsValue: { fontSize: 20, fontWeight: "800", color: "#374151" },
   statsUnit: { fontSize: 12, fontWeight: "400", color: "#6b7280" },
-
   inputRow: { flexDirection: "row", gap: 8 },
   numberInput: {
     flex: 1,

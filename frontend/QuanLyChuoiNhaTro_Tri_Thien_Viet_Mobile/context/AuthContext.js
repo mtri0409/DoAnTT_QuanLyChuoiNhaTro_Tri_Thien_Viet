@@ -32,31 +32,13 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  //cái này đăng nhập nó lưu token lại hết hạn token mới phải đăng nhập lại
-  //   useEffect(() => {
-  //     const init = async () => {
-  //       try {
-  //         const [savedUser, savedToken] = await Promise.all([
-  //           AsyncStorage.getItem("user"),
-  //           AsyncStorage.getItem("authToken"),
-  //         ]);
-
-  //cái này thì thoát app thì xóa luôn token phải đăng nhập lại
   useEffect(() => {
     const init = async () => {
-      // ✅ Xóa token mỗi lần app khởi động (dev mode)
-      if (__DEV__) {
-        await AsyncStorage.multiRemove(["user", "authToken"]);
-        setLoading(false);
-        return;
-      }
-
       try {
         const [savedUser, savedToken] = await Promise.all([
           AsyncStorage.getItem("user"),
           AsyncStorage.getItem("authToken"),
         ]);
-
         if (savedUser && savedToken) {
           if (isTokenExpired(savedToken)) {
             await AsyncStorage.multiRemove(["user", "authToken"]);
