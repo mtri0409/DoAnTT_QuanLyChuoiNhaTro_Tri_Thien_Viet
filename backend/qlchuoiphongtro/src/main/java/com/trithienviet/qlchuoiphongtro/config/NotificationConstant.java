@@ -6,10 +6,11 @@ public class NotificationConstant {
     public static final String TYPE_SYSTEM = "SYSTEM";
     public static final String TYPE_CONTRACT = "CONTRACT";
     public static final String TYPE_BILL = "BILL";
-    public static final String TYPE_OVER_BILL = "Over BILL";
+    public static final String TYPE_OVER_BILL = "OVERDUE BILL";
     public static final String TYPE_ACCOUNT = "ACCOUNT";
     public static final String TYPE_MAINTENANCE = "MAINTENANCE";
     public static final String TYPE_PROFILE_UPDATE = "PROFILE_UPDATE";
+    public static final String TYPE_VEHICLE = "VEHICLE";
     // --- MẪU THÔNG BÁO HỢP ĐỒNG ---
     public static final String CONTRACT_CREATED_TITLE = "Hợp đồng thuê phòng mới";
     public static final String CONTRACT_CREATED_CONTENT = "Chào %s! Hợp đồng thuê phòng %s của bạn đã được khởi tạo thành công. Vui lòng kiểm tra lại thông tin.";
@@ -44,8 +45,8 @@ public class NotificationConstant {
 
 
         // constant/NotificationConstant.java
-    public static final String VEHICLE_EXIT_ALERT_TITLE = "CẢNH BÁO XE RỜI BÃI";
-    public static final String VEHICLE_EXIT_ALERT_CONTENT = "Xe %s - Phòng %s đã rời khỏi bãi lúc %s. Vui lòng kiểm tra!";
+    public static final String ALERT_VEHICLE_EXIT_AFTER_12H_TITLE = "CẢNH BÁO XE RỜI BÃI";
+    public static final String ALERT_VEHICLE_EXIT_AFTER_12H_CONTENT = "Xe %s đã rời khỏi bãi lúc %s. Vui lòng kiểm tra!";
 
     public static final String UNKNOWN_VEHICLE_TITLE = "CẢNH BÁO XE LẠ";
     public static final String UNKNOWN_VEHICLE_CONTENT = "Phát hiện xe lạ %s khỏi bãi. Biển số: %s - Thời gian: %s";

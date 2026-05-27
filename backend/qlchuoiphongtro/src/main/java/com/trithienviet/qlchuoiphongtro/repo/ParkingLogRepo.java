@@ -22,7 +22,6 @@ public interface ParkingLogRepo extends JpaRepository<ParkingLog, Long> {
     List<ParkingLog> findByIsVerifiedFalse();
     
     // ===== STATS QUERIES =====
-    Long countByDirectionAndDetectedAtBetween(String direction, LocalDateTime start, LocalDateTime end);
     Long countByIsVerifiedFalseAndDetectedAtBetween(LocalDateTime start, LocalDateTime end);
     Long countByIsNotifiedTrueAndNotifiedAtBetween(LocalDateTime start, LocalDateTime end);
     Long countByIsVerifiedFalse();
@@ -58,4 +57,17 @@ public interface ParkingLogRepo extends JpaRepository<ParkingLog, Long> {
     List<ParkingLog> findCurrentVehiclesInside();
 
      List<ParkingLog> findTopByLicensePlateOrderByDetectedAtDesc(String licensePlate);
+
+     // Tìm kiếm lịch sử và phân trang theo khoảng thời gian
+    Page<ParkingLog> findByDetectedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    
+    // Đếm tổng số lượt xe đi VÀO (IN) trong khoảng thời gian
+    long countByDirectionAndDetectedAtBetween(String direction, LocalDateTime start, LocalDateTime end);
+
+    // Đếm số lượt OCR thất bại trong khoảng thời gian
+    long countByStatusAndDetectedAtBetween(String status, LocalDateTime start, LocalDateTime end);
+
+    // Đếm số lượt xe lạ (vãng lai - không có liên kết xe)
+    long countByVehicleIsNullAndDetectedAtBetween(LocalDateTime start, LocalDateTime end);
+
 }

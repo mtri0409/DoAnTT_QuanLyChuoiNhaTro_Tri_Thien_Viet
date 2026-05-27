@@ -4,17 +4,62 @@ import SockJS from 'sockjs-client';
 import { 
   FaVideo, FaVideoSlash, FaWifi, FaCar, 
   FaCheckCircle, FaExclamationTriangle,
-  FaClock, FaEye, FaIdCard, FaCircle
+  FaClock, FaEye, FaIdCard, FaCircle, FaExchangeAlt
 } from 'react-icons/fa';
 
+// CẤU HÌNH ĐA CAMERA & MOCK DATA: Hỗ trợ chuyển đổi kênh hoặc giả lập sự kiện
+const MOCK_CAMERAS = [
+  { id: 'CH-01', name: 'CỔNG VÀO CHÍNH', streamUrl: "http://localhost:8000/api/stream", isMock: false },
+  { id: 'CH-02', name: 'CỔNG RA PHỤ (MOCK)', streamUrl: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=600", isMock: true },
+  { id: 'CH-03', name: 'CAMERA BÃI XE TẦNG G (MOCK)', streamUrl: "https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?q=80&w=600", isMock: true }
+];
+
 const CameraDashboard = () => {
-  const STREAM_URL = "http://localhost:8000/api/stream";
   const SOCKET_URL = "http://localhost:8080/ws-parking";
+
+  // Quản lý trạng thái camera
+  const [cameras] = useState(MOCK_CAMERAS);
+  const [activeCam, setActiveCam] = useState(MOCK_CAMERAS[0]);
 
   const [isStreamOffline, setIsStreamOffline] = useState(false);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [plateHistory, setPlateHistory] = useState([]);
+  const successSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav");
+  const errorSound = new Audio("https://assets.mixkit.co/active_storage/sfx/911/911-500.wav");
 
+  const playAlert = (audioObj) => {
+    try {
+      audioObj.currentTime = 0; // Tua nhanh về giây đầu tiên (tránh bị lag khi quét liên tục)
+      audioObj.play().catch(err => console.log("Trình duyệt yêu cầu tương tác trước khi phát âm thanh"));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  useEffect(() => {
+    if (!activeCam.isMock) return;
+
+    const mockInterval = setInterval(() => {
+      const mockPlates = ["59G1-12345", "29A-99999", "43C-88888", "72A-55555"];
+      const randomPlate = mockPlates[Math.floor(Math.random() * mockPlates.length)];
+      const isSuccess = Math.random() > 0.2; // Giả lập tỷ lệ OCR thành công 80%
+
+      const mockEvent = {
+        track_id: Math.floor(Math.random() * 1000),
+        status: isSuccess ? "SUCCESS" : "FAILED_OCR",
+        best_plate: isSuccess ? randomPlate : null,
+        confidence_votes: "5/5",
+        raw_5_reads: isSuccess ? [randomPlate] : ["???", "UNKNOWN"],
+        timestamp: new Date().toISOString(),
+        camera_id: activeCam.id
+      };
+
+      setPlateHistory((prev) => [mockEvent, ...prev].slice(0, 50));
+    }, 7000); // 7 giây xuất hiện một xe mới
+
+    return () => clearInterval(mockInterval);
+  }, [activeCam]);
+
+  // 2. LUỒNG WEBSOCKET REALTIME: Kết nối trực tiếp đến Spring Boot Server thông qua SockJS
   useEffect(() => {
     const stompClient = new Client({
       webSocketFactory: () => new SockJS(SOCKET_URL),
@@ -25,27 +70,47 @@ const CameraDashboard = () => {
 
     stompClient.onConnect = () => {
       setIsSocketConnected(true);
+      
+      // Đăng ký nhận sự kiện quét thành công
       stompClient.subscribe('/topic/plates', (message) => {
         try {
           const newData = JSON.parse(message.body);
-          setPlateHistory((prev) => [newData, ...prev].slice(0, 50));
-        } catch (err) {}
+          // Đồng bộ cấu hình trường trạng thái theo chuẩn hệ thống mới
+          const standardData = {
+            ...newData,
+            status: newData.status || 'SUCCESS'
+          };
+          setPlateHistory((prev) => [standardData, ...prev].slice(0, 50));
+          playAlert(successSound);
+        } catch (err) {
+          console.error("Lỗi phân tích cú pháp JSON hợp lệ:", err);
+        }
       });
 
+      // Đăng ký nhận sự kiện lỗi hoặc xe không đọc được biển số
       stompClient.subscribe('/topic/plates_errors', (message) => {
         try {
           const errorData = JSON.parse(message.body);
-          setPlateHistory((prev) => [errorData, ...prev].slice(0, 50));
-        } catch (err) {}
+          const standardError = {
+            ...errorData,
+            status: errorData.status || 'FAILED_OCR'
+          };
+          setPlateHistory((prev) => [standardError, ...prev].slice(0, 50));
+          playAlert(errorSound);
+        } catch (err) {
+          console.error("Lỗi phân tích cú pháp JSON cảnh báo:", err);
+        }
       });
     };
 
     stompClient.onWebSocketClose = () => setIsSocketConnected(false);
     stompClient.activate();
 
+    // Hủy kích hoạt cổng kết nối khi component bị unmount khỏi cây DOM
     return () => { if (stompClient) stompClient.deactivate(); };
   }, []);
 
+  // Tiện ích định dạng thời gian và ngày
   const formatTime = (isoString) => {
     if (!isoString) return '';
     try {
@@ -60,16 +125,12 @@ const CameraDashboard = () => {
     } catch { return ''; }
   };
 
-  const todayCount = plateHistory.filter(p => {
-    try { return new Date(p.timestamp).toDateString() === new Date().toDateString(); } 
-    catch { return false; }
-  }).length;
-
-  const successCount = plateHistory.filter(p => p.status === 'SUCCESS').length;
-  const errorCount = plateHistory.filter(p => p.status !== 'SUCCESS').length;
+  // Tính toán các chỉ số dựa trên mảng lịch sử thời gian thực (Có cơ chế phòng vệ chống lỗi undefined)
+  const totalCount = plateHistory?.length || 0;
+  const successCount = plateHistory?.filter(p => p?.status === 'SUCCESS').length || 0;
+  const errorCount = plateHistory?.filter(p => p?.status !== 'SUCCESS').length || 0;
 
   return (
-    // Container bao ngoài cùng, 100vh để không bị cuộn trang
     <div className="vh-100 d-flex flex-column bg-light" style={{ overflow: 'hidden' }}>
       
       {/* ===== HEADER ===== */}
@@ -80,12 +141,31 @@ const CameraDashboard = () => {
           </div>
           <div>
             <h4 className="m-0 fw-bold text-dark">Smart Parking AI</h4>
-            <small className="text-muted fw-semibold">Hệ thống giám sát phương tiện</small>
+            <small className="text-muted fw-semibold">Hệ thống giám sát phương tiện đa kênh</small>
           </div>
         </div>
         
+        {/* Bộ tinh chỉnh đổi luồng Camera nhanh */}
+        <div className="d-flex align-items-center gap-2">
+          <span className="small text-muted fw-bold"><FaExchangeAlt /> Chọn kênh:</span>
+          <select 
+            className="form-select form-select-sm fw-bold border-primary text-primary" 
+            style={{ width: '220px' }}
+            value={activeCam.id}
+            onChange={(e) => {
+              const selected = cameras.find(c => c.id === e.target.value);
+              setActiveCam(selected);
+              setIsStreamOffline(false); // Đặt lại trạng thái lỗi của luồng camera mới
+            }}
+          >
+            {cameras.map(cam => (
+              <option key={cam.id} value={cam.id}>{cam.id} - {cam.name}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="d-flex gap-2">
-          <StatusBadge label="Camera AI" isOnline={!isStreamOffline} icon={!isStreamOffline ? <FaVideo /> : <FaVideoSlash />} />
+          <StatusBadge label={activeCam.id} isOnline={activeCam.isMock ? true : !isStreamOffline} icon={<FaVideo />} />
           <StatusBadge label="Máy chủ Java" isOnline={isSocketConnected} icon={<FaWifi />} />
         </div>
       </header>
@@ -94,49 +174,48 @@ const CameraDashboard = () => {
       <main className="container-fluid flex-grow-1 p-4" style={{ minHeight: 0 }}>
         <div className="row h-100 g-4">
           
-          {/* CỘT TRÁI: THỐNG KÊ & CAMERA */}
+          {/* CỘT TRÁI: THỐNG KÊ NHANH & MÀN HÌNH THEO DÕI */}
           <div className="col-lg-8 d-flex flex-column h-100 gap-3">
             
-            {/* 1. Thống kê nhanh */}
+            {/* Thống kê nhanh luồng dữ liệu tạm thời */}
             <div className="row g-3 flex-shrink-0">
-              <div className="col-4"><StatCard label="Lượt xe hôm nay" value={todayCount} icon={<FaCar />} color="primary" /></div>
-              <div className="col-4"><StatCard label="Thành công" value={successCount} icon={<FaCheckCircle />} color="success" /></div>
-              <div className="col-4"><StatCard label="Cảnh báo / Lỗi" value={errorCount} icon={<FaExclamationTriangle />} color="danger" /></div>
+              <div className="col-4"><StatCard label="Tổng lưu lượng quét" value={totalCount} icon={<FaCar />} color="primary" /></div>
+              <div className="col-4"><StatCard label="Nhận diện thành công" value={successCount} icon={<FaCheckCircle />} color="success" /></div>
+              <div className="col-4"><StatCard label="Cảnh báo / Lỗi OCR" value={errorCount} icon={<FaExclamationTriangle />} color="danger" /></div>
             </div>
 
-            {/* 2. Màn hình Camera */}
+            {/* Khung giám sát Camera */}
             <div className="card flex-grow-1 bg-dark text-white border-0 shadow overflow-hidden position-relative">
               
-              {/* Header Camera */}
               <div className="position-absolute top-0 w-100 p-3 d-flex justify-content-between align-items-center" style={{ background: 'rgba(0,0,0,0.6)', zIndex: 10 }}>
                 <div className="d-flex align-items-center gap-2">
-                  <span className="badge border border-secondary text-light bg-dark">CH-01</span>
-                  <span className="fw-bold small">CỔNG VÀO CHÍNH</span>
+                  <span className="badge border border-secondary text-light bg-dark">{activeCam.id}</span>
+                  <span className="fw-bold small text-uppercase">{activeCam.name}</span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
                   <span className="text-light small" style={{ fontFamily: 'monospace' }}>{formatTime(new Date().toISOString())}</span>
-                  {!isStreamOffline && <FaCircle className="text-danger small" />}
+                  {(!isStreamOffline || activeCam.isMock) && <FaCircle className="text-danger small animate-pulse" />}
                   <span className="text-danger fw-bold small">LIVE</span>
                 </div>
               </div>
 
-              {/* Khung Video */}
+              {/* Box kết xuất hình ảnh từ Stream URL */}
               <div className="h-100 d-flex align-items-center justify-content-center bg-black">
-                {!isStreamOffline ? (
+                {(!isStreamOffline || activeCam.isMock) ? (
                   <img
-                    src={STREAM_URL}
-                    alt="Live Stream"
+                    src={activeCam.streamUrl}
+                    alt={activeCam.name}
                     className="w-100 h-100"
-                    style={{ objectFit: 'contain' }}
-                    onError={() => setIsStreamOffline(true)}
+                    style={{ objectFit: activeCam.isMock ? 'cover' : 'contain' }}
+                    onError={() => { if(!activeCam.isMock) setIsStreamOffline(true); }}
                   />
                 ) : (
                   <div className="text-center p-5">
                     <div className="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: '80px', height: '80px' }}>
                       <FaVideoSlash size={32} className="text-light" />
                     </div>
-                    <h5 className="fw-bold">Mất tín hiệu Video</h5>
-                    <p className="text-muted small mb-4">Kiểm tra lại service Python AI hoặc đường truyền.</p>
+                    <h5 className="fw-bold">Mất tín hiệu luồng camera thật</h5>
+                    <p className="text-muted small mb-4">Vui lòng kiểm tra lại cổng chạy Python AI Service (Port 8000) hoặc liên kết webcam.</p>
                     <button onClick={() => setIsStreamOffline(false)} className="btn btn-primary px-4 shadow">
                       Thử kết nối lại
                     </button>
@@ -146,31 +225,34 @@ const CameraDashboard = () => {
             </div>
           </div>
 
-          {/* CỘT PHẢI: LỊCH SỬ NHẬN DIỆN */}
+          {/* CỘT PHẢI: LUỒNG SỰ KIỆN NHẬN DIỆN THỜI GIAN THỰC */}
           <div className="col-lg-4 h-100">
             <div className="card h-100 shadow-sm border-0 d-flex flex-column">
               
-              {/* Header Lịch sử */}
               <div className="card-header bg-light d-flex justify-content-between align-items-center py-3">
                 <h6 className="m-0 fw-bold d-flex align-items-center gap-2">
-                  <FaClock className="text-secondary" /> Luồng sự kiện
+                  <FaClock className="text-secondary" /> Luồng sự kiện trạm
                 </h6>
                 <span className="badge bg-primary rounded-pill px-3 py-2">
-                  {plateHistory.length} kết quả
+                  {totalCount} sự kiện
                 </span>
               </div>
 
-              {/* Danh sách (Scrollable) */}
               <div className="card-body overflow-auto p-3" style={{ backgroundColor: '#f8f9fa' }}>
-                {plateHistory.length === 0 ? (
+                {totalCount === 0 ? (
                   <div className="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
                     <FaEye size={48} className="mb-3 text-light" />
-                    <span className="fw-semibold">Hệ thống đang chờ</span>
-                    <small>Chưa có phương tiện qua trạm...</small>
+                    <span className="fw-semibold">Hệ thống đã sẵn sàng</span>
+                    <small>Đang nghe tín hiệu xe từ camera hoặc mock dữ liệu...</small>
                   </div>
                 ) : (
                   plateHistory.map((item, idx) => (
-                    <PlateCard key={item.track_id + '-' + idx} item={item} formatTime={formatTime} formatDate={formatDate} />
+                    <PlateCard 
+                      key={item?.track_id ? `${item.track_id}-${idx}` : idx} 
+                      item={item} 
+                      formatTime={formatTime} 
+                      formatDate={formatDate} 
+                    />
                   ))
                 )}
               </div>
@@ -213,7 +295,8 @@ const StatCard = ({ label, value, icon, color }) => {
 };
 
 const PlateCard = ({ item, formatTime, formatDate }) => {
-  const isSuccess = item.status === 'SUCCESS';
+  // Đồng bộ kiểm tra trạng thái khớp với dữ liệu cấu hình mới của Java
+  const isSuccess = item?.status === 'SUCCESS';
   
   return (
     <div className={`card mb-3 shadow-sm border-0 border-start border-5 ${isSuccess ? 'border-success' : 'border-danger bg-white'}`}>
@@ -231,8 +314,8 @@ const PlateCard = ({ item, formatTime, formatDate }) => {
           </div>
           
           <div className="text-end">
-            <span className="d-block fw-bold text-dark small">{formatTime(item.timestamp)}</span>
-            <span className="d-block text-muted" style={{ fontSize: '0.7rem' }}>{formatDate(item.timestamp)}</span>
+            <span className="d-block fw-bold text-dark small">{formatTime(item?.timestamp)}</span>
+            <span className="d-block text-muted" style={{ fontSize: '0.7rem' }}>{formatDate(item?.timestamp)}</span>
           </div>
         </div>
         
@@ -240,24 +323,26 @@ const PlateCard = ({ item, formatTime, formatDate }) => {
           {isSuccess ? (
             <div>
               <h2 className="fw-bold mb-0 text-dark" style={{ fontFamily: 'monospace', letterSpacing: '2px' }}>
-                {item.best_plate}
+                {item?.best_plate}
               </h2>
               <div className="d-flex gap-2 mt-2">
                 <span className="badge bg-light text-secondary border d-flex align-items-center gap-1">
-                  <FaIdCard /> ID: {item.track_id}
+                  <FaIdCard /> Track ID: {item?.track_id}
                 </span>
                 <span className="badge bg-light text-secondary border d-flex align-items-center gap-1">
-                  Tỉ lệ: {item.confidence_votes}
+                  Tỷ lệ bầu: {item?.confidence_votes}
                 </span>
               </div>
             </div>
           ) : (
             <div>
-              <h5 className="fw-bold text-muted" style={{ fontFamily: 'monospace' }}>Không xác định</h5>
+              <h5 className="fw-bold text-muted" style={{ fontFamily: 'monospace' }}>
+                {item?.best_plate || "UNKNOWN (Không đọc được)"}
+              </h5>
               <div className="mt-2 p-2 bg-light border border-danger border-opacity-25 rounded">
-                <small className="fw-bold text-dark d-block mb-1">Kết quả OCR thô:</small>
+                <small className="fw-bold text-dark d-block mb-1">Kết quả phân tích thô:</small>
                 <small className="text-muted d-block" style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                  {item.raw_5_reads?.join(' | ') || 'Trống'}
+                  {item?.raw_5_reads?.join(' | ') || 'Dữ liệu ảnh lỗi hoàn toàn'}
                 </small>
               </div>
             </div>

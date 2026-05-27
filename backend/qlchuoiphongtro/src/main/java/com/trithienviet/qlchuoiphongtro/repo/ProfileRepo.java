@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
+import com.trithienviet.qlchuoiphongtro.entity.UserRole;
 
 public interface ProfileRepo extends JpaRepository<Profile, Long> {
 
@@ -84,4 +85,6 @@ public interface ProfileRepo extends JpaRepository<Profile, Long> {
     // Nếu bạn muốn đếm số lượng để hiển thị cảnh báo trên Dashboard
     @Query("SELECT COUNT(p) FROM Profile p WHERE p.phone IS NULL OR p.identityNumber IS NULL")
     long countIncompleteProfiles();
-}
+
+       @Query("SELECT p FROM Profile p JOIN p.user u WHERE u.role = :role")
+    List<Profile> findProfileByRole(@Param("role") UserRole role);}

@@ -188,58 +188,12 @@ public class NotificationHelper {
         }
     }
 
-        /**
-     * Gửi thông báo cảnh báo khi xe rời khỏi bãi trong khung giờ nhạy cảm (0h - 7h)
-     * @param vehicle Xe rời bãi
-     * @param parkingLog Log xe ra vào
-     */
-    public void sendVehicleExitAlert(Vehicle vehicle, ParkingLog parkingLog) {
-        try {
-            // Lấy thông tin chủ xe
-            Profile owner = vehicle.getOwner();
-            if (owner == null) {
-                log.warn("Không tìm thấy chủ xe cho biển số: {}", vehicle.getLicensePlate());
-                return;
-            }
-            
-            String email = owner.getEmail();
-            String fullName = owner.getFullName();
-            String licensePlate = vehicle.getLicensePlate();
-            String roomName = vehicle.getRoom() != null ? vehicle.getRoom().getRoomName() : "Không xác định";
-            
-            // Định dạng thời gian
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
-            String exitTime = parkingLog.getExitTime() != null 
-                ? parkingLog.getExitTime().format(formatter) 
-                : parkingLog.getDetectedAt().format(formatter);
-            
-            // Gửi email cảnh báo
-            if (email != null && !email.isEmpty()) {
-                String emailTemplate = EmailTemplate.getVehicleExitAlert(fullName, licensePlate, roomName, exitTime);
-                emailService.sendHtmlEmail(email, "⚠️ CẢNH BÁO: Xe của bạn vừa rời khỏi bãi", emailTemplate);
-                log.info("📧 Đã gửi email cảnh báo đến: {}", email);
-            }
-            
-            // Gửi thông báo hệ thống (trong app)
-            String title = NotificationConstant.VEHICLE_EXIT_ALERT_TITLE;
-            String content = String.format(
-                NotificationConstant.VEHICLE_EXIT_ALERT_CONTENT, 
-                licensePlate, roomName, exitTime
-            );
-            notificationService.sendSystemNotification(
-                owner.getProfileId(), 
-                title, 
-                content, 
-                NotificationConstant.TYPE_VEHICLE_ALERT
-            );
-            
-            log.info("🔔 Đã gửi cảnh báo xe rời bãi - Biển số: {}, Chủ xe: {}, Thời gian: {}", 
-                licensePlate, fullName, exitTime);
-            
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi cảnh báo xe rời bãi: ", e);
-        }
+     public void sendVehicleExitAfter12Hour (Profile profile,String licensePlate, String exitTime)
+    {    
+            String title = NotificationConstant.ALERT_VEHICLE_EXIT_AFTER_12H_TITLE;
+            String content = String.format(NotificationConstant.ALERT_VEHICLE_EXIT_AFTER_12H_CONTENT, licensePlate, exitTime);
+            notificationService.sendSystemNotification(profile.getProfileId(), title, content, NotificationConstant.TYPE_VEHICLE_ALERT);
+        
     }
-
-
+    
 }

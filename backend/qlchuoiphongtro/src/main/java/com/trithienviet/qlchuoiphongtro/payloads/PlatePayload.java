@@ -26,6 +26,6 @@ public class PlatePayload {
 
     @JsonProperty("timestamp")
     private String timestamp;
-
+    @JsonProperty("plate_image_base64")
     private String plateImageBase64;
 }
