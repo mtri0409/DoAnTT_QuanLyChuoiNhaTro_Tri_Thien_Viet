@@ -75,7 +75,7 @@ const PostCategoryManager = () => {
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/news-posts")}
             className="btn btn-light border-0 shadow-sm rounded-circle p-2"
           >
             <FaArrowLeft className="text-muted" />
