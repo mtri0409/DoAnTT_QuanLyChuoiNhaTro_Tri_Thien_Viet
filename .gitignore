@@ -66,3 +66,5 @@ bin/
 =======
 >>>>>>> dev-tri
 uploads/
+
+**/venv/**
