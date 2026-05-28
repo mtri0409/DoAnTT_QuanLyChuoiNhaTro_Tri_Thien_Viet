@@ -208,7 +208,7 @@ const ProfileDetail = () => {
           </div>
         </div>
         <button
-          onClick={() => navigate(`/profiles/${id}/update`)}
+          onClick={() => navigate(`/profile/${id}/update`)}
           className="btn btn-primary d-flex align-items-center gap-2 shadow-sm px-4"
         >
           <FaEdit /> Chỉnh sửa hồ sơ
