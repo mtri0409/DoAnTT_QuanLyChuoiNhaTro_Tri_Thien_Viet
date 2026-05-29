@@ -54,15 +54,15 @@ const ListParkingLog = () => {
     setLoading(true); // Bật trạng thái loading chặn UI
     try {
       const response = await apiParkingLog.getAllParkingLogs(
-        currentPage ,         // pageNumber (Môi trường Spring Boot chạy từ index 0)
-        10,                      // pageSize
-        sortBy,                  // "detectedAt"
-        sortOrder,               // "desc"
-        appliedSearch || null,   // licensePlate
+        currentPage - 1, // pageNumber (Môi trường Spring Boot chạy từ index 0)
+        10, // pageSize
+        sortBy, // "detectedAt"
+        sortOrder, // "desc"
+        appliedSearch || null, // licensePlate
         filterDirection || null, // direction
-        null,                    // isVerified (mặc định để trống)
-        fromDate || null,        // fromDate
-        toDate || null           // toDate
+        null, // isVerified (mặc định để trống)
+        fromDate || null, // fromDate
+        toDate || null, // toDate
       );
       console.log("Dữ liệu API trả về:", response);
       setData(response);
@@ -79,7 +79,7 @@ const ListParkingLog = () => {
     try {
       const response = await apiParkingLog.getTodayStats(
         fromDate || null,
-        toDate || null
+        toDate || null,
       );
       console.log("Dữ liệu thống kê trả về:", response);
       setStats({
@@ -96,13 +96,7 @@ const ListParkingLog = () => {
   useEffect(() => {
     fetchParkingLogs();
     fetchStats();
-  }, [
-    currentPage,
-    appliedSearch,
-    filterDirection,
-    fromDate,
-    toDate,
-  ]);
+  }, [currentPage, appliedSearch, filterDirection, fromDate, toDate]);
 
   // Bộ xử lý sự kiện (Handlers)
   const handleSearchSubmit = (e) => {
@@ -140,7 +134,7 @@ const ListParkingLog = () => {
       try {
         await apiParkingLog.deleteParkingLog(logId);
         toast.success("Xóa lịch sử xe thành công!");
-        
+
         if (data.content.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         } else {
@@ -166,14 +160,21 @@ const ListParkingLog = () => {
 
   return (
     <div className="container-fluid py-4 position-relative">
-      
       {/* HIỆU ỨNG CHẶN MÀN HÌNH KHI ĐANG LOADING KHÔNG CHO CLICK */}
       {loading && (
-        <div 
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-          style={{ background: "rgba(255,255,255,0.6)", zIndex: 9999, pointerEvents: "all" }}
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{
+            background: "rgba(255,255,255,0.6)",
+            zIndex: 9999,
+            pointerEvents: "all",
+          }}
         >
-          <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
+          <div
+            className="spinner-border text-primary"
+            role="status"
+            style={{ width: "3rem", height: "3rem" }}
+          >
             <span className="visually-hidden">Đang tải...</span>
           </div>
         </div>
@@ -185,12 +186,14 @@ const ListParkingLog = () => {
           <h4 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
             <FaCar className="text-primary" /> QUẢN LÝ XE RA VÀO
           </h4>
-          <p className="text-muted small mb-0">Giám sát và lọc lịch sử xe thông qua Camera AI liên tục</p>
+          <p className="text-muted small mb-0">
+            Giám sát và lọc lịch sử xe thông qua Camera AI liên tục
+          </p>
         </div>
 
         <div className="d-flex gap-2">
           <button
-            className={`btn ${showFilters ? 'btn-primary' : 'btn-outline-primary'} shadow-sm d-flex align-items-center gap-2`}
+            className={`btn ${showFilters ? "btn-primary" : "btn-outline-primary"} shadow-sm d-flex align-items-center gap-2`}
             onClick={() => setShowFilters(!showFilters)}
             disabled={loading}
           >
@@ -206,8 +209,12 @@ const ListParkingLog = () => {
             <div className="card-body p-3">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <div className="small text-muted fw-semibold">Lượt xe VÀO</div>
-                  <div className="fs-2 fw-bold text-success">{stats.inCount}</div>
+                  <div className="small text-muted fw-semibold">
+                    Lượt xe VÀO
+                  </div>
+                  <div className="fs-2 fw-bold text-success">
+                    {stats.inCount}
+                  </div>
                 </div>
                 <FaSignInAlt className="fs-1 text-success opacity-50" />
               </div>
@@ -220,7 +227,9 @@ const ListParkingLog = () => {
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   <div className="small text-muted fw-semibold">Lượt xe RA</div>
-                  <div className="fs-2 fw-bold text-danger">{stats.outCount}</div>
+                  <div className="fs-2 fw-bold text-danger">
+                    {stats.outCount}
+                  </div>
                 </div>
                 <FaSignOutAlt className="fs-1 text-danger opacity-50" />
               </div>
@@ -232,8 +241,12 @@ const ListParkingLog = () => {
             <div className="card-body p-3">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <div className="small text-muted fw-semibold">Tổng lưu lượng trạm</div>
-                  <div className="fs-2 fw-bold text-primary">{stats.totalCount}</div>
+                  <div className="small text-muted fw-semibold">
+                    Tổng lưu lượng trạm
+                  </div>
+                  <div className="fs-2 fw-bold text-primary">
+                    {stats.totalCount}
+                  </div>
                 </div>
                 <FaCar className="fs-1 text-primary opacity-50" />
               </div>
@@ -248,7 +261,9 @@ const ListParkingLog = () => {
           <div className="card-body p-3">
             <div className="row g-3 align-items-end">
               <div className="col-md-3">
-                <label className="small fw-bold text-muted mb-1">Hướng di chuyển</label>
+                <label className="small fw-bold text-muted mb-1">
+                  Hướng di chuyển
+                </label>
                 <select
                   className="form-select form-select-sm"
                   value={filterDirection}
@@ -277,7 +292,9 @@ const ListParkingLog = () => {
                 />
               </div>
               <div className="col-md-3">
-                <label className="small fw-bold text-muted mb-1">Đến ngày</label>
+                <label className="small fw-bold text-muted mb-1">
+                  Đến ngày
+                </label>
                 <input
                   type="date"
                   className="form-control form-control-sm"
@@ -306,7 +323,11 @@ const ListParkingLog = () => {
       {/* Thanh Tìm kiếm biển số */}
       <div className="card border-0 shadow-sm rounded-3 mb-4">
         <div className="card-header bg-white py-3 border-0">
-          <form onSubmit={handleSearchSubmit} className="d-flex gap-2" style={{ maxWidth: "400px" }}>
+          <form
+            onSubmit={handleSearchSubmit}
+            className="d-flex gap-2"
+            style={{ maxWidth: "400px" }}
+          >
             <div className="input-group">
               <span className="input-group-text bg-light border-0">
                 <FaSearch />
@@ -320,12 +341,21 @@ const ListParkingLog = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {appliedSearch && (
-                <button type="button" className="btn btn-light border-0" onClick={handleClearSearch} disabled={loading}>
+                <button
+                  type="button"
+                  className="btn btn-light border-0"
+                  onClick={handleClearSearch}
+                  disabled={loading}
+                >
                   <FaTimesCircle className="text-muted" />
                 </button>
               )}
             </div>
-            <button type="submit" className="btn btn-dark shadow-sm" disabled={loading}>
+            <button
+              type="submit"
+              className="btn btn-dark shadow-sm"
+              disabled={loading}
+            >
               Tìm kiếm
             </button>
           </form>
@@ -353,21 +383,37 @@ const ListParkingLog = () => {
                     <td className="ps-4">
                       <div className="d-flex align-items-center">
                         <FaCar className="fs-4 text-secondary me-2" />
-                        <span className="fw-bold text-uppercase">{item.licensePlate}</span>
+                        <span className="fw-bold text-uppercase">
+                          {item.licensePlate}
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span className={`badge ${item.direction === "IN" ? "bg-success" : "bg-danger"}`}>
+                      <span
+                        className={`badge ${item.direction === "IN" ? "bg-success" : "bg-danger"}`}
+                      >
                         {item.direction === "IN" ? "VÀO" : "RA"}
                       </span>
                     </td>
-                    <td className="small text-muted">{formatDateTime(item.detectedAt)}</td>
-                    <td className="fw-semibold text-dark">{Math.round((item.confidence || 0) * 100)}%</td>
+                    <td className="small text-muted">
+                      {formatDateTime(item.detectedAt)}
+                    </td>
+                    <td className="fw-semibold text-dark">
+                      {Math.round((item.confidence || 0) * 100)}%
+                    </td>
                     <td>
                       {item.isVerified ? (
-                        <FaCheckCircle className="text-success" size={18} title="Hệ thống đã xác thực" />
+                        <FaCheckCircle
+                          className="text-success"
+                          size={18}
+                          title="Hệ thống đã xác thực"
+                        />
                       ) : (
-                        <FaBan className="text-warning" size={18} title="Xe lạ / Chưa xác thực" />
+                        <FaBan
+                          className="text-warning"
+                          size={18}
+                          title="Xe lạ / Chưa xác thực"
+                        />
                       )}
                     </td>
                     <td className="text-end pe-4">
@@ -376,7 +422,9 @@ const ListParkingLog = () => {
                           className="btn btn-sm btn-light border-0"
                           title="Xem chi tiết ảnh & log thô"
                           disabled={loading}
-                          onClick={() => navigate(`/parking-logs/${item.logId}`)}
+                          onClick={() =>
+                            navigate(`/parking-logs/${item.logId}`)
+                          }
                         >
                           <FaEye className="text-info" />
                         </button>
@@ -384,7 +432,9 @@ const ListParkingLog = () => {
                           className="btn btn-sm btn-light border-0"
                           title="Xóa bản ghi"
                           disabled={loading}
-                          onClick={() => handleDelete(item.logId, item.licensePlate)}
+                          onClick={() =>
+                            handleDelete(item.logId, item.licensePlate)
+                          }
                         >
                           <FaTrashAlt className="text-danger" />
                         </button>
@@ -394,8 +444,13 @@ const ListParkingLog = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted fw-semibold">
-                    {!loading ? "Không tìm thấy dữ liệu xe ra vào phù hợp" : "Đang đồng bộ..."}
+                  <td
+                    colSpan="6"
+                    className="text-center py-5 text-muted fw-semibold"
+                  >
+                    {!loading
+                      ? "Không tìm thấy dữ liệu xe ra vào phù hợp"
+                      : "Đang đồng bộ..."}
                   </td>
                 </tr>
               )}
@@ -405,7 +460,9 @@ const ListParkingLog = () => {
 
         {/* Chân trang phân trang */}
         <div className="card-footer bg-white py-3 d-flex justify-content-between align-items-center border-0">
-          <small className="text-muted fw-semibold">Tổng cộng: {data.totalElements} lượt quét</small>
+          <small className="text-muted fw-semibold">
+            Tổng cộng: {data.totalElements} lượt quét
+          </small>
           {!loading && (
             <Pagination
               currentPage={data.pageNumber}

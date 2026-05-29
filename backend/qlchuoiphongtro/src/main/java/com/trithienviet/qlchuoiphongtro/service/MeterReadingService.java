@@ -12,13 +12,21 @@ public interface MeterReadingService {
 
         /**
          * Nhập hoặc cập nhật chỉ số đồng hồ cho phòng trong kỳ.
-         * oldValue tự động lấy từ newValue kỳ trước.
-         * Nếu đã có bản ghi kỳ này → cập nhật (chỉ khi hóa đơn còn DRAFT).
+         *
+         * @param oldValueParam Nếu frontend truyền vào (>= 0), dùng luôn giá trị này
+         *                      làm oldValue thay vì để backend tự tìm. Truyền null để
+         *                      backend tự tính (tương thích ngược).
+         *                      Bắt buộc truyền khi phòng mới có bản isInitial cùng
+         *                      tháng để tránh oldValue = 0 sai.
+         * @param isInitial     true khi phòng chưa có HĐ — đánh dấu đây là số đầu
+         *                      đồng hồ, không tính vào tiêu thụ hóa đơn.
          */
         MetterReadingDTO saveReading(Long roomId, Integer serviceId,
                         BigDecimal newValue,
                         Integer month, Integer year,
-                        String imageUrl);
+                        String imageUrl,
+                        BigDecimal oldValueParam,
+                        Boolean isInitial);
 
         /** Upload ảnh chụp đồng hồ — trả về URL/tên file đã lưu */
         String uploadReadingImage(MultipartFile image) throws IOException;

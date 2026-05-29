@@ -1,10 +1,8 @@
 import axiosClient from "./axios";
 
-const PAGE_SIZE_ROOMS = 10; // mỗi lần load 10 phòng cho meter
+const PAGE_SIZE_ROOMS = 10;
 
 const apiContract = {
-  // ─── HỢP ĐỒNG (ADMIN) ─────────────────────────────────────────────────────
-
   getAllContracts: (
     pageNumber = 0,
     pageSize = 10,

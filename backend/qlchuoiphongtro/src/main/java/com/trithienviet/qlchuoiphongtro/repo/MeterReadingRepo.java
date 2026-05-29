@@ -29,6 +29,7 @@ public interface MeterReadingRepo extends JpaRepository<MeterReading, Long> {
         List<MeterReading> findByRoom_RoomIdAndPeriodMonthAndPeriodYear(
                         Long roomId, Integer month, Integer year);
 
+        // Query cũ — giữ lại để tương thích, nhưng KHÔNG dùng cho saveReading nữa
         @Query("SELECT mr FROM MeterReading mr " +
                         "WHERE mr.room.roomId = :roomId " +
                         "AND mr.service.serviceId = :serviceId " +
@@ -39,23 +40,82 @@ public interface MeterReadingRepo extends JpaRepository<MeterReading, Long> {
                         @Param("serviceId") Integer serviceId,
                         @Param("month") Integer month,
                         @Param("year") Integer year);
-       @Query(value = "SELECT " +
-                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value ELSE 0 END), 0) as totalElectricUsage, " +
-                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalElectricMoney, " +
-                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value ELSE 0 END), 0) as totalWaterUsage, " +
-                "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalWaterMoney " +
-                "FROM meter_readings m " +
-                "JOIN services s ON m.service_id = s.service_id " +
-                "JOIN rooms r ON m.room_id = r.room_id " +
-                "JOIN floors f ON r.floor_id = f.floor_id " +
-                "WHERE (:branchId IS NULL OR f.branch_id = :branchId) " +
-                "AND (:month IS NULL OR m.period_month = :month) " +
-                "AND (:year IS NULL OR m.period_year = :year)", nativeQuery = true)
+
+        /**
+         * Tìm bản ghi kỳ trước — KỂ CẢ bản isInitial=true.
+         * Dùng thay thế findPreviousReading trong saveReading và getPreviousReading
+         * để tránh oldValue = 0 khi phòng mới có người thuê đầu tiên vào cùng tháng
+         * thêm phòng (bản isInitial cùng tháng không được findPreviousReading tìm
+         * thấy).
+         *
+         * Logic: lấy bản ghi mới nhất có kỳ TRƯỚC kỳ hiện tại, kể cả isInitial.
+         * Nếu bản isInitial được lưu cùng tháng thì dùng cột LIMIT 1 theo readingDate.
+         */
+        @Query("SELECT mr FROM MeterReading mr " +
+                        "WHERE mr.room.roomId = :roomId " +
+                        "AND mr.service.serviceId = :serviceId " +
+                        "AND (mr.periodYear < :year OR (mr.periodYear = :year AND mr.periodMonth < :month)) " +
+                        "ORDER BY mr.periodYear DESC, mr.periodMonth DESC, mr.readingDate DESC")
+        List<MeterReading> findPreviousReadingIncludingInitial(
+                        @Param("roomId") Long roomId,
+                        @Param("serviceId") Integer serviceId,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year);
+
+        /**
+         * Tìm bản isInitial của phòng cho một service cụ thể.
+         * Dùng khi phòng có hợp đồng nhưng chưa có bản ghi kỳ trước nào
+         * (người thuê đầu tiên vào cùng tháng thêm phòng).
+         * Dùng native query để tránh phụ thuộc vào field isInitial trong entity
+         * (entity có thể dùng tên khác hoặc chưa có field này).
+         */
+        @Query("SELECT mr FROM MeterReading mr " +
+                        "WHERE mr.room.roomId = :roomId " +
+                        "AND mr.service.serviceId = :serviceId " +
+                        "AND mr.isInitial = true " +
+                        "ORDER BY mr.readingDate DESC")
+        List<MeterReading> findInitialReading(
+                        @Param("roomId") Long roomId,
+                        @Param("serviceId") Integer serviceId);
+
+        /**
+         * Tìm bản isInitial trong CÙNG THÁNG — dùng khi thêm phòng và người thuê
+         * vào cùng tháng. findPreviousReadingIncludingInitial tìm period < tháng hiện
+         * tại nên bỏ sót bản isInitial cùng tháng → phải tìm riêng bằng query này.
+         */
+        @Query("SELECT mr FROM MeterReading mr " +
+                        "WHERE mr.room.roomId = :roomId " +
+                        "AND mr.service.serviceId = :serviceId " +
+                        "AND mr.periodMonth = :month " +
+                        "AND mr.periodYear = :year " +
+                        "AND mr.isInitial = true " +
+                        "ORDER BY mr.readingDate DESC")
+        List<MeterReading> findInitialReadingSameMonth(
+                        @Param("roomId") Long roomId,
+                        @Param("serviceId") Integer serviceId,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year);
+
+        @Query(value = "SELECT " +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value ELSE 0 END), 0) as totalElectricUsage, "
+                        +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalElectricMoney, "
+                        +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value ELSE 0 END), 0) as totalWaterUsage, "
+                        +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as totalWaterMoney "
+                        +
+                        "FROM meter_readings m " +
+                        "JOIN services s ON m.service_id = s.service_id " +
+                        "JOIN rooms r ON m.room_id = r.room_id " +
+                        "JOIN floors f ON r.floor_id = f.floor_id " +
+                        "WHERE (:branchId IS NULL OR f.branch_id = :branchId) " +
+                        "AND (:month IS NULL OR m.period_month = :month) " +
+                        "AND (:year IS NULL OR m.period_year = :year)", nativeQuery = true)
         UtilityProjection getUtilityAnalytics(
-        @Param("branchId") Long branchId, 
-        @Param("month") Integer month, 
-        @Param("year") Integer year,
-        @Param("elecName") String elecName, 
-        @Param("waterName") String waterName
-        );
+                        @Param("branchId") Long branchId,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year,
+                        @Param("elecName") String elecName,
+                        @Param("waterName") String waterName);
 }

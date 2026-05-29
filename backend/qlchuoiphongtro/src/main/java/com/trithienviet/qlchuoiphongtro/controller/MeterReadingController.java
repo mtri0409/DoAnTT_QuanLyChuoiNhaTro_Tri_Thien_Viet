@@ -33,16 +33,20 @@ public class MeterReadingController {
             @RequestParam BigDecimal newValue,
             @RequestParam Integer month,
             @RequestParam Integer year,
-            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            // oldValue truyền thẳng từ frontend — tránh backend tự tính sai khi phòng mới
+            @RequestParam(value = "oldValue", required = false) BigDecimal oldValue,
+            // isInitial = true khi phòng chưa có HĐ, đánh dấu số đầu đồng hồ
+            @RequestParam(value = "isInitial", required = false, defaultValue = "false") Boolean isInitial)
+            throws IOException {
 
-        // Xử lý upload ảnh nếu có
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
             imageUrl = meterReadingService.uploadReadingImage(image);
         }
 
         MetterReadingDTO saved = meterReadingService.saveReading(
-                roomId, serviceId, newValue, month, year, imageUrl);
+                roomId, serviceId, newValue, month, year, imageUrl, oldValue, isInitial);
 
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }

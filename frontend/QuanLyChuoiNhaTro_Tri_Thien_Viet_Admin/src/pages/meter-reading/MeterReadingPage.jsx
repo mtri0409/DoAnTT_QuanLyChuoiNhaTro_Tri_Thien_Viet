@@ -319,6 +319,14 @@ export default function MeterReadingPage() {
 
   // Cache trạng thái phòng từ server — không cần mở phòng mới biết
   const [roomStatusCache, setRoomStatusCache] = useState({});
+  // Cache hợp đồng nhẹ cho tất cả phòng — hiển thị ngay trên header
+  const [contractCache, setContractCache] = useState({});
+
+  // Track phòng đã tạo hóa đơn thành công — key: contractId, value: true
+  const [createdInvoices, setCreatedInvoices] = useState({});
+  // Trạng thái tạo tất cả hóa đơn cho chi nhánh
+  const [bulkInvoiceLoading, setBulkInvoiceLoading] = useState(false);
+  const [bulkInvoiceResult, setBulkInvoiceResult] = useState(null); // { success, failed }
 
   // Modal xác nhận lưu
   const [confirmModal, setConfirmModal] = useState(null); // { roomId, serviceId, svcLabel, svcUnit, oldValue, newValue, isInitial }
@@ -340,6 +348,7 @@ export default function MeterReadingPage() {
     setRooms([]);
     setReadings({});
     setContracts({});
+    setContractCache({});
     setExpandedRooms({});
     setRoomStatusCache({});
     if (!selectedBranch) return;
@@ -381,11 +390,14 @@ export default function MeterReadingPage() {
     setLoadingRooms(true);
     setReadings({});
     setContracts({});
+    setContractCache({});
     setExpandedRooms({});
     setRoomStatusCache({});
     setCurrentPage(0);
     setHasMorePages(false);
     setTotalRooms(0);
+    setCreatedInvoices({});
+    setBulkInvoiceResult(null);
 
     apiRoom
       .getRoomsPaged(
@@ -400,6 +412,7 @@ export default function MeterReadingPage() {
         setHasMorePages(!res.last && res.totalPages > 1);
         setTotalRooms(res.totalElements || list.length);
         fetchAllRoomStatuses(list, month, year);
+        fetchAllContracts(list);
       })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
@@ -420,8 +433,9 @@ export default function MeterReadingPage() {
       const newList = res.content || [];
       setRooms((prev) => [...prev, ...newList]);
       setCurrentPage(nextPage);
-      setHasMorePages(!res.last);
+      setHasMorePages(!res.last && nextPage + 1 < res.totalPages);
       fetchAllRoomStatuses(newList, month, year);
+      fetchAllContracts(newList);
     } catch {
       /* ignore */
     } finally {
@@ -476,6 +490,26 @@ export default function MeterReadingPage() {
     setRoomStatusCache(newCache);
   }, []);
 
+  /* Fetch hợp đồng nhẹ cho tất cả phòng để hiển thị trên header */
+  const fetchAllContracts = useCallback(async (roomList) => {
+    const results = await Promise.allSettled(
+      roomList.map((room) => apiContract.getContractsByRoom(room.roomId)),
+    );
+    const newCache = {};
+    results.forEach((result, idx) => {
+      const roomId = roomList[idx].roomId;
+      if (result.status === "fulfilled") {
+        const list = Array.isArray(result.value)
+          ? result.value
+          : result.value?.content || [];
+        newCache[roomId] = list.find((c) => c.status === "ACTIVE") || null;
+      } else {
+        newCache[roomId] = null;
+      }
+    });
+    setContractCache((prev) => ({ ...prev, ...newCache }));
+  }, []);
+
   /* ── Load full data 1 phòng khi mở ── */
   const loadRoomData = useCallback(
     async (roomId) => {
@@ -511,26 +545,40 @@ export default function MeterReadingPage() {
           ? currentPeriod.value
           : [];
 
-        existing.forEach((r) => {
-          const sid = Number(r.serviceId);
-          if (!initReadings[sid]) return;
+        // Tách bản ghi khởi đầu và bản ghi thật
+        const initialRecords = existing.filter((r) => r.isInitial);
+        const realRecords = existing.filter((r) => !r.isInitial);
 
-          if (hasContract) {
-            // ✅ FIX: Bỏ qua bản ghi "khởi đầu" (isInitial = true)
-            // Bản này được tạo khi phòng chưa có HĐ, không phải chỉ số tháng thật
-            if (r.isInitial) return;
+        if (hasContract) {
+          // Bước 1: Set oldValue từ bản isInitial TRƯỚC — đây là số đầu đồng hồ
+          // khi thêm phòng. Phải làm trước để không bị tính vào tiêu thụ hóa đơn.
+          initialRecords.forEach((r) => {
+            const sid = Number(r.serviceId);
+            if (!initReadings[sid] || r.newValue == null) return;
+            initReadings[sid].oldValue = r.newValue;
+          });
 
+          // Bước 2: Nếu có bản ghi thật (tháng hiện tại, không phải isInitial),
+          // dùng nó — nhưng giữ lại oldValue đã set từ initial ở bước 1
+          realRecords.forEach((r) => {
+            const sid = Number(r.serviceId);
+            if (!initReadings[sid]) return;
             initReadings[sid] = {
               newValue: String(r.newValue ?? ""),
-              oldValue: r.oldValue ?? 0,
+              // r.oldValue từ server, fallback về giá trị đã set từ initial
+              oldValue: r.oldValue ?? initReadings[sid].oldValue ?? 0,
               initialValue: "",
               savedValue: r.newValue,
               status: r.newValue != null ? "saved" : "idle",
               image: null,
               imagePreview: null,
             };
-          } else {
-            // Phòng chưa có HĐ → bản ghi này là chỉ số khởi đầu
+          });
+        } else {
+          // Phòng chưa có HĐ → bản ghi này là chỉ số khởi đầu
+          existing.forEach((r) => {
+            const sid = Number(r.serviceId);
+            if (!initReadings[sid]) return;
             initReadings[sid] = {
               newValue: "",
               oldValue: 0,
@@ -540,12 +588,21 @@ export default function MeterReadingPage() {
               image: null,
               imagePreview: null,
             };
-          }
-        });
+          });
+        }
       }
 
-      // Chỉ fetch kỳ trước khi phòng có HĐ
+      // Fetch kỳ trước từ server.
+      // Trường hợp thêm phòng và người thuê vào CÙNG THÁNG:
+      //   getPrevious tìm period < tháng hiện tại → không tìm thấy bản isInitial cùng tháng
+      //   → fallback tìm bản isInitial trong getByRoomAndPeriod cùng tháng đó
+      //   → lấy newValue của bản isInitial làm oldValue cho kỳ này
       if (hasContract) {
+        // Lấy tất cả bản ghi cùng tháng 1 lần — dùng cho fallback bên dưới
+        const sameMonthRecords = Array.isArray(currentPeriod.value)
+          ? currentPeriod.value
+          : [];
+
         await Promise.allSettled(
           SERVICES.filter((svc) => initReadings[svc.id].status !== "saved").map(
             async (svc) => {
@@ -556,11 +613,22 @@ export default function MeterReadingPage() {
                   month,
                   year,
                 );
-                if (prev) {
-                  initReadings[svc.id].oldValue = prev.newValue ?? 0;
+                if (prev && prev.newValue != null) {
+                  // getPrevious trả về bản kỳ trước (isInitial hoặc thật) — dùng làm oldValue
+                  initReadings[svc.id].oldValue = prev.newValue;
+                } else {
+                  // getPrevious không tìm thấy → thêm phòng & người thuê cùng tháng
+                  // Tìm bản isInitial trong cùng tháng để lấy làm oldValue
+                  const initialSameMonth = sameMonthRecords.find(
+                    (r) => r.isInitial && Number(r.serviceId) === svc.id,
+                  );
+                  if (initialSameMonth && initialSameMonth.newValue != null) {
+                    initReadings[svc.id].oldValue = initialSameMonth.newValue;
+                  }
+                  // Nếu vẫn không có → oldValue giữ nguyên 0 (phòng hoàn toàn mới)
                 }
               } catch {
-                /* không có kỳ trước */
+                /* không có kỳ trước — giữ nguyên oldValue đã set */
               }
             },
           ),
@@ -613,7 +681,7 @@ export default function MeterReadingPage() {
   /* ── Mở modal xác nhận trước khi lưu ── */
   const handleSaveClick = (roomId, serviceId) => {
     const r = readings[roomId]?.[serviceId];
-    const contract = contracts[roomId];
+    const contract = contracts[roomId] ?? contractCache[roomId];
     const hasContract = !!contract;
     const svc = SERVICES.find((s) => s.id === serviceId);
 
@@ -663,6 +731,9 @@ export default function MeterReadingPage() {
     try {
       if (!isInitial) {
         // ── Phòng có HĐ: lưu chỉ số tháng bình thường ──
+        // Truyền oldValue rõ ràng — backend sẽ dùng thay vì tự tính lại
+        // (tránh trường hợp backend tìm không thấy bản isInitial cùng tháng → ra 0)
+        const oldValue = confirmModal.oldValue ?? r?.oldValue ?? 0;
         await apiMeterReading.saveReading(
           roomId,
           serviceId,
@@ -670,6 +741,8 @@ export default function MeterReadingPage() {
           month,
           year,
           r.image,
+          false, // isInitial = false
+          oldValue, // truyền thẳng xuống backend
         );
         setReadings((prev) => {
           const updated = {
@@ -818,7 +891,15 @@ export default function MeterReadingPage() {
           defaultMonth={month}
           defaultYear={year}
           onClose={() => setInvoiceModal(null)}
-          onCreated={() => navigate("/invoice")}
+          onCreated={() => {
+            if (invoiceModal.contractId) {
+              setCreatedInvoices((prev) => ({
+                ...prev,
+                [invoiceModal.contractId]: true,
+              }));
+            }
+            setInvoiceModal(null);
+          }}
         />
       )}
 
@@ -940,7 +1021,7 @@ export default function MeterReadingPage() {
           {[
             {
               label: "Tổng phòng",
-              val: filteredRooms.length,
+              val: totalRooms,
               color: "text-primary",
             },
             {
@@ -972,6 +1053,103 @@ export default function MeterReadingPage() {
           ))}
         </div>
       )}
+
+      {/* ── Nút tạo tất cả hóa đơn cho chi nhánh ── */}
+      {selectedBranch &&
+        !loadingRooms &&
+        filteredRooms.length > 0 &&
+        (() => {
+          const eligibleRooms = filteredRooms.filter((r) => {
+            const c = contracts[r.roomId] ?? contractCache[r.roomId];
+            return (
+              !!c &&
+              !createdInvoices[c.contractId] &&
+              getRoomStatus(r.roomId) === "done"
+            );
+          });
+          const doneRooms = filteredRooms.filter((r) => {
+            const c = contracts[r.roomId] ?? contractCache[r.roomId];
+            return !!c && createdInvoices[c.contractId];
+          });
+          const allDone = eligibleRooms.length === 0 && doneRooms.length > 0;
+          return (
+            <div
+              className="d-flex align-items-center gap-3 mb-3 p-3 rounded-3"
+              style={{ background: "#f8fafc", border: "1.5px dashed #cbd5e1" }}
+            >
+              <div className="flex-fill">
+                <div className="fw-semibold small text-dark">
+                  Tạo hóa đơn hàng loạt
+                </div>
+                <div className="text-muted" style={{ fontSize: 12 }}>
+                  {allDone
+                    ? `✓ Đã tạo xong ${doneRooms.length} hóa đơn cho chi nhánh này`
+                    : `${eligibleRooms.length} phòng đã ghi đủ chỉ số, chưa tạo hóa đơn T${month}/${year}`}
+                </div>
+                {bulkInvoiceResult && (
+                  <div className="mt-1" style={{ fontSize: 12 }}>
+                    <span className="text-success fw-semibold">
+                      ✓ {bulkInvoiceResult.success} thành công
+                    </span>
+                    {bulkInvoiceResult.failed > 0 && (
+                      <span className="text-danger fw-semibold ms-2">
+                        ✗ {bulkInvoiceResult.failed} thất bại
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 flex-shrink-0 ${allDone ? "btn-success disabled" : bulkInvoiceLoading ? "btn-secondary" : "btn-primary"}`}
+                disabled={
+                  allDone || bulkInvoiceLoading || eligibleRooms.length === 0
+                }
+                onClick={async () => {
+                  if (bulkInvoiceLoading || eligibleRooms.length === 0) return;
+                  setBulkInvoiceLoading(true);
+                  setBulkInvoiceResult(null);
+                  let success = 0,
+                    failed = 0;
+                  for (const r of eligibleRooms) {
+                    const c = contracts[r.roomId] ?? contractCache[r.roomId];
+                    if (!c) continue;
+                    try {
+                      await apiInvoice.createManual(c.contractId, month, year);
+                      setCreatedInvoices((prev) => ({
+                        ...prev,
+                        [c.contractId]: true,
+                      }));
+                      success++;
+                    } catch {
+                      failed++;
+                    }
+                  }
+                  setBulkInvoiceLoading(false);
+                  setBulkInvoiceResult({ success, failed });
+                }}
+              >
+                {bulkInvoiceLoading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      style={{ width: 13, height: 13 }}
+                    />
+                    Đang tạo...
+                  </>
+                ) : allDone ? (
+                  <>
+                    <FaCheck size={12} /> Đã tạo tất cả
+                  </>
+                ) : (
+                  <>
+                    <FaFileInvoiceDollar size={13} /> Tạo tất cả (
+                    {eligibleRooms.length})
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        })()}
 
       {/* ── Nội dung chính ── */}
       {!selectedBranch ? (
@@ -1009,7 +1187,8 @@ export default function MeterReadingPage() {
             const expanded = expandedRooms[room.roomId];
             const roomStatus = getRoomStatus(room.roomId);
             const statusCfg = STATUS_CONFIG[roomStatus];
-            const contract = contracts[room.roomId];
+            const contract =
+              contracts[room.roomId] ?? contractCache[room.roomId];
 
             return (
               <div
@@ -1029,22 +1208,58 @@ export default function MeterReadingPage() {
                     <FaDoorOpen size={16} />
                   </div>
 
-                  <div className="flex-fill">
+                  <div className="flex-fill" style={{ minWidth: 0 }}>
                     <div className="fw-bold text-dark small">
                       {room.roomName}
                     </div>
                     <div className="text-muted" style={{ fontSize: 11 }}>
                       {room.floorName} · {room.branchName}
-                      {contract && (
-                        <span className="text-primary ms-2 fw-semibold">
-                          HĐ #{contract.contractId}
-                        </span>
-                      )}
                     </div>
+                    {/* Contract badge — always visible */}
+                    {contractCache[room.roomId] !== undefined ||
+                    contracts[room.roomId] !== undefined ? (
+                      contract ? (
+                        <div
+                          className="mt-1 d-flex align-items-center gap-1"
+                          style={{ fontSize: 11 }}
+                        >
+                          <span
+                            className="badge rounded-pill fw-semibold"
+                            style={{
+                              background: "#dbeafe",
+                              color: "#1d4ed8",
+                              fontSize: 10,
+                            }}
+                          >
+                            HĐ #{contract.contractId}
+                          </span>
+                          <span className="text-success fw-semibold">
+                            · Có hợp đồng
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mt-1" style={{ fontSize: 11 }}>
+                          <span className="text-warning fw-semibold">
+                            ⚠ Chưa có hợp đồng
+                          </span>
+                        </div>
+                      )
+                    ) : (
+                      <div
+                        className="mt-1"
+                        style={{ fontSize: 10, color: "#aaa" }}
+                      >
+                        <span
+                          className="spinner-border spinner-border-sm me-1"
+                          style={{ width: 8, height: 8 }}
+                        />
+                        Đang tải HĐ...
+                      </div>
+                    )}
                   </div>
 
                   <span
-                    className={`badge rounded-pill fw-semibold ${statusCfg.badge}`}
+                    className={`badge rounded-pill fw-semibold flex-shrink-0 ${statusCfg.badge}`}
                     style={{ fontSize: 11 }}
                   >
                     {statusCfg.label}
@@ -1398,30 +1613,49 @@ export default function MeterReadingPage() {
                               </span>
                             )}
                           </div>
-                          <button
-                            className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 ${!contract ? "btn-secondary opacity-50" : roomStatus === "done" ? "btn-primary" : "btn-secondary"}`}
-                            disabled={!contract}
-                            title={
-                              !contract
-                                ? "Cần có hợp đồng active trước khi tạo hóa đơn"
-                                : ""
-                            }
-                            onClick={() =>
-                              contract &&
-                              setInvoiceModal({
-                                contractId: contract.contractId,
-                                roomName: room.roomName,
-                              })
-                            }
-                          >
-                            <FaFileInvoiceDollar size={13} />
-                            {!contract
-                              ? "Tạo hóa đơn (cần hợp đồng)"
-                              : roomStatus === "done"
-                                ? `Tạo hóa đơn T${month}/${year}`
-                                : "Tạo hóa đơn (chưa ghi đủ)"}
-                            <FaArrowRight size={11} />
-                          </button>
+                          {(() => {
+                            const invoiceCreated =
+                              contract && createdInvoices[contract.contractId];
+                            return (
+                              <button
+                                className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 ${
+                                  !contract
+                                    ? "btn-secondary opacity-50"
+                                    : invoiceCreated
+                                      ? "btn-success"
+                                      : roomStatus === "done"
+                                        ? "btn-primary"
+                                        : "btn-secondary"
+                                }`}
+                                disabled={!contract || invoiceCreated}
+                                title={
+                                  !contract
+                                    ? "Cần có hợp đồng active trước khi tạo hóa đơn"
+                                    : invoiceCreated
+                                      ? `Đã tạo hóa đơn T${month}/${year}`
+                                      : ""
+                                }
+                                onClick={() =>
+                                  !invoiceCreated &&
+                                  contract &&
+                                  setInvoiceModal({
+                                    contractId: contract.contractId,
+                                    roomName: room.roomName,
+                                  })
+                                }
+                              >
+                                <FaFileInvoiceDollar size={13} />
+                                {!contract
+                                  ? "Tạo hóa đơn (cần hợp đồng)"
+                                  : invoiceCreated
+                                    ? `✓ Đã tạo hóa đơn T${month}/${year}`
+                                    : roomStatus === "done"
+                                      ? `Tạo hóa đơn T${month}/${year}`
+                                      : "Tạo hóa đơn (chưa ghi đủ)"}
+                                {!invoiceCreated && <FaArrowRight size={11} />}
+                              </button>
+                            );
+                          })()}
                         </div>
                       </>
                     )}
@@ -1433,26 +1667,60 @@ export default function MeterReadingPage() {
 
           {/* Nút Xem thêm */}
           {hasMorePages && (
-            <button
-              className="btn btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
-              onClick={loadMoreRooms}
-              disabled={loadingMore}
-            >
-              {loadingMore ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm"
-                    style={{ width: 14, height: 14 }}
-                  />
-                  Đang tải...
-                </>
-              ) : (
-                <>
-                  <FaPlus size={11} />
-                  Xem thêm ({rooms.length}/{totalRooms} phòng)
-                </>
-              )}
-            </button>
+            <div className="d-flex justify-content-center mt-3">
+              <button
+                className="btn d-flex align-items-center gap-2 px-4 py-2 fw-semibold"
+                style={{
+                  background: loadingMore ? "#f1f5f9" : "#fff",
+                  border: "1.5px dashed #cbd5e1",
+                  borderRadius: 12,
+                  color: "#64748b",
+                  fontSize: 13,
+                  transition: "all 0.15s",
+                  boxShadow: loadingMore
+                    ? "none"
+                    : "0 1px 4px rgba(0,0,0,0.06)",
+                }}
+                onClick={loadMoreRooms}
+                disabled={loadingMore}
+                onMouseEnter={(e) => {
+                  if (!loadingMore) {
+                    e.currentTarget.style.borderColor = "#94a3b8";
+                    e.currentTarget.style.color = "#334155";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#cbd5e1";
+                  e.currentTarget.style.color = "#64748b";
+                }}
+              >
+                {loadingMore ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      style={{ width: 14, height: 14 }}
+                    />
+                    Đang tải thêm...
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>↓</span>
+                    Xem thêm phòng
+                    <span
+                      className="badge rounded-pill ms-1"
+                      style={{
+                        background: "#e2e8f0",
+                        color: "#475569",
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {rooms.length}/{totalRooms}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       )}
