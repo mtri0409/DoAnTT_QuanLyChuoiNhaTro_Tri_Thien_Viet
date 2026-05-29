@@ -399,7 +399,9 @@ const RoomList = () => {
       const fl = floors.find((f) => f.floorId === room.floorId);
       return fl && String(b.branchId) === String(fl.branchId);
     });
-    navigate("/contracts/create", { state: { room, branch } });
+    navigate(`/rooms/${room.roomId}/fast-contract`, {
+      state: { room, branch },
+    });
   };
 
   /* ── Render ── */

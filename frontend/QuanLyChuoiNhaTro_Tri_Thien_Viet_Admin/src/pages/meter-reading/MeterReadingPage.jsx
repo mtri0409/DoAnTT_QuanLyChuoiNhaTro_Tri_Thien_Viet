@@ -16,6 +16,8 @@ import {
   FaFileInvoiceDollar,
   FaPlus,
   FaExpand,
+  FaExclamationTriangle,
+  FaPencilAlt,
 } from "react-icons/fa";
 import apiBranches from "../../api/apiBranches";
 import apiFloor from "../../api/apiFloor";
@@ -57,6 +59,241 @@ const STATUS_CONFIG = {
   pending: { label: "Chưa ghi", badge: "bg-secondary-subtle text-secondary" },
 };
 
+/* ─────────────────────────────────────────────
+   Modal xác nhận lưu chỉ số
+───────────────────────────────────────────── */
+function ConfirmSaveModal({ data, onConfirm, onCancel }) {
+  if (!data) return null;
+  const { svcLabel, svcUnit, oldValue, newValue, isInitial } = data;
+  const usage = isInitial
+    ? null
+    : Math.max(0, Number(newValue) - Number(oldValue));
+  const isHighUsage = usage !== null && usage > 9999;
+  const isNegative = !isInitial && Number(newValue) < Number(oldValue);
+
+  return (
+    <div
+      className="modal d-block"
+      style={{ background: "rgba(0,0,0,0.45)", zIndex: 1055 }}
+      onClick={onCancel}
+    >
+      <div
+        className="modal-dialog modal-dialog-centered"
+        style={{ maxWidth: 420 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          {/* Header */}
+          <div className="modal-header border-0 pb-0 pt-4 px-4">
+            <div className="d-flex align-items-center gap-2">
+              {isNegative || isHighUsage ? (
+                <span className="text-warning fs-5">
+                  <FaExclamationTriangle />
+                </span>
+              ) : (
+                <span className="text-success fs-5">
+                  <FaCheck />
+                </span>
+              )}
+              <h6 className="modal-title fw-bold mb-0">
+                Xác nhận lưu chỉ số {svcLabel}
+              </h6>
+            </div>
+            <button
+              className="btn-close"
+              onClick={onCancel}
+              style={{ fontSize: 12 }}
+            />
+          </div>
+
+          {/* Body */}
+          <div className="modal-body px-4 py-3">
+            {/* Cảnh báo nếu dữ liệu bất thường */}
+            {isNegative && (
+              <div
+                className="alert alert-danger py-2 px-3 mb-3 d-flex gap-2 align-items-start"
+                style={{ fontSize: 12 }}
+              >
+                <FaExclamationTriangle className="flex-shrink-0 mt-1" />
+                <span>
+                  <strong>Chỉ số mới nhỏ hơn kỳ trước!</strong> Hãy kiểm tra lại
+                  — đồng hồ có thể bị nhập nhầm.
+                </span>
+              </div>
+            )}
+            {isHighUsage && (
+              <div
+                className="alert alert-warning py-2 px-3 mb-3 d-flex gap-2 align-items-start"
+                style={{ fontSize: 12 }}
+              >
+                <FaExclamationTriangle className="flex-shrink-0 mt-1" />
+                <span>
+                  <strong>
+                    Tiêu thụ rất cao ({usage} {svcUnit})!
+                  </strong>{" "}
+                  Kiểm tra lại trước khi xác nhận.
+                </span>
+              </div>
+            )}
+
+            {isInitial ? (
+              /* Xác nhận chỉ số đầu */
+              <div className="rounded-3 p-3 bg-info-subtle border border-info-subtle">
+                <div
+                  className="text-muted small fw-semibold mb-2 text-uppercase"
+                  style={{ fontSize: 10 }}
+                >
+                  Chỉ số gốc (số đầu đồng hồ)
+                </div>
+                <div className="fw-bold fs-4 text-info">
+                  {newValue}{" "}
+                  <span className="small fw-normal text-muted">{svcUnit}</span>
+                </div>
+                <div className="text-muted small mt-1" style={{ fontSize: 11 }}>
+                  Đây sẽ là chỉ số kỳ trước khi người thuê đầu tiên vào phòng.
+                </div>
+              </div>
+            ) : (
+              /* Xác nhận chỉ số tháng */
+              <div className="d-flex gap-3 align-items-center">
+                <div className="flex-fill rounded-3 p-3 bg-light text-center">
+                  <div
+                    className="text-muted small fw-semibold mb-1 text-uppercase"
+                    style={{ fontSize: 10 }}
+                  >
+                    Kỳ trước
+                  </div>
+                  <div className="fw-bold fs-5 text-secondary">
+                    {oldValue ?? 0}{" "}
+                    <span className="small fw-normal">{svcUnit}</span>
+                  </div>
+                </div>
+
+                <div className="text-muted">
+                  <FaArrowRight />
+                </div>
+
+                <div
+                  className="flex-fill rounded-3 p-3 text-center"
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1.5px solid #86efac",
+                  }}
+                >
+                  <div
+                    className="text-muted small fw-semibold mb-1 text-uppercase"
+                    style={{ fontSize: 10 }}
+                  >
+                    Chỉ số mới
+                  </div>
+                  <div className="fw-bold fs-5 text-success">
+                    {newValue}{" "}
+                    <span className="small fw-normal">{svcUnit}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isInitial && usage !== null && !isNegative && (
+              <div className="mt-3 text-center">
+                <span className="text-muted small">Tiêu thụ kỳ này: </span>
+                <span
+                  className={`fw-bold ${isHighUsage ? "text-warning" : "text-dark"}`}
+                >
+                  +{usage} {svcUnit}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="modal-footer border-0 px-4 pb-4 pt-1 gap-2">
+            <button
+              className="btn btn-light btn-sm flex-fill"
+              onClick={onCancel}
+            >
+              Kiểm tra lại
+            </button>
+            <button
+              className={`btn btn-sm fw-semibold flex-fill ${isNegative ? "btn-danger" : "btn-success"}`}
+              onClick={onConfirm}
+            >
+              <FaCheck size={11} className="me-1" />
+              {isNegative ? "Vẫn lưu (tôi chắc chắn)" : "Xác nhận lưu"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Modal xác nhận SỬA LẠI chỉ số đã lưu
+───────────────────────────────────────────── */
+function ConfirmEditModal({ data, onConfirm, onCancel }) {
+  if (!data) return null;
+  return (
+    <div
+      className="modal d-block"
+      style={{ background: "rgba(0,0,0,0.45)", zIndex: 1055 }}
+      onClick={onCancel}
+    >
+      <div
+        className="modal-dialog modal-dialog-centered"
+        style={{ maxWidth: 380 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div className="modal-header border-0 pb-0 pt-4 px-4">
+            <div className="d-flex align-items-center gap-2">
+              <span className="text-warning fs-5">
+                <FaExclamationTriangle />
+              </span>
+              <h6 className="modal-title fw-bold mb-0">Sửa lại chỉ số?</h6>
+            </div>
+            <button
+              className="btn-close"
+              onClick={onCancel}
+              style={{ fontSize: 12 }}
+            />
+          </div>
+          <div className="modal-body px-4 py-3">
+            <p className="text-muted small mb-2">
+              Chỉ số <strong>{data.svcLabel}</strong> đã được lưu là{" "}
+              <strong className="text-dark">
+                {data.savedValue} {data.svcUnit}
+              </strong>
+              .
+            </p>
+            <p className="text-muted small mb-0">
+              Nếu bạn sửa lại, chỉ số cũ sẽ bị ghi đè. Hãy chắc chắn trước khi
+              tiếp tục.
+            </p>
+          </div>
+          <div className="modal-footer border-0 px-4 pb-4 pt-1 gap-2">
+            <button
+              className="btn btn-light btn-sm flex-fill"
+              onClick={onCancel}
+            >
+              Hủy
+            </button>
+            <button
+              className="btn btn-warning btn-sm fw-semibold flex-fill"
+              onClick={onConfirm}
+            >
+              <FaPencilAlt size={11} className="me-1" /> Cho phép sửa lại
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Main Page
+───────────────────────────────────────────── */
 export default function MeterReadingPage() {
   const navigate = useNavigate();
 
@@ -73,11 +310,20 @@ export default function MeterReadingPage() {
   const [contracts, setContracts] = useState({});
   const [expandedRooms, setExpandedRooms] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMorePages, setHasMorePages] = useState(false);
+  const [totalRooms, setTotalRooms] = useState(0);
   const [invoiceModal, setInvoiceModal] = useState(null);
   const [lightbox, setLightbox] = useState(null);
 
-  // ✅ FIX: Cache trạng thái phòng từ server — không cần mở phòng mới biết
+  // Cache trạng thái phòng từ server — không cần mở phòng mới biết
   const [roomStatusCache, setRoomStatusCache] = useState({});
+
+  // Modal xác nhận lưu
+  const [confirmModal, setConfirmModal] = useState(null); // { roomId, serviceId, svcLabel, svcUnit, oldValue, newValue, isInitial }
+  // Modal xác nhận sửa lại
+  const [editModal, setEditModal] = useState(null); // { roomId, serviceId, svcLabel, svcUnit, savedValue }
 
   /* ── Load branches ── */
   useEffect(() => {
@@ -127,6 +373,9 @@ export default function MeterReadingPage() {
   useEffect(() => {
     if (!selectedBranch) {
       setRooms([]);
+      setCurrentPage(0);
+      setHasMorePages(false);
+      setTotalRooms(0);
       return;
     }
     setLoadingRooms(true);
@@ -134,26 +383,60 @@ export default function MeterReadingPage() {
     setContracts({});
     setExpandedRooms({});
     setRoomStatusCache({});
+    setCurrentPage(0);
+    setHasMorePages(false);
+    setTotalRooms(0);
 
     apiRoom
-      .getAllRooms(
+      .getRoomsPaged(
         0,
-        100,
-        "roomName",
-        "asc",
         selectedFloor || null,
         selectedBranch || null,
-        searchRoom,
+        searchRoom || "",
       )
       .then((res) => {
         const list = res.content || [];
         setRooms(list);
-        // ✅ Fetch trạng thái tất cả phòng ngầm sau khi có danh sách
+        setHasMorePages(!res.last && res.totalPages > 1);
+        setTotalRooms(res.totalElements || list.length);
         fetchAllRoomStatuses(list, month, year);
       })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
   }, [selectedBranch, selectedFloor, searchRoom]);
+
+  /* ── Load thêm phòng từ trang tiếp theo ── */
+  const loadMoreRooms = useCallback(async () => {
+    if (loadingMore || !hasMorePages) return;
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    try {
+      const res = await apiRoom.getRoomsPaged(
+        nextPage,
+        selectedFloor || null,
+        selectedBranch || null,
+        searchRoom || "",
+      );
+      const newList = res.content || [];
+      setRooms((prev) => [...prev, ...newList]);
+      setCurrentPage(nextPage);
+      setHasMorePages(!res.last);
+      fetchAllRoomStatuses(newList, month, year);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [
+    loadingMore,
+    hasMorePages,
+    currentPage,
+    selectedFloor,
+    selectedBranch,
+    searchRoom,
+    month,
+    year,
+  ]);
 
   /* ── Reset + refetch cache khi đổi kỳ ── */
   useEffect(() => {
@@ -164,7 +447,7 @@ export default function MeterReadingPage() {
     if (rooms.length > 0) fetchAllRoomStatuses(rooms, month, year);
   }, [month, year]);
 
-  /* ✅ Fetch trạng thái nhẹ cho tất cả phòng (chỉ lấy status, không load full) */
+  /* Fetch trạng thái nhẹ cho tất cả phòng */
   const fetchAllRoomStatuses = useCallback(async (roomList, m, y) => {
     const results = await Promise.allSettled(
       roomList.map((room) =>
@@ -177,14 +460,19 @@ export default function MeterReadingPage() {
       const roomId = roomList[idx].roomId;
       if (result.status === "fulfilled") {
         const existing = Array.isArray(result.value) ? result.value : [];
-        const savedCount = existing.filter((r) => r.newValue != null).length;
-        if (savedCount === 0) newCache[roomId] = "pending";
-        else if (savedCount >= SERVICES.length) newCache[roomId] = "done";
+        // Chỉ tính bản ghi thật (không phải initial) vào trạng thái
+        const realRecords = existing.filter(
+          (r) => r.newValue != null && !r.isInitial,
+        );
+        if (realRecords.length === 0) newCache[roomId] = "pending";
+        else if (realRecords.length >= SERVICES.length)
+          newCache[roomId] = "done";
         else newCache[roomId] = "partial";
       } else {
         newCache[roomId] = "pending";
       }
     });
+
     setRoomStatusCache(newCache);
   }, []);
 
@@ -196,6 +484,7 @@ export default function MeterReadingPage() {
         initReadings[svc.id] = {
           newValue: "",
           oldValue: 0,
+          initialValue: "",
           image: null,
           imagePreview: null,
           status: "idle",
@@ -208,18 +497,46 @@ export default function MeterReadingPage() {
         apiContract.getContractsByRoom(roomId),
       ]);
 
+      let activeContract = null;
+      if (contractRes.status === "fulfilled") {
+        const list = Array.isArray(contractRes.value)
+          ? contractRes.value
+          : contractRes.value?.content || [];
+        activeContract = list.find((c) => c.status === "ACTIVE") || null;
+      }
+      const hasContract = !!activeContract;
+
       if (currentPeriod.status === "fulfilled") {
         const existing = Array.isArray(currentPeriod.value)
           ? currentPeriod.value
           : [];
+
         existing.forEach((r) => {
           const sid = Number(r.serviceId);
-          if (initReadings[sid]) {
+          if (!initReadings[sid]) return;
+
+          if (hasContract) {
+            // ✅ FIX: Bỏ qua bản ghi "khởi đầu" (isInitial = true)
+            // Bản này được tạo khi phòng chưa có HĐ, không phải chỉ số tháng thật
+            if (r.isInitial) return;
+
             initReadings[sid] = {
               newValue: String(r.newValue ?? ""),
               oldValue: r.oldValue ?? 0,
+              initialValue: "",
               savedValue: r.newValue,
-              status: "saved",
+              status: r.newValue != null ? "saved" : "idle",
+              image: null,
+              imagePreview: null,
+            };
+          } else {
+            // Phòng chưa có HĐ → bản ghi này là chỉ số khởi đầu
+            initReadings[sid] = {
+              newValue: "",
+              oldValue: 0,
+              initialValue: String(r.newValue ?? ""),
+              savedValue: null,
+              status: r.newValue != null ? "initial_saved" : "idle",
               image: null,
               imagePreview: null,
             };
@@ -227,36 +544,31 @@ export default function MeterReadingPage() {
         });
       }
 
-      await Promise.allSettled(
-        SERVICES.filter((svc) => initReadings[svc.id].status !== "saved").map(
-          async (svc) => {
-            try {
-              const prev = await apiMeterReading.getPrevious(
-                roomId,
-                svc.id,
-                month,
-                year,
-              );
-              if (prev) initReadings[svc.id].oldValue = prev.newValue ?? 0;
-            } catch {
-              /* không có kỳ trước */
-            }
-          },
-        ),
-      );
+      // Chỉ fetch kỳ trước khi phòng có HĐ
+      if (hasContract) {
+        await Promise.allSettled(
+          SERVICES.filter((svc) => initReadings[svc.id].status !== "saved").map(
+            async (svc) => {
+              try {
+                const prev = await apiMeterReading.getPrevious(
+                  roomId,
+                  svc.id,
+                  month,
+                  year,
+                );
+                if (prev) {
+                  initReadings[svc.id].oldValue = prev.newValue ?? 0;
+                }
+              } catch {
+                /* không có kỳ trước */
+              }
+            },
+          ),
+        );
+      }
 
       setReadings((prev) => ({ ...prev, [roomId]: initReadings }));
-
-      if (contractRes.status === "fulfilled") {
-        const list = Array.isArray(contractRes.value)
-          ? contractRes.value
-          : contractRes.value?.content || [];
-        const active =
-          list.find((c) => c.status === "ACTIVE") || list[0] || null;
-        setContracts((prev) => ({ ...prev, [roomId]: active }));
-      } else {
-        setContracts((prev) => ({ ...prev, [roomId]: null }));
-      }
+      setContracts((prev) => ({ ...prev, [roomId]: activeContract }));
     },
     [month, year],
   );
@@ -294,13 +606,51 @@ export default function MeterReadingPage() {
 
   const removeImage = (roomId, serviceId) =>
     updateReading(roomId, serviceId, "image", null, null);
+
   const handleOCRValue = (roomId, serviceId, ocrValue) =>
     updateReading(roomId, serviceId, "newValue", String(ocrValue));
 
-  const handleSave = async (roomId, serviceId) => {
+  /* ── Mở modal xác nhận trước khi lưu ── */
+  const handleSaveClick = (roomId, serviceId) => {
     const r = readings[roomId]?.[serviceId];
-    const val = Number(r?.newValue);
-    if (!r?.newValue || isNaN(val)) return;
+    const contract = contracts[roomId];
+    const hasContract = !!contract;
+    const svc = SERVICES.find((s) => s.id === serviceId);
+
+    if (hasContract) {
+      const val = Number(r?.newValue);
+      if (!r?.newValue || isNaN(val)) return;
+      setConfirmModal({
+        roomId,
+        serviceId,
+        svcLabel: svc.label,
+        svcUnit: svc.unit,
+        oldValue: r.oldValue ?? 0,
+        newValue: val,
+        isInitial: false,
+      });
+    } else {
+      const val = Number(r?.initialValue);
+      if (!r?.initialValue || isNaN(val) || val < 0) return;
+      setConfirmModal({
+        roomId,
+        serviceId,
+        svcLabel: svc.label,
+        svcUnit: svc.unit,
+        oldValue: 0,
+        newValue: val,
+        isInitial: true,
+      });
+    }
+  };
+
+  /* ── Thực hiện lưu sau khi xác nhận ── */
+  const handleSaveConfirmed = async () => {
+    const { roomId, serviceId, newValue, isInitial } = confirmModal;
+    setConfirmModal(null);
+
+    const r = readings[roomId]?.[serviceId];
+    const contract = contracts[roomId];
 
     setReadings((prev) => ({
       ...prev,
@@ -311,36 +661,62 @@ export default function MeterReadingPage() {
     }));
 
     try {
-      await apiMeterReading.saveReading(
-        roomId,
-        serviceId,
-        val,
-        month,
-        year,
-        r.image,
-      );
-      setReadings((prev) => {
-        const updated = {
+      if (!isInitial) {
+        // ── Phòng có HĐ: lưu chỉ số tháng bình thường ──
+        await apiMeterReading.saveReading(
+          roomId,
+          serviceId,
+          newValue,
+          month,
+          year,
+          r.image,
+        );
+        setReadings((prev) => {
+          const updated = {
+            ...prev,
+            [roomId]: {
+              ...prev[roomId],
+              [serviceId]: {
+                ...prev[roomId][serviceId],
+                status: "saved",
+                savedValue: newValue,
+              },
+            },
+          };
+          const statuses = SERVICES.map((s) => updated[roomId][s.id]?.status);
+          const newStatus = statuses.every((s) => s === "saved")
+            ? "done"
+            : statuses.some((s) => s === "saved")
+              ? "partial"
+              : "pending";
+          setRoomStatusCache((c) => ({ ...c, [roomId]: newStatus }));
+          return updated;
+        });
+      } else {
+        // ── Phòng chưa có HĐ: lưu chỉ số khởi đầu (isInitial = true) ──
+        // API cần nhận thêm flag isInitial để phân biệt với chỉ số tháng thật
+        await apiMeterReading.saveReading(
+          roomId,
+          serviceId,
+          newValue,
+          month,
+          year,
+          null,
+          true, // isInitial flag
+        );
+        setReadings((prev) => ({
           ...prev,
           [roomId]: {
             ...prev[roomId],
             [serviceId]: {
               ...prev[roomId][serviceId],
-              status: "saved",
-              savedValue: val,
+              status: "initial_saved",
+              initialValue: String(newValue),
             },
           },
-        };
-        // ✅ Cập nhật roomStatusCache ngay sau khi lưu — không cần reload
-        const statuses = SERVICES.map((s) => updated[roomId][s.id]?.status);
-        const newStatus = statuses.every((s) => s === "saved")
-          ? "done"
-          : statuses.some((s) => s === "saved")
-            ? "partial"
-            : "pending";
-        setRoomStatusCache((c) => ({ ...c, [roomId]: newStatus }));
-        return updated;
-      });
+        }));
+        // Phòng không HĐ không tính vào trạng thái "done"
+      }
     } catch (err) {
       setReadings((prev) => ({
         ...prev,
@@ -356,13 +732,56 @@ export default function MeterReadingPage() {
     }
   };
 
+  /* ── Mở modal xác nhận sửa lại ── */
+  const handleEditClick = (roomId, serviceId) => {
+    const r = readings[roomId]?.[serviceId];
+    const svc = SERVICES.find((s) => s.id === serviceId);
+    setEditModal({
+      roomId,
+      serviceId,
+      svcLabel: svc.label,
+      svcUnit: svc.unit,
+      savedValue: r?.savedValue,
+    });
+  };
+
+  /* ── Cho phép sửa lại sau xác nhận ── */
+  const handleEditConfirmed = () => {
+    const { roomId, serviceId } = editModal;
+    setEditModal(null);
+    setReadings((prev) => ({
+      ...prev,
+      [roomId]: {
+        ...prev[roomId],
+        [serviceId]: {
+          ...prev[roomId][serviceId],
+          status: "idle",
+          newValue: String(prev[roomId][serviceId].savedValue ?? ""),
+        },
+      },
+    }));
+    // Cập nhật lại cache status phòng
+    setRoomStatusCache((c) => {
+      const roomReadings = readings[roomId];
+      const statuses = SERVICES.map((s) =>
+        s.id === serviceId ? "idle" : roomReadings?.[s.id]?.status,
+      );
+      const newStatus = statuses.every((s) => s === "saved")
+        ? "done"
+        : statuses.some((s) => s === "saved")
+          ? "partial"
+          : "pending";
+      return { ...c, [roomId]: newStatus };
+    });
+  };
+
   const filteredRooms = rooms.filter(
     (r) =>
       !searchRoom ||
       r.roomName?.toLowerCase().includes(searchRoom.toLowerCase()),
   );
 
-  /* ✅ FIX: getRoomStatus ưu tiên readings nếu đã load, fallback về cache từ server */
+  /* getRoomStatus ưu tiên readings nếu đã load, fallback về cache từ server */
   const getRoomStatus = (roomId) => {
     const r = readings[roomId];
     if (r) {
@@ -371,7 +790,6 @@ export default function MeterReadingPage() {
       if (statuses.some((s) => s === "saved")) return "partial";
       return "pending";
     }
-    // Chưa mở phòng → dùng cache từ server
     return roomStatusCache[roomId] ?? "pending";
   };
 
@@ -379,6 +797,20 @@ export default function MeterReadingPage() {
   return (
     <div className="container-fluid py-4">
       <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
+
+      {/* Modal xác nhận lưu */}
+      <ConfirmSaveModal
+        data={confirmModal}
+        onConfirm={handleSaveConfirmed}
+        onCancel={() => setConfirmModal(null)}
+      />
+
+      {/* Modal xác nhận sửa lại */}
+      <ConfirmEditModal
+        data={editModal}
+        onConfirm={handleEditConfirmed}
+        onCancel={() => setEditModal(null)}
+      />
 
       {invoiceModal && (
         <CreateInvoice
@@ -643,14 +1075,20 @@ export default function MeterReadingPage() {
                         <div className="row g-3 mt-1">
                           {SERVICES.map((svc) => {
                             const rd = readings[room.roomId]?.[svc.id] || {};
+                            const hasContract = !!contract;
+
                             const usage =
-                              rd.newValue && !isNaN(Number(rd.newValue))
+                              hasContract &&
+                              rd.newValue &&
+                              !isNaN(Number(rd.newValue))
                                 ? Math.max(
                                     0,
                                     Number(rd.newValue) - (rd.oldValue || 0),
                                   )
                                 : null;
                             const isSaved = rd.status === "saved";
+                            const isInitialSaved =
+                              rd.status === "initial_saved";
                             const isLoading = rd.status === "loading";
                             const hasError = rd.status === "error";
 
@@ -659,9 +1097,10 @@ export default function MeterReadingPage() {
                                 <div
                                   className={`rounded-3 p-3 ${svc.bgClass}`}
                                   style={{
-                                    border: `1.5px solid ${isSaved ? svc.borderColor + "80" : svc.borderColor + "30"}`,
+                                    border: `1.5px solid ${isSaved ? svc.borderColor + "80" : isInitialSaved ? svc.borderColor + "60" : svc.borderColor + "30"}`,
                                   }}
                                 >
+                                  {/* Card header */}
                                   <div className="d-flex align-items-center gap-2 mb-3">
                                     <span className={svc.colorClass}>
                                       {svc.icon}
@@ -669,6 +1108,7 @@ export default function MeterReadingPage() {
                                     <span className="fw-bold small">
                                       {svc.label}
                                     </span>
+
                                     {isSaved && (
                                       <span
                                         className="badge bg-success-subtle text-success ms-auto d-flex align-items-center gap-1"
@@ -677,139 +1117,264 @@ export default function MeterReadingPage() {
                                         <FaCheck size={9} /> Đã lưu
                                       </span>
                                     )}
+                                    {isInitialSaved && (
+                                      <span
+                                        className="badge bg-info-subtle text-info ms-auto d-flex align-items-center gap-1"
+                                        style={{ fontSize: 11 }}
+                                      >
+                                        <FaCheck size={9} /> Đã lưu số đầu
+                                      </span>
+                                    )}
+
+                                    {/* Nút sửa lại khi đã lưu */}
+                                    {isSaved && (
+                                      <button
+                                        className="btn btn-link btn-sm text-warning p-0 ms-1 d-flex align-items-center gap-1"
+                                        style={{ fontSize: 11 }}
+                                        title="Sửa lại chỉ số"
+                                        onClick={() =>
+                                          handleEditClick(room.roomId, svc.id)
+                                        }
+                                      >
+                                        <FaPencilAlt size={10} /> Sửa
+                                      </button>
+                                    )}
                                   </div>
 
-                                  <div className="d-flex justify-content-between mb-3">
-                                    <div>
+                                  {!hasContract ? (
+                                    /* ── Phòng CHƯA có HĐ: nhập chỉ số khởi đầu ── */
+                                    <>
                                       <div
-                                        className="text-muted text-uppercase fw-semibold mb-1"
-                                        style={{ fontSize: 10 }}
+                                        className="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2"
+                                        style={{ fontSize: 12 }}
                                       >
-                                        Kỳ trước
-                                      </div>
-                                      <div className="fw-bold fs-5 text-secondary">
-                                        {rd.oldValue ?? 0}{" "}
-                                        <span className="small fw-normal">
-                                          {svc.unit}
+                                        <FaInfoCircle className="flex-shrink-0" />
+                                        <span>
+                                          Phòng chưa có hợp đồng. Nhập chỉ số
+                                          hiện tại trên đồng hồ để làm{" "}
+                                          <strong>số gốc</strong> cho người thuê
+                                          tiếp theo.
                                         </span>
                                       </div>
-                                    </div>
-                                    {usage !== null && (
-                                      <div className="text-end">
-                                        <div
-                                          className="text-muted text-uppercase fw-semibold mb-1"
-                                          style={{ fontSize: 10 }}
-                                        >
-                                          Tiêu thụ
+                                      <div className="mb-2">
+                                        <label className="form-label small fw-semibold text-muted mb-1">
+                                          Chỉ số đồng hồ hiện tại ({svc.unit})
+                                        </label>
+                                        <div className="d-flex gap-2">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            className={`form-control form-control-sm fw-bold ${hasError ? "is-invalid" : isInitialSaved ? "border-info bg-info-subtle" : ""}`}
+                                            value={rd.initialValue || ""}
+                                            onChange={(e) =>
+                                              updateReading(
+                                                room.roomId,
+                                                svc.id,
+                                                "initialValue",
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder={`VD: 1234 — số đang hiển thị trên đồng hồ`}
+                                            disabled={
+                                              isInitialSaved || isLoading
+                                            }
+                                          />
+                                          <button
+                                            className={`btn btn-sm fw-bold d-flex align-items-center gap-1 flex-shrink-0 ${isInitialSaved ? "btn-info" : "btn-secondary"}`}
+                                            onClick={() =>
+                                              handleSaveClick(
+                                                room.roomId,
+                                                svc.id,
+                                              )
+                                            }
+                                            disabled={
+                                              !rd.initialValue ||
+                                              isInitialSaved ||
+                                              isLoading
+                                            }
+                                          >
+                                            {isLoading ? (
+                                              <span
+                                                className="spinner-border spinner-border-sm"
+                                                style={{
+                                                  width: 12,
+                                                  height: 12,
+                                                }}
+                                              />
+                                            ) : isInitialSaved ? (
+                                              <FaCheck size={11} />
+                                            ) : (
+                                              "Lưu"
+                                            )}
+                                          </button>
                                         </div>
-                                        <div
-                                          className={`fw-bold fs-5 ${svc.colorClass}`}
-                                        >
-                                          +{usage}{" "}
-                                          <span className="small fw-normal">
-                                            {svc.unit}
-                                          </span>
-                                        </div>
+                                        {hasError && (
+                                          <div className="text-danger small mt-1">
+                                            <FaInfoCircle className="me-1" />{" "}
+                                            {rd.errMsg}
+                                          </div>
+                                        )}
+                                        {isInitialSaved && (
+                                          <div className="text-info small mt-1">
+                                            <FaInfoCircle className="me-1" />
+                                            Số{" "}
+                                            <strong>
+                                              {rd.initialValue} {svc.unit}
+                                            </strong>{" "}
+                                            sẽ là chỉ số kỳ trước khi người thuê
+                                            đầu tiên vào.
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
+                                    </>
+                                  ) : (
+                                    /* ── Phòng CÓ HĐ: nhập chỉ số mới bình thường ── */
+                                    <>
+                                      <div className="d-flex justify-content-between mb-3">
+                                        <div>
+                                          <div
+                                            className="text-muted text-uppercase fw-semibold mb-1"
+                                            style={{ fontSize: 10 }}
+                                          >
+                                            Kỳ trước
+                                          </div>
+                                          <div className="fw-bold fs-5 text-secondary">
+                                            {rd.oldValue ?? 0}{" "}
+                                            <span className="small fw-normal">
+                                              {svc.unit}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        {usage !== null && (
+                                          <div className="text-end">
+                                            <div
+                                              className="text-muted text-uppercase fw-semibold mb-1"
+                                              style={{ fontSize: 10 }}
+                                            >
+                                              Tiêu thụ
+                                            </div>
+                                            <div
+                                              className={`fw-bold fs-5 ${svc.colorClass}`}
+                                            >
+                                              +{usage}{" "}
+                                              <span className="small fw-normal">
+                                                {svc.unit}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
 
-                                  <div className="mb-2">
-                                    <label className="form-label small fw-semibold text-muted mb-1">
-                                      Chỉ số mới ({svc.unit})
-                                    </label>
-                                    <div className="d-flex gap-2">
-                                      <input
-                                        type="number"
-                                        min={rd.oldValue || 0}
-                                        className={`form-control form-control-sm fw-bold ${hasError ? "is-invalid" : isSaved ? "border-success bg-success-subtle" : ""}`}
-                                        value={rd.newValue || ""}
-                                        onChange={(e) =>
-                                          updateReading(
+                                      <div className="mb-2">
+                                        <label className="form-label small fw-semibold text-muted mb-1">
+                                          Chỉ số mới ({svc.unit})
+                                        </label>
+                                        <div className="d-flex gap-2">
+                                          <input
+                                            type="number"
+                                            min={rd.oldValue || 0}
+                                            className={`form-control form-control-sm fw-bold ${hasError ? "is-invalid" : isSaved ? "border-success bg-success-subtle" : ""}`}
+                                            value={rd.newValue || ""}
+                                            onChange={(e) =>
+                                              updateReading(
+                                                room.roomId,
+                                                svc.id,
+                                                "newValue",
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder="Nhập chỉ số..."
+                                            disabled={isSaved}
+                                          />
+                                          <button
+                                            className={`btn btn-sm fw-bold d-flex align-items-center gap-1 flex-shrink-0 ${isSaved ? "btn-success" : "btn-dark"}`}
+                                            onClick={() =>
+                                              handleSaveClick(
+                                                room.roomId,
+                                                svc.id,
+                                              )
+                                            }
+                                            disabled={
+                                              !rd.newValue ||
+                                              isSaved ||
+                                              isLoading
+                                            }
+                                          >
+                                            {isLoading ? (
+                                              <span
+                                                className="spinner-border spinner-border-sm"
+                                                style={{
+                                                  width: 12,
+                                                  height: 12,
+                                                }}
+                                              />
+                                            ) : isSaved ? (
+                                              <FaCheck size={11} />
+                                            ) : (
+                                              "Lưu"
+                                            )}
+                                          </button>
+                                        </div>
+                                        {hasError && (
+                                          <div className="text-danger small mt-1">
+                                            <FaInfoCircle className="me-1" />{" "}
+                                            {rd.errMsg}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <ImageCapture
+                                        serviceColor={svc.borderColor}
+                                        imagePreview={rd.imagePreview}
+                                        imageName={rd.image?.name}
+                                        imageSize={rd.image?.size}
+                                        isSaved={isSaved}
+                                        serviceId={svc.id}
+                                        onFile={({ file, preview }) =>
+                                          handleImageFile(room.roomId, svc.id, {
+                                            file,
+                                            preview,
+                                          })
+                                        }
+                                        onRemove={() =>
+                                          removeImage(room.roomId, svc.id)
+                                        }
+                                        onOCRComplete={(value) =>
+                                          handleOCRValue(
                                             room.roomId,
                                             svc.id,
-                                            "newValue",
-                                            e.target.value,
+                                            value,
                                           )
                                         }
-                                        placeholder="Nhập chỉ số..."
-                                        disabled={isSaved}
+                                        overlayType="rectangle"
+                                        aspectRatio={4 / 3}
                                       />
-                                      <button
-                                        className={`btn btn-sm fw-bold d-flex align-items-center gap-1 flex-shrink-0 ${isSaved ? "btn-success" : "btn-dark"}`}
-                                        onClick={() =>
-                                          handleSave(room.roomId, svc.id)
-                                        }
-                                        disabled={
-                                          !rd.newValue || isSaved || isLoading
-                                        }
-                                      >
-                                        {isLoading ? (
-                                          <span
-                                            className="spinner-border spinner-border-sm"
-                                            style={{ width: 12, height: 12 }}
+
+                                      {isSaved && rd.imagePreview && (
+                                        <div
+                                          className="d-flex align-items-center gap-2 mt-2 p-2 rounded bg-white bg-opacity-50"
+                                          style={{ cursor: "zoom-in" }}
+                                          onClick={() =>
+                                            setLightbox(rd.imagePreview)
+                                          }
+                                        >
+                                          <img
+                                            src={rd.imagePreview}
+                                            alt="meter"
+                                            style={{
+                                              width: 40,
+                                              height: 32,
+                                              objectFit: "cover",
+                                            }}
+                                            className="rounded"
                                           />
-                                        ) : isSaved ? (
-                                          <FaCheck size={11} />
-                                        ) : (
-                                          "Lưu"
-                                        )}
-                                      </button>
-                                    </div>
-                                    {hasError && (
-                                      <div className="text-danger small mt-1">
-                                        <FaInfoCircle className="me-1" />{" "}
-                                        {rd.errMsg}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  <ImageCapture
-                                    serviceColor={svc.borderColor}
-                                    imagePreview={rd.imagePreview}
-                                    imageName={rd.image?.name}
-                                    imageSize={rd.image?.size}
-                                    isSaved={isSaved}
-                                    serviceId={svc.id}
-                                    onFile={({ file, preview }) =>
-                                      handleImageFile(room.roomId, svc.id, {
-                                        file,
-                                        preview,
-                                      })
-                                    }
-                                    onRemove={() =>
-                                      removeImage(room.roomId, svc.id)
-                                    }
-                                    onOCRComplete={(value) =>
-                                      handleOCRValue(room.roomId, svc.id, value)
-                                    }
-                                    overlayType="rectangle"
-                                    aspectRatio={4 / 3}
-                                  />
-
-                                  {isSaved && rd.imagePreview && (
-                                    <div
-                                      className="d-flex align-items-center gap-2 mt-2 p-2 rounded bg-white bg-opacity-50"
-                                      style={{ cursor: "zoom-in" }}
-                                      onClick={() =>
-                                        setLightbox(rd.imagePreview)
-                                      }
-                                    >
-                                      <img
-                                        src={rd.imagePreview}
-                                        alt="meter"
-                                        style={{
-                                          width: 40,
-                                          height: 32,
-                                          objectFit: "cover",
-                                        }}
-                                        className="rounded"
-                                      />
-                                      <span className="small text-secondary">
-                                        Xem ảnh đồng hồ
-                                      </span>
-                                      <FaExpand className="ms-auto text-secondary" />
-                                    </div>
+                                          <span className="small text-secondary">
+                                            Xem ảnh đồng hồ
+                                          </span>
+                                          <FaExpand className="ms-auto text-secondary" />
+                                        </div>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               </div>
@@ -829,23 +1394,32 @@ export default function MeterReadingPage() {
                               </>
                             ) : (
                               <span className="text-warning">
-                                ⚠ Không tìm thấy hợp đồng active
+                                ⚠ Phòng chưa có hợp đồng — không thể tạo hóa đơn
                               </span>
                             )}
                           </div>
                           <button
-                            className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 ${roomStatus === "done" ? "btn-primary" : "btn-secondary"}`}
+                            className={`btn btn-sm fw-semibold d-flex align-items-center gap-2 ${!contract ? "btn-secondary opacity-50" : roomStatus === "done" ? "btn-primary" : "btn-secondary"}`}
+                            disabled={!contract}
+                            title={
+                              !contract
+                                ? "Cần có hợp đồng active trước khi tạo hóa đơn"
+                                : ""
+                            }
                             onClick={() =>
+                              contract &&
                               setInvoiceModal({
-                                contractId: contract?.contractId || "",
+                                contractId: contract.contractId,
                                 roomName: room.roomName,
                               })
                             }
                           >
                             <FaFileInvoiceDollar size={13} />
-                            {roomStatus === "done"
-                              ? `Tạo hóa đơn T${month}/${year}`
-                              : "Tạo hóa đơn (chưa ghi đủ)"}
+                            {!contract
+                              ? "Tạo hóa đơn (cần hợp đồng)"
+                              : roomStatus === "done"
+                                ? `Tạo hóa đơn T${month}/${year}`
+                                : "Tạo hóa đơn (chưa ghi đủ)"}
                             <FaArrowRight size={11} />
                           </button>
                         </div>
@@ -856,6 +1430,30 @@ export default function MeterReadingPage() {
               </div>
             );
           })}
+
+          {/* Nút Xem thêm */}
+          {hasMorePages && (
+            <button
+              className="btn btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
+              onClick={loadMoreRooms}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    style={{ width: 14, height: 14 }}
+                  />
+                  Đang tải...
+                </>
+              ) : (
+                <>
+                  <FaPlus size={11} />
+                  Xem thêm ({rooms.length}/{totalRooms} phòng)
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
