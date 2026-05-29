@@ -53,7 +53,7 @@ public class ParkingLogController {
         if (created != null) {
             log.info("✅ Đã lưu parking log với ID: {}", created.getLogId());
             
-             
+             messagingTemplate.convertAndSend("/topic/plates", created);
             
             return ResponseEntity.ok("Đã lưu parking log thành công!");
         } else {
