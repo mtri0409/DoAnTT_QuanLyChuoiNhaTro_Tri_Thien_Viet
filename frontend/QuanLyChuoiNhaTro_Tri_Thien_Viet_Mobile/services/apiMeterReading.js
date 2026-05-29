@@ -2,15 +2,29 @@
 import axiosInstance from "./axios";
 
 const apiMeterReading = {
-  saveReading: (roomId, serviceId, newValue, month, year, imageUri = null) => {
+  // Nhập chỉ số điện/nước (có thể upload ảnh)
+  // oldValue truyền rõ ràng để backend không tự tính sai (phòng mới có isInitial)
+  saveReading: (
+    roomId,
+    serviceId,
+    newValue,
+    month,
+    year,
+    imageUri = null,
+    isInitial = false,
+    oldValue = null,
+  ) => {
     const formData = new FormData();
     formData.append("roomId", String(roomId));
     formData.append("serviceId", String(serviceId));
     formData.append("newValue", String(newValue));
     formData.append("month", String(month));
     formData.append("year", String(year));
+    formData.append("isInitial", String(isInitial));
+    if (oldValue !== null && oldValue !== undefined) {
+      formData.append("oldValue", String(oldValue));
+    }
     if (imageUri) {
-      // React Native FormData cần object { uri, name, type }
       const filename = imageUri.split("/").pop();
       const ext = filename?.split(".").pop()?.toLowerCase() || "jpg";
       formData.append("image", {
@@ -42,19 +56,13 @@ const apiMeterReading = {
     const formData = new FormData();
     const filename = imageUri.split("/").pop();
     const ext = filename?.split(".").pop()?.toLowerCase() || "jpg";
-
-    // Bước 1: Chỉ append thông tin file vào FormData (hàm append chỉ nhận tối đa 3 tham số: key, value, filename)
     formData.append("file", {
       uri: imageUri,
       name: filename || `meter_${Date.now()}.${ext}`,
       type: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    }); // Đóng ngoặc hàm append tại đây
-
-    // Bước 2: Truyền headers vào tham số thứ 3 của hàm axiosInstance.post
+    });
     return axiosInstance.post("/admin/ocr/water", formData, {
-      headers: { 
-        "Content-Type": "multipart/form-data" 
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
@@ -66,11 +74,11 @@ const apiMeterReading = {
       uri: imageUri,
       name: filename || `meter_${Date.now()}.${ext}`,
       type: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    }),
-     {
-        headers: { "Content-Type": "multipart/form-data" },
-      };
-    return axiosInstance.post("/admin/ocr/electricity", formData);
+    });
+    return axiosInstance.post("/admin/ocr/electricity", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
 };
+
 export default apiMeterReading;

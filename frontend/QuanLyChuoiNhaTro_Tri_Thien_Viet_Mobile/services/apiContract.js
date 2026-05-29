@@ -75,7 +75,9 @@ const apiContract = {
    * Trả về array; caller tự .find(c => c.status === "ACTIVE").
    */
   getContractsByRoom: (roomId) => {
-    return axiosClient.get(`/public/contracts/room/${roomId}`);
+    return axiosClient
+      .get(`/public/contracts/room/${roomId}`)
+      .then((res) => res.data ?? res);
   },
 
   // ─── PHÂN TRANG PHÒNG CHO METER READING ───────────────────────────────────
@@ -109,17 +111,19 @@ const apiContract = {
     sortBy = "roomName",
     sortOrder = "asc",
   ) => {
-    return axiosClient.get("/admin/rooms", {
-      params: {
-        pageNumber,
-        pageSize,
-        sortBy,
-        sortOrder,
-        ...(floorId ? { floorId } : {}),
-        ...(branchId ? { branchId } : {}),
-        ...(keyword?.trim() ? { keyword: keyword.trim() } : {}),
-      },
-    });
+    return axiosClient
+      .get("/rooms", {
+        params: {
+          pageNumber,
+          pageSize,
+          sortBy,
+          sortOrder,
+          ...(floorId ? { floorId } : {}),
+          ...(branchId ? { branchId } : {}),
+          ...(keyword?.trim() ? { search: keyword.trim() } : {}),
+        },
+      })
+      .then((res) => res.data ?? res);
   },
 
   // ─── TẠO / CẬP NHẬT / XÓA ─────────────────────────────────────────────────

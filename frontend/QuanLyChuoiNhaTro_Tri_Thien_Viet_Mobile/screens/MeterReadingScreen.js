@@ -17,9 +17,9 @@ import {
 import { useRouter } from "expo-router";
 import apiBranches from "../services/apiBranches";
 import apiFloor from "../services/apiFloor";
-import apiRoom from "../services/apiRoom";
 import apiMeterReading from "../services/apiMeterReading";
 import apiContract, { PAGE_SIZE_ROOMS } from "../services/apiContract";
+import apiInvoice from "../services/apiInvoice";
 import ImageCapture from "../components/readings/ImageCapture";
 import { useAuth } from "../context/AuthContext";
 
@@ -560,6 +560,7 @@ function RoomCard({
   expanded,
   readings,
   contracts,
+  contractCache,
   roomStatusCache,
   month,
   year,
@@ -572,6 +573,7 @@ function RoomCard({
   onOCR,
   onViewImage,
   onCreateInvoice,
+  createdInvoices,
 }) {
   const roomStatus = (() => {
     const r = readings[room.roomId];
@@ -584,8 +586,13 @@ function RoomCard({
     return roomStatusCache[room.roomId] ?? "pending";
   })();
   const statusCfg = STATUS_CONFIG[roomStatus];
-  const contract = contracts?.[room.roomId];
+  // Ưu tiên contracts (đã load full khi mở phòng), fallback về contractCache (load ngầm)
+  const contract = contracts?.[room.roomId] ?? contractCache?.[room.roomId];
   const hasContract = !!contract;
+  // contractCache đã load xong cho phòng này chưa?
+  const contractLoaded =
+    Object.prototype.hasOwnProperty.call(contracts, room.roomId) ||
+    Object.prototype.hasOwnProperty.call(contractCache, room.roomId);
 
   return (
     <View style={[styles.roomCard, expanded && styles.roomCardExpanded]}>
@@ -606,17 +613,21 @@ function RoomCard({
           <Text style={styles.roomName}>{room.roomName}</Text>
           <Text style={styles.roomSub} numberOfLines={1}>
             {room.floorName} · {room.branchName}
-            {Object.prototype.hasOwnProperty.call(contracts, room.roomId) ? (
-              contract ? (
-                <Text style={{ color: "#3b82f6", fontWeight: "600" }}>
-                  {" "}
-                  HĐ #{contract.contractId}
-                </Text>
-              ) : (
-                <Text style={{ color: "#d97706" }}> (chưa có HĐ)</Text>
-              )
-            ) : null}
           </Text>
+          {/* Contract badge — giống web: loading / có HĐ / chưa có HĐ */}
+          {!contractLoaded ? (
+            <Text style={{ fontSize: 10, color: "#aaa" }}>
+              ⏳ Đang tải HĐ...
+            </Text>
+          ) : contract ? (
+            <Text style={{ fontSize: 11, color: "#3b82f6", fontWeight: "600" }}>
+              HĐ #{contract.contractId} · Có hợp đồng
+            </Text>
+          ) : (
+            <Text style={{ fontSize: 11, color: "#d97706", fontWeight: "600" }}>
+              ⚠ Chưa có hợp đồng
+            </Text>
+          )}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
           <Text style={[styles.statusBadgeText, { color: statusCfg.color }]}>
@@ -680,34 +691,49 @@ function RoomCard({
                     </Text>
                   )}
                 </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.invoiceBtn,
-                    !contract && styles.invoiceBtnDisabled,
-                    roomStatus === "done" &&
-                      contract &&
-                      styles.invoiceBtnActive,
-                  ]}
-                  onPress={() =>
-                    contract &&
-                    onCreateInvoice(contract.contractId, room.roomName)
-                  }
-                  disabled={!contract}
-                >
-                  <Text
-                    style={[
-                      styles.invoiceBtnText,
-                      roomStatus === "done" && contract && { color: "#fff" },
-                    ]}
-                  >
-                    🧾{" "}
-                    {!contract
-                      ? "Tạo hóa đơn (cần HĐ)"
-                      : roomStatus === "done"
-                        ? `Tạo HĐ T${String(month).padStart(2, "0")}/${year}`
-                        : "Tạo hóa đơn (chưa ghi đủ)"}
-                  </Text>
-                </TouchableOpacity>
+                {(() => {
+                  const invoiceCreated =
+                    contract && createdInvoices?.[contract.contractId];
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.invoiceBtn,
+                        !contract && styles.invoiceBtnDisabled,
+                        invoiceCreated
+                          ? styles.invoiceBtnDone
+                          : roomStatus === "done" &&
+                            contract &&
+                            styles.invoiceBtnActive,
+                      ]}
+                      onPress={() =>
+                        !invoiceCreated &&
+                        contract &&
+                        onCreateInvoice(contract.contractId, room.roomName)
+                      }
+                      disabled={!contract || !!invoiceCreated}
+                      activeOpacity={invoiceCreated ? 1 : 0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.invoiceBtnText,
+                          roomStatus === "done" &&
+                            contract &&
+                            !invoiceCreated && { color: "#fff" },
+                          invoiceCreated && { color: "#fff" },
+                        ]}
+                      >
+                        🧾{" "}
+                        {!contract
+                          ? "Tạo hóa đơn (cần HĐ)"
+                          : invoiceCreated
+                            ? `✓ Đã tạo HĐ T${String(month).padStart(2, "0")}/${year}`
+                            : roomStatus === "done"
+                              ? `Tạo HĐ T${String(month).padStart(2, "0")}/${year}`
+                              : "Tạo hóa đơn (chưa ghi đủ)"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })()}
               </View>
             </>
           )}
@@ -749,10 +775,19 @@ export default function MeterReadingScreen() {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [searchRoom, setSearchRoom] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search — chỉ trigger load phòng sau 400ms khi user ngừng gõ
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchRoom), 400);
+    return () => clearTimeout(timer);
+  }, [searchRoom]);
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [readings, setReadings] = useState({});
   const [contracts, setContracts] = useState({});
+  // Cache hợp đồng nhẹ cho tất cả phòng — hiển thị ngay trên header card (giống web)
+  const [contractCache, setContractCache] = useState({});
   const [roomStatusCache, setRoomStatusCache] = useState({});
   const [expandedRooms, setExpandedRooms] = useState({});
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -767,6 +802,12 @@ export default function MeterReadingScreen() {
   // Modals xác nhận lưu / sửa lại
   const [confirmModal, setConfirmModal] = useState(null);
   const [editModal, setEditModal] = useState(null);
+
+  // Track hóa đơn đã tạo: key = contractId, value = true
+  const [createdInvoices, setCreatedInvoices] = useState({});
+  // Tạo tất cả hóa đơn hàng loạt
+  const [bulkInvoiceLoading, setBulkInvoiceLoading] = useState(false);
+  const [bulkInvoiceResult, setBulkInvoiceResult] = useState(null);
 
   const [showBranchPicker, setShowBranchPicker] = useState(false);
   const [showFloorPicker, setShowFloorPicker] = useState(false);
@@ -797,6 +838,7 @@ export default function MeterReadingScreen() {
     setRooms([]);
     setReadings({});
     setContracts({});
+    setContractCache({});
     setRoomStatusCache({});
     setExpandedRooms({});
     if (!selectedBranch) return;
@@ -859,6 +901,26 @@ export default function MeterReadingScreen() {
     setRoomStatusCache((prev) => ({ ...prev, ...newCache }));
   }, []);
 
+  // Fetch hợp đồng nhẹ cho tất cả phòng — hiển thị badge HĐ trên header card (giống web)
+  const fetchAllContracts = useCallback(async (roomList) => {
+    const results = await Promise.allSettled(
+      roomList.map((room) => apiContract.getContractsByRoom(room.roomId)),
+    );
+    const newCache = {};
+    results.forEach((result, idx) => {
+      const roomId = roomList[idx].roomId;
+      if (result.status === "fulfilled") {
+        const list = Array.isArray(result.value)
+          ? result.value
+          : result.value?.content || [];
+        newCache[roomId] = list.find((c) => c.status === "ACTIVE") || null;
+      } else {
+        newCache[roomId] = null;
+      }
+    });
+    setContractCache((prev) => ({ ...prev, ...newCache }));
+  }, []);
+
   // ─── Load phòng trang đầu khi đổi filter (dùng getRoomsPaged — backend pagination) ──
   useEffect(() => {
     if (!selectedBranch) {
@@ -875,15 +937,18 @@ export default function MeterReadingScreen() {
     setTotalRooms(0);
     setReadings({});
     setContracts({});
+    setContractCache({});
     setRoomStatusCache({});
     setExpandedRooms({});
+    setCreatedInvoices({});
+    setBulkInvoiceResult(null);
 
     apiContract
       .getRoomsPaged(
         0,
         selectedFloor || null,
         selectedBranch || null,
-        searchRoom || "",
+        debouncedSearch || "",
       )
       .then((res) => {
         const list = (res.content || []).map((r) => ({
@@ -894,13 +959,20 @@ export default function MeterReadingScreen() {
         setHasMorePages(!res.last && res.totalPages > 1);
         setTotalRooms(res.totalElements || list.length);
         fetchAllRoomStatuses(list, month, year);
+        fetchAllContracts(list);
       })
       .catch((err) => {
         console.error("Load rooms error:", err);
         setRooms([]);
       })
       .finally(() => setLoadingRooms(false));
-  }, [selectedBranch, selectedFloor, searchRoom, fetchAllRoomStatuses]);
+  }, [
+    selectedBranch,
+    selectedFloor,
+    debouncedSearch,
+    fetchAllRoomStatuses,
+    fetchAllContracts,
+  ]);
 
   // ─── Load trang tiếp theo từ backend ──────────────────────────────────────
   const loadMoreRooms = useCallback(async () => {
@@ -912,7 +984,7 @@ export default function MeterReadingScreen() {
         nextPage,
         selectedFloor || null,
         selectedBranch || null,
-        searchRoom || "",
+        debouncedSearch || "",
       );
       const newList = (res.content || []).map((r) => ({
         ...r,
@@ -920,8 +992,9 @@ export default function MeterReadingScreen() {
       }));
       setRooms((prev) => [...prev, ...newList]);
       setCurrentPage(nextPage);
-      setHasMorePages(!res.last);
+      setHasMorePages(!res.last && nextPage + 1 < res.totalPages);
       fetchAllRoomStatuses(newList, month, year);
+      fetchAllContracts(newList);
     } catch (err) {
       console.error("Load more rooms error:", err);
     } finally {
@@ -933,10 +1006,11 @@ export default function MeterReadingScreen() {
     currentPage,
     selectedFloor,
     selectedBranch,
-    searchRoom,
+    debouncedSearch,
     month,
     year,
     fetchAllRoomStatuses,
+    fetchAllContracts,
   ]);
 
   // Reset khi đổi kỳ
@@ -1136,6 +1210,8 @@ export default function MeterReadingScreen() {
           month,
           year,
           r.imageUri,
+          false, // isInitial
+          r.oldValue ?? 0, // oldValue — truyền rõ ràng tránh backend tự tính sai
         );
         setReadings((prev) => {
           const updated = {
@@ -1509,6 +1585,124 @@ export default function MeterReadingScreen() {
           </View>
         ) : (
           <>
+            {/* ── Banner tạo tất cả hóa đơn ── */}
+            {(() => {
+              const eligibleRooms = filteredRooms.filter((r) => {
+                const c = contracts[r.roomId] ?? contractCache[r.roomId];
+                const status = (() => {
+                  const rd = readings[r.roomId];
+                  if (rd) {
+                    const statuses = SERVICES.map((s) => rd[s.id]?.status);
+                    if (statuses.every((s) => s === "saved")) return "done";
+                    return "other";
+                  }
+                  return roomStatusCache[r.roomId] ?? "pending";
+                })();
+                return (
+                  !!c && !createdInvoices[c.contractId] && status === "done"
+                );
+              });
+              const doneCount = filteredRooms.filter((r) => {
+                const c = contracts[r.roomId] ?? contractCache[r.roomId];
+                return !!c && createdInvoices[c.contractId];
+              }).length;
+              const allDone = eligibleRooms.length === 0 && doneCount > 0;
+
+              return (
+                <View style={styles.bulkBanner}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.bulkBannerTitle}>
+                      Tạo hóa đơn hàng loạt
+                    </Text>
+                    <Text style={styles.bulkBannerSub}>
+                      {allDone
+                        ? `✓ Đã tạo xong ${doneCount} hóa đơn cho chi nhánh này`
+                        : `${eligibleRooms.length} phòng đã ghi đủ, chưa tạo HĐ T${String(month).padStart(2, "0")}/${year}`}
+                    </Text>
+                    {bulkInvoiceResult && (
+                      <Text style={styles.bulkBannerResult}>
+                        <Text style={{ color: "#16a34a" }}>
+                          ✓ {bulkInvoiceResult.success} thành công
+                        </Text>
+                        {bulkInvoiceResult.failed > 0 && (
+                          <Text style={{ color: "#ef4444" }}>
+                            {" "}
+                            ✗ {bulkInvoiceResult.failed} thất bại
+                          </Text>
+                        )}
+                      </Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.bulkBtn,
+                      (allDone || eligibleRooms.length === 0) &&
+                        styles.bulkBtnDone,
+                      bulkInvoiceLoading && styles.bulkBtnLoading,
+                    ]}
+                    disabled={
+                      allDone ||
+                      bulkInvoiceLoading ||
+                      eligibleRooms.length === 0
+                    }
+                    onPress={() => {
+                      if (bulkInvoiceLoading || eligibleRooms.length === 0)
+                        return;
+                      Alert.alert(
+                        "Tạo hóa đơn hàng loạt",
+                        `Tạo ${eligibleRooms.length} hóa đơn T${String(month).padStart(2, "0")}/${year} cho tất cả phòng đã ghi đủ?`,
+                        [
+                          { text: "Hủy", style: "cancel" },
+                          {
+                            text: "Tạo tất cả",
+                            onPress: async () => {
+                              setBulkInvoiceLoading(true);
+                              setBulkInvoiceResult(null);
+                              let success = 0,
+                                failed = 0;
+                              for (const r of eligibleRooms) {
+                                const c =
+                                  contracts[r.roomId] ??
+                                  contractCache[r.roomId];
+                                if (!c) continue;
+                                try {
+                                  await apiInvoice.createManual(
+                                    c.contractId,
+                                    month,
+                                    year,
+                                  );
+                                  setCreatedInvoices((prev) => ({
+                                    ...prev,
+                                    [c.contractId]: true,
+                                  }));
+                                  success++;
+                                } catch {
+                                  failed++;
+                                }
+                              }
+                              setBulkInvoiceLoading(false);
+                              setBulkInvoiceResult({ success, failed });
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    {bulkInvoiceLoading ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.bulkBtnText}>
+                        {allDone
+                          ? "✓ Đã xong"
+                          : `🧾 Tạo tất cả (${eligibleRooms.length})`}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })()}
+
             {filteredRooms.map((room) => (
               <RoomCard
                 key={room.roomId}
@@ -1516,6 +1710,7 @@ export default function MeterReadingScreen() {
                 expanded={!!expandedRooms[room.roomId]}
                 readings={readings}
                 contracts={contracts}
+                contractCache={contractCache}
                 roomStatusCache={roomStatusCache}
                 month={month}
                 year={year}
@@ -1527,6 +1722,7 @@ export default function MeterReadingScreen() {
                 onRemove={removeImage}
                 onOCR={handleOCRValue}
                 onViewImage={setLightboxUri}
+                createdInvoices={createdInvoices}
                 onCreateInvoice={(contractId, roomName) =>
                   Alert.alert(
                     "Tạo hóa đơn",
@@ -1535,10 +1731,29 @@ export default function MeterReadingScreen() {
                       { text: "Hủy", style: "cancel" },
                       {
                         text: "Tạo",
-                        onPress: () =>
-                          router.push(
-                            `/invoice/create?contractId=${contractId}&month=${month}&year=${year}`,
-                          ),
+                        onPress: async () => {
+                          try {
+                            await apiInvoice.createManual(
+                              contractId,
+                              month,
+                              year,
+                            );
+                            setCreatedInvoices((prev) => ({
+                              ...prev,
+                              [contractId]: true,
+                            }));
+                            Alert.alert(
+                              "Thành công",
+                              `Đã tạo hóa đơn T${String(month).padStart(2, "0")}/${year}`,
+                            );
+                          } catch (err) {
+                            Alert.alert(
+                              "Lỗi",
+                              err?.response?.data?.message ||
+                                "Không thể tạo hóa đơn",
+                            );
+                          }
+                        },
                       },
                     ],
                   )
@@ -1886,6 +2101,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#3b82f6",
     borderColor: "#3b82f6",
   },
+  invoiceBtnDone: {
+    backgroundColor: "#16a34a",
+    borderColor: "#16a34a",
+  },
   invoiceBtnDisabled: { opacity: 0.5 },
   invoiceBtnText: { fontSize: 13, fontWeight: "600", color: "#374151" },
 
@@ -1968,6 +2187,45 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 16,
   },
+
+  // Bulk invoice banner
+  bulkBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#93c5fd",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  bulkBannerTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 2,
+  },
+  bulkBannerSub: { fontSize: 12, color: "#6b7280" },
+  bulkBannerResult: { fontSize: 12, marginTop: 4 },
+  bulkBtn: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+  },
+  bulkBtnDone: { backgroundColor: "#16a34a" },
+  bulkBtnLoading: { backgroundColor: "#9ca3af" },
+  bulkBtnText: { fontSize: 12, fontWeight: "700", color: "#fff" },
 
   // Load more
   loadMoreBtn: {
