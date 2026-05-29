@@ -19,13 +19,6 @@ const ACTIONS = (navigate, profile) => [
     onClick: () => navigate(`user/profile/${profile.profileId}`),
   },
   {
-    icon: <FaBed />,
-    label: "Thông tin phòng",
-    sub: "Chi tiết căn phòng",
-    bg: "#e6f4ea",
-    fg: "#1e8b4e",
-  },
-  {
     icon: <FaHistory />,
     label: "Lịch sử hóa đơn",
     sub: "Thanh toán & công nợ",
@@ -40,13 +33,6 @@ const ACTIONS = (navigate, profile) => [
     bg: "#fff8e1",
     fg: "#c17900",
     onClick: () => navigate(`user/contract/${profile.activeContractId}`),
-  },
-  {
-    icon: <FaTools />,
-    label: "Báo sự cố",
-    sub: "Yêu cầu sửa chữa",
-    bg: "#fce8e6",
-    fg: "#c0392b",
   },
   {
     icon: <FaPowerOff />,
@@ -64,7 +50,8 @@ const QuickActions = ({ profile }) => {
 
   return (
     <>
-      <div className="row row-cols-2 row-cols-sm-3 row-cols-lg-6 g-3">
+      {/* 2 cột trên mobile, 4 cột từ md trở lên — vừa khít 4 nút */}
+      <div className="row row-cols-2 row-cols-md-4 g-3">
         {actions.map((action, idx) => (
           <div key={idx} className="col">
             <button
