@@ -1,4 +1,4 @@
-gitignore# --- IDE & System Files ---
+# --- IDE & System Files ---
 .idea/
 .vscode/
 *.swp
@@ -19,7 +19,7 @@ Thumbs.db
 .classpath
 
 # --- Node / Frontend (Cho folder frontend-web hoặc mobile) ---
-**/node_modules/
+**/node_modules/**
 **/dist/
 **/build/
 .env
@@ -35,36 +35,9 @@ Thumbs.db
 # --- Others ---
 temp/
 bin/
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> dev-tri
-#--- image
-**/images/**
-.vite/
-<<<<<<< HEAD
->>>>>>> ee57d37636e4387a4029c95a9c2ca81fc43fd468
-=======
-=======
-
->>>>>>> dev-tri
-
-#--- image
-**/images/**
-
-.vite/
-
-.vite/**
-
-*.mp4
-
-<<<<<<< HEAD
->>>>>>> dev-tri
-=======
->>>>>>> dev-tri
 uploads/
-
+**/images/**
+.vite/
+.vite/**
+*.mp4
 **/venv/**

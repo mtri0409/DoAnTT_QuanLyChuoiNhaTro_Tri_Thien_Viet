@@ -33,3 +33,6 @@ build/
 .vscode/
 
 .vite/
+
+# Environment files
+src/main/resources/application.properties
