@@ -87,6 +87,7 @@ public class ContractServiceImpl implements ContractService {
         // ── 4. Cập nhật Room: OCCUPIED → AVAILABLE ───────────────────────────────
         Room room = contract.getRoom();
         room.setStatus(RoomStatus.AVAILABLE);
+        room.setCurrentPeople(0);
         roomRepo.save(room);
 
         // ── 5. Cập nhật Deposit: ACTIVE → PENDING, tách khỏi contract ────────────
@@ -359,6 +360,10 @@ public class ContractServiceImpl implements ContractService {
             updateRoomStatusToOccupied(savedContract);
         }
 
+        // 13b. Cập nhật currentPeople theo số member vừa tạo
+        room.setCurrentPeople(contractRequest.getMemberIds().size());
+        roomRepo.save(room);
+
         // 14. Lấy danh sách dịch vụ đã lưu để trả về response đầy đủ
         List<ContractServiceDTO> savedContractServices = contractServiceRepo
                 .findByContract_ContractId(savedContract.getContractId())
@@ -532,6 +537,11 @@ public class ContractServiceImpl implements ContractService {
         newRoomMember.setContract(contract);
         newRoomMember.setIsStaying(true);
         roomMemberRepo.save(newRoomMember);
+
+        // Cập nhật currentPeople
+        Room room = contract.getRoom();
+        room.setCurrentPeople((room.getCurrentPeople() == null ? 0 : room.getCurrentPeople()) + 1);
+        roomRepo.save(room);
     }
 
     // ==================== removeMember ====================
@@ -565,6 +575,12 @@ public class ContractServiceImpl implements ContractService {
         }
 
         roomMemberRepo.delete(memberToRemove);
+
+        // Cập nhật currentPeople
+        Room room = contract.getRoom();
+        int current = room.getCurrentPeople() == null ? 0 : room.getCurrentPeople();
+        room.setCurrentPeople(Math.max(0, current - 1));
+        roomRepo.save(room);
     }
 
     // ==================== getMemberIds ====================
@@ -730,6 +746,7 @@ public class ContractServiceImpl implements ContractService {
         if (oldStatus == ContractStatus.ACTIVE &&
                 (newStatus == ContractStatus.TERMINATED || newStatus == ContractStatus.EXPIRED)) {
             room.setStatus(RoomStatus.AVAILABLE);
+            room.setCurrentPeople(0);
 
             // Reset deposit về PENDING để phòng sẵn sàng cho hợp đồng mới
             depositRepo.findTopByRoom_RoomIdAndStatus(room.getRoomId(), "ACTIVE")

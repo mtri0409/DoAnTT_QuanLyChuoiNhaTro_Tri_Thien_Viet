@@ -94,9 +94,7 @@ const RoomDetail = () => {
             : [rawContracts].filter(Boolean);
 
           const activeContract =
-            list.find((c) => c.status?.toUpperCase() === "ACTIVE") ??
-            list[0] ??
-            null;
+            list.find((c) => c.status?.toUpperCase() === "ACTIVE") ?? null;
 
           if (activeContract?.contractId) {
             setContract(activeContract);
