@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings" },
   { title: "Thông báo", path: "/notifications", icon: <FaBell />, group: "settings" },
   { title: "Bãi xe", path: "/parks", icon: <FaUserCog />, group: "security" },
-    { title: "Bãi xe", path: "/camera", icon: <FaCamera />, group: "security" },
+    { title: "Camera", path: "/camera", icon: <FaCamera />, group: "security" },
 
 ];
 

@@ -29,46 +29,71 @@ public class ParkingLogController {
 
     @Autowired
     private ParkingLogService parkingLogService;
-    
+
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;  // ✅ Thêm dòng này
+    private SimpMessagingTemplate messagingTemplate; // ✅ Thêm dòng này
 
     // ==================== AI DETECTION ====================
-    
+
     /**
      * Nhận dữ liệu từ AI Python (webhook)
      * POST /api/ai/receive-plate
      */
 
-   @PostMapping("/ai/receive-plate") // Đảm bảo đúng Endpoint Webhook nhận từ Python
+    @PostMapping("/ai/receive-plate")
     public ResponseEntity<String> receivePlateFromAI(@RequestBody PlatePayload payload) {
-        log.info("📥 Nhận dữ liệu từ AI: trackId={}, plate={}", 
-                payload.getTrackId(), payload.getBestPlate());
 
-       
-        // Tiến hành lưu xuống Database thông qua Service
-        ParkingLogDTO created = parkingLogService.createParking(payload);
-        
-        // ========== BROADCAST QUA WEBSOCKET ==========
+        System.out.println("📥 Nhận dữ liệu từ AI: trackId=" + payload.getTrackId() + ", plate="
+                + payload.getBestPlate() + ", timestamp=" + System.currentTimeMillis());
+        System.out.println("📦 Payload đầy đủ: " + payload);
+
+        // VALIDATE
+        if (payload.getBestPlate() == null || payload.getBestPlate().isBlank()) {
+            System.out.println("❌ Biển số trống/null. trackId=" + payload.getTrackId() + ", payload=" + payload);
+            return ResponseEntity.badRequest().body("Biển số không hợp lệ");
+        }
+
+        // SAVE DB
+        ParkingLogDTO created;
+        try {
+            System.out
+                    .println("💾 Đang lưu DB... trackId=" + payload.getTrackId() + ", plate=" + payload.getBestPlate());
+            created = parkingLogService.createParking(payload);
+            System.out.println("✅ Lưu DB xong. logId=" + (created != null ? created.getLogId() : "null") + ", plate="
+                    + payload.getBestPlate());
+        } catch (Exception e) {
+            System.out.println("💥 Exception khi lưu DB: trackId=" + payload.getTrackId() + ", plate="
+                    + payload.getBestPlate() + ", error=" + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Lỗi server khi lưu: " + e.getMessage());
+        }
+
+        // BROADCAST
         if (created != null) {
-            log.info("✅ Đã lưu parking log với ID: {}", created.getLogId());
-            
-             messagingTemplate.convertAndSend("/topic/plates", created);
-            
-            return ResponseEntity.ok("Đã lưu parking log thành công!");
+            try {
+                System.out.println("📡 Broadcasting /topic/plates: logId=" + created.getLogId());
+                messagingTemplate.convertAndSend("/topic/plates", created);
+                System.out.println("✅ Broadcast thành công: logId=" + created.getLogId());
+            } catch (Exception e) {
+                System.out.println("💥 Broadcast lỗi: logId=" + created.getLogId() + ", error=" + e.getMessage());
+                e.printStackTrace();
+            }
+            return ResponseEntity.ok("Đã lưu parking log: " + created.getLogId());
         } else {
-            log.warn("❌ Không thể lưu do biển số không hợp lệ");
-            
-            // Broadcast lỗi qua kênh /topic/plates_errors
-            messagingTemplate.convertAndSend("/topic/plates_errors", payload);
-            log.info("📡 Đã broadcast lỗi qua WebSocket: /topic/plates_errors");
-            
+            System.out.println(
+                    "⚠️ createParking trả null. trackId=" + payload.getTrackId() + ", plate=" + payload.getBestPlate());
+            try {
+                messagingTemplate.convertAndSend("/topic/plates_errors", payload);
+                System.out.println("📡 Broadcast lỗi /topic/plates_errors: trackId=" + payload.getTrackId());
+            } catch (Exception e) {
+                System.out.println("💥 Broadcast lỗi thất bại: " + e.getMessage());
+                e.printStackTrace();
+            }
             return ResponseEntity.badRequest().body("Không thể lưu do biển số không hợp lệ");
         }
     }
-
     // ==================== GET ====================
-    
+
     @GetMapping("/parking-logs")
     public ResponseEntity<PageResponse<ParkingLogDTO>> getAllParkingLogs(
             @RequestParam(defaultValue = "0") Integer pageNumber,
@@ -80,16 +105,16 @@ public class ParkingLogController {
             @RequestParam(required = false) Boolean isVerified,
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) {
-        
+
         // Truyền thêm các tham số lọc vào hàm service
         PageResponse<ParkingLogDTO> response = parkingLogService.getAllParkingLogs(
-            pageNumber, pageSize, sortBy, sortOrder, licensePlate, direction, isVerified, fromDate, toDate);
-            
+                pageNumber, pageSize, sortBy, sortOrder, licensePlate, direction, isVerified, fromDate, toDate);
+
         return ResponseEntity.ok(response);
     }
 
     // ==================== DELETE ====================
-    
+
     @DeleteMapping("/parking-logs/{logId}")
     public ResponseEntity<String> deleteParkingLog(@PathVariable Long logId) {
         String result = parkingLogService.deleteParkingLog(logId);
@@ -97,7 +122,8 @@ public class ParkingLogController {
     }
 
     // API 1: Bộ lọc tìm kiếm lịch sử xe theo ngày
-    // URL test: /api/admin/parking-logs/filter?startDate=2026-05-24&endDate=2026-05-24
+    // URL test:
+    // /api/admin/parking-logs/filter?startDate=2026-05-24&endDate=2026-05-24
     @GetMapping("/filter")
     public ResponseEntity<PageResponse<ParkingLogDTO>> filterLogs(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -106,7 +132,7 @@ public class ParkingLogController {
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "detectedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder) {
-        
+
         return ResponseEntity.ok(parkingLogService.filterParkingLogsByDate(
                 startDate, endDate, pageNumber, pageSize, sortBy, sortOrder));
     }
@@ -116,7 +142,7 @@ public class ParkingLogController {
     public ResponseEntity<ParkingStatsResponse> getStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
+
         return ResponseEntity.ok(parkingLogService.getParkingStats(startDate, endDate));
     }
 }
