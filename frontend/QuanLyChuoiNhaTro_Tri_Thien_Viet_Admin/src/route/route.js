@@ -62,89 +62,99 @@ import NewsPostEditForm from "../pages/post/NewsPostEditForm";
 import ListParkingLog from "../pages/park/ParkingLog";
 import CameraDashboard from "../pages/park/CameraDashboard";
 
+// =============================================================
+// PHÂN QUYỀN ROUTE (roles)
+// - ADMIN   : Toàn quyền
+// - STAFF   : Xem & thao tác hầu hết, trừ Dashboard, tài khoản, 
+//             xóa danh mục quan trọng
+// - TENANT  : Chỉ xem thông tin cá nhân, báo hỏng
+// =============================================================
 const AdminRoute = [
-  { path: "/", component: Dashboard },
-  { path: "/profiles", component: ListProfile },
-  { path: "/profile/create", component: CreateProfile },
-  { path: "/profile/:id/detail", component: ProfileDetail },
-  { path: "/profile/:id/update", component: UpdateProfile },
-  { path: "/profile/:profileId/vehicle", component: CreateVehicle },
-  { path: "/users", component: ListUser },
-  { path: "/users/create", component: CreateAccount },
+  // Dashboard - chỉ ADMIN & TENANT (STAFF không có dashboard)
+  { path: "/", component: Dashboard, roles: ["ADMIN", "TENANT"] },
+  
+  // ─── QUẢN LÝ HỒ SƠ / NGƯỜI THUÊ ───────────────────────────
+  { path: "/profiles", component: ListProfile, roles: ["ADMIN", "STAFF"] },
+  { path: "/profile/create", component: CreateProfile, roles: ["ADMIN", "STAFF"] },
+  { path: "/profile/:id/detail", component: ProfileDetail, roles: ["ADMIN", "STAFF", "TENANT"] },
+  { path: "/profile/:id/update", component: UpdateProfile, roles: ["ADMIN", "STAFF"] },
+  { path: "/profile/:profileId/vehicle", component: CreateVehicle, roles: ["ADMIN", "STAFF"] },
+  { path: "/profile/restore", component: ListProfileDeleted, roles: ["ADMIN", "STAFF"] },
 
-  { path: "/vehicles", component: ListVehicle },
-  { path: "/vehicle/:vehicleId/update", component: UpdateVehicle },
+  // ─── QUẢN LÝ TÀI KHOẢN (chỉ ADMIN) ────────────────────────
+  { path: "/users", component: ListUser, roles: ["ADMIN"] },
+  { path: "/users/create", component: CreateAccount, roles: ["ADMIN"] },
+  { path: "/users/restore", component: ListUserDeleted, roles: ["ADMIN"] },
 
-  //contract
-  { path: "/contracts", component: ListContract },
-  { path: "/contracts/:id/update", component: UpdateContract },
-  { path: "/contracts/create", component: CreateContract },
-  { path: "/contracts/:id/detail", component: ContractDetail },
-  { path: "/contracts/:id/members", component: ContractMember },
-  { path: "/rooms/:roomId/fast-contract", component: FastContract },
+  // ─── QUẢN LÝ XE CỘ ─────────────────────────────────────────
+  { path: "/vehicles", component: ListVehicle, roles: ["ADMIN", "STAFF"] },
+  { path: "/vehicle/:vehicleId/update", component: UpdateVehicle, roles: ["ADMIN", "STAFF"] },
+  { path: "/vehicle/restore", component: ListVehicleDeleted, roles: ["ADMIN", "STAFF"] },
 
-  //meter-reading
-  { path: "/meter-reading", component: MeterReadingPage },
-  { path: "/invoice", component: ListInvoice },
-  { path: "/invoice/:invoiceId", component: InvoiceDetail },
-  { path: "/profile/:profileId/vehicle", component: CreateVehicle },
-  { path: "/profile/restore", component: ListProfileDeleted },
-  { path: "/users", component: ListUser },
-  { path: "/users/create", component: CreateAccount },
-  { path: "/users/restore", component: ListUserDeleted },
+  // ─── HỢP ĐỒNG ──────────────────────────────────────────────
+  { path: "/contracts", component: ListContract, roles: ["ADMIN", "STAFF"] },
+  { path: "/contracts/:id/update", component: UpdateContract, roles: ["ADMIN", "STAFF"] },
+  { path: "/contracts/create", component: CreateContract, roles: ["ADMIN", "STAFF"] },
+  { path: "/contracts/:id/detail", component: ContractDetail, roles: ["ADMIN", "STAFF"] },
+  { path: "/contracts/:id/members", component: ContractMember, roles: ["ADMIN", "STAFF"] },
+  { path: "/rooms/:roomId/fast-contract", component: FastContract, roles: ["ADMIN", "STAFF"] },
 
-  { path: "/vehicles", component: ListVehicle },
-  { path: "/vehicle/:vehicleId/update", component: UpdateVehicle },
-  { path: "/vehicle/restore", component: ListVehicleDeleted },
+  // ─── GHI ĐIỆN NƯỚC / HÓA ĐƠN / CHI PHÍ ────────────────────
+  { path: "/meter-reading", component: MeterReadingPage, roles: ["ADMIN", "STAFF"] },
+  { path: "/invoice", component: ListInvoice, roles: ["ADMIN", "STAFF"] },
+  { path: "/invoice/:invoiceId", component: InvoiceDetail, roles: ["ADMIN", "STAFF"] },
+  { path: "/expenses", component: ListExpenses, roles: ["ADMIN", "STAFF"] },
+  { path: "/expenses/create", component: CreateExpense, roles: ["ADMIN", "STAFF"] },
+  { path: "/expenses/:expenseId/detail", component: DetailExpense, roles: ["ADMIN", "STAFF"] },
+  { path: "/expenses/:expenseId/edit", component: EditExpense, roles: ["ADMIN", "STAFF"] },
 
-  //branch
-  { path: "/branches/:page", component: BranchList },
-  { path: "/branches/create", component: CreateBranch },
-  { path: "/branches/:id/update", component: UpdateBranch },
-  //profile
-  { path: "/rooms/:page", component: RoomList },
-  { path: "/rooms/create", component: CreateRoom },
-  { path: "/rooms/:roomId/update", component: UpdateRoom },
-  { path: "/rooms/:roomId/detail", component: RoomDetail },
-  //amenity
-  { path: "/amenities/:page", component: AmenityList },
-  { path: "/amenities/create", component: CreateAmenity },
-  { path: "/amenities/:id/update", component: UpdateAmenity },
-  //service
-  { path: "/services/:page", component: ServiceList },
-  { path: "/services/create", component: CreateService },
-  { path: "/services/:id/update", component: UpdateService },
+  // ─── CHI NHÁNH ──────────────────────────────────────────────
+  { path: "/branches/:page", component: BranchList, roles: ["ADMIN", "STAFF"] },
+  { path: "/branches/create", component: CreateBranch, roles: ["ADMIN", "STAFF"] },
+  { path: "/branches/:id/update", component: UpdateBranch, roles: ["ADMIN", "STAFF"] },
+  
+  // ─── PHÒNG TRỌ ──────────────────────────────────────────────
+  { path: "/rooms/:page", component: RoomList, roles: ["ADMIN", "STAFF"] },
+  { path: "/rooms/create", component: CreateRoom, roles: ["ADMIN", "STAFF"] },
+  { path: "/rooms/:roomId/update", component: UpdateRoom, roles: ["ADMIN", "STAFF"] },
+  { path: "/rooms/:roomId/detail", component: RoomDetail, roles: ["ADMIN", "STAFF"] },
+  
+  // ─── TIỆN ÍCH ───────────────────────────────────────────────
+  { path: "/amenities/:page", component: AmenityList, roles: ["ADMIN", "STAFF"] },
+  { path: "/amenities/create", component: CreateAmenity, roles: ["ADMIN", "STAFF"] },
+  { path: "/amenities/:id/update", component: UpdateAmenity, roles: ["ADMIN", "STAFF"] },
+  
+  // ─── DỊCH VỤ ────────────────────────────────────────────────
+  { path: "/services/:page", component: ServiceList, roles: ["ADMIN", "STAFF"] },
+  { path: "/services/create", component: CreateService, roles: ["ADMIN", "STAFF"] },
+  { path: "/services/:id/update", component: UpdateService, roles: ["ADMIN", "STAFF"] },
 
-  //post
-  { path: "/posts", component: ListPost },
-  { path: "/posts/:postId/detail", component: PostDetail },
-  { path: "/news-posts", component: ListNewsPost },
-  { path: "/news-posts", component: ListNewsPost },
-  { path: "/news-posts/create", component: NewsPostForm },
-  { path: "/news-posts/:postId/edit", component: NewsPostEditForm },
-  { path: "/news-posts/:postId", component: NewsPostDetail },
-  { path: "/post-categories", component: PostCategoryManager },
-  { path: "/post-categories/create", component: CreatePostCategory },
-  { path: "/post-categories/:categoryId/edit", component: UpdatePostCategory },
+  // ─── BÀI ĐĂNG / TIN TỨC ────────────────────────────────────
+  { path: "/posts", component: ListPost, roles: ["ADMIN", "STAFF"] },
+  { path: "/posts/:postId/detail", component: PostDetail, roles: ["ADMIN", "STAFF"] },
+  { path: "/news-posts", component: ListNewsPost, roles: ["ADMIN", "STAFF"] },
+  { path: "/news-posts/create", component: NewsPostForm, roles: ["ADMIN", "STAFF"] },
+  { path: "/news-posts/:postId/edit", component: NewsPostEditForm, roles: ["ADMIN", "STAFF"] },
+  { path: "/news-posts/:postId", component: NewsPostDetail, roles: ["ADMIN", "STAFF"] },
+  { path: "/post-categories", component: PostCategoryManager, roles: ["ADMIN", "STAFF"] },
+  { path: "/post-categories/create", component: CreatePostCategory, roles: ["ADMIN", "STAFF"] },
+  { path: "/post-categories/:categoryId/edit", component: UpdatePostCategory, roles: ["ADMIN", "STAFF"] },
 
-  { path: "/notifications", component: ListNotification },
-  { path: "/notifications/create", component: CreateNotification },
+  // ─── THÔNG BÁO ──────────────────────────────────────────────
+  { path: "/notifications", component: ListNotification, roles: ["ADMIN", "STAFF", "TENANT"] },
+  { path: "/notifications/create", component: CreateNotification, roles: ["ADMIN", "STAFF"] },
 
-  //maintenance
-  { path: "/maintenance", component: ListMaintenance },
-  { path: "/maintenance/:requestId/detail", component: MaintenanceDetail },
-  { path: "/maintenance/:requestId/edit", component: MaintenanceEdit },
+  // ─── BÁO HỎNG / SỬA CHỮA ────────────────────────────────────
+  { path: "/maintenance", component: ListMaintenance, roles: ["ADMIN", "STAFF", "TENANT"] },
+  { path: "/maintenance/:requestId/detail", component: MaintenanceDetail, roles: ["ADMIN", "STAFF", "TENANT"] },
+  { path: "/maintenance/:requestId/edit", component: MaintenanceEdit, roles: ["ADMIN", "STAFF"] },
 
-  //expense
-  { path: "/expenses", component: ListExpenses },
-  { path: "/expenses/create", component: CreateExpense },
-  { path: "/expenses/:expenseId/detail", component: DetailExpense },
+  // ─── AN NINH BÃI ĐỖ XE ──────────────────────────────────────
+  { path: "/parks", component: ListParkingLog, roles: ["ADMIN", "STAFF"] },
+  { path: "/camera", component: CameraDashboard, roles: ["ADMIN", "STAFF"] },
 
-  //setting
-  { path: "/setting", component: SystemSettings },
-  { path: "/parks", component: ListParkingLog },
-  { path: "/camera", component: CameraDashboard },
-
-  { path: "/expenses/:expenseId/edit", component: EditExpense },
+  // ─── CÀI ĐẶT HỆ THỐNG (chỉ ADMIN) ──────────────────────────
+  { path: "/setting", component: SystemSettings, roles: ["ADMIN", "STAFF"] },
 ];
+
 export default AdminRoute;

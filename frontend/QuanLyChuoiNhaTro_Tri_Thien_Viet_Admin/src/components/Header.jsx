@@ -15,7 +15,7 @@ const Header = ({ toggleSidebar }) => {
   const [showProfile, setShowProfile] = useState(false);
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   
   // ========== SEARCH STATE ==========
   const [searchText, setSearchText] = useState('');
@@ -341,7 +341,9 @@ const Header = ({ toggleSidebar }) => {
             style={{ cursor: 'pointer' }}
             onClick={() => setShowProfile(!showProfile)}
           >
-            <span className="me-2 fw-bold text-dark d-none d-md-inline">Admin Tri</span>
+            <span className="me-2 fw-bold text-dark d-none d-md-inline">
+              {user ? `${user.fullName || user.userName || user.username || "Người dùng"} (${user.role})` : "Khách"}
+            </span>
             <FaUserCircle className="fs-3 text-secondary" />
           </div>
 

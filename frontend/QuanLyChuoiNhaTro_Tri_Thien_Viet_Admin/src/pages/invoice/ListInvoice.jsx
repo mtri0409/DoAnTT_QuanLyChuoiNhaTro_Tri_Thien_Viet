@@ -20,6 +20,7 @@ import apiInvoice from "../../api/apiInvoice";
 import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
 import { toast } from "react-toastify";
+import CreateInvoice from "../../components/CreateInvoice";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const TYPE_OPTIONS = [
@@ -151,6 +152,7 @@ export default function ListInvoice() {
   }, []);
 
   // Modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showGenModal, setShowGenModal] = useState(false);
   const [genMonth, setGenMonth] = useState(new Date().getMonth() + 1);
   const [genYear, setGenYear] = useState(new Date().getFullYear());
@@ -408,6 +410,20 @@ export default function ListInvoice() {
         </div>
       )}
 
+      {/* ── Modal: Tạo thủ công ── */}
+      {showCreateModal && (
+        <CreateInvoice
+          defaultContractId=""
+          defaultMonth={new Date().getMonth() + 1}
+          defaultYear={new Date().getFullYear()}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            fetchInvoices();
+          }}
+        />
+      )}
+
       {/* ── Header ── */}
       <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
         <div>
@@ -433,7 +449,7 @@ export default function ListInvoice() {
           </button>
           <button
             className="btn btn-primary shadow-sm d-flex align-items-center gap-2"
-            onClick={() => navigate("/invoice/create")}
+            onClick={() => setShowCreateModal(true)}
           >
             <FaPlus size={14} /> Tạo thủ công
           </button>

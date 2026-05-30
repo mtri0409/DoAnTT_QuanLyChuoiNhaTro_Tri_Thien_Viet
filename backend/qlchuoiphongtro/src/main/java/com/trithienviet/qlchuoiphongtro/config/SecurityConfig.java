@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,8 +25,8 @@ import com.trithienviet.qlchuoiphongtro.service.impl.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
-@EnableWebSecurity // Kích hoạt tính năng Security cho dự án Web
-@EnableMethodSecurity // Cho phép dùng @PreAuthorize("hasRole('...')") ở Controller
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -36,34 +35,55 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsServiceImpl userDetailsServiceImpl;
 
-    // --- 1. CẤU HÌNH BỘ LỌC BẢO MẬT (Security Filter Chain) ---
+    /**
+     * BỘ LỌC BẢO MẬT - THỨ TỰ QUAN TRỌNG (first-match-wins):
+     *
+     * 1. PUBLIC_URLS   → permitAll()
+     * 2. USER_URLS     → TENANT + ADMIN
+     * 3. GUARD_URLS    → STAFF + ADMIN  (bãi xe)
+     * 4. STAFF_URLS    → STAFF + ADMIN  (PHẢI ĐẶT TRƯỚC ADMIN_URLS!)
+     *    └─ Bao gồm các /api/admin/contracts/**, /api/admin/profiles, v.v.
+     *       để override catch-all /api/admin/** của ADMIN_URLS
+     * 5. ADMIN_URLS    → ADMIN only     (catch-all /api/admin/**)
+     * 6. anyRequest    → authenticated
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-
-            .csrf(csrf -> csrf.disable()) // Tắt CSRF vì JWT không cần (chống tấn công giả mạo yêu cầu)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Cấu hình chia sẻ tài nguyên (CORS) cho React gọi API
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(requests -> requests
-                // Cho phép các URL công khai (Login, Register) vào tự do
+
+                // ── 1. Public (không cần đăng nhập) ────────────────────
                 .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
-                // CẤU HÌNH QUYỀN TRUY CẬP: 
+
+                // ── 2. Tenant ────────────────────────────────────────────
                 .requestMatchers(AppConstants.USER_URLS).hasAnyRole("TENANT", "ADMIN")
-                .requestMatchers(AppConstants.ADMIN_URLS).hasAnyRole("ADMIN","STAFF")
-                // Tất cả các request còn lại đều phải đăng nhập mới được vào
+
+                // ── 3. Guard / Bảo vệ bãi xe ────────────────────────────
+                .requestMatchers(AppConstants.GUARD_URLS).hasAnyRole("STAFF", "ADMIN")
+
+                // ── 4. STAFF (ĐẶT TRƯỚC ADMIN_URLS) ─────────────────────
+                // Các sub-path /api/admin/** mà STAFF được phép sẽ match tại đây
+                // trước khi catch-all /api/admin/** ở bước 5 chặn lại
+                .requestMatchers(AppConstants.STAFF_URLS).hasAnyRole("STAFF", "ADMIN")
+
+                // ── 5. Admin catch-all (các /api/admin/** còn lại) ───────
+                .requestMatchers(AppConstants.ADMIN_URLS).hasRole("ADMIN")
+
+                // ── 6. Mọi request khác phải đăng nhập ──────────────────
                 .anyRequest().authenticated()
             )
-            // Cấu hình xử lý lỗi khi chưa đăng nhập (Unauthorized)
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, authException) -> 
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
-            // CHẾ ĐỘ STATELESS: Không tạo Session trên Server (Dành riêng cho JWT)
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
+            )
             .sessionManagement(management -> management
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // THỨ TỰ CHẠY: Chạy bộ lọc JWT trước khi kiểm tra Username/Password mặc định của Spring
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .authenticationProvider(daoAuthenticationProvider());
-
 
         return http.build();
     }
@@ -71,48 +91,32 @@ public class SecurityConfig {
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsServiceImpl);
-        // provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
-        provider.setHideUserNotFoundExceptions(false); // For better debugging
+        provider.setHideUserNotFoundExceptions(false);
         return provider;
     }
 
-    // --- 3. CÔNG CỤ MÃ HÓA MẬT KHẨU ---
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Mã hóa mật khẩu một chiều cực mạnh
+        return new BCryptPasswordEncoder();
     }
 
-    // --- 4. QUẢN LÝ XÁC THỰC (Dùng trong AuthController để Login) ---
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // --- 5. CẤU HÌNH CORS: Cho phép Frontend (React/Vite) kết nối ---
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Liệt kê các địa chỉ của Frontend được phép gọi đến Backend
-        // configuration.setAllowedOrigins(List.of(
-
-        //         "http://localhost:3000",
-        //         "http://localhost:5173",
-        //         "http://localhost:5174",
-        //         "http://localhost:5175"));
         configuration.setAllowedOriginPatterns(List.of("*")); 
         configuration.setAllowCredentials(true);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-    
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
-
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        configuration.setAllowCredentials(true); // Cho phép gửi Token/Cookie kèm theo
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Áp dụng cho toàn bộ API
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

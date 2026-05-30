@@ -9,50 +9,78 @@ import {
   FaCamera,
 } from "react-icons/fa";
 import { useSystemSetting } from "../context/SystemSettingContext";
+import { useAuth } from "../context/AuthContext";
 
+// =============================================================
+// NAV_ITEMS: Cấu hình menu điều hướng kèm phân quyền (roles)
+//
+// STAFF có quyền truy cập hầu hết, trừ:
+//   - Dashboard (trang tổng quan số liệu)
+//   - Quản lý tài khoản (/users)
+//   - Chi phí (/expenses)
+//   - Cài đặt hệ thống (/setting)
+//   - Xóa/tạo các danh mục quan trọng (xử lý trong từng trang)
+// =============================================================
 const NAV_ITEMS = [
-  { title: "Dashboard", path: "/", icon: <FaHome />, group: "main" },
-  { title: "Hợp đồng", path: "/contracts", icon: <FaFileContract />, group: "core" },
-  { title: "Người thuê", path: "/profiles", icon: <FaUsers />, group: "core" },
-  { title: "Quản lý Phòng", path: "/rooms/1", icon: <FaBed />, group: "core" },
-  { title: "Quản lý xe", path: "/vehicles", icon: <FaMotorcycle />, group: "core" },
-  { title: "Hóa đơn", path: "/invoice", icon: <FaFileInvoiceDollar />, group: "finance" },
-  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator />, group: "finance" },
-  { title: "Chi phí", path: "/expenses", icon: <FaMoneyBillWave />, group: "finance" },
-  { title: "Quản lý Dịch vụ", path: "/services/1", icon: <FaServicestack />, group: "service" },
-  { title: "Quản lý Tiện ích", path: "/amenities/1", icon: <FaWifi />, group: "service" },
-  { title: "Báo hỏng", path: "/maintenance", icon: <FaWrench />, group: "operation" },
-  { title: "Quản lý Bài đăng", path: "/posts", icon: <FaRegNewspaper />, group: "operation" },
-    { title: "Quản lý tin tức", path: "/news-posts", icon: <FaRegNewspaper />, group: "operation" },
-  { title: "Chi nhánh", path: "/branches/1", icon: <FaBuilding />, group: "system" },
-  { title: "Tài khoản", path: "/users", icon: <FaUserCog />, group: "system" },
-  { title: "Cài đặt", path: "/setting", icon: <FaCogs />, group: "settings" },
-  { title: "Thông báo", path: "/notifications", icon: <FaBell />, group: "settings" },
-  { title: "Bãi xe", path: "/parks", icon: <FaUserCog />, group: "security" },
-    { title: "Camera", path: "/camera", icon: <FaCamera />, group: "security" },
+  // Tổng quan (Dashboard - chỉ ADMIN & TENANT)
+  { title: "Dashboard", path: "/", icon: <FaHome />, group: "main", roles: ["ADMIN", "TENANT"] },
 
+  // ─── Quản lý chính ──────────────────────────────────────────
+  { title: "Hợp đồng",    path: "/contracts",    icon: <FaFileContract />,     group: "core", roles: ["ADMIN", "STAFF"] },
+  { title: "Người thuê",  path: "/profiles",     icon: <FaUsers />,            group: "core", roles: ["ADMIN", "STAFF"] },
+  { title: "Quản lý Phòng", path: "/rooms/1",   icon: <FaBed />,              group: "core", roles: ["ADMIN", "STAFF"] },
+  { title: "Quản lý xe",  path: "/vehicles",     icon: <FaMotorcycle />,       group: "core", roles: ["ADMIN", "STAFF"] },
+
+  // ─── Tài chính ──────────────────────────────────────────────
+  { title: "Hóa đơn",      path: "/invoice",       icon: <FaFileInvoiceDollar />, group: "finance", roles: ["ADMIN", "STAFF"] },
+  { title: "Ghi điện nước", path: "/meter-reading", icon: <FaCalculator />,       group: "finance", roles: ["ADMIN", "STAFF"] },
+  { title: "Chi phí",       path: "/expenses",      icon: <FaMoneyBillWave />,     group: "finance", roles: ["ADMIN", "STAFF"] },
+
+  // ─── Dịch vụ & Tiện ích ─────────────────────────────────────
+  { title: "Dịch vụ",     path: "/services/1",   icon: <FaServicestack />, group: "service", roles: ["ADMIN", "STAFF"] },
+  { title: "Tiện ích",    path: "/amenities/1",  icon: <FaWifi />,         group: "service", roles: ["ADMIN", "STAFF"] },
+
+  // ─── Vận hành ───────────────────────────────────────────────
+  { title: "Báo hỏng",        path: "/maintenance", icon: <FaWrench />,        group: "operation", roles: ["ADMIN", "STAFF", "TENANT"] },
+  { title: "Bài đăng",        path: "/posts",        icon: <FaRegNewspaper />,  group: "operation", roles: ["ADMIN", "STAFF"] },
+  { title: "Tin tức",         path: "/news-posts",   icon: <FaRegNewspaper />,  group: "operation", roles: ["ADMIN", "STAFF"] },
+
+  // ─── Hệ thống (Admin only) ──────────────────────────────────
+  { title: "Chi nhánh",   path: "/branches/1",   icon: <FaBuilding />,     group: "system", roles: ["ADMIN", "STAFF"] },
+  { title: "Tài khoản",   path: "/users",        icon: <FaUserCog />,      group: "system", roles: ["ADMIN"] },
+  { title: "Cài đặt",     path: "/setting",      icon: <FaCogs />,         group: "system", roles: ["ADMIN", "STAFF"] },
+  { title: "Thông báo",   path: "/notifications",icon: <FaBell />,         group: "system", roles: ["ADMIN", "STAFF", "TENANT"] },
+
+  // ─── An ninh bãi xe ─────────────────────────────────────────
+  { title: "Bãi xe",  path: "/parks",  icon: <FaMotorcycle />, group: "security", roles: ["ADMIN", "STAFF"] },
+  { title: "Camera",  path: "/camera", icon: <FaCamera />,     group: "security", roles: ["ADMIN", "STAFF"] },
 ];
 
 const GROUP_CONFIG = {
-  main:      { label: "Tổng quan",      icon: <FaChartLine size={14} />,     color: "#60a5fa" },
-  core:      { label: "Quản lý chính",  icon: <FaClipboardList size={14} />, color: "#34d399" },
-  finance:   { label: "Tài chính",      icon: <FaMoneyBillWave size={14} />, color: "#fbbf24" },
-  service:   { label: "Dịch vụ",        icon: <FaBoxes size={14} />,         color: "#a78bfa" },
-  operation: { label: "Vận hành",       icon: <FaWrench size={14} />,        color: "#fb923c" },
-  system:    { label: "Hệ thống",       icon: <FaBuilding size={14} />,      color: "#94a3b8" },
-  security:    { label: "An ninh",       icon: <FaBuilding size={14} />,      color: "#94a3b8" },
-  settings:  { label: "Cài đặt",        icon: <FaCogs size={14} />,          color: "#94a3b8" },
+  main:      { label: "Tổng quan",     icon: <FaChartLine size={14} />,     color: "#60a5fa" },
+  core:      { label: "Quản lý chính", icon: <FaClipboardList size={14} />, color: "#34d399" },
+  finance:   { label: "Tài chính",     icon: <FaMoneyBillWave size={14} />, color: "#fbbf24" },
+  service:   { label: "Dịch vụ",       icon: <FaBoxes size={14} />,         color: "#a78bfa" },
+  operation: { label: "Vận hành",      icon: <FaWrench size={14} />,        color: "#fb923c" },
+  system:    { label: "Hệ thống",      icon: <FaBuilding size={14} />,      color: "#94a3b8" },
+  security:  { label: "An ninh",       icon: <FaCamera size={14} />,        color: "#f87171" },
+  settings:  { label: "Cài đặt",       icon: <FaCogs size={14} />,          color: "#94a3b8" },
 };
 
-const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings","security"];
+const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings", "security"];
 
 const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { user } = useAuth();
+  const userRole = user?.role || "TENANT";
+
+  // Lọc menu theo role
+  const filteredNavItems = NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole));
 
   const getInitialOpen = () => {
-    const activeItem = NAV_ITEMS.find(i => i.path === location.pathname);
-    return activeItem ? { [activeItem.group]: true } : { main: true };
+    const activeItem = filteredNavItems.find(i => i.path === location.pathname);
+    return activeItem ? { [activeItem.group]: true } : { main: true, core: true };
   };
   const [openGroups, setOpenGroups] = useState(getInitialOpen);
 
@@ -73,7 +101,7 @@ const Sidebar = ({ isCollapsed, showMobile, toggleMobile }) => {
   };
 
   const groupedItems = {};
-  NAV_ITEMS.forEach((item) => {
+  filteredNavItems.forEach((item) => {
     if (!groupedItems[item.group]) groupedItems[item.group] = [];
     groupedItems[item.group].push(item);
   });

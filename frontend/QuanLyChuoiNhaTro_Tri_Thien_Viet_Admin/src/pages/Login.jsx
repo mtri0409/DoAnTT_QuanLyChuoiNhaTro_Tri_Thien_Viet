@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaLock, FaSignInAlt } from 'react-icons/fa';
 // Giả sử bạn để axiosInstance trong file api.js hoặc tương đương
 import authApi from '../api/apiUser'; 
@@ -7,10 +7,15 @@ import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth(); 
   const [form, setForm] = useState({ userName: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Phân tích URL Query để phát hiện phiên làm việc hết hạn
+  const queryParams = new URLSearchParams(location.search);
+  const isExpired = queryParams.get('expired') === 'true';
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,6 +66,12 @@ const Login = () => {
         {error && (
           <div className="alert alert-danger py-2 small text-center" role="alert">
             {error}
+          </div>
+        )}
+
+        {isExpired && !error && (
+          <div className="alert alert-warning py-2 small text-center" role="alert">
+            Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!
           </div>
         )}
 
