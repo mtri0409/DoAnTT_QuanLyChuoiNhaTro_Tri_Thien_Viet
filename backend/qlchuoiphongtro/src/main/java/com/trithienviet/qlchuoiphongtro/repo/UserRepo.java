@@ -40,9 +40,9 @@ public interface UserRepo extends JpaRepository<User, Long> {
             "(:keyword IS NULL OR LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
 
-    Page<User> findByIsActiceTrue(Pageable pageable);
+    Page<User> findByActiveTrue(Pageable pageable);
 
-    Page<User> findByIsActiceFalse(Pageable pageable);
+    Page<User> findByActiveFalse(Pageable pageable);
 
     @Query("SELECT u FROM User u " +
             "JOIN u.profile p " +
@@ -51,6 +51,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
             "JOIN c.room r " +
             "JOIN r.floor f " +
             "WHERE f.branch.branchId = :branchId " +
-            "AND u.isActice = true ") // Chỉ lấy những user đang hoạt động
+            "AND u.active = true ") // Chỉ lấy những user đang hoạt động
     List<User> findAllByBranchId(@Param("branchId") Integer BranchId);
 }

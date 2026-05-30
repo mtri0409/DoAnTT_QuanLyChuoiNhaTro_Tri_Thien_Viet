@@ -22,12 +22,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -45,7 +45,7 @@ public class User {
     @Enumerated(EnumType.STRING) 
     private UserRole role;
 
-    private Boolean isActice = true;
+    private Boolean active = true;
     
     @OneToOne 
     @JoinColumn(name="profile_id", nullable = true,unique = true)

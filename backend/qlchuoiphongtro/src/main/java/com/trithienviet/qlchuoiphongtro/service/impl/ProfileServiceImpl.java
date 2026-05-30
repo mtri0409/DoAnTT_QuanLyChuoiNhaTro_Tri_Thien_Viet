@@ -145,7 +145,7 @@ public class ProfileServiceImpl implements ProfileService {
         }
         User user = profile.getUser();
         if (user != null) {
-            user.setIsActice(false);
+            user.setActive(false);
             userRepo.save(user);
         }
 
@@ -420,7 +420,7 @@ public class ProfileServiceImpl implements ProfileService {
         }
         User user = profile.getUser();
         if (user != null) {
-            user.setIsActice(true); 
+            user.setActive(true); 
             userRepo.save(user);
         }
 

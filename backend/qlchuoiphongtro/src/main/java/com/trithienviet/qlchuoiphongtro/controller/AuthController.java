@@ -58,7 +58,7 @@ public class AuthController {
         User user = userRepo.findByUserName(credentials.getUserName())
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
-        if (user.getIsActice() != null && !user.getIsActice()) {
+        if (user.getActive() != null && !user.getActive()) {
             throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
         }
         // Generate JWT

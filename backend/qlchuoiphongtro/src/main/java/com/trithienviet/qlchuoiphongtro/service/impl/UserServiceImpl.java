@@ -28,7 +28,6 @@ import org.springframework.data.domain.Pageable;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
 
-import java.lang.foreign.Linker.Option;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -117,7 +116,7 @@ public class UserServiceImpl implements UserService{
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<User> userpage = userRepo.findByIsActiceTrue(pageDetails);
+        Page<User> userpage = userRepo.findByActiveTrue(pageDetails);
 
         List<User> users = userpage.getContent();
         List<UserDTO> userDTOs = users.stream()
@@ -142,7 +141,7 @@ public class UserServiceImpl implements UserService{
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<User> userpage = userRepo.findByIsActiceFalse(pageDetails);
+        Page<User> userpage = userRepo.findByActiveFalse(pageDetails);
 
         List<User> users = userpage.getContent();
         List<UserDTO> userDTOs = users.stream()
@@ -256,10 +255,10 @@ public class UserServiceImpl implements UserService{
     public String changeStatus(Long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
-        user.setIsActice(!user.getIsActice());
+        user.setActive(!user.getActive());
         userRepo.save(user);
         
-        return user.getIsActice() ? "Đã kích hoạt" : "Đã khóa";
+        return user.getActive() ? "Đã kích hoạt" : "Đã khóa";
     }
     
    @Override
