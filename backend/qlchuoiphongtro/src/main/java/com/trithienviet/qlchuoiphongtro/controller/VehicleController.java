@@ -1,6 +1,5 @@
 package com.trithienviet.qlchuoiphongtro.controller;
 
-import java.net.http.HttpHeaders;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
-import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleLoadDTO;
 import com.trithienviet.qlchuoiphongtro.service.VehicleService;

@@ -13,8 +13,7 @@ public class AppConstants {
     public static final String SORT_DIR = "asc";
     public static final Long ADMIN_ID = 101L;
     public static final Long USER_ID = 102L;
-    public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60; // 5 giờ tính bằng giây
-
+    public static final long JWT_TOKEN_VALIDITY = 10 * 24 * 60 * 60; // 10 ngày tính bằng giây
     public static final String[] PUBLIC_URLS = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -44,7 +43,7 @@ public class AppConstants {
     };
     public static final String[] USER_URLS = { "/api/user/**" };
 
-    // public static final String[] USER_URLS = { "/api/public/**" };
+    // public static final String[] USER_PUBLIC_URLS = { "/api/public/**" };
 
     public static final String[] ADMIN_URLS = { "/api/admin/**" };
 

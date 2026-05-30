@@ -42,53 +42,31 @@ public class ParkingLogController {
 
     @PostMapping("/ai/receive-plate")
     public ResponseEntity<String> receivePlateFromAI(@RequestBody PlatePayload payload) {
+        log.info("📥 Nhận dữ liệu từ AI: trackId={}, plate={}",
+                payload.getTrackId(), payload.getBestPlate());
 
-        System.out.println("📥 Nhận dữ liệu từ AI: trackId=" + payload.getTrackId() + ", plate="
-                + payload.getBestPlate() + ", timestamp=" + System.currentTimeMillis());
-        System.out.println("📦 Payload đầy đủ: " + payload);
+        // Tiến hành lưu xuống Database thông qua Service
+        ParkingLogDTO created = parkingLogService.createParking(payload);
 
-        // VALIDATE
-        if (payload.getBestPlate() == null || payload.getBestPlate().isBlank()) {
-            System.out.println("❌ Biển số trống/null. trackId=" + payload.getTrackId() + ", payload=" + payload);
-            return ResponseEntity.badRequest().body("Biển số không hợp lệ");
-        }
-
-        // SAVE DB
-        ParkingLogDTO created;
-        try {
-            System.out
-                    .println("💾 Đang lưu DB... trackId=" + payload.getTrackId() + ", plate=" + payload.getBestPlate());
-            created = parkingLogService.createParking(payload);
-            System.out.println("✅ Lưu DB xong. logId=" + (created != null ? created.getLogId() : "null") + ", plate="
-                    + payload.getBestPlate());
-        } catch (Exception e) {
-            System.out.println("💥 Exception khi lưu DB: trackId=" + payload.getTrackId() + ", plate="
-                    + payload.getBestPlate() + ", error=" + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Lỗi server khi lưu: " + e.getMessage());
-        }
-
-        // BROADCAST
+        // ========== BROADCAST QUA WEBSOCKET ==========
         if (created != null) {
-            try {
-                System.out.println("📡 Broadcasting /topic/plates: logId=" + created.getLogId());
-                messagingTemplate.convertAndSend("/topic/plates", created);
-                System.out.println("✅ Broadcast thành công: logId=" + created.getLogId());
-            } catch (Exception e) {
-                System.out.println("💥 Broadcast lỗi: logId=" + created.getLogId() + ", error=" + e.getMessage());
-                e.printStackTrace();
-            }
-            return ResponseEntity.ok("Đã lưu parking log: " + created.getLogId());
+            log.info("✅ Đã lưu parking log với ID: {}", created.getLogId());
+
+            // BỔ SUNG CODE BẮN SOCKET THÀNH CÔNG Ở ĐÂY 👇
+            // Bạn có thể gửi 'created' (Dữ liệu đã lưu thành công) hoặc 'payload' (dữ liệu
+            // gốc AI gửi)
+            messagingTemplate.convertAndSend("/topic/plates", created);
+            log.info("📡 Đã broadcast dữ liệu thành công qua WebSocket: /topic/plates");
+            // 👆 KẾT THÚC BỔ SUNG
+
+            return ResponseEntity.ok("Đã lưu parking log thành công!");
         } else {
-            System.out.println(
-                    "⚠️ createParking trả null. trackId=" + payload.getTrackId() + ", plate=" + payload.getBestPlate());
-            try {
-                messagingTemplate.convertAndSend("/topic/plates_errors", payload);
-                System.out.println("📡 Broadcast lỗi /topic/plates_errors: trackId=" + payload.getTrackId());
-            } catch (Exception e) {
-                System.out.println("💥 Broadcast lỗi thất bại: " + e.getMessage());
-                e.printStackTrace();
-            }
+            log.warn("❌ Không thể lưu do biển số không hợp lệ");
+
+            // Broadcast lỗi qua kênh /topic/plates_errors (Chỗ này bạn làm đúng rồi)
+            messagingTemplate.convertAndSend("/topic/plates_errors", payload);
+            log.info("📡 Đã broadcast lỗi qua WebSocket: /topic/plates_errors");
+
             return ResponseEntity.badRequest().body("Không thể lưu do biển số không hợp lệ");
         }
     }
