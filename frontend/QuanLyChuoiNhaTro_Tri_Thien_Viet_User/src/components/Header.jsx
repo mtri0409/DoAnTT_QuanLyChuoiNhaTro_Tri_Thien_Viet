@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import userService from "../services/userService";
+import { imgURL } from "../services/userConfig";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,17 +36,17 @@ export default function Header() {
 
   const getImage = (room) => {
     if (!room.roomMedia?.length) {
-      return "http://localhost:8080/images/default.jpg";
+      return `${imgURL}/images/default.jpg`;
     }
 
     const valid = room.roomMedia.find(
       (m) => m.url && !m.url.includes("storage.troapp.vn")
     );
 
-    if (!valid) return "http://localhost:8080/images/default.jpg";
+    if (!valid) return `${imgURL}/images/default.jpg`;
 
     if (valid.url.startsWith("/images")) {
-      return `http://localhost:8080${valid.url}`;
+      return `${imgURL}${valid.url}`;
     }
 
     return valid.url;

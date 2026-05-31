@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.*;
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ServiveDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.ServiceService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class ServiceController {
 
@@ -22,7 +23,7 @@ public class ServiceController {
     private ServiceService serviceService;
 
     @GetMapping("/admin/services")
-    public ResponseEntity<PageResponse<ServiveDTO>> getAllServices(
+    public ResponseEntity<ApiResponse<PageResponse<ServiveDTO>>> getAllServices(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = "serviceId", required = false) String sortBy,
@@ -35,33 +36,33 @@ public class ServiceController {
                 sortOrder
         );
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(response), HttpStatus.OK);
     }
 
     @GetMapping("/public/services/{id}")
-    public ResponseEntity<ServiveDTO> getServiceById(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ServiveDTO>> getServiceById(@PathVariable Integer id) {
         ServiveDTO dto = serviceService.getServiceById(id);
-        return new ResponseEntity<>(dto, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(dto), HttpStatus.OK);
     }
 
     @PostMapping("/admin/services")
-    public ResponseEntity<ServiveDTO> createService(@Valid @RequestBody ServiveDTO dto) {
+    public ResponseEntity<ApiResponse<ServiveDTO>> createService(@Valid @RequestBody ServiveDTO dto) {
         ServiveDTO saved = serviceService.createService(dto);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(saved), HttpStatus.CREATED);
     }
 
     @PutMapping("/admin/services/{id}")
-    public ResponseEntity<ServiveDTO> updateService(
+    public ResponseEntity<ApiResponse<ServiveDTO>> updateService(
             @PathVariable Integer id,
             @Valid @RequestBody ServiveDTO dto) {
 
         ServiveDTO updated = serviceService.updateService(id, dto);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(updated), HttpStatus.OK);
     }
 
     @DeleteMapping("/admin/services/{id}")
-    public ResponseEntity<String> deleteService(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<String>> deleteService(@PathVariable Integer id) {
         String message = serviceService.deleteService(id);
-        return new ResponseEntity<>(message, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(message), HttpStatus.OK);
     }
 }

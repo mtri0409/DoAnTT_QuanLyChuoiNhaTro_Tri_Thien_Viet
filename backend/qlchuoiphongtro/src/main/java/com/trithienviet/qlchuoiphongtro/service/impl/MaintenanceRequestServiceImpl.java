@@ -307,7 +307,7 @@ public class MaintenanceRequestServiceImpl implements MaintenanceRequestService 
                 .map(img -> MaintenanceRequestImageDTO.builder()
                         .imageId(img.getImageId())
                         .imageName(img.getImageName())
-                        .imageUrl(baseUrl + "/api/maintenance/images/" + img.getImageName())
+                        .imageUrl(baseUrl + "/api/v1/maintenance/images/" + img.getImageName())
                         .build())
                 .collect(Collectors.toList());
     }

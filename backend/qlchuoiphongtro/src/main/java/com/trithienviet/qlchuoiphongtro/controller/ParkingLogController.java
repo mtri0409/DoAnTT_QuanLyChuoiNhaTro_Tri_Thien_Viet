@@ -15,14 +15,14 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ParkingLogDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ParkingStatsResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.PlatePayload;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.ParkingLogService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import java.time.LocalTime;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class ParkingLogController {
@@ -31,17 +31,17 @@ public class ParkingLogController {
     private ParkingLogService parkingLogService;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate; // ✅ Thêm dòng này
+    private SimpMessagingTemplate messagingTemplate;
 
     // ==================== AI DETECTION ====================
 
     /**
      * Nhận dữ liệu từ AI Python (webhook)
-     * POST /api/ai/receive-plate
+     * POST /api/v1/ai/receive-plate
      */
 
     @PostMapping("/ai/receive-plate")
-    public ResponseEntity<String> receivePlateFromAI(@RequestBody PlatePayload payload) {
+    public ResponseEntity<ApiResponse<String>> receivePlateFromAI(@RequestBody PlatePayload payload) {
         log.info("📥 Nhận dữ liệu từ AI: trackId={}, plate={}",
                 payload.getTrackId(), payload.getBestPlate());
 
@@ -52,28 +52,24 @@ public class ParkingLogController {
         if (created != null) {
             log.info("✅ Đã lưu parking log với ID: {}", created.getLogId());
 
-            // BỔ SUNG CODE BẮN SOCKET THÀNH CÔNG Ở ĐÂY 👇
-            // Bạn có thể gửi 'created' (Dữ liệu đã lưu thành công) hoặc 'payload' (dữ liệu
-            // gốc AI gửi)
             messagingTemplate.convertAndSend("/topic/plates", created);
             log.info("📡 Đã broadcast dữ liệu thành công qua WebSocket: /topic/plates");
-            // 👆 KẾT THÚC BỔ SUNG
 
-            return ResponseEntity.ok("Đã lưu parking log thành công!");
+            return ResponseEntity.ok(ApiResponse.success("Đã lưu parking log thành công!"));
         } else {
             log.warn("❌ Không thể lưu do biển số không hợp lệ");
 
-            // Broadcast lỗi qua kênh /topic/plates_errors (Chỗ này bạn làm đúng rồi)
+            // Broadcast lỗi qua kênh /topic/plates_errors
             messagingTemplate.convertAndSend("/topic/plates_errors", payload);
             log.info("📡 Đã broadcast lỗi qua WebSocket: /topic/plates_errors");
 
-            return ResponseEntity.badRequest().body("Không thể lưu do biển số không hợp lệ");
+            return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_PLATE", "Không thể lưu do biển số không hợp lệ", 400));
         }
     }
     // ==================== GET ====================
 
     @GetMapping("/parking-logs")
-    public ResponseEntity<PageResponse<ParkingLogDTO>> getAllParkingLogs(
+    public ResponseEntity<ApiResponse<PageResponse<ParkingLogDTO>>> getAllParkingLogs(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "detectedAt") String sortBy,
@@ -88,22 +84,22 @@ public class ParkingLogController {
         PageResponse<ParkingLogDTO> response = parkingLogService.getAllParkingLogs(
                 pageNumber, pageSize, sortBy, sortOrder, licensePlate, direction, isVerified, fromDate, toDate);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // ==================== DELETE ====================
 
     @DeleteMapping("/parking-logs/{logId}")
-    public ResponseEntity<String> deleteParkingLog(@PathVariable Long logId) {
+    public ResponseEntity<ApiResponse<String>> deleteParkingLog(@PathVariable Long logId) {
         String result = parkingLogService.deleteParkingLog(logId);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     // API 1: Bộ lọc tìm kiếm lịch sử xe theo ngày
     // URL test:
-    // /api/admin/parking-logs/filter?startDate=2026-05-24&endDate=2026-05-24
-    @GetMapping("/filter")
-    public ResponseEntity<PageResponse<ParkingLogDTO>> filterLogs(
+    // /api/v1/admin/parking-logs/filter?startDate=2026-05-24&endDate=2026-05-24
+    @GetMapping("/admin/parking-logs/filter")
+    public ResponseEntity<ApiResponse<PageResponse<ParkingLogDTO>>> filterLogs(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") Integer pageNumber,
@@ -111,16 +107,16 @@ public class ParkingLogController {
             @RequestParam(defaultValue = "detectedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder) {
 
-        return ResponseEntity.ok(parkingLogService.filterParkingLogsByDate(
-                startDate, endDate, pageNumber, pageSize, sortBy, sortOrder));
+        return ResponseEntity.ok(ApiResponse.success(parkingLogService.filterParkingLogsByDate(
+                startDate, endDate, pageNumber, pageSize, sortBy, sortOrder)));
     }
 
-    // URL test: /api/admin/parking-logs/stats?startDate=2026-05-24
+    // URL test: /api/v1/parking-logs/stats?startDate=2026-05-24
     @GetMapping("/parking-logs/stats")
-    public ResponseEntity<ParkingStatsResponse> getStats(
+    public ResponseEntity<ApiResponse<ParkingStatsResponse>> getStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-        return ResponseEntity.ok(parkingLogService.getParkingStats(startDate, endDate));
+        return ResponseEntity.ok(ApiResponse.success(parkingLogService.getParkingStats(startDate, endDate)));
     }
 }

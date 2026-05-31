@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trithienviet.qlchuoiphongtro.payloads.PlatePayload;
 
 @RestController
-@RequestMapping("/api/ai")
+@RequestMapping("/api/v1/ai")
 @CrossOrigin(origins = "*")
 public class PlateController {
 

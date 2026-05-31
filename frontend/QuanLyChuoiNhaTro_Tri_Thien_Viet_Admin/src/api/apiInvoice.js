@@ -9,13 +9,13 @@ const apiInvoice = {
     }),
 
   autoGenerate: (month, year) =>
-    axiosInstance.post("/admin/invoices/auto-generate", null, {
+    axiosInstance.post("/admin/invoices/auto-generation", null, {
       params: { month, year },
     }),
 
   /** Tạo hóa đơn tiền cọc → status DRAFT */
   createDeposit: (contractId, depositId) =>
-    axiosInstance.post("/admin/invoices/deposit", null, {
+    axiosInstance.post("/admin/invoices/deposits", null, {
       params: { contractId, depositId },
     }),
 
@@ -62,19 +62,19 @@ const apiInvoice = {
   // ── WORKFLOW MONTHLY: DRAFT → PENDING → PAID ──────────────────────────────
 
   /** DRAFT → PENDING: tính lại total, set dueDate */
-  send: (invoiceId) => axiosInstance.put(`/admin/invoices/${invoiceId}/send`),
-  sendAll :() => axiosInstance.put(`/admin/invoices/send`),
+  send: (invoiceId) => axiosInstance.post(`/admin/invoices/${invoiceId}/dispatches`),
+  sendAll :() => axiosInstance.post(`/admin/invoices/dispatches`),
   /** PENDING → PAID (chỉ MONTHLY / REPAIR) */
   markPaid: (invoiceId) =>
-    axiosInstance.put(`/admin/invoices/${invoiceId}/mark-paid`),
+    axiosInstance.patch(`/admin/invoices/${invoiceId}/payment-status`),
 
   /** Hủy hóa đơn (không hủy được khi PAID / REFUNDED) */
   cancel: (invoiceId) =>
-    axiosInstance.put(`/admin/invoices/${invoiceId}/cancel`),
+    axiosInstance.post(`/admin/invoices/${invoiceId}/cancellations`),
 
   /** Tính lại totalAmount từ các InvoiceDetail */
   recalculate: (invoiceId) =>
-    axiosInstance.put(`/admin/invoices/${invoiceId}/recalculate`),
+    axiosInstance.post(`/admin/invoices/${invoiceId}/recalculations`),
 
   // ── WORKFLOW DEPOSIT ──────────────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ const apiInvoice = {
    * - paidAmount >= totalAmount → PAID
    */
   depositPayment: (invoiceId, amount) =>
-    axiosInstance.put(`/admin/invoices/${invoiceId}/deposit-payment`, null, {
+    axiosInstance.put(`/admin/invoices/${invoiceId}/deposit-payments`, null, {
       params: { amount },
     }),
 
@@ -93,7 +93,7 @@ const apiInvoice = {
    * @param {string} [note] lý do hoàn cọc
    */
   refund: (invoiceId, note) =>
-    axiosInstance.put(`/admin/invoices/${invoiceId}/refund`, null, {
+    axiosInstance.post(`/admin/invoices/${invoiceId}/refunds`, null, {
       params: { ...(note && { note }) },
     }),
 };

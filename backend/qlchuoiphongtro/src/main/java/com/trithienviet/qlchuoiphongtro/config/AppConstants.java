@@ -26,34 +26,51 @@ public class AppConstants {
     // ⚠️  NGUYÊN TẮC: Spring Security xử lý rule theo THỨ TỰ KHAI BÁO
     //     Rule nào match TRƯỚC sẽ thắng (first-match-wins).
     //
-    //     STAFF_URLS phải khai báo các /api/admin/xxx/** CỤ THỂ
-    //     và đặt TRƯỚC ADMIN_URLS (catch-all /api/admin/**) trong SecurityConfig.
+    //     STAFF_URLS phải khai báo các /api/v1/admin/xxx/** CỤ THỂ
+    //     và đặt TRƯỚC ADMIN_URLS (catch-all /api/v1/admin/**) trong SecurityConfig.
     // =========================================================
 
     /**
      * Nhóm 1: PUBLIC_URLS — Không cần xác thực.
+     *
+     * Tất cả endpoint dành cho vãng lai (Web User) đều dùng prefix /api/v1/public/
+     * nên chỉ cần 1 rule duy nhất: /api/v1/public/**
      */
     public static final String[] PUBLIC_URLS = {
+            // ── Swagger / API Docs ─────────────────────────────────────────
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/api/register/**",
-            "/api/auth/login",
-            "/api/auth/create-account/**",
-            "/api/public/**",
+
+            // ── Xác thực ──────────────────────────────────────────────────
+            "/api/v1/register/**",
+            "/api/v1/auth/login",
+            "/api/v1/auth/create-account/**",
+
+            // ── Static / Misc ──────────────────────────────────────────────
             "/images/**",
-            "/api/maintenance/images/**",
-            "/api/admin/evidence/**",       // Ảnh minh chứng chi phí (public display)
-            "/error"
+            "/api/v1/maintenance/images/**",
+            "/api/v1/admin/evidence/**",       // Ảnh minh chứng chi phí (public display)
+            "/error",
+
+            // ── Tất cả endpoint public của Web User ───────────────────────
+            // Bao gồm: /api/v1/public/rooms/**, /api/v1/public/branches/**,
+            // /api/v1/public/amenities/**, /api/v1/public/floors/**,
+            // /api/v1/public/room-medias/**, /api/v1/public/profiles/**,
+            // /api/v1/public/roommate-posts/**, /api/v1/public/posts/**, v.v.
+            "/api/v1/public/**",
+
+            // ── Gửi thông báo liên hệ (Web User contact form) ────────────
+            "/api/v1/notification/send-manual",
     };
 
     /**
      * Nhóm 2: USER_URLS — Dành cho TENANT (khách thuê).
      */
     public static final String[] USER_URLS = {
-            "/api/user/**",
-            "/api/tenant/maintenance/**",
-            "/api/tenant/contracts/**",
-            "/api/profiles/my-profile/**"
+            "/api/v1/user/**",
+            "/api/v1/tenant/maintenance/**",
+            "/api/v1/tenant/contracts/**",
+            "/api/v1/profiles/my-profile/**"
     };
 
     /**
@@ -61,113 +78,105 @@ public class AppConstants {
      */
     public static final String[] GUARD_URLS = {
             "/ws-parking/**",
-            "/api/vehicles/**",
-            "/api/guard/**"
+            "/api/v1/vehicles/**",
+            "/api/v1/guard/**"
     };
 
     /**
      * Nhóm 4: STAFF_URLS — Tất cả endpoint STAFF được truy cập.
      *
-     * ⚠️  KEY FIX: Frontend gọi /api/admin/contracts, /api/admin/vehicles, v.v.
-     *     Nếu chỉ khai báo /api/contracts/** thì KHÔNG match vì path thực là /api/admin/contracts.
-     *     → Phải liệt kê CỤ THỂ các /api/admin/xxx/** mà STAFF cần.
-     *     → Trong SecurityConfig, rule STAFF_URLS đặt TRƯỚC rule ADMIN_URLS.
+     * ⚠️  Tất cả endpoint có cần auth đều dùng prefix /api/v1/admin/
+     *     → STAFF_URLS liệt kê cụ thể các /api/v1/admin/xxx/** STAFF được phép
+     *     → ADMIN_URLS là catch-all /api/v1/admin/** còn lại (chỉ ADMIN)
      *
      * STAFF CÓ QUYỀN:
      *   Hợp đồng, Phòng, Chi nhánh, Tiện ích, Tầng, Room-Media,
-     *   Hồ sơ (xem/sửa, KHÔNG tạo/xóa), Xe cộ, Ghi điện nước,
-     *   Hóa đơn (xem/thao tác), Dịch vụ, Bài đăng, Tin tức,
-     *   Bảo trì, Thông báo (xem), Bãi xe + Camera
-     *
-     * STAFF KHÔNG được:
-     *   /api/admin/users/**  (tài khoản),
-     *   /api/admin/expenses/** (chi phí),
-     *   /api/admin/settings/** (cài đặt),
-     *   /api/ai/**, /api/ocr/** (AI/OCR)
+     *   Hồ sơ (xem/sửa), Xe cộ, Ghi điện nước, Hóa đơn, Dịch vụ,
+     *   Bài đăng, Tin tức, Bảo trì, Thông báo, Bãi xe + Camera
      */
     public static final String[] STAFF_URLS = {
-            // ── Bãi xe (cũng có trong GUARD_URLS) ──────────────────────
+            // ── Bãi xe / Camera / Guard ──────────────────────────────────
             "/ws-parking/**",
-            "/api/vehicles/**",
-            "/api/guard/**",
+            "/api/v1/vehicles/**",
+            "/api/v1/guard/**",
 
             // ── Hợp đồng ─────────────────────────────────────────────────
-            "/api/admin/contracts/**",
+            "/api/v1/admin/contracts/**",
 
             // ── Xe cộ ────────────────────────────────────────────────────
-            "/api/admin/vehicles/**",
+            "/api/v1/admin/vehicles/**",
 
             // ── Phòng trọ ─────────────────────────────────────────────────
-            "/api/rooms/**",
-            "/api/admin/rooms/**",
+            "/api/v1/admin/rooms/**",
 
             // ── Chi nhánh ─────────────────────────────────────────────────
-            "/api/branches/**",
-            "/api/admin/branches/**",
+            "/api/v1/admin/branches/**",
 
             // ── Tiện ích ──────────────────────────────────────────────────
-            "/api/amenities/**",
-            "/api/admin/amenities/**",
+            "/api/v1/admin/amenities/**",
 
             // ── Tầng lầu ──────────────────────────────────────────────────
-            "/api/floors/**",
-            "/api/admin/floors/**",
+            "/api/v1/admin/floors/**",
 
             // ── Room Media ────────────────────────────────────────────────
-            "/api/room-medias/**",
+            "/api/v1/admin/room-medias/**",
 
             // ── Hồ sơ người thuê ─────────────────────────────────────────
-            "/api/admin/profiles/**",
-            "/api/admin/profile/**",
+            "/api/v1/admin/profiles/**",
+            "/api/v1/admin/profile/**",
+
+            // ── Quản lý người dùng (Users) ─────────────────────────────────
+            "/api/v1/admin/users/**",
+            "/api/v1/admin/user/**",
 
             // ── Ghi điện nước ─────────────────────────────────────────────
-            "/api/admin/meter-readings/**",
+            "/api/v1/admin/meter-readings/**",
+            "/api/v1/admin/ocr/**",
 
             // ── Hóa đơn ───────────────────────────────────────────────────
-            "/api/admin/invoices/**",
+            "/api/v1/admin/invoices/**",
 
             // ── Dịch vụ ───────────────────────────────────────────────────
-            "/api/admin/services/**",
+            "/api/v1/admin/services/**",
 
             // ── Bài đăng tìm phòng (Roommate Posts) ──────────────────────
-            "/api/admin/roommate-posts/**",
+            "/api/v1/admin/roommate-posts/**",
 
             // ── Tin tức / Bài đăng hệ thống ──────────────────────────────
-            "/api/admin/posts/**",
+            "/api/v1/admin/posts/**",
 
-            // ── Danh mục bài đăng ──────────────────────────────────────────
-            "/api/admin/post-categories/**",
+            // ── Danh mục bài đăng ─────────────────────────────────────────
+            "/api/v1/admin/post-categories/**",
 
             // ── Bảo trì / Báo hỏng ────────────────────────────────────────
-            "/api/admin/maintenance/**",
+            "/api/v1/admin/maintenance/**",
 
-            // ── Thông báo (chỉ xem) ───────────────────────────────────────
-            "/api/admin/notification/**",
+            // ── Thông báo ─────────────────────────────────────────────────
+            "/api/v1/admin/notification/**",
 
             // ── Chi phí ───────────────────────────────────────────────────
-            "/api/admin/expenses/**",
+            "/api/v1/admin/expenses/**",
 
             // ── Cài đặt hệ thống ──────────────────────────────────────────
-            "/api/admin/settings/**",
-            "/api/admin/system/**",
+            "/api/v1/admin/settings/**",
+            "/api/v1/admin/system/**",
 
-            // ── Soạn gửi thông báo thủ công ──────────────────────────────
-            "/api/notification/send-manual",
+            // ── Gửi thông báo thủ công ────────────────────────────────────
+            "/api/v1/notification/send-manual",
     };
 
     /**
-     * Nhóm 5: ADMIN_URLS — Quyền hạn tối cao.
-     * Rule catch-all /api/admin/** phải đặt SAU STAFF_URLS trong SecurityConfig.
-     * Các sub-path STAFF được phép đã được xử lý trước bởi STAFF_URLS.
+     * Nhóm 5: ADMIN_URLS — Quyền hạn tối cao (ADMIN only).
+     * Catch-all /api/v1/admin/** bắt mọi path chưa được khai báo trong STAFF_URLS.
+     * Đặt SAU STAFF_URLS trong SecurityConfig (first-match-wins).
      *
-     * ADMIN ONLY (STAFF bị chặn):
-     *   /api/admin/users/**     — Quản lý tài khoản
-     *   + bất kỳ /api/admin/** nào chưa được khai báo trong STAFF_URLS
+     * ADMIN ONLY: /api/v1/admin/users/**, /api/v1/ai/**, /api/v1/ocr/**
      */
     public static final String[] ADMIN_URLS = {
-            "/api/admin/**",                // catch-all (sau khi STAFF exceptions đã match ở trên)
-            "/api/ai/**",
-            "/api/ocr/**"
+            "/api/v1/admin/**",    // catch-all (STAFF exceptions đã match ở bước 4)
+            "/api/v1/ai/**",
+            "/api/v1/ocr/**",
     };
 
 }
+

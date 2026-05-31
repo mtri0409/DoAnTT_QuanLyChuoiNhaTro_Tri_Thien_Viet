@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.InvoiceDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.InvoiceService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class InvoiceController {
 
@@ -26,58 +27,58 @@ public class InvoiceController {
     private InvoiceService invoiceService;
 
     @PostMapping("/admin/invoices/manual")
-    public ResponseEntity<InvoiceDTO> createManual(
+    public ResponseEntity<ApiResponse<InvoiceDTO>> createManual(
             @RequestParam Long contractId,
             @RequestParam Integer month,
             @RequestParam Integer year) {
         return new ResponseEntity<>(
-                invoiceService.createManualInvoice(contractId, month, year),
+                ApiResponse.success(invoiceService.createManualInvoice(contractId, month, year)),
                 HttpStatus.CREATED);
     }
 
-    @PostMapping("/admin/invoices/auto-generate")
-    public ResponseEntity<List<InvoiceDTO>> autoGenerate(
+    @PostMapping("/admin/invoices/auto-generation")
+    public ResponseEntity<ApiResponse<List<InvoiceDTO>>> autoGenerate(
             @RequestParam Integer month,
             @RequestParam Integer year) {
         return new ResponseEntity<>(
-                invoiceService.autoGenerateInvoices(month, year),
+                ApiResponse.success(invoiceService.autoGenerateInvoices(month, year)),
                 HttpStatus.CREATED);
     }
 
-    @PostMapping("/admin/invoices/deposit")
-    public ResponseEntity<InvoiceDTO> createDeposit(
+    @PostMapping("/admin/invoices/deposits")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> createDeposit(
             @RequestParam Long contractId,
             @RequestParam Long depositId) {
         return new ResponseEntity<>(
-                invoiceService.createDepositInvoice(contractId, depositId),
+                ApiResponse.success(invoiceService.createDepositInvoice(contractId, depositId)),
                 HttpStatus.CREATED);
     }
 
-    @PutMapping("/admin/invoices/{invoiceId}/deposit-payment")
-    public ResponseEntity<InvoiceDTO> depositPayment(
+    @PutMapping("/admin/invoices/{invoiceId}/deposit-payments")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> depositPayment(
             @PathVariable Long invoiceId,
             @RequestParam BigDecimal amount) {
         return new ResponseEntity<>(
-                invoiceService.recordDepositPayment(invoiceId, amount),
+                ApiResponse.success(invoiceService.recordDepositPayment(invoiceId, amount)),
                 HttpStatus.OK);
     }
 
-    @PutMapping("/admin/invoices/{invoiceId}/refund")
-    public ResponseEntity<InvoiceDTO> refund(
+    @PostMapping("/admin/invoices/{invoiceId}/refunds")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> refund(
             @PathVariable Long invoiceId,
             @RequestParam(required = false) String note) {
         return new ResponseEntity<>(
-                invoiceService.refundDeposit(invoiceId, note),
+                ApiResponse.success(invoiceService.refundDeposit(invoiceId, note)),
                 HttpStatus.OK);
     }
 
     @GetMapping("/admin/invoices/{invoiceId}")
-    public ResponseEntity<InvoiceDTO> getById(@PathVariable Long invoiceId) {
-        return new ResponseEntity<>(invoiceService.getInvoiceById(invoiceId), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<InvoiceDTO>> getById(@PathVariable Long invoiceId) {
+        return new ResponseEntity<>(ApiResponse.success(invoiceService.getInvoiceById(invoiceId)), HttpStatus.OK);
     }
 
     @GetMapping("/admin/invoices/contract/{contractId}")
-    public ResponseEntity<PageResponse<InvoiceDTO>> getByContract(
+    public ResponseEntity<ApiResponse<PageResponse<InvoiceDTO>>> getByContract(
             @PathVariable Long contractId,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -85,13 +86,13 @@ public class InvoiceController {
             @RequestParam(defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
         return new ResponseEntity<>(
-                invoiceService.getInvoicesByContract(contractId,
-                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder),
+                ApiResponse.success(invoiceService.getInvoicesByContract(contractId,
+                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)),
                 HttpStatus.OK);
     }
 
     @GetMapping("/admin/invoices")
-    public ResponseEntity<PageResponse<InvoiceDTO>> filter(
+    public ResponseEntity<ApiResponse<PageResponse<InvoiceDTO>>> filter(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Integer month,
@@ -104,43 +105,42 @@ public class InvoiceController {
             @RequestParam(defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder) {
 
         return new ResponseEntity<>(
-                invoiceService.filterInvoices(status, type, month, year, contractId, branchId,
-                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder),
+                ApiResponse.success(invoiceService.filterInvoices(status, type, month, year, contractId, branchId,
+                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)),
                 HttpStatus.OK);
     }
 
-    @PutMapping("/admin/invoices/{invoiceId}/send")
-    public ResponseEntity<InvoiceDTO> send(@PathVariable Long invoiceId) {
-        return new ResponseEntity<>(invoiceService.sendInvoice(invoiceId), HttpStatus.OK);
+    @PostMapping("/admin/invoices/{invoiceId}/dispatches")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> send(@PathVariable Long invoiceId) {
+        return new ResponseEntity<>(ApiResponse.success(invoiceService.sendInvoice(invoiceId)), HttpStatus.OK);
     }
-      @PutMapping("/admin/invoices/send")
-  @PostMapping("/send-all")
-    public ResponseEntity<List<InvoiceDTO>> sendAll(
+
+    @PostMapping("/admin/invoices/dispatches")
+    public ResponseEntity<ApiResponse<List<InvoiceDTO>>> sendAll(
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
-        return ResponseEntity.ok(invoiceService.sendAllInvoices(month, year));
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.sendAllInvoices(month, year)));
     }
     
-    
-    @PutMapping("/admin/invoices/{invoiceId}/mark-paid")
-    public ResponseEntity<InvoiceDTO> markPaid(@PathVariable Long invoiceId) {
-        return new ResponseEntity<>(invoiceService.markAsPaid(invoiceId), HttpStatus.OK);
+    @PatchMapping("/admin/invoices/{invoiceId}/payment-status")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> markPaid(@PathVariable Long invoiceId) {
+        return new ResponseEntity<>(ApiResponse.success(invoiceService.markAsPaid(invoiceId)), HttpStatus.OK);
     }
 
-    @PutMapping("/admin/invoices/{invoiceId}/cancel")
-    public ResponseEntity<String> cancel(@PathVariable Long invoiceId) {
+    @PostMapping("/admin/invoices/{invoiceId}/cancellations")
+    public ResponseEntity<ApiResponse<String>> cancel(@PathVariable Long invoiceId) {
         invoiceService.cancelInvoice(invoiceId);
-        return new ResponseEntity<>("Invoice cancelled successfully", HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success("Invoice cancelled successfully"), HttpStatus.OK);
     }
 
-    @PutMapping("/admin/invoices/{invoiceId}/recalculate")
-    public ResponseEntity<InvoiceDTO> recalculate(@PathVariable Long invoiceId) {
-        return new ResponseEntity<>(invoiceService.recalculate(invoiceId), HttpStatus.OK);
+    @PostMapping("/admin/invoices/{invoiceId}/recalculations")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> recalculate(@PathVariable Long invoiceId) {
+        return new ResponseEntity<>(ApiResponse.success(invoiceService.recalculate(invoiceId)), HttpStatus.OK);
     }
 
     // UserInvoiceController.java
     @GetMapping("/user/invoices/my")
-    public ResponseEntity<PageResponse<InvoiceDTO>> getMyInvoices(
+    public ResponseEntity<ApiResponse<PageResponse<InvoiceDTO>>> getMyInvoices(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String type,
@@ -152,22 +152,22 @@ public class InvoiceController {
             @RequestParam(defaultValue = "desc") String sortOrder) {
 
         return ResponseEntity.ok(
-                invoiceService.getInvoicesByUser(
+                ApiResponse.success(invoiceService.getInvoicesByUser(
                         userDetails.getUsername(), // hoặc userId từ JWT
                         status, type, month, year,
-                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
+                        Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
     }
 
     @GetMapping("/user/invoices/{invoiceId}")
-    public ResponseEntity<InvoiceDTO> getMyInvoiceById(
+    public ResponseEntity<ApiResponse<InvoiceDTO>> getMyInvoiceById(
             @PathVariable Long invoiceId,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(
-                invoiceService.getInvoiceByIdForUser(invoiceId, userDetails.getUsername()));
+                ApiResponse.success(invoiceService.getInvoiceByIdForUser(invoiceId, userDetails.getUsername())));
     }
 
-    @PutMapping("/user/invoices/{invoiceId}/confirm-vnpay")
-    public ResponseEntity<InvoiceDTO> confirmVNPay(
+    @PostMapping("/user/invoices/{invoiceId}/vnpay-confirmations")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> confirmVNPay(
             @PathVariable Long invoiceId,
             @RequestParam BigDecimal amount,
             @RequestParam String transactionCode,
@@ -177,6 +177,6 @@ public class InvoiceController {
         invoiceService.getInvoiceByIdForUser(invoiceId, userDetails.getUsername());
 
         return ResponseEntity.ok(
-                invoiceService.confirmVNPayPayment(invoiceId, amount, transactionCode));
+                ApiResponse.success(invoiceService.confirmVNPayPayment(invoiceId, amount, transactionCode)));
     }
 }

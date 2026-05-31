@@ -1,6 +1,7 @@
 import axiosInstance from "./axios";
 
-export const imgURL = 'http://localhost:8080'; // base URL để ghép với path ảnh
+import { imgURL } from "./config";
+export { imgURL };
 
 const apiRoomMedia = {
   createRoomMedia: (file, roomId, isThumbnail = false) => {

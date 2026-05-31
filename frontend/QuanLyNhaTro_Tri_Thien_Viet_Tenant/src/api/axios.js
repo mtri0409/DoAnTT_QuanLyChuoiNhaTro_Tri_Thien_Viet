@@ -29,7 +29,11 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
    
     (response) => {
-        return response.data; 
+        const resData = response.data;
+        if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+            return resData.data;
+        }
+        return resData; 
     },
     (error) => {
         console.log("LỖI PHẢN HỒI: ", error.response);

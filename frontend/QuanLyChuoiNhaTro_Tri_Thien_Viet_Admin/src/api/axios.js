@@ -39,7 +39,13 @@ axiosClient.interceptors.request.use(
 //    Frontend chỉ cần xử lý response 401/403 từ backend.
 // =========================================================
 axiosClient.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+        const resData = response.data;
+        if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+            return resData.data;
+        }
+        return resData;
+    },
     (error) => {
         // 401: Token hết hạn / không hợp lệ → logout
         if (error.response?.status === 401) {

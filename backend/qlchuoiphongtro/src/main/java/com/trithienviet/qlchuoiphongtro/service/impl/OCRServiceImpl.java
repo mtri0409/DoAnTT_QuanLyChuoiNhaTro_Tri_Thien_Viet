@@ -3,6 +3,7 @@ package com.trithienviet.qlchuoiphongtro.service.impl;
 import com.trithienviet.qlchuoiphongtro.service.OCRService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -21,8 +22,8 @@ public class OCRServiceImpl implements OCRService {
     @Autowired
     private RestTemplate restTemplate;
 
-    // Nên để config trong application.properties thay vì hardcode
-    private final String PYTHON_OCR_URL = "http://localhost:8000/api";
+    @Value("${app.ai-ocr-url:http://localhost:8000/api}")
+    private String pythonOcrUrl;
 
   @Override
     public String scanMeterImage(MultipartFile file) {
@@ -34,7 +35,7 @@ public class OCRServiceImpl implements OCRService {
             body.add("file", file.getResource());
 
             // Thêm tham số debug=true vào URL để Python trả về chi tiết các box tìm được
-            String urlWithDebug = PYTHON_OCR_URL + "/detect" + "?type=water_meter";
+            String urlWithDebug = pythonOcrUrl + "/detect" + "?type=water_meter";
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             // Gọi API

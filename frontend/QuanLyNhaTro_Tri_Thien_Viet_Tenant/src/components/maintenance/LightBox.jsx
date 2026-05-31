@@ -15,7 +15,7 @@ const NavBtn = ({ onClick, className, children }) => (
 
 const Lightbox = ({ images, startIndex, onClose }) => {
   const [idx, setIdx] = useState(startIndex);
-  const src = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+  const src = (img) => `${imgURL}/api/v1/maintenance/images/${img.imageName}`;
 
   useEffect(() => {
     const handleKeyDown = (e) => {

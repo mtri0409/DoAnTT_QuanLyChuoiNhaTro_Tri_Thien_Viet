@@ -97,7 +97,7 @@ const StatusBadge = ({ status }) => {
 /* ── Lightbox ── */
 const Lightbox = ({ images, startIndex, onClose }) => {
   const [idx, setIdx] = useState(startIndex);
-  const src = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+  const src = (img) => `${imgURL}/api/v1/maintenance/images/${img.imageName}`;
 
   useEffect(() => {
     const h = (e) => {
@@ -617,7 +617,7 @@ const MaintenanceDetail = () => {
     }
   };
 
-  const imgSrc = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+  const imgSrc = (img) => `${imgURL}/api/v1/maintenance/images/${img.imageName}`;
   const formatDate = (dt) =>
     dt
       ? new Date(dt).toLocaleString("vi-VN", {

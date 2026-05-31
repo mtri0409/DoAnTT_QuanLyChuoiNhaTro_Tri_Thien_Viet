@@ -28,6 +28,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiNewsPost from "../../api/apiNewsPost";
+import { imgURL } from "../../api/config";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ const isBanner = (type) => type === "BANNER";
 const buildImageUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `http://localhost:8080${url.startsWith("/") ? "" : "/"}${url}`;
+  return `${imgURL}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 const STATUS_CONFIG = {

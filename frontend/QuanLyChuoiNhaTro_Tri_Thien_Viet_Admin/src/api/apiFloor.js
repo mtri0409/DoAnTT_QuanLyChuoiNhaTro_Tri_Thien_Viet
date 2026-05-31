@@ -2,7 +2,7 @@ import axiosInstance from "./axios";
 
 const apiFloor = {
     getAllFloors: () => {
-        const url = `/floors`;
+        const url = `/admin/floors`;
         return axiosInstance.get(url);
     },
 
@@ -17,7 +17,7 @@ const apiFloor = {
     },
 
     updateFloor: (floorId, floorDTO) => {
-        const url = `/public/floors/${floorId}`;
+        const url = `/admin/floors/${floorId}`;
         return axiosInstance.put(url, floorDTO);
     },
 

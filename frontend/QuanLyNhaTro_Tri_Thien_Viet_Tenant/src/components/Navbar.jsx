@@ -6,6 +6,7 @@ import NavLinks from "./NavLinks";
 import { useAuth } from "../context/AuthContext";
 import { useSystemSetting } from "../context/SystemSettingContext"
 import apiNotification from "../api/apiNotification";
+import { imgURL } from "../api/config";
 
 /* ─── Navbar ────────────────────────────────────────────────── */
 const Navbar = () => {
@@ -38,7 +39,7 @@ const Navbar = () => {
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           {settings.logo ? (
             <img 
-              src={`http://localhost:8080/api/public/system/image/${settings.logo}`}
+              src={`${imgURL}/api/v1/public/system/image/${settings.logo}`}
               alt="Logo" 
               width={34}
               height={34}

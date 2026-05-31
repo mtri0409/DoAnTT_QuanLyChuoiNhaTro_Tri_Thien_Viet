@@ -95,7 +95,7 @@ export default function MaintenanceRequestDetail() {
   const images = request?.images ?? [];
   const curIdx = lightbox.index;
 
-  const imgSrc = (img) => `${imgURL}/api/maintenance/images/${img.imageName}`;
+  const imgSrc = (img) => `${imgURL}/api/v1/maintenance/images/${img.imageName}`;
 
   return (
     <div className="container-fluid py-4 bg-light min-vh-100">

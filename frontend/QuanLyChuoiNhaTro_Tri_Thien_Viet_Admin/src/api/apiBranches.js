@@ -2,7 +2,7 @@ import axiosInstance from "./axios";
 
 const apiBranches = {
     getAllBranches: (pageNumber = 1, pageSize = 5, sortBy = 'branchId', sortOrder = 'asc', search = '') => {
-        const url = `/branches`;
+        const url = `/admin/branches`;
         return axiosInstance.get(url, {
             params: {
                 pageNumber: pageNumber,  // 1, 2, 3... (user-friendly)
@@ -15,7 +15,7 @@ const apiBranches = {
     },
 
     getBranchById: (id) => {
-        const url = `/branches/${id}`;
+        const url = `/admin/branches/${id}`;
         return axiosInstance.get(url);
     },
 

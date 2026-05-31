@@ -25,7 +25,7 @@ import apiRoom from "../../api/apiRoom";
 import apiMeterReading from "../../api/apiMeterReading";
 import apiInvoice from "../../api/apiInvoice";
 import apiContract from "../../api/apiContract";
-import Lightbox from "../../components/Lightbox";
+import Lightbox from "../../components/LightBox";
 import CreateInvoice from "../../components/CreateInvoice";
 import ImageCapture from "../../components/readings/WaterImageCapture";
 

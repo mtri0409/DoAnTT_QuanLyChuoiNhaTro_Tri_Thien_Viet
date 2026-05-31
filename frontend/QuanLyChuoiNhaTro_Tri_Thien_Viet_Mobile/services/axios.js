@@ -16,4 +16,18 @@ axiosInstance.interceptors.request.use(async (config) => {
   return config;
 });
 
+// 2. RESPONSE INTERCEPTOR: Xử lý response v1 ApiResponse
+axiosInstance.interceptors.response.use(
+  (response) => {
+    const resData = response.data;
+    if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+      response.data = resData.data;
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default axiosInstance;

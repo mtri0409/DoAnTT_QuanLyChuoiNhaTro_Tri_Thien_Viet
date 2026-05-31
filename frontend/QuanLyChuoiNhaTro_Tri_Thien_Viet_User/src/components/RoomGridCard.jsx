@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { imgURL } from '../services/userConfig';
 
 const badgeColors = {
   available: { bg: '#eaf7ea', color: '#287a35', label: 'Còn phòng' },
@@ -82,21 +83,21 @@ export default function RoomGridCard({ room, floors = [], branches = [] }) {
     const media = room.roomMedia;
 
     if (!media || media.length === 0) {
-      return 'http://localhost:8080/images/default.jpg';
+      return `${imgURL}/images/default.jpg`;
     }
 
     const url = media[imgIdx]?.url ?? media[0]?.url;
 
-    if (!url) return 'http://localhost:8080/images/default.jpg';
+    if (!url) return `${imgURL}/images/default.jpg`;
 
     if (url.includes('storage.troapp.vn')) {
       const local = media.find(m => m.url?.startsWith('/images'));
-      if (local) return `http://localhost:8080${local.url}`;
-      return 'http://localhost:8080/images/default.jpg';
+      if (local) return `${imgURL}${local.url}`;
+      return `${imgURL}/images/default.jpg`;
     }
 
     if (url.startsWith('/images')) {
-      return `http://localhost:8080${url}`;
+      return `${imgURL}${url}`;
     }
 
     return url;

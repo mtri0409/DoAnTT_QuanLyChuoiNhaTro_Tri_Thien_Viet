@@ -28,7 +28,11 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => {
     // Trả về thẳng data để khi dùng Tri không cần .data nữa
-    return response.data;
+    const resData = response.data;
+    if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+      return resData.data;
+    }
+    return resData;
   },
   (error) => {
     // Nếu Server trả về 401 (Hết hạn token) hoặc 403 (Không có quyền)

@@ -85,16 +85,16 @@ const apiProfile = {
   createProfile: (data) => axiosInstance.post("/admin/profiles", data),
 
   updateProfile: (id, data) =>
-    axiosInstance.put(`/public/profiles/${id}`, data),
+    axiosInstance.put(`/admin/profiles/${id}`, data),
 
   deleteProfile: (id) => axiosInstance.delete(`/admin/profiles/${id}`),
 
   getProfileById: (id) => {
-    return axiosInstance.get(`public/profiles/${id}`);
+    return axiosInstance.get(`/admin/profiles/${id}`);
   },
   restoreProfile: (id) => axiosInstance.patch(`/admin/profile/restore/${id}`),
    uploadFrontImage: (id, formData) => {
-    return axiosInstance.put(`/public/profiles/${id}/idfrontimage`, formData, {
+    return axiosInstance.put(`/admin/profiles/${id}/idfrontimage`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data', // Ép kiểu dữ liệu là form-data
       },
@@ -102,7 +102,7 @@ const apiProfile = {
   },
   
   uploadBackImage: (id, formData) => {
-    return axiosInstance.put(`/public/profiles/${id}/idbackimage`, formData, {
+    return axiosInstance.put(`/admin/profiles/${id}/idbackimage`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -18,6 +18,7 @@ import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileRequestDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,7 +28,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class ProfileController {
 
@@ -35,25 +36,25 @@ public class ProfileController {
     private ProfileService profileService;
 
     @PostMapping("/admin/profiles") // Chỉ Admin mới được tạo profile khách
-    public ResponseEntity<ProfileRequestDTO> createProfile(@Valid @RequestBody ProfileRequestDTO profile) {
+    public ResponseEntity<ApiResponse<ProfileRequestDTO>> createProfile(@Valid @RequestBody ProfileRequestDTO profile) {
         // Gọi Service để lưu vào DB
         ProfileRequestDTO createdProfile = profileService.createProfile(profile);
 
         // Trả về kèm mã 201 Created (Đúng chuẩn RESTful)
-        return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(createdProfile), HttpStatus.CREATED);
     }
 
-    @PutMapping("/public/profiles/{profileId}")
-    public ResponseEntity<ProfileRequestDTO> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,
+    @PutMapping({"/admin/profiles/{profileId}", "/user/profiles/{profileId}"})
+    public ResponseEntity<ApiResponse<ProfileRequestDTO>> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,
             @PathVariable Long profileId) {
         // Gọi Service để lưu vào DB
         ProfileRequestDTO updateProfile = profileService.updateProfile(profile, profileId);
 
-        return new ResponseEntity<>(updateProfile, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(updateProfile), HttpStatus.OK);
     }
 
     @GetMapping("/admin/profiles")
-    public ResponseEntity<PageResponse<ProfileDTO>> getAllProfiles(
+    public ResponseEntity<ApiResponse<PageResponse<ProfileDTO>>> getAllProfiles(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
@@ -67,12 +68,12 @@ public class ProfileController {
                 sortOrder,
                 branchId,
                 status);
-        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(profileResponse), HttpStatus.OK);
 
     }
 
     @GetMapping("/admin/profiles/search")
-    public ResponseEntity<PageResponse<ProfileDTO>> searchProfiles(
+    public ResponseEntity<ApiResponse<PageResponse<ProfileDTO>>> searchProfiles(
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -89,11 +90,11 @@ public class ProfileController {
                 branchId,
                 status);
 
-        return ResponseEntity.ok(profileResponse);
+        return ResponseEntity.ok(ApiResponse.success(profileResponse));
     }
 
     @GetMapping("/admin/profiles/internal")
-    public ResponseEntity<PageResponse<ProfileDTO>> getAllInternalProfiles(
+    public ResponseEntity<ApiResponse<PageResponse<ProfileDTO>>> getAllInternalProfiles(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PROFILE_BY, required = false) String sortBy,
@@ -105,11 +106,11 @@ public class ProfileController {
                 pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
                 sortOrder,
                 status);
-        return new ResponseEntity<>(profileResponse, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(profileResponse), HttpStatus.OK);
     }
 
     @GetMapping("/admin/profiles/internal/search")
-    public ResponseEntity<PageResponse<ProfileDTO>> searchInternalProfiles(
+    public ResponseEntity<ApiResponse<PageResponse<ProfileDTO>>> searchInternalProfiles(
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -124,43 +125,43 @@ public class ProfileController {
                 pageSize, "id".equals(sortBy) ? "profileId" : sortBy,
                 sortOrder,
                 status);
-        return ResponseEntity.ok(profileResponse);
+        return ResponseEntity.ok(ApiResponse.success(profileResponse));
     }
 
     @GetMapping("/admin/profiles/unassigned")
-    public ResponseEntity<List<ProfileDTO>> getUnassignedProfiles() {
-        return ResponseEntity.ok(profileService.getProfilesWithoutAccount());
+    public ResponseEntity<ApiResponse<List<ProfileDTO>>> getUnassignedProfiles() {
+        return ResponseEntity.ok(ApiResponse.success(profileService.getProfilesWithoutAccount()));
     }
 
     @GetMapping("/public/profiles/{profileId}")
-    public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
+    public ResponseEntity<ApiResponse<ProfileDetailDTO>> getProfileById(@PathVariable Long profileId) {
 
         ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
-        return new ResponseEntity<>(profileDTO, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(profileDTO), HttpStatus.OK);
     }
 
     @DeleteMapping("/admin/profiles/{profileId}")
-    public ResponseEntity<String> deleteProfile(@PathVariable Long profileId) {
+    public ResponseEntity<ApiResponse<String>> deleteProfile(@PathVariable Long profileId) {
         String message = profileService.deleteProfile(profileId);
-        return new ResponseEntity<String>(message, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(message), HttpStatus.OK);
     }
 
-    @PutMapping("/public/profiles/{profileId}/idfrontimage")
-    public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
+    @PutMapping({"/admin/profiles/{profileId}/idfrontimage", "/user/profiles/{profileId}/idfrontimage"})
+    public ResponseEntity<ApiResponse<ProfileImageDTO>> updateIdFrontImage(
             @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
 
         ProfileImageDTO updatedProfile = profileService.updateIdFrontImage(profileId, image);
-        return ResponseEntity.ok(updatedProfile);
+        return ResponseEntity.ok(ApiResponse.success(updatedProfile));
     }
 
-    @PutMapping("/public/profiles/{profileId}/idbackimage")
-    public ResponseEntity<ProfileImageDTO> updateIdBackImage(
+    @PutMapping({"/admin/profiles/{profileId}/idbackimage", "/user/profiles/{profileId}/idbackimage"})
+    public ResponseEntity<ApiResponse<ProfileImageDTO>> updateIdBackImage(
             @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
 
         ProfileImageDTO updatedProfile = profileService.updateIdBackImage(profileId, image);
-        return ResponseEntity.ok(updatedProfile);
+        return ResponseEntity.ok(ApiResponse.success(updatedProfile));
     }
 
     @GetMapping("/public/profile/image/{fileName}")
@@ -182,9 +183,9 @@ public class ProfileController {
     }
 
     @PatchMapping("/admin/profile/restore/{profileId}")
-    public ResponseEntity<String> restoreProfile(@PathVariable Long profileId) {
+    public ResponseEntity<ApiResponse<String>> restoreProfile(@PathVariable Long profileId) {
         String message = profileService.restoreProfile(profileId);
-        return new ResponseEntity<>(message, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(message), HttpStatus.OK);
     }
 
 }

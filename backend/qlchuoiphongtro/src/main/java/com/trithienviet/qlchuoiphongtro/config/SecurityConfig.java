@@ -4,7 +4,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -58,7 +57,7 @@ public class SecurityConfig {
                 .requestMatchers(AppConstants.PUBLIC_URLS).permitAll()
 
                 // ── 2. Tenant ────────────────────────────────────────────
-                .requestMatchers(AppConstants.USER_URLS).hasAnyRole("TENANT", "ADMIN")
+                .requestMatchers(AppConstants.USER_URLS).hasAnyRole("TENANT", "STAFF", "ADMIN")
 
                 // ── 3. Guard / Bảo vệ bãi xe ────────────────────────────
                 .requestMatchers(AppConstants.GUARD_URLS).hasAnyRole("STAFF", "ADMIN")

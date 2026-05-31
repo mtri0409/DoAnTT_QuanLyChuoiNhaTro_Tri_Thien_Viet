@@ -49,6 +49,10 @@ public class ParkingLogServiceImpl implements ParkingLogService {
 
     @Autowired
     private NotificationHelper notificationHelper;
+
+    @org.springframework.beans.factory.annotation.Value("${app.parking.image-dir:uploads/plates/}")
+    private String plateUploadDir;
+
     // ==================== CREATE ====================
     @Autowired
     private ProfileRepo profileRepo;
@@ -355,7 +359,7 @@ public class ParkingLogServiceImpl implements ParkingLogService {
         }
 
         try {
-            String uploadDir = "uploads/plates/";
+            String uploadDir = plateUploadDir;
             File directory = new File(uploadDir);
             if (!directory.exists()) {
                 directory.mkdirs();

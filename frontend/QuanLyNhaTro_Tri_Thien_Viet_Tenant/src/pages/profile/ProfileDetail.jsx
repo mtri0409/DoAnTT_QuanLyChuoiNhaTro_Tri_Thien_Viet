@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import { notify } from '../../utils/swalUtils';
+import { imgURL } from '../../api/config';
 
 const ProfileDetail = () => {
   const { id } = useParams();
@@ -322,7 +323,7 @@ const ProfileDetail = () => {
               <div className="col-md-6">
                 <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '220px' }}>
                   {profile.idFrontImage ? (
-                    <img src={`http://localhost:8080/api/public/profile/image/${profile.idFrontImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt trước" />
+                    <img src={`${imgURL}/api/v1/public/profile/image/${profile.idFrontImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt trước" />
                   ) : <span className="text-muted small">Trống mặt trước</span>}
                 </div>
                 <div className="d-flex gap-2">
@@ -340,7 +341,7 @@ const ProfileDetail = () => {
               <div className="col-md-6">
                 <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '220px' }}>
                   {profile.idBackImage ? (
-                    <img src={`http://localhost:8080/api/public/profile/image/${profile.idBackImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt sau" />
+                    <img src={`${imgURL}/api/v1/public/profile/image/${profile.idBackImage}`} className="img-fluid h-100 w-100 object-fit-contain" alt="Mặt sau" />
                   ) : <span className="text-muted small">Trống mặt sau</span>}
                 </div>
                 <div className="d-flex gap-2">

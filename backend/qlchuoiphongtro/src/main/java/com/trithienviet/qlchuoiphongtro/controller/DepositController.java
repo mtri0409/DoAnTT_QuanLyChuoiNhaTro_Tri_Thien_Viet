@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.payloads.DepositDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.DepositService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class DepositController {
 
     @Autowired
@@ -25,25 +26,25 @@ public class DepositController {
 
     // Lấy tiền cọc theo phòng
     @GetMapping("/public/deposits/room/{roomId}")
-    public ResponseEntity<DepositDTO> getDepositByRoom(@PathVariable Long roomId) {
+    public ResponseEntity<ApiResponse<DepositDTO>> getDepositByRoom(@PathVariable Long roomId) {
         DepositDTO dto = depositService.getDepositByRoomId(roomId);
         if (dto == null) return ResponseEntity.noContent().build();
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     // Tạo tiền cọc cho phòng (dùng khi cần tạo độc lập ngoài room)
     @PostMapping("/admin/deposits/room/{roomId}")
-    public ResponseEntity<DepositDTO> createDeposit(
+    public ResponseEntity<ApiResponse<DepositDTO>> createDeposit(
             @PathVariable Long roomId,
             @RequestParam BigDecimal amount) {
-        return new ResponseEntity<>(depositService.createDeposit(roomId, amount), HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(depositService.createDeposit(roomId, amount)), HttpStatus.CREATED);
     }
 
     // Cập nhật tiền cọc
     @PutMapping("/admin/deposits/room/{roomId}")
-    public ResponseEntity<DepositDTO> updateDeposit(
+    public ResponseEntity<ApiResponse<DepositDTO>> updateDeposit(
             @PathVariable Long roomId,
             @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(depositService.updateDepositAmount(roomId, amount));
+        return ResponseEntity.ok(ApiResponse.success(depositService.updateDepositAmount(roomId, amount)));
     }
 }

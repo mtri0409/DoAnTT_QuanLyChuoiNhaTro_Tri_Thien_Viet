@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.SettingDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.SettingImageDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.SettingService;
 
 import org.springframework.http.ContentDisposition;
@@ -21,7 +22,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class SettingController {
 
@@ -31,33 +32,33 @@ public class SettingController {
     // API CÔNG KHAI: Ai cũng có thể xem tên hệ thống, logo, hotline...
     // React sẽ gọi cái này ở Navbar, Footer hoặc trang Login
     @GetMapping("/public/settings")
-    public ResponseEntity<SettingDTO> getSystemSettings() {
-        return ResponseEntity.ok(this.settingService.getSetting());
+    public ResponseEntity<ApiResponse<SettingDTO>> getSystemSettings() {
+        return ResponseEntity.ok(ApiResponse.success(this.settingService.getSetting()));
     }
 
     // API BẢO MẬT: Chỉ Admin mới có quyền cập nhật cấu hình
     // Bạn có thể phân quyền bằng Spring Security ở đây (ví dụ: .hasRole('ADMIN'))
     @PutMapping("/admin/settings")
-    public ResponseEntity<SettingDTO> updateSystemSettings(@Valid @RequestBody SettingDTO settingDTO) {
+    public ResponseEntity<ApiResponse<SettingDTO>> updateSystemSettings(@Valid @RequestBody SettingDTO settingDTO) {
         SettingDTO updatedSetting = this.settingService.updateSetting(settingDTO);
-        return ResponseEntity.ok(updatedSetting);
+        return ResponseEntity.ok(ApiResponse.success(updatedSetting));
     }
 
     
     @PutMapping("/admin/system/logo")
-    public ResponseEntity<SettingImageDTO> updateLogo(
+    public ResponseEntity<ApiResponse<SettingImageDTO>> updateLogo(
             @RequestParam("image") MultipartFile image) throws IOException {
 
         SettingImageDTO updateLogo = settingService.updateLogo( image);
-        return ResponseEntity.ok(updateLogo);
+        return ResponseEntity.ok(ApiResponse.success(updateLogo));
     }
 
     @PutMapping("/admin/system/favicon")
-    public ResponseEntity<SettingImageDTO> updateFavicon(
+    public ResponseEntity<ApiResponse<SettingImageDTO>> updateFavicon(
             @RequestParam("image") MultipartFile image) throws IOException {
 
         SettingImageDTO updateFavicon = settingService.updateFavicon( image);
-        return ResponseEntity.ok(updateFavicon);
+        return ResponseEntity.ok(ApiResponse.success(updateFavicon));
     }
 
       @GetMapping("/public/system/image/{fileName}")

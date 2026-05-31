@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.MetterReadingDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.service.MeterReadingService;
@@ -19,7 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class MeterReadingController {
 
@@ -27,7 +28,7 @@ public class MeterReadingController {
     private MeterReadingService meterReadingService;
 
     @PostMapping("/admin/meter-readings")
-    public ResponseEntity<MetterReadingDTO> saveReading(
+    public ResponseEntity<ApiResponse<MetterReadingDTO>> saveReading(
             @RequestParam Long roomId,
             @RequestParam Integer serviceId,
             @RequestParam BigDecimal newValue,
@@ -48,17 +49,17 @@ public class MeterReadingController {
         MetterReadingDTO saved = meterReadingService.saveReading(
                 roomId, serviceId, newValue, month, year, imageUrl, oldValue, isInitial);
 
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(saved), HttpStatus.CREATED);
     }
 
     @GetMapping("/admin/meter-readings/{readingId}")
-    public ResponseEntity<MetterReadingDTO> getById(@PathVariable Long readingId) {
+    public ResponseEntity<ApiResponse<MetterReadingDTO>> getById(@PathVariable Long readingId) {
         MetterReadingDTO reading = meterReadingService.getReadingById(readingId);
-        return new ResponseEntity<>(reading, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(reading), HttpStatus.OK);
     }
 
     @GetMapping("/admin/meter-readings/room/{roomId}")
-    public ResponseEntity<PageResponse<MetterReadingDTO>> getByRoom(
+    public ResponseEntity<ApiResponse<PageResponse<MetterReadingDTO>>> getByRoom(
             @PathVariable Long roomId,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -69,21 +70,21 @@ public class MeterReadingController {
                 roomId,
                 Math.max(0, pageNumber - 1),
                 pageSize, sortBy, sortOrder);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(response), HttpStatus.OK);
     }
 
     @GetMapping("/admin/meter-readings/room/{roomId}/period")
-    public ResponseEntity<List<MetterReadingDTO>> getByRoomAndPeriod(
+    public ResponseEntity<ApiResponse<List<MetterReadingDTO>>> getByRoomAndPeriod(
             @PathVariable Long roomId,
             @RequestParam Integer month,
             @RequestParam Integer year) {
         List<MetterReadingDTO> readings = meterReadingService.getReadingsByRoomAndPeriod(
                 roomId, month, year);
-        return new ResponseEntity<>(readings, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(readings), HttpStatus.OK);
     }
 
     @GetMapping("/admin/meter-readings/room/{roomId}/previous")
-    public ResponseEntity<MetterReadingDTO> getPrevious(
+    public ResponseEntity<ApiResponse<MetterReadingDTO>> getPrevious(
             @PathVariable Long roomId,
             @RequestParam Integer serviceId,
             @RequestParam Integer month,
@@ -93,12 +94,12 @@ public class MeterReadingController {
         if (reading == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(reading, HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success(reading), HttpStatus.OK);
     }
 
     @DeleteMapping("/admin/meter-readings/{readingId}")
-    public ResponseEntity<String> delete(@PathVariable Long readingId) {
+    public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long readingId) {
         meterReadingService.deleteReading(readingId);
-        return new ResponseEntity<>("Meter reading deleted successfully", HttpStatus.OK);
+        return new ResponseEntity<>(ApiResponse.success("Meter reading deleted successfully"), HttpStatus.OK);
     }
 }

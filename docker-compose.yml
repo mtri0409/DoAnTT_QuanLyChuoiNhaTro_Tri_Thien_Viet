@@ -1,0 +1,142 @@
+services:
+  # 1. MySQL Database Container
+  db:
+    image: mysql:8.0
+    container_name: qlchuoiphongtro_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - qlchuoiphongtro_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Spring Boot Backend Service
+  backend:
+    build:
+      context: ./backend/qlchuoiphongtro
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://db:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      UPLOAD_PATH: ${UPLOAD_PATH}
+      AI_OCR_URL: http://ai-services:8000/api
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - qlchuoiphongtro_network
+
+  # 3. AI Services (FastAPI/YOLO)
+  ai-services:
+    build:
+      context: ./AI_Services
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_ai
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      API_BACKEND_URL: http://backend:8080/api/ai
+    depends_on:
+      - backend
+    networks:
+      - qlchuoiphongtro_network
+
+  # 4. VNPay Proxy Mock Server
+  vnpay:
+    build:
+      context: ./vnpay
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_vnpay
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      VNP_TMN_CODE: ${VNP_TMN_CODE}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET}
+      VNP_RETURN_URL: http://localhost:5174
+      PORT: 3001
+    networks:
+      - qlchuoiphongtro_network
+
+  # 5. Frontend Admin Web App
+  admin-web:
+    build:
+      context: ./frontend/QuanLyChuoiNhaTro_Tri_Thien_Viet_Admin
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_admin_web
+    restart: always
+    ports:
+      - "5173:80"
+    networks:
+      - qlchuoiphongtro_network
+
+  # 6. Frontend Tenant Web App
+  tenant-web:
+    build:
+      context: ./frontend/QuanLyNhaTro_Tri_Thien_Viet_Tenant
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_tenant_web
+    restart: always
+    ports:
+      - "5174:80"
+    networks:
+      - qlchuoiphongtro_network
+
+  # 7. Frontend User Web App
+  user-web:
+    build:
+      context: ./frontend/QuanLyChuoiNhaTro_Tri_Thien_Viet_User
+      dockerfile: Dockerfile
+    container_name: qlchuoiphongtro_user_web
+    restart: always
+    ports:
+      - "5175:80"
+    networks:
+      - qlchuoiphongtro_network
+
+  # 8. phpMyAdmin (Web UI to manage MySQL database)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: qlchuoiphongtro_phpmyadmin
+    restart: always
+    ports:
+      - "8082:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 0
+      PMA_ALLOW_EMPTY_PASSWORD: "yes"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - qlchuoiphongtro_network
+
+volumes:
+  mysql_data:
+    name: qlchuoiphongtro_mysql_data
+
+networks:
+  qlchuoiphongtro_network:
+    name: qlchuoiphongtro_net
+    driver: bridge

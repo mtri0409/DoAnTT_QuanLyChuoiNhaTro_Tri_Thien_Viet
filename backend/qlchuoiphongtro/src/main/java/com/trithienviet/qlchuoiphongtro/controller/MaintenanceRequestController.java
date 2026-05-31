@@ -19,7 +19,7 @@ import com.trithienviet.qlchuoiphongtro.service.MaintenanceRequestService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class MaintenanceRequestController {
 
@@ -32,72 +32,72 @@ public class MaintenanceRequestController {
 
     /**
      * Tenant tạo yêu cầu sửa chữa mới.
-     * POST /api/tenant/maintenance?roomId=1&description=...&assetId=2
+     * POST /api/v1/tenant/maintenance?roomId=1&description=...&assetId=2
      */
     @PostMapping("/tenant/maintenance")
-    public ResponseEntity<MaintenanceRequestDTO> createRequest(
+    public ResponseEntity<ApiResponse<MaintenanceRequestDTO>> createRequest(
             @RequestParam Long roomId,
             @RequestParam(required = false) Integer assetId,
             @RequestParam String description,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return new ResponseEntity<>(
-                maintenanceRequestService.createRequest(roomId, assetId, description, userDetails.getUsername()),
+                ApiResponse.success(maintenanceRequestService.createRequest(roomId, assetId, description, userDetails.getUsername())),
                 HttpStatus.CREATED);
     }
 
     /**
      * Tenant upload ảnh cho yêu cầu (tối đa 5 ảnh).
-     * POST /api/tenant/maintenance/{requestId}/images
+     * POST /api/v1/tenant/maintenance/{requestId}/images
      */
     @PostMapping("/tenant/maintenance/{requestId}/images")
-    public ResponseEntity<List<MaintenanceRequestImageDTO>> uploadImages(
+    public ResponseEntity<ApiResponse<List<MaintenanceRequestImageDTO>>> uploadImages(
             @PathVariable Integer requestId,
             @RequestParam("images") List<MultipartFile> images,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         return ResponseEntity.ok(
-                maintenanceRequestService.uploadImages(requestId, images, userDetails.getUsername()));
+                ApiResponse.success(maintenanceRequestService.uploadImages(requestId, images, userDetails.getUsername())));
     }
 
     /**
      * Tenant xem danh sách yêu cầu của mình.
-     * GET /api/tenant/maintenance
+     * GET /api/v1/tenant/maintenance
      */
     @GetMapping("/tenant/maintenance")
-    public ResponseEntity<PageResponse<MaintenanceRequestDTO>> getMyRequests(
+    public ResponseEntity<ApiResponse<PageResponse<MaintenanceRequestDTO>>> getMyRequests(
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(defaultValue = "createdAt", required = false) String sortBy,
             @RequestParam(defaultValue = "desc", required = false) String sortOrder,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        return ResponseEntity.ok(maintenanceRequestService.getMyRequests(
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.getMyRequests(
                 userDetails.getUsername(),
                 Math.max(0, pageNumber - 1),
-                pageSize, sortBy, sortOrder));
+                pageSize, sortBy, sortOrder)));
     }
 
     /**
      * Xem chi tiết 1 yêu cầu (tenant + admin đều dùng).
-     * GET /api/public/maintenance/{requestId}
+     * GET /api/v1/public/maintenance/{requestId}
      */
     @GetMapping("/public/maintenance/{requestId}")
-    public ResponseEntity<MaintenanceRequestDTO> getRequestById(@PathVariable Integer requestId) {
-        return ResponseEntity.ok(maintenanceRequestService.getRequestById(requestId));
+    public ResponseEntity<ApiResponse<MaintenanceRequestDTO>> getRequestById(@PathVariable Integer requestId) {
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.getRequestById(requestId)));
     }
 
     /**
      * Tenant hủy yêu cầu của mình (chỉ khi PENDING).
-     * PATCH /api/tenant/maintenance/{requestId}/cancel
+     * PATCH /api/v1/tenant/maintenance/{requestId}/cancel
      */
     @PatchMapping("/tenant/maintenance/{requestId}/cancel")
-    public ResponseEntity<MaintenanceRequestDTO> cancelRequest(
+    public ResponseEntity<ApiResponse<MaintenanceRequestDTO>> cancelRequest(
             @PathVariable Integer requestId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(
-                maintenanceRequestService.cancelRequest(requestId, userDetails.getUsername()));
+                ApiResponse.success(maintenanceRequestService.cancelRequest(requestId, userDetails.getUsername())));
     }
 
     // ================================================================
@@ -106,10 +106,10 @@ public class MaintenanceRequestController {
 
     /**
      * Admin xem tất cả yêu cầu, lọc theo status / branchId.
-     * GET /api/admin/maintenance
+     * GET /api/v1/admin/maintenance
      */
     @GetMapping("/admin/maintenance")
-    public ResponseEntity<PageResponse<MaintenanceRequestDTO>> getAllRequests(
+    public ResponseEntity<ApiResponse<PageResponse<MaintenanceRequestDTO>>> getAllRequests(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Integer branchId,
             @RequestParam(required = false) Long floorId,
@@ -118,18 +118,18 @@ public class MaintenanceRequestController {
             @RequestParam(defaultValue = "createdAt", required = false) String sortBy,
             @RequestParam(defaultValue = "desc", required = false) String sortOrder) {
 
-        return ResponseEntity.ok(maintenanceRequestService.getAllRequests(
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.getAllRequests(
                 status, branchId, floorId,
                 Math.max(0, pageNumber - 1),
-                pageSize, sortBy, sortOrder));
+                pageSize, sortBy, sortOrder)));
     }
 
     /**
      * Admin xem yêu cầu theo phòng.
-     * GET /api/admin/maintenance/room/{roomId}
+     * GET /api/v1/admin/maintenance/room/{roomId}
      */
     @GetMapping("/admin/maintenance/room/{roomId}")
-    public ResponseEntity<PageResponse<MaintenanceRequestDTO>> getRequestsByRoom(
+    public ResponseEntity<ApiResponse<PageResponse<MaintenanceRequestDTO>>> getRequestsByRoom(
             @PathVariable Long roomId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
@@ -137,31 +137,31 @@ public class MaintenanceRequestController {
             @RequestParam(defaultValue = "createdAt", required = false) String sortBy,
             @RequestParam(defaultValue = "desc", required = false) String sortOrder) {
 
-        return ResponseEntity.ok(maintenanceRequestService.getRequestsByRoom(
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.getRequestsByRoom(
                 roomId, status,
                 Math.max(0, pageNumber - 1),
-                pageSize, sortBy, sortOrder));
+                pageSize, sortBy, sortOrder)));
     }
 
     /**
      * Admin cập nhật trạng thái yêu cầu.
-     * PATCH /api/admin/maintenance/{requestId}/status?status=PROCESSING
+     * PATCH /api/v1/admin/maintenance/{requestId}/status?status=PROCESSING
      */
     @PatchMapping("/admin/maintenance/{requestId}/status")
-    public ResponseEntity<MaintenanceRequestDTO> updateStatus(
+    public ResponseEntity<ApiResponse<MaintenanceRequestDTO>> updateStatus(
             @PathVariable Integer requestId,
             @RequestParam String status) {
 
-        return ResponseEntity.ok(maintenanceRequestService.updateStatus(requestId, status));
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.updateStatus(requestId, status)));
     }
 
     /**
      * Admin xóa yêu cầu.
-     * DELETE /api/admin/maintenance/{requestId}
+     * DELETE /api/v1/admin/maintenance/{requestId}
      */
     @DeleteMapping("/admin/maintenance/{requestId}")
-    public ResponseEntity<String> deleteRequest(@PathVariable Integer requestId) {
-        return ResponseEntity.ok(maintenanceRequestService.deleteRequest(requestId));
+    public ResponseEntity<ApiResponse<String>> deleteRequest(@PathVariable Integer requestId) {
+        return ResponseEntity.ok(ApiResponse.success(maintenanceRequestService.deleteRequest(requestId)));
     }
 
     // ================================================================
@@ -170,7 +170,7 @@ public class MaintenanceRequestController {
 
     /**
      * Trả về file ảnh theo tên.
-     * GET /api/maintenance/images/{fileName}
+     * GET /api/v1/maintenance/images/{fileName}
      */
     @GetMapping("/maintenance/images/{fileName}")
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String fileName) throws IOException {

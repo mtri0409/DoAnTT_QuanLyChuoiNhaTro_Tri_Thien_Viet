@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import { toast } from 'react-toastify';
+import { imgURL } from '../../api/config';
 
 const ProfileDetail = () => {
   const { id } = useParams();
@@ -317,7 +318,7 @@ const ProfileDetail = () => {
                     <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '200px' }}>
                       {profile.idFrontImage ? (
                         <img
-                          src={`http://localhost:8080/api/public/profile/image/${profile.idFrontImage}`}
+                          src={`${imgURL}/api/v1/public/profile/image/${profile.idFrontImage}`}
                           alt="Mặt trước"
                           className="img-fluid h-100 w-100 object-fit-contain"
                         />
@@ -348,7 +349,7 @@ const ProfileDetail = () => {
                     <div className="rounded-4 bg-light border border-2 border-dashed d-flex align-items-center justify-content-center overflow-hidden mb-2" style={{ height: '200px' }}>
                       {profile.idBackImage ? (
                         <img
-                          src={`http://localhost:8080/api/public/profile/image/${profile.idBackImage}`}
+                          src={`${imgURL}/api/v1/public/profile/image/${profile.idBackImage}`}
                           alt="Mặt sau"
                           className="img-fluid h-100 w-100 object-fit-cover"
                         />

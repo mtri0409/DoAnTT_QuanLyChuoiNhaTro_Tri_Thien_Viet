@@ -6,6 +6,7 @@ import {
   FaCheckCircle, FaExclamationTriangle,
   FaClock, FaEye, FaCircle, FaExchangeAlt,
 } from "react-icons/fa";
+import { socketURL } from "../../api/config";
 
 const MOCK_CAMERAS = [
   { id: "CH-01", name: "CỔNG VÀO CHÍNH", streamUrl: "http://localhost:8000/api/stream", isMock: false },
@@ -14,7 +15,7 @@ const MOCK_CAMERAS = [
 ];
 
 const CameraDashboard = () => {
-  const SOCKET_URL = "http://localhost:8080/ws-parking";
+  const SOCKET_URL = socketURL;
 
   const [cameras] = useState(MOCK_CAMERAS);
   const [activeCam, setActiveCam] = useState(MOCK_CAMERAS[0]);

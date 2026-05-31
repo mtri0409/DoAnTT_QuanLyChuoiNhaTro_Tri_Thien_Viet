@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.entity.PostPublishStatus;
 import com.trithienviet.qlchuoiphongtro.entity.PostType;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.PostCategoryDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PostDTO;
@@ -24,7 +25,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 public class PostController {
 
@@ -36,35 +37,35 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * POST /api/admin/posts?authorId={id}
+     * POST /api/v1/admin/posts?authorId={id}
      * Tạo bài đăng mới (mặc định DRAFT). Chỉ ADMIN hoặc STAFF.
      */
     @PostMapping("/admin/posts")
-    public ResponseEntity<PostDetailDTO> createPost(
+    public ResponseEntity<ApiResponse<PostDetailDTO>> createPost(
             @Valid @RequestBody PostRequestDTO request,
             @RequestParam Long authorId) {
         PostDetailDTO created = postService.createPost(request, authorId);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(created), HttpStatus.CREATED);
     }
 
     /**
-     * PUT /api/admin/posts/{postId}
+     * PUT /api/v1/admin/posts/{postId}
      * Cập nhật nội dung bài đăng.
      */
     @PutMapping("/admin/posts/{postId}")
-    public ResponseEntity<PostDetailDTO> updatePost(
+    public ResponseEntity<ApiResponse<PostDetailDTO>> updatePost(
             @PathVariable Integer postId,
             @Valid @RequestBody PostRequestDTO request) {
-        return ResponseEntity.ok(postService.updatePost(postId, request));
+        return ResponseEntity.ok(ApiResponse.success(postService.updatePost(postId, request)));
     }
 
     /**
-     * DELETE /api/admin/posts/{postId}
+     * DELETE /api/v1/admin/posts/{postId}
      * Xoá bài đăng (xoá cả ảnh liên quan).
      */
     @DeleteMapping("/admin/posts/{postId}")
-    public ResponseEntity<String> deletePost(@PathVariable Integer postId) {
-        return ResponseEntity.ok(postService.deletePost(postId));
+    public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable Integer postId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.deletePost(postId)));
     }
 
     // ================================================================== //
@@ -72,30 +73,30 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * PATCH /api/admin/posts/{postId}/publish
+     * PATCH /api/v1/admin/posts/{postId}/publish
      * Xuất bản bài đăng (DRAFT → PUBLISHED).
      */
     @PatchMapping("/admin/posts/{postId}/publish")
-    public ResponseEntity<PostDetailDTO> publishPost(@PathVariable Integer postId) {
-        return ResponseEntity.ok(postService.publishPost(postId));
+    public ResponseEntity<ApiResponse<PostDetailDTO>> publishPost(@PathVariable Integer postId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.publishPost(postId)));
     }
 
     /**
-     * PATCH /api/admin/posts/{postId}/archive
+     * PATCH /api/v1/admin/posts/{postId}/archive
      * Lưu trữ bài đăng (PUBLISHED → ARCHIVED).
      */
     @PatchMapping("/admin/posts/{postId}/archive")
-    public ResponseEntity<PostDetailDTO> archivePost(@PathVariable Integer postId) {
-        return ResponseEntity.ok(postService.archivePost(postId));
+    public ResponseEntity<ApiResponse<PostDetailDTO>> archivePost(@PathVariable Integer postId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.archivePost(postId)));
     }
 
     /**
-     * PATCH /api/admin/posts/{postId}/draft
+     * PATCH /api/v1/admin/posts/{postId}/draft
      * Kéo bài đăng về DRAFT để chỉnh sửa lại.
      */
     @PatchMapping("/admin/posts/{postId}/draft")
-    public ResponseEntity<PostDetailDTO> revertToDraft(@PathVariable Integer postId) {
-        return ResponseEntity.ok(postService.revertToDraft(postId));
+    public ResponseEntity<ApiResponse<PostDetailDTO>> revertToDraft(@PathVariable Integer postId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.revertToDraft(postId)));
     }
 
     // ================================================================== //
@@ -103,11 +104,11 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * GET /api/admin/posts
+     * GET /api/v1/admin/posts
      * Lấy tất cả bài đăng (admin), lọc theo type / status / category.
      */
     @GetMapping("/admin/posts")
-    public ResponseEntity<PageResponse<PostDTO>> getAllPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> getAllPosts(
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(defaultValue = "createdAt", required = false) String sortBy,
@@ -116,17 +117,17 @@ public class PostController {
             @RequestParam(required = false) PostPublishStatus status,
             @RequestParam(required = false) Integer categoryId) {
 
-        return ResponseEntity.ok(postService.getAllPosts(
+        return ResponseEntity.ok(ApiResponse.success(postService.getAllPosts(
                 Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder,
-                type, status, categoryId));
+                type, status, categoryId)));
     }
 
     /**
-     * GET /api/admin/posts/search?keyword=...
+     * GET /api/v1/admin/posts/search?keyword=...
      * Tìm kiếm bài đăng theo keyword (admin).
      */
     @GetMapping("/admin/posts/search")
-    public ResponseEntity<PageResponse<PostDTO>> searchPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> searchPosts(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -136,10 +137,10 @@ public class PostController {
             @RequestParam(required = false) PostPublishStatus status,
             @RequestParam(required = false) Integer categoryId) {
 
-        return ResponseEntity.ok(postService.searchPosts(
+        return ResponseEntity.ok(ApiResponse.success(postService.searchPosts(
                 keyword,
                 Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder,
-                type, status, categoryId));
+                type, status, categoryId)));
     }
 
     // ================================================================== //
@@ -147,53 +148,53 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * GET /api/public/posts/{postId}
+     * GET /api/v1/public/posts/{postId}
      * Lấy chi tiết bài đăng theo ID (admin xem bất kỳ trạng thái).
      */
     @GetMapping("/admin/posts/{postId}")
-    public ResponseEntity<PostDetailDTO> getPostById(@PathVariable Integer postId) {
-        return ResponseEntity.ok(postService.getPostById(postId));
+    public ResponseEntity<ApiResponse<PostDetailDTO>> getPostById(@PathVariable Integer postId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.getPostById(postId)));
     }
 
     /**
-     * GET /api/public/posts/slug/{slug}
+     * GET /api/v1/public/posts/slug/{slug}
      * Lấy chi tiết bài đăng theo slug (SEO-friendly, chỉ PUBLISHED).
      */
     @GetMapping("/public/posts/slug/{slug}")
-    public ResponseEntity<PostDetailDTO> getPostBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(postService.getPostBySlug(slug));
+    public ResponseEntity<ApiResponse<PostDetailDTO>> getPostBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(ApiResponse.success(postService.getPostBySlug(slug)));
     }
 
     /**
-     * GET /api/public/posts
+     * GET /api/v1/public/posts
      * Danh sách bài đăng đã PUBLISHED — dùng cho trang tin tức người dùng.
      * Hỗ trợ lọc theo type (ARTICLE / BANNER) và category.
      */
     @GetMapping("/public/posts")
-    public ResponseEntity<PageResponse<PostDTO>> getPublishedPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> getPublishedPosts(
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(required = false) PostType type,
             @RequestParam(required = false) Integer categoryId) {
 
-        return ResponseEntity.ok(postService.getPublishedPosts(
-                Math.max(0, pageNumber - 1), pageSize, type, categoryId));
+        return ResponseEntity.ok(ApiResponse.success(postService.getPublishedPosts(
+                Math.max(0, pageNumber - 1), pageSize, type, categoryId)));
     }
 
     /**
-     * GET /api/public/posts/search?keyword=...&categoryId=...
+     * GET /api/v1/public/posts/search?keyword=...&categoryId=...
      * Tìm kiếm bài đăng PUBLISHED (người dùng tìm trên trang tin tức).
      */
     @GetMapping("/public/posts/search")
-    public ResponseEntity<PageResponse<PostDTO>> searchPublishedPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostDTO>>> searchPublishedPosts(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(required = false) Integer categoryId) {
 
-        return ResponseEntity.ok(postService.searchPublishedPosts(
+        return ResponseEntity.ok(ApiResponse.success(postService.searchPublishedPosts(
                 keyword,
-                Math.max(0, pageNumber - 1), pageSize, categoryId));
+                Math.max(0, pageNumber - 1), pageSize, categoryId)));
     }
 
     // ================================================================== //
@@ -201,41 +202,41 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * POST /api/admin/posts/{postId}/images
+     * POST /api/v1/admin/posts/{postId}/images
      * Upload thêm ảnh cho bài đăng.
      * isPrimary=true → đặt làm ảnh đại diện (thumbnail / banner chính).
      */
     @PostMapping("/admin/posts/{postId}/images")
-    public ResponseEntity<PostImageDTO> addImage(
+    public ResponseEntity<ApiResponse<PostImageDTO>> addImage(
             @PathVariable Integer postId,
             @RequestParam("image") MultipartFile image,
             @RequestParam(defaultValue = "false") Boolean isPrimary,
             @RequestParam(required = false) String altText) throws IOException {
 
         PostImageDTO result = postService.addImage(postId, image, isPrimary, altText);
-        return new ResponseEntity<>(result, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(result), HttpStatus.CREATED);
     }
 
     /**
-     * DELETE /api/admin/posts/{postId}/images/{imageId}
+     * DELETE /api/v1/admin/posts/{postId}/images/{imageId}
      * Xoá một ảnh khỏi bài đăng.
      */
     @DeleteMapping("/admin/posts/{postId}/images/{imageId}")
-    public ResponseEntity<String> deleteImage(
+    public ResponseEntity<ApiResponse<String>> deleteImage(
             @PathVariable Integer postId,
             @PathVariable Integer imageId) {
-        return ResponseEntity.ok(postService.deleteImage(postId, imageId));
+        return ResponseEntity.ok(ApiResponse.success(postService.deleteImage(postId, imageId)));
     }
 
     /**
-     * PATCH /api/admin/posts/{postId}/images/{imageId}/primary
+     * PATCH /api/v1/admin/posts/{postId}/images/{imageId}/primary
      * Đặt ảnh này làm ảnh đại diện (primary) của bài đăng.
      */
     @PatchMapping("/admin/posts/{postId}/images/{imageId}/primary")
-    public ResponseEntity<PostImageDTO> setPrimaryImage(
+    public ResponseEntity<ApiResponse<PostImageDTO>> setPrimaryImage(
             @PathVariable Integer postId,
             @PathVariable Integer imageId) {
-        return ResponseEntity.ok(postService.setPrimaryImage(postId, imageId));
+        return ResponseEntity.ok(ApiResponse.success(postService.setPrimaryImage(postId, imageId)));
     }
 
     // ================================================================== //
@@ -243,51 +244,51 @@ public class PostController {
     // ================================================================== //
 
     /**
-     * POST /api/admin/post-categories
+     * POST /api/v1/admin/post-categories
      * Tạo danh mục mới (Xu hướng, Cảnh báo, ...).
      */
     @PostMapping("/admin/post-categories")
-    public ResponseEntity<PostCategoryDTO> createCategory(
+    public ResponseEntity<ApiResponse<PostCategoryDTO>> createCategory(
             @Valid @RequestBody PostCategoryDTO dto) {
-        return new ResponseEntity<>(postService.createCategory(dto), HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(postService.createCategory(dto)), HttpStatus.CREATED);
     }
 
     /**
-     * PUT /api/admin/post-categories/{categoryId}
+     * PUT /api/v1/admin/post-categories/{categoryId}
      * Cập nhật danh mục.
      */
     @PutMapping("/admin/post-categories/{categoryId}")
-    public ResponseEntity<PostCategoryDTO> updateCategory(
+    public ResponseEntity<ApiResponse<PostCategoryDTO>> updateCategory(
             @PathVariable Integer categoryId,
             @Valid @RequestBody PostCategoryDTO dto) {
-        return ResponseEntity.ok(postService.updateCategory(categoryId, dto));
+        return ResponseEntity.ok(ApiResponse.success(postService.updateCategory(categoryId, dto)));
     }
 
     /**
-     * DELETE /api/admin/post-categories/{categoryId}
+     * DELETE /api/v1/admin/post-categories/{categoryId}
      * Xoá danh mục.
      */
     @DeleteMapping("/admin/post-categories/{categoryId}")
-    public ResponseEntity<String> deleteCategory(@PathVariable Integer categoryId) {
-        return ResponseEntity.ok(postService.deleteCategory(categoryId));
+    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Integer categoryId) {
+        return ResponseEntity.ok(ApiResponse.success(postService.deleteCategory(categoryId)));
     }
 
     /**
-     * GET /api/admin/post-categories
+     * GET /api/v1/admin/post-categories
      * Lấy tất cả danh mục (kể cả inactive) — dành cho admin quản lý.
      */
     @GetMapping("/admin/post-categories")
-    public ResponseEntity<List<PostCategoryDTO>> getAllCategories() {
-        return ResponseEntity.ok(postService.getAllCategories());
+    public ResponseEntity<ApiResponse<List<PostCategoryDTO>>> getAllCategories() {
+        return ResponseEntity.ok(ApiResponse.success(postService.getAllCategories()));
     }
 
     /**
-     * GET /api/public/post-categories
+     * GET /api/v1/public/post-categories
      * Lấy danh mục active — dùng để render menu lọc tin tức (Tất cả | Xu hướng |
      * ...).
      */
     @GetMapping("/public/post-categories")
-    public ResponseEntity<List<PostCategoryDTO>> getActiveCategories() {
-        return ResponseEntity.ok(postService.getActiveCategories());
+    public ResponseEntity<ApiResponse<List<PostCategoryDTO>>> getActiveCategories() {
+        return ResponseEntity.ok(ApiResponse.success(postService.getActiveCategories()));
     }
 }

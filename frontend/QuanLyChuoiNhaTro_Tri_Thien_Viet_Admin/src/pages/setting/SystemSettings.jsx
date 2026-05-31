@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import apiSystemSetting from "../../api/apiSetting";
 import { toast } from "react-toastify";
+import { imgURL } from "../../api/config";
 
 // ====================== COMPONENTS ======================
 const SettingSection = ({ icon, title, children }) => (
@@ -75,7 +76,7 @@ const ImageUploadField = ({ label, value, onUpload, uploadLoading }) => {
   const getImageUrl = (fileName) => {
     if (!fileName) return "";
     if (fileName.startsWith("http")) return fileName;
-    return `http://localhost:8080/api/public/system/image/${fileName}`;
+    return `${imgURL}/api/v1/public/system/image/${fileName}`;
   };
 
   return (
@@ -487,7 +488,7 @@ const SystemSettings = () => {
                   {settings.logo && (
                     <div className="d-flex align-items-center gap-2">
                       <img 
-                        src={`http://localhost:8080/api/public/system/image/${settings.logo}`}
+                        src={`${imgURL}/api/public/system/image/${settings.logo}`}
                         alt="Logo" 
                         style={{ height: 32, objectFit: "contain" }}
                         onError={(e) => e.target.style.display = "none"}

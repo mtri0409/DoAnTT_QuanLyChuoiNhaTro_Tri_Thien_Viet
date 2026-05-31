@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaFacebook, FaYoutube, FaMapMarkerAlt, FaPhone, FaEnvelope, FaHome } from 'react-icons/fa';
 import { useSystemSetting } from '../context/SystemSettingContext';
+import { imgURL } from '../api/config';
 
 const Footer = () => {
   const { settings, loading } = useSystemSetting();
@@ -31,7 +32,7 @@ const Footer = () => {
             <div className="d-flex align-items-center gap-3 mb-3">
               {settings.logo ? (
                 <img 
-                  src={`http://localhost:8080/api/public/system/image/${settings.logo}`}
+                  src={`${imgURL}/api/v1/public/system/image/${settings.logo}`}
                   alt="Logo" 
                   height="40"
                   style={{ objectFit: "contain" }}

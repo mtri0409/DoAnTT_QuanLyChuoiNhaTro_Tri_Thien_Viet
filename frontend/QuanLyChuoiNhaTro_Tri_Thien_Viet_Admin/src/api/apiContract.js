@@ -78,12 +78,12 @@ const apiContract = {
 
   // Lấy hợp đồng theo ID
   getContractById: (id) => {
-    return axiosClient.get(`/public/contracts/${id}`);
+    return axiosClient.get(`/user/contracts/${id}`);
   },
 
   // Lấy hợp đồng theo phòng
   getContractsByRoom: (roomId) => {
-    return axiosClient.get(`/public/contracts/room/${roomId}`);
+    return axiosClient.get(`/user/contracts/room/${roomId}`);
   },
 
   // Tạo hợp đồng mới
@@ -93,7 +93,7 @@ const apiContract = {
 
   // Cập nhật hợp đồng
   updateContract: (id, dto) => {
-    return axiosClient.put(`/public/contracts/${id}`, dto);
+    return axiosClient.put(`/user/contracts/${id}`, dto);
   },
 
   // Cập nhật trạng thái hợp đồng
@@ -108,48 +108,48 @@ const apiContract = {
 
   // Tự động cập nhật trạng thái hợp đồng
   autoUpdateStatus: () => {
-    return axiosClient.post("/admin/contracts/auto-update-status");
+    return axiosClient.post("/admin/contracts/status-updates");
   },
 
   // --- THÀNH VIÊN ---
   addMember: (contractId, profileId) => {
     return axiosClient.post(
-      `/public/contracts/${contractId}/members/${profileId}`,
+      `/user/contracts/${contractId}/members/${profileId}`,
     );
   },
 
   removeMember: (contractId, profileId) => {
     return axiosClient.delete(
-      `/public/contracts/${contractId}/members/${profileId}`,
+      `/user/contracts/${contractId}/members/${profileId}`,
     );
   },
 
   getMembers: (contractId) => {
-    return axiosClient.get(`/public/contracts/${contractId}/members`);
+    return axiosClient.get(`/user/contracts/${contractId}/members`);
   },
 
   // --- DỊCH VỤ ---
   getServices: (contractId) => {
-    return axiosClient.get(`/public/contracts/${contractId}/services`);
+    return axiosClient.get(`/user/contracts/${contractId}/services`);
   },
 
   addServices: (contractId, services) => {
     return axiosClient.post(
-      `/public/contracts/${contractId}/services`,
+      `/user/contracts/${contractId}/services`,
       services,
     );
   },
 
   updateService: (id, dto) => {
-    return axiosClient.put(`/public/contracts/services/${id}`, dto);
+    return axiosClient.put(`/user/contracts/services/${id}`, dto);
   },
 
   deleteService: (id) => {
-    return axiosClient.delete(`/public/contracts/services/${id}`);
+    return axiosClient.delete(`/user/contracts/services/${id}`);
   },
 
   terminateContract: (id, reason = null) => {
-    return axiosClient.post(`/admin/contracts/${id}/terminate`, { reason });
+    return axiosClient.post(`/admin/contracts/${id}/termination`, { reason });
   },
 };
 

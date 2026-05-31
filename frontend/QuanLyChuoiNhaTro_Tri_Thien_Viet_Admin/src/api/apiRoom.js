@@ -12,7 +12,7 @@ const apiRoom = {
     status = null,
     maxPeople = null,
   ) => {
-    const url = `/rooms`;
+    const url = `/admin/rooms`;
     return axiosInstance.get(url, {
       params: {
         pageNumber: pageNumber,
@@ -49,7 +49,7 @@ const apiRoom = {
   },
 
   getRoomById: (roomId) => {
-    const url = `/rooms/${roomId}`;
+    const url = `/admin/rooms/${roomId}`;
     return axiosInstance.get(url);
   },
 
@@ -59,7 +59,7 @@ const apiRoom = {
   },
 
   updateRoom: (roomId, roomDTO) => {
-    const url = `/public/rooms/${roomId}`;
+    const url = `/admin/rooms/${roomId}`;
     return axiosInstance.put(url, roomDTO);
   },
 

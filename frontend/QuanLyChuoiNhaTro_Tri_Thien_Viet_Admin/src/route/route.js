@@ -14,7 +14,7 @@ import UpdateProfile from "../pages/proflie/UpdateProfile";
 import CreateAccount from "../pages/user/CreateAccount";
 import ListUser from "../pages/user/UserList";
 import CreateVehicle from "../pages/proflie/CreateVehicle";
-import UpdateVehicle from "../pages/vehicle/updateVehicle";
+import UpdateVehicle from "../pages/vehicle/UpdateVehicle";
 
 import ListContract from "../pages/contract/ListContract";
 import CreateContract from "../pages/contract/CreateContract";

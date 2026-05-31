@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.payloads.LoginCredentials;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.security.JWTUtil;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
@@ -24,7 +25,7 @@ import com.trithienviet.qlchuoiphongtro.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 
 public class AuthController {
@@ -41,13 +42,13 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("auth/login")
-    public Map<String, Object> loginHandler(@RequestBody LoginCredentials credentials) {
+    @PostMapping("/auth/login")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> loginHandler(@RequestBody LoginCredentials credentials) {
         try {
             // Authenticate
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            credentials.getUserName(),
+                             credentials.getUserName(),
                             credentials.getPassword()));
         } catch (Exception e) {
             // Nếu bị IllegalAccessException hoặc BadCredentialsException sẽ rơi vào đây
@@ -65,16 +66,17 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getUserName());
 
         // Trả data cho Frontend (React)
-        return Map.of(
+        Map<String, Object> data = Map.of(
                 "token", token,
                 "username", user.getUserName(),
                 "role", user.getRole().name() // Nên trả thêm Role để React phân quyền UI
         );
+        return ResponseEntity.ok(ApiResponse.success(data, "Đăng nhập thành công"));
     }
 
     // @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/auth/create-account/{profileId}")
-    public ResponseEntity<UserDTO> createAccount(
+    public ResponseEntity<ApiResponse<UserDTO>> createAccount(
             @PathVariable Long profileId,
             @RequestBody LoginCredentials credentials) {
 
@@ -83,14 +85,14 @@ public class AuthController {
                 credentials.getUserName(),
                 credentials.getPassword());
 
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(newUser, "Tạo tài khoản thành công"), HttpStatus.CREATED);
     }
 
     @PostMapping("/auth/generare-account/{profileId}")
-    public ResponseEntity<UserDTO> generateAccount(@PathVariable Long profileId) {
+    public ResponseEntity<ApiResponse<UserDTO>> generateAccount(@PathVariable Long profileId) {
 
         UserDTO newUser = userService.generateAccountForFile(
                 profileId);
-        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(newUser, "Tạo tài khoản thành công"), HttpStatus.CREATED);
     }
 }

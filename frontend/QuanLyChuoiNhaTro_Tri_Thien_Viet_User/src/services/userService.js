@@ -8,7 +8,7 @@ const userService = {
     sortOrder = "asc",
     search = "",
   ) => {
-    return axiosClient.get("/branches", {
+    return axiosClient.get("/public/branches", {
       params: { pageNumber, pageSize, sortBy, sortOrder, search },
     });
   },
@@ -19,7 +19,7 @@ const userService = {
     sortBy = "amenityName",
     sortOrder = "asc",
   ) => {
-    return axiosClient.get("/amenities", {
+    return axiosClient.get("/public/amenities", {
       params: { pageNumber, pageSize, sortBy, sortOrder },
     });
   },
@@ -27,42 +27,43 @@ const userService = {
   getAllRooms: (
     pageNumber = 0,
     pageSize = 10,
-    sortBy = 'roomName',
-    sortOrder = 'asc',
+    sortBy = "roomName",
+    sortOrder = "asc",
     floorId = null,
     branchId = null,
-    search = '',
+    search = "",
     status = null
   ) => {
-    const url = `/rooms`;
-    return axiosClient.get(url, {
+    return axiosClient.get("/public/rooms", {
       params: {
-        pageNumber: pageNumber,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        ...(floorId && { floorId: floorId }),
-        ...(branchId && { branchId: branchId }),
-        ...(search && { search: search }),
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortOrder,
+        ...(floorId && { floorId }),
+        ...(branchId && { branchId }),
+        ...(search && { search }),
         ...(status && { status }),
-      }
+      },
     });
   },
 
   getRoomById: (roomId) => {
-    return axiosClient.get(`/rooms/${roomId}`);
+    return axiosClient.get(`/public/rooms/${roomId}`);
   },
 
   getMediaByRoomId: (roomId) => {
-    return axiosClient.get(`/room-media/room/${roomId}`);
+    return axiosClient.get(`/public/rooms/${roomId}/medias`);
   },
+
   getProfileById: (id) => {
-    return axiosClient.get(`/profiles/${id}`);
+    return axiosClient.get(`/public/profiles/${id}`);
   },
+
   getAllFloors: () => {
-    const url = `/floors`;
-    return axiosClient.get(url);
+    return axiosClient.get("/public/floors");
   },
+
   getActivePosts: (
     pageNumber = 0,
     pageSize = 10,
@@ -78,43 +79,45 @@ const userService = {
       },
     });
   },
+
   getPostById: (postId) => {
     return axiosClient.get(`/public/roommate-posts/${postId}`);
   },
+
   createManualNotification: (profileId = 0, branchId = 0, data) => {
     return axiosClient.post(`/notification/send-manual`, data, {
       params: {
-        profileId: profileId || 0, // Nếu không có thì gửi 0
-        branchId: branchId || 0    // Nếu không có thì gửi 0
-      }
+        profileId: profileId || 0,
+        branchId: branchId || 0,
+      },
     });
   },
+
   getNewsPosts: (params = {}) => {
-  const {
-    pageNumber = 1,
-    pageSize = 100,
-    type = null,
-    categoryId = null,
-  } = params;
+    const {
+      pageNumber = 1,
+      pageSize = 100,
+      type = null,
+      categoryId = null,
+    } = params;
 
-  return axiosClient.get("/public/posts", {
-    params: {
-      pageNumber,
-      pageSize,
-      type: type || undefined,
-      categoryId: categoryId || undefined,
-    },
-  });
-},
+    return axiosClient.get("/public/posts", {
+      params: {
+        pageNumber,
+        pageSize,
+        type: type || undefined,
+        categoryId: categoryId || undefined,
+      },
+    });
+  },
 
-getNewsCategories: () => {
-  return axiosClient.get("/public/post-categories");
-},
+  getNewsCategories: () => {
+    return axiosClient.get("/public/post-categories");
+  },
 
-getNewsPostBySlug: slug => {
-  return axiosClient.get(`/public/posts/slug/${slug}`);
-},
-
+  getNewsPostBySlug: (slug) => {
+    return axiosClient.get(`/public/posts/slug/${slug}`);
+  },
 };
 
 export default userService;

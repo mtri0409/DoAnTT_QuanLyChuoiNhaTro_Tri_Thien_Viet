@@ -20,6 +20,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import apiNewsPost from "../../api/apiNewsPost";
+import { imgURL } from "../../api/config";
 
 const STATUS_CONFIG = {
   DRAFT: {
@@ -53,7 +54,7 @@ const formatDate = (d) =>
 const buildImageUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `http://localhost:8080${url.startsWith("/") ? "" : "/"}${url}`;
+  return `${imgURL}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 const NewsPostDetail = () => {

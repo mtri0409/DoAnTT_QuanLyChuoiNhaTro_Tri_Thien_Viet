@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.repo.RoomMemberRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.service.RoomService;
@@ -21,10 +22,10 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Endpoint cho tenant tự lấy danh sách phòng mình đang ở.
- * GET /api/user/my-rooms
+ * GET /api/v1/user/my-rooms
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class MyRoomController {
 
@@ -46,7 +47,7 @@ public class MyRoomController {
      */
     @GetMapping("/user/my-rooms")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<RoomDTO>> getMyRooms() {
+    public ResponseEntity<ApiResponse<List<RoomDTO>>> getMyRooms() {
         Long profileId = getCurrentProfileId();
 
         // Lấy tất cả roomId mà profile đang ở (isStaying = true)
@@ -56,6 +57,6 @@ public class MyRoomController {
                 .map(roomService::getRoomById) // giả sử RoomService có getRoomById(Long) -> RoomDTO
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(rooms);
+        return ResponseEntity.ok(ApiResponse.success(rooms));
     }
 }

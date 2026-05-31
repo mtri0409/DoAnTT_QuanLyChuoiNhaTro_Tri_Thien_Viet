@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.trithienviet.qlchuoiphongtro.payloads.APIResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -22,27 +22,23 @@ import jakarta.validation.ConstraintViolationException;
 public class MyGlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<APIResponse> myResourceNotFoundException(ResourceNotFoundException e) {
+    public ResponseEntity<ApiResponse<Void>> myResourceNotFoundException(ResourceNotFoundException e) {
         String message = e.getMessage();
-
-        APIResponse res = new APIResponse(message, false);
-
-        return new ResponseEntity<APIResponse>(res, HttpStatus.NOT_FOUND);
+        ApiResponse<Void> res = ApiResponse.error("RESOURCE_NOT_FOUND", message, 404);
+        return new ResponseEntity<>(res, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(APIException.class)
-    public ResponseEntity<APIResponse> myAPIException(APIException e) {
+    public ResponseEntity<ApiResponse<Void>> myAPIException(APIException e) {
         String message = e.getMessage();
-
-        APIResponse res = new APIResponse(message, false);
-
-        return new ResponseEntity<APIResponse>(res, HttpStatus.BAD_REQUEST);
+        ApiResponse<Void> res = ApiResponse.error("API_EXCEPTION", message, 400);
+        return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<APIResponse> myResponseStatusException(ResponseStatusException e) {
-        APIResponse res = new APIResponse(e.getReason(), false);
-        return new ResponseEntity<APIResponse>(res, e.getStatusCode());
+    public ResponseEntity<ApiResponse<Void>> myResponseStatusException(ResponseStatusException e) {
+        ApiResponse<Void> res = ApiResponse.error(e.getStatusCode().toString(), e.getReason(), e.getStatusCode().value());
+        return new ResponseEntity<>(res, e.getStatusCode());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -81,16 +77,14 @@ public class MyGlobalExceptionHandler {
     }
 
     @ExceptionHandler(MissingPathVariableException.class)
-    public ResponseEntity<APIResponse> myMissingPathVariableException(MissingPathVariableException e) {
-        APIResponse res = new APIResponse(e.getMessage(), false);
-
-        return new ResponseEntity<APIResponse>(res, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ApiResponse<Void>> myMissingPathVariableException(MissingPathVariableException e) {
+        ApiResponse<Void> res = ApiResponse.error("MISSING_PATH_VARIABLE", e.getMessage(), 400);
+        return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<APIResponse> myDataIntegrityException(DataIntegrityViolationException e) {
-        APIResponse res = new APIResponse(e.getMessage(), false);
-
-        return new ResponseEntity<APIResponse>(res, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ApiResponse<Void>> myDataIntegrityException(DataIntegrityViolationException e) {
+        ApiResponse<Void> res = ApiResponse.error("DATA_INTEGRITY_VIOLATION", e.getMessage(), 400);
+        return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 }

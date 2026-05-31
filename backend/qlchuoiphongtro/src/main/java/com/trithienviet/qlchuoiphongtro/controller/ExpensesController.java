@@ -1,6 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.controller;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ExpensesDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.service.ExpensesService;
@@ -25,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/expenses")
+@RequestMapping("/api/v1/admin/expenses")
 @SecurityRequirement(name = "Manager Room Application")
 public class ExpensesController {
 
@@ -44,27 +45,27 @@ public class ExpensesController {
 
         /**
          * Upload ảnh bằng chứng.
-         * POST /api/admin/expenses/upload-evidence
+         * POST /api/v1/admin/expenses/upload-evidence
          * Response: { "fileName": "uuid.jpg", "url":
-         * "/api/admin/expenses/evidence/uuid.jpg" }
+         * "/api/v1/admin/expenses/evidence/uuid.jpg" }
          */
         @PostMapping("/upload-evidence")
-        public ResponseEntity<Map<String, String>> uploadEvidence(
+        public ResponseEntity<ApiResponse<Map<String, String>>> uploadEvidence(
                         @RequestParam("file") MultipartFile file) {
                 try {
                         String folder = imagePath + "expenses/";
                         String fileName = fileService.uploadImage(folder, file);
-                        String url = "/api/admin/expenses/evidence/" + fileName;
-                        return ResponseEntity.ok(Map.of("fileName", fileName, "url", url));
+                        String url = "/api/v1/admin/expenses/evidence/" + fileName;
+                        return ResponseEntity.ok(ApiResponse.success(Map.of("fileName", fileName, "url", url)));
                 } catch (IOException e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                        .body(Map.of("error", "Không thể upload file: " + e.getMessage()));
+                                        .body(ApiResponse.error("UPLOAD_ERROR", "Không thể upload file: " + e.getMessage(), 500));
                 }
         }
 
         /**
          * Lấy ảnh bằng chứng.
-         * GET /api/admin/expenses/evidence/{fileName}
+         * GET /api/v1/admin/expenses/evidence/{fileName}
          */
         @GetMapping("/evidence/{fileName}")
         public ResponseEntity<InputStreamResource> getEvidence(@PathVariable String fileName) {
@@ -98,10 +99,10 @@ public class ExpensesController {
 
         /**
          * Tạo chi phí mới.
-         * POST /api/admin/expenses
+         * POST /api/v1/admin/expenses
          */
         @PostMapping
-        public ResponseEntity<ExpensesDTO> createExpense(
+        public ResponseEntity<ApiResponse<ExpensesDTO>> createExpense(
                         @RequestParam String payer,
                         @RequestParam String expenseCategory,
                         @RequestParam BigDecimal amount,
@@ -114,11 +115,11 @@ public class ExpensesController {
                         @AuthenticationPrincipal UserDetails userDetails) {
 
                 return new ResponseEntity<>(
-                                expenseService.createExpense(
+                                ApiResponse.success(expenseService.createExpense(
                                                 payer, expenseCategory, amount, paymentDate,
                                                 payeeName, evidenceUrl, description,
                                                 maintenanceRequestId, branchId,
-                                                userDetails.getUsername()),
+                                                userDetails.getUsername())),
                                 HttpStatus.CREATED);
         }
 
@@ -127,12 +128,12 @@ public class ExpensesController {
         // ================================================================
 
         @GetMapping("/{expenseId}")
-        public ResponseEntity<ExpensesDTO> getById(@PathVariable Long expenseId) {
-                return ResponseEntity.ok(expenseService.getExpenseById(expenseId));
+        public ResponseEntity<ApiResponse<ExpensesDTO>> getById(@PathVariable Long expenseId) {
+                return ResponseEntity.ok(ApiResponse.success(expenseService.getExpenseById(expenseId)));
         }
 
         @GetMapping
-        public ResponseEntity<PageResponse<ExpensesDTO>> filter(
+        public ResponseEntity<ApiResponse<PageResponse<ExpensesDTO>>> filter(
                         @RequestParam(required = false) String payer,
                         @RequestParam(required = false) String category,
                         @RequestParam(required = false) Integer branchId,
@@ -144,20 +145,20 @@ public class ExpensesController {
                         @RequestParam(defaultValue = "desc", required = false) String sortOrder) {
 
                 return ResponseEntity.ok(
-                                expenseService.filterExpenses(
+                                ApiResponse.success(expenseService.filterExpenses(
                                                 payer, category, branchId, from, to,
-                                                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
+                                                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
         }
 
         @GetMapping("/maintenance/{requestId}")
-        public ResponseEntity<PageResponse<ExpensesDTO>> getByMaintenanceRequest(
+        public ResponseEntity<ApiResponse<PageResponse<ExpensesDTO>>> getByMaintenanceRequest(
                         @PathVariable Integer requestId,
                         @RequestParam(defaultValue = "1") Integer pageNumber,
                         @RequestParam(defaultValue = "10") Integer pageSize) {
 
                 return ResponseEntity.ok(
-                                expenseService.getExpensesByMaintenanceRequest(
-                                                requestId, Math.max(0, pageNumber - 1), pageSize));
+                                ApiResponse.success(expenseService.getExpensesByMaintenanceRequest(
+                                                requestId, Math.max(0, pageNumber - 1), pageSize)));
         }
 
         // ================================================================
@@ -165,7 +166,7 @@ public class ExpensesController {
         // ================================================================
 
         @PatchMapping("/{expenseId}")
-        public ResponseEntity<ExpensesDTO> update(
+        public ResponseEntity<ApiResponse<ExpensesDTO>> update(
                         @PathVariable Long expenseId,
                         @RequestParam(required = false) String expenseCategory,
                         @RequestParam(required = false) BigDecimal amount,
@@ -175,13 +176,13 @@ public class ExpensesController {
                         @RequestParam(required = false) String description) {
 
                 return ResponseEntity.ok(
-                                expenseService.updateExpense(
+                                ApiResponse.success(expenseService.updateExpense(
                                                 expenseId, expenseCategory, amount,
-                                                paymentDate, payeeName, evidenceUrl, description));
+                                                paymentDate, payeeName, evidenceUrl, description)));
         }
 
         @DeleteMapping("/{expenseId}")
-        public ResponseEntity<String> delete(@PathVariable Long expenseId) {
-                return ResponseEntity.ok(expenseService.deleteExpense(expenseId));
+        public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long expenseId) {
+                return ResponseEntity.ok(ApiResponse.success(expenseService.deleteExpense(expenseId)));
         }
 }
