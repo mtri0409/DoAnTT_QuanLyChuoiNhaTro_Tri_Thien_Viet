@@ -40,7 +40,7 @@ DEBUG_DIR.mkdir(exist_ok=True)
 VIDEO_SOURCE = "0"  # Thay bằng URL RTSP nếu dùng camera IP
 FRAMES_TO_COLLECT = 5
 
-JAVA_API_URL = os.getenv("API_BACKEND_URL", "http://localhost:8080/api/ai") + "/receive-plate"  # Webhook Backend Java
+JAVA_API_URL = os.getenv("API_BACKEND_URL", "http://localhost:8080/api/v1/ai") + "/receive-plate"  # Webhook Backend Java
 
 PLATE_REGEX = re.compile(r"^\d{2}[A-Z][0-9A-Z]\d{3,6}$")
 
@@ -77,20 +77,46 @@ def crop_image(frame, box):
 class FrameReader(threading.Thread):
     def __init__(self, source):
         super().__init__(daemon=True)
-        self.cap = cv2.VideoCapture(int(source) if source.isdigit() else source)
+        self.source = source
+        self.is_webcam = source.isdigit()
         self.frame = None
         self.lock = threading.Lock()
         self.stopped = False
-        self.is_webcam = source.isdigit()
+        self.is_simulated = False
+        
+        try:
+            self.cap = cv2.VideoCapture(int(source) if self.is_webcam else source)
+            if not self.cap.isOpened():
+                print(f"[WARN] Camera source {source} cannot be opened. Activating Simulation Mode.")
+                self.is_simulated = True
+        except Exception as e:
+            print(f"[WARN] Failed to initialize camera {source}: {e}. Activating Simulation Mode.")
+            self.is_simulated = True
         
     def run(self):
+        consecutive_failures = 0
         while not self.stopped:
+            if self.is_simulated:
+                frame = self.generate_simulated_frame()
+                with self.lock:
+                    self.frame = frame
+                time.sleep(0.04) # ~25 FPS
+                continue
+                
             ok, frame = self.cap.read()
             if not ok:
-                if self.is_webcam:
-                    time.sleep(0.01); continue
-                self.stopped = True; break
+                consecutive_failures += 1
+                if consecutive_failures > 15:
+                    print("[WARN] Too many consecutive frame failures. Switching to Camera Simulator.")
+                    self.is_simulated = True
                 
+                if self.is_webcam:
+                    time.sleep(0.01)
+                    continue
+                self.stopped = True
+                break
+            
+            consecutive_failures = 0
             with self.lock:
                 self.frame = frame
                 
@@ -100,7 +126,181 @@ class FrameReader(threading.Thread):
 
     def stop(self):
         self.stopped = True
-        self.cap.release()
+        if hasattr(self, 'cap') and self.cap is not None:
+            self.cap.release()
+
+    def generate_simulated_frame(self):
+        # 720x1280x3 canvas
+        frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        
+        # Draw background grid
+        for y in range(80, 720, 80):
+            cv2.line(frame, (0, y), (1280, y), (40, 40, 45), 1)
+        for x in range(80, 1280, 80):
+            cv2.line(frame, (x, 0), (x, 720), (40, 40, 45), 1)
+
+        # Draw a stylish gate/lane layout
+        cv2.line(frame, (400, 720), (500, 350), (120, 120, 120), 2)
+        cv2.line(frame, (880, 720), (780, 350), (120, 120, 120), 2)
+        
+        # Camera overlay text
+        now = datetime.now()
+        time_str = now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        cv2.putText(frame, f"CAM-01: MAIN ENTRANCE (SIMULATOR)", (30, 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        cv2.putText(frame, time_str, (930, 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        
+        global active_viewers
+        if active_viewers <= 0:
+            cv2.putText(frame, "STATUS: STANDBY (NO ACTIVE VIEWERS)", (30, 90), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (120, 120, 120), 2)
+            cv2.putText(frame, "DETECTION PAUSED", (480, 360), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
+            return frame
+
+        # Entry/Exit Stop line (red line)
+        cv2.line(frame, (480, 420), (800, 420), (0, 0, 255), 3)
+        
+        # Flashing "LIVE FEED" indicator
+        if int(time.time() * 2) % 2 == 0:
+            cv2.putText(frame, "● LIVE FEED (MOCK)", (30, 90), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        else:
+            cv2.putText(frame, "  LIVE FEED (MOCK)", (30, 90), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            
+        cv2.putText(frame, "STATUS: DEMO GATE RUNNING", (30, 120), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 1)
+        
+        # Cycle timing: Every 15 seconds
+        cycle_duration = 15.0
+        t = time.time() % cycle_duration
+        cycle_idx = int(time.time() / cycle_duration)
+        
+        if 8.0 <= t < 10.0:
+            # Entering
+            ratio = (t - 8.0) / 2.0
+            y = int(720 - ratio * (720 - 460))
+            w = int(200 + ratio * 100)
+            h = int(120 + ratio * 60)
+            self.draw_vehicle(frame, 640, y, w, h, None, None)
+            
+        elif 10.0 <= t < 13.0:
+            # Stationary (Plate scan phase)
+            y = 460
+            w = 300
+            h = 180
+            plate_text, is_square = self.get_plate_for_cycle(cycle_idx)
+            self.draw_vehicle(frame, 640, y, w, h, plate_text, is_square)
+            
+            # Submit detection ONCE per cycle
+            if not hasattr(self, 'last_submitted_cycle') or self.last_submitted_cycle != cycle_idx:
+                self.last_submitted_cycle = cycle_idx
+                self.trigger_simulated_detection(cycle_idx, plate_text, is_square)
+                
+        elif 13.0 <= t < 15.0:
+            # Exiting
+            ratio = (t - 13.0) / 2.0
+            y = int(460 - ratio * (460 - 320))
+            w = int(300 - ratio * 150)
+            h = int(180 - ratio * 90)
+            self.draw_vehicle(frame, 640, y, w, h, None, None)
+            
+        return frame
+
+    def draw_vehicle(self, frame, cx, cy, w, h, plate_text=None, is_square=True):
+        x1 = cx - w // 2
+        y1 = cy - h
+        x2 = cx + w // 2
+        y2 = cy
+        
+        # Body
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (180, 100, 50), -1)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (220, 220, 220), 2)
+        
+        # Windshield
+        wx1 = cx - int(w * 0.4)
+        wy1 = cy - h + int(h * 0.1)
+        wx2 = cx + int(w * 0.4)
+        wy2 = cy - int(h * 0.5)
+        cv2.rectangle(frame, (wx1, wy1), (wx2, wy2), (240, 200, 150), -1)
+        cv2.rectangle(frame, (wx1, wy1), (wx2, wy2), (220, 220, 220), 1)
+        
+        # Headlights
+        cv2.circle(frame, (x1 + int(w * 0.15), cy - int(h * 0.2)), int(w * 0.06), (200, 255, 255), -1)
+        cv2.circle(frame, (x2 - int(w * 0.15), cy - int(h * 0.2)), int(w * 0.06), (200, 255, 255), -1)
+        
+        # Grille
+        gx1 = cx - int(w * 0.2)
+        gy1 = cy - int(h * 0.3)
+        gx2 = cx + int(w * 0.2)
+        gy2 = cy - int(h * 0.1)
+        cv2.rectangle(frame, (gx1, gy1), (gx2, gy2), (30, 30, 30), -1)
+        
+        # License Plate
+        if plate_text:
+            pw = int(w * 0.48)
+            ph = int(h * 0.28) if is_square else int(h * 0.18)
+            px1 = cx - pw // 2
+            py1 = cy - int(h * 0.1) - ph // 2
+            px2 = cx + pw // 2
+            py2 = cy - int(h * 0.1) + ph // 2
+            
+            # Plate base
+            cv2.rectangle(frame, (px1, py1), (px2, py2), (240, 240, 240), -1)
+            cv2.rectangle(frame, (px1, py1), (px2, py2), (0, 0, 0), 2)
+            
+            # Draw AI Bounding Box overlay representing YOLO detection
+            color = (0, 255, 0)  # Green box
+            cv2.rectangle(frame, (px1 - 3, py1 - 3), (px2 + 3, py2 + 3), color, 2)
+            cv2.putText(frame, f"{'BSV' if is_square else 'BSD'} 0.96", (px1, py1 - 8), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+            
+            if is_square:
+                line1 = plate_text[:4]
+                line2 = plate_text[4:]
+                formatted_line1 = f"{line1[:2]}-{line1[2:]}"
+                formatted_line2 = f"{line2[:3]}.{line2[3:]}" if len(line2) >= 4 else line2
+                
+                cv2.putText(frame, formatted_line1, (px1 + 8, py1 + int(ph * 0.42)), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+                cv2.putText(frame, formatted_line2, (px1 + 8, py1 + int(ph * 0.85)), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            else:
+                formatted = f"{plate_text[:3]}-{plate_text[3:6]}.{plate_text[6:]}" if len(plate_text) > 6 else plate_text
+                cv2.putText(frame, formatted, (px1 + 6, py1 + int(ph * 0.72)), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 0, 0), 2)
+
+    def get_plate_for_cycle(self, cycle_idx):
+        plates = [
+            ("59G112345", True),  # Square
+            ("30A99999", False),  # Long
+            ("43C88888", True),
+            ("72A55555", False),
+            ("29A66666", True),
+            ("92C77777", False)
+        ]
+        return plates[cycle_idx % len(plates)]
+
+    def trigger_simulated_detection(self, track_id, plate_text, is_square):
+        crop_h = 60 if is_square else 40
+        crop_w = 120
+        crop_img = np.ones((crop_h, crop_w, 3), dtype=np.uint8) * 240
+        cv2.rectangle(crop_img, (0, 0), (crop_w - 1, crop_h - 1), (0, 0, 0), 2)
+        
+        if is_square:
+            line1 = f"{plate_text[:2]}-{plate_text[2:4]}"
+            line2 = f"{plate_text[4:7]}.{plate_text[7:]}" if len(plate_text) > 7 else plate_text[4:]
+            cv2.putText(crop_img, line1, (15, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+            cv2.putText(crop_img, line2, (15, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        else:
+            line = f"{plate_text[:3]}-{plate_text[3:6]}.{plate_text[6:]}" if len(plate_text) > 6 else plate_text
+            cv2.putText(crop_img, line, (10, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 2)
+            
+        cls_name = f"SIMULATED:{'BSV' if is_square else 'BSD'}:{plate_text}"
+        ocr_worker.submit_batch(track_id, [(crop_img, cls_name)])
+        print(f"[SIMULATOR] Dispatched simulated ALPR event for track {track_id}: {plate_text}")
 
 # ==================== LUỒNG 2: XỬ LÝ OCR & GỬI JAVA ====================
 class OcrWorker(threading.Thread):
@@ -131,7 +331,10 @@ class OcrWorker(threading.Thread):
             for idx, (crop, class_name) in enumerate(crops_data):
                 if crop.size == 0: continue
                 try:
-                    if class_name == 'BSV':
+                    if class_name.startswith("SIMULATED:"):
+                        parts = class_name.split(":")
+                        raw_text = parts[2]
+                    elif class_name == 'BSV':
                         h = crop.shape[0]
                         split_point = int(h * 0.5)
                         pil_top = Image.fromarray(cv2.cvtColor(crop[:split_point, :], cv2.COLOR_BGR2RGB))
@@ -220,6 +423,12 @@ def video_tracking_loop():
             time.sleep(0.01)
             continue
 
+        if hasattr(camera_reader, 'is_simulated') and camera_reader.is_simulated:
+            with frame_lock:
+                latest_annotated_frame = frame.copy()
+            time.sleep(0.03)
+            continue
+
         if frame.shape[1] > 1280:
             frame = cv2.resize(frame, (1280, int(frame.shape[0] * (1280/frame.shape[1]))))
 
@@ -276,21 +485,30 @@ def shutdown_event():
 
 # ==================== API ENDPOINTS CỦA WEB ====================
 
+active_viewers = 0
+
 def generate_mjpeg_stream():
     """Generator sinh ra các khung hình liên tục cho MJPEG stream"""
-    while True:
-        with frame_lock:
-            if latest_annotated_frame is None:
-                time.sleep(0.05)
-                continue
-            # Nén frame sang định dạng JPEG
-            ret, buffer = cv2.imencode('.jpg', latest_annotated_frame)
-            frame_bytes = buffer.tobytes()
-            
-        # Format HTTP chuẩn cho MJPEG
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        time.sleep(0.03) # Giới hạn ~30 FPS
+    global active_viewers
+    active_viewers += 1
+    print(f"[STREAM] New viewer connected. Active viewers: {active_viewers}", flush=True)
+    try:
+        while True:
+            with frame_lock:
+                if latest_annotated_frame is None:
+                    time.sleep(0.05)
+                    continue
+                # Nén frame sang định dạng JPEG
+                ret, buffer = cv2.imencode('.jpg', latest_annotated_frame)
+                frame_bytes = buffer.tobytes()
+                
+            # Format HTTP chuẩn cho MJPEG
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.04) # Giới hạn ~25 FPS
+    finally:
+        active_viewers = max(0, active_viewers - 1)
+        print(f"[STREAM] Viewer disconnected. Active viewers: {active_viewers}", flush=True)
 
 @app.get("/api/stream")
 async def video_feed():

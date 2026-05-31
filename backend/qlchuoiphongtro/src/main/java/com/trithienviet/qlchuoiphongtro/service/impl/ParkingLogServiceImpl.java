@@ -66,8 +66,7 @@ public class ParkingLogServiceImpl implements ParkingLogService {
         LocalDateTime checkAt = LocalDateTime.parse(payload.getTimestamp());
         
         // 2. Kiểm tra điều kiện nếu giờ quét nằm trong khoảng từ 0h sáng đến trước 6h sáng (Sau 12h đêm)
-        // if (checkAt.getHour() >= 0 && checkAt.getHour() < 6) {
-        if (checkAt.getHour() >= 6 || checkAt.getHour() == 0) {
+        if (checkAt.getHour() >= 0 && checkAt.getHour() < 6) {
             log.info("🌙 [CẢNH BÁO CA ĐÊM] Xe quét vào khung giờ muộn sau 12h đêm: {}h", checkAt.getHour());
             List<Profile> profiles = profileRepo.findProfileByRole(com.trithienviet.qlchuoiphongtro.entity.UserRole.ADMIN); // Giả sử role = ADMIN là người quản lý hoặc chủ nhà, bạn cần thay bằng logic lấy profile thực tế
             

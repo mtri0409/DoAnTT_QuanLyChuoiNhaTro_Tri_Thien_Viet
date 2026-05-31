@@ -55,7 +55,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      API_BACKEND_URL: http://backend:8080/api/ai
+      API_BACKEND_URL: http://backend:8080/api/v1/ai
     depends_on:
       - backend
     networks:

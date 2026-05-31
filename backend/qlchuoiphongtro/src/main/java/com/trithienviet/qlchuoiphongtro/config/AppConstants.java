@@ -51,12 +51,8 @@ public class AppConstants {
             "/api/v1/maintenance/images/**",
             "/api/v1/admin/evidence/**",       // Ảnh minh chứng chi phí (public display)
             "/error",
-
-            // ── Tất cả endpoint public của Web User ───────────────────────
-            // Bao gồm: /api/v1/public/rooms/**, /api/v1/public/branches/**,
-            // /api/v1/public/amenities/**, /api/v1/public/floors/**,
-            // /api/v1/public/room-medias/**, /api/v1/public/profiles/**,
-            // /api/v1/public/roommate-posts/**, /api/v1/public/posts/**, v.v.
+            "/ws-parking/**",
+            "/api/v1/ai/**",
             "/api/v1/public/**",
 
             // ── Gửi thông báo liên hệ (Web User contact form) ────────────
@@ -174,7 +170,6 @@ public class AppConstants {
      */
     public static final String[] ADMIN_URLS = {
             "/api/v1/admin/**",    // catch-all (STAFF exceptions đã match ở bước 4)
-            "/api/v1/ai/**",
             "/api/v1/ocr/**",
     };
 
