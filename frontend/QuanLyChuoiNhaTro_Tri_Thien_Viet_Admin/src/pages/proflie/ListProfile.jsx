@@ -7,7 +7,7 @@ import {
 import apiProfile from '../../api/apiProfile';
 // import apiUser from '../../api/apiUser';
 import Pagination from '../../components/Pagination';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import apiUser from '../../api/apiUser';
 import apiBranch from '../../api/apiBranches';
 import { toast } from 'react-toastify';
@@ -18,6 +18,7 @@ const ListProfile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedBranch, setSelectedBranch] = useState('');
   const [branches, setBranches] = useState([]);
   // --- STATE QUẢN LÝ SEARCH ---
@@ -28,7 +29,14 @@ const ListProfile = () => {
   const [sortBy, setSortBy] = useState('profileId');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  const [viewType,setViewType] = useState("TENANT")
+  const [viewType, setViewType] = useState(location.state?.viewType || "TENANT");
+
+  useEffect(() => {
+    if (location.state?.viewType) {
+      setViewType(location.state.viewType);
+      setCurrentPage(1);
+    }
+  }, [location.state?.viewType]);
   
   // Hàm gọi API chung cho cả Load All và Search
   const fetchProfiles = async () => {
@@ -181,7 +189,7 @@ const ListProfile = () => {
     {/* Nav Tabs: Chuyển đổi đối tượng quản lý */}
     <ul className="nav nav-pills mb-4 bg-white p-1 rounded-3 shadow-sm d-inline-flex border">
       <li className="nav-item">
-        <button 
+        <button
           className={`nav-link px-4 py-2 fw-semibold ${viewType === 'TENANT' ? 'active' : 'text-muted'}`}
           onClick={() => { setViewType('TENANT'); setCurrentPage(1); }}
         >
@@ -189,11 +197,19 @@ const ListProfile = () => {
         </button>
       </li>
       <li className="nav-item">
-        <button 
+        <button
           className={`nav-link px-4 py-2 fw-semibold ${viewType === 'SYSTEM' ? 'active' : 'text-muted'}`}
           onClick={() => { setViewType('SYSTEM'); setCurrentPage(1); }}
         >
           Nhân sự hệ thống
+        </button>
+      </li>
+      <li className="nav-item">
+        <button
+          className="nav-link px-4 py-2 fw-semibold text-muted"
+          onClick={() => navigate('/guests/management')}
+        >
+          Khách tạm trú
         </button>
       </li>
     </ul>

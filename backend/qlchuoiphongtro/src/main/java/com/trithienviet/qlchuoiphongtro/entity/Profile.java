@@ -51,7 +51,7 @@ public class Profile {
     @Size(min = 12, max = 12, message = "identity number must be axactly 10 digits long")
     private String identityNumber;
 
-    @Size(min = 20, message = "Address must contain at least 20 characters")
+    // @Size(min = 20, message = "Address must contain at least 20 characters")
     private String address;
 
     @Column(nullable = true)
@@ -67,6 +67,12 @@ public class Profile {
 
     @Column(name = "id_issue_place")
     private String idIssuePlace; // Nơi cấp (Cục Cảnh sát QLHC về trật tự xã hội)
+
+    @Column(nullable = true)
+    private String profilePhoto; // Ảnh đại diện (ngoài ảnh CCCD)
+
+    @Column(nullable = true)
+    private String relationship; // Mối quan hệ với chủ hợp đồng (vợ/chồng, con, v.v.)
 
     @OneToOne(mappedBy = "profile", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private User user;

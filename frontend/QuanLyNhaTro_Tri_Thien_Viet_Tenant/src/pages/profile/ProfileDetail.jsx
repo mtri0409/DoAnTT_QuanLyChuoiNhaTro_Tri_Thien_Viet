@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt, 
-  FaCalendarAlt, FaArrowLeft, FaEdit, FaMotorcycle, 
+import {
+  FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt,
+  FaCalendarAlt, FaArrowLeft, FaEdit, FaMotorcycle,
   FaHome, FaFileContract, FaCloudUploadAlt, FaKey, FaUserEdit,
-  FaCamera, FaTimes
+  FaCamera, FaTimes, FaUsers
 } from 'react-icons/fa';
 import apiProfile from '../../api/apiProfile';
 import { notify } from '../../utils/swalUtils';
@@ -228,6 +228,13 @@ const ProfileDetail = () => {
         <div className="d-flex gap-2">
           <button onClick={() => navigate(`/user/profile/${id}/update`)} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
             <FaUserEdit /> Cập nhật
+          </button>
+          <button onClick={() => {
+            // Pass profileId + roomId (roomId optional, backend sẽ query)
+            const profileId = profile?.profileId;
+            navigate(`/user/profile/${id}/guests`);
+          }} className="btn btn-success d-flex align-items-center gap-2 px-4 shadow-sm">
+            <FaUsers /> Người thân
           </button>
           <button onClick={() => navigate(`/user/change-password`)} className="btn btn-outline-dark d-flex align-items-center gap-2 px-3">
             <FaKey /> Đổi mật khẩu

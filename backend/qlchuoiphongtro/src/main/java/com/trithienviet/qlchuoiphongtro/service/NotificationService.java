@@ -13,4 +13,9 @@ public interface NotificationService {
     PageResponse<NotificationLoadDTO> getAllNoti(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder);
     void sendSystemNotification(Long profileId, String title, String content, String type);
     long countUnread(Long userId);
+
+    // Mới thêm cho chức năng đăng ký người thân
+    void notifyAdminGuestRegistration(String roomName, String guestName, String tenantName);
+    void notifyGuestApproved(String guestName, String roomName);
+    void notifyGuestRejected(String guestName, String roomName, String rejectionReason);
 }

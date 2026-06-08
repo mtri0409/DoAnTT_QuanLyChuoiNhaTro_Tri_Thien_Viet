@@ -1,0 +1,4 @@
+/* GuestRegistration styling - Using Bootstrap 5 for layout */
+.card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}

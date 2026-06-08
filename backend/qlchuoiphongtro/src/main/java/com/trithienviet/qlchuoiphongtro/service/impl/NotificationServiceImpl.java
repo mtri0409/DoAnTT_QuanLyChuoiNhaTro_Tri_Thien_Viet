@@ -177,4 +177,77 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepo.save(notification);
     }
+
+    // Mới thêm cho chức năng đăng ký người thân
+
+    @Override
+    public void notifyAdminGuestRegistration(String roomName, String guestName, String tenantName) {
+        // Gửi thông báo cho admin
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký người thân mới";
+        String content = String.format(
+                "Khách thuê %s vừa đăng ký %s để ở nhờ tại phòng %s. Vui lòng kiểm duyệt.",
+                tenantName,
+                guestName,
+                roomName
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_REGISTRATION");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public void notifyGuestApproved(String guestName, String roomName) {
+        // Gửi thông báo cho tất cả admin (userId=1)
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký được phê duyệt";
+        String content = String.format(
+                "%s đã được phê duyệt để ở nhờ tại phòng %s.",
+                guestName,
+                roomName
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_APPROVED");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public void notifyGuestRejected(String guestName, String roomName, String rejectionReason) {
+        // Gửi thông báo cho tất cả admin
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký bị từ chối";
+        String content = String.format(
+                "Đơn đăng ký của %s tại phòng %s đã bị từ chối. Lý do: %s",
+                guestName,
+                roomName,
+                rejectionReason != null ? rejectionReason : "Không có"
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_REJECTED");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
 }

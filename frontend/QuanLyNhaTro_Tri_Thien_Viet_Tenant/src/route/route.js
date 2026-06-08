@@ -15,6 +15,7 @@ import VehicleGridLayout from "../pages/profile/ManagerVehicle";
 import ProfileDetail from "../pages/profile/ProfileDetail";
 import ProfileUpdate from "../pages/profile/UpdateProfile";
 import UpdateVehicle from "../pages/profile/UpdateVehicleProfile";
+import GuestRegistrationPage from "../pages/profile/GuestRegistrationPage";
 import ListMaintenanceRequest from "../pages/maintenance-request/ListMaintenanceRequest";
 import MaintenanceRequestDetail from "../pages/maintenance-request/MaintenanceRequestDetail";
 import TenantContractDetail from "../pages/contract/ContractDetail";
@@ -25,6 +26,7 @@ const AdminRoute = [
   { path: "/", component: Home },
   { path: "user/profile/:id", component: ProfileDetail },
   { path: "user/profile/:id/update", component: ProfileUpdate },
+  { path: "user/profile/:id/guests", component: GuestRegistrationPage },
   { path: "user/change-password", component: ChangePassword },
   { path: "user/manager-vehicle/:id", component: VehicleGridLayout },
   { path: "user/vehicle/:id/create", component: CreateVehicle },

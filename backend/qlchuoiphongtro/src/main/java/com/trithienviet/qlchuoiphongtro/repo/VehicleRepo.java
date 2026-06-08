@@ -53,7 +53,7 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
     Page<Vehicle> findVehicles(Pageable pageable,@Param("status") Boolean status);
 
     @Query("SELECT v FROM Vehicle v " +
-           "JOIN v.owner p " + 
+           "JOIN v.owner p " +
            "JOIN p.roomMember rm " +
            "JOIN rm.contract c " +
            "JOIN c.room r " +
@@ -61,9 +61,33 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Long> {
            "WHERE v.status = :status " +
            "AND (:branchId IS NULL OR f.branch.branchId = :branchId)")
     Page<Vehicle> findVehiclesByBranch(
-        @Param("branchId") Integer branchId, 
-        @Param("status") Boolean status, 
+        @Param("branchId") Integer branchId,
+        @Param("status") Boolean status,
         Pageable pageable
     );
+
+    // Mới thêm cho chức năng đăng ký xe của người thân
+
+    // Lấy danh sách xe của người thân
+    @Query("""
+            SELECT v FROM Vehicle v
+            WHERE v.registeredByMember.memberId = :memberId
+            """)
+    List<Vehicle> findByRegisteredByMember(@Param("memberId") Integer memberId);
+
+    // Kiểm tra biển số xe đã tồn tại (kể cả đã xóa)
+    @Query("""
+            SELECT CASE WHEN COUNT(v) > 0 THEN true ELSE false END
+            FROM Vehicle v
+            WHERE LOWER(v.licensePlate) = LOWER(:licensePlate)
+            """)
+    boolean existsByLicensePlateIgnoreCase(@Param("licensePlate") String licensePlate);
+
+    // Lấy xe theo biển số (bất kể status)
+    @Query("""
+            SELECT v FROM Vehicle v
+            WHERE LOWER(v.licensePlate) = LOWER(:licensePlate)
+            """)
+    Optional<Vehicle> findByLicensePlateIgnoreCase(@Param("licensePlate") String licensePlate);
 
 }

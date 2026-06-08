@@ -37,9 +37,17 @@ public class Vehicle {
     private String licensePlate; // Biển số xe (QUAN TRỌNG - unique)
 
     private String color; // Màu xe (tuỳ chọn)
-    
+
     private LocalDateTime registeredAt = LocalDateTime.now(); // Thời gian đăng ký
-    
+
+    // Mới thêm cho chức năng đăng ký xe của người thân
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registered_by_member_id", nullable = true)
+    private RoomMember registeredByMember; // Người nào đăng ký biển số xe
+
+    @Column(nullable = true)
+    private String memberRelation; // Mối quan hệ của người đăng ký
+
     @OneToMany(mappedBy = "vehicle", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ParkingLog> parkingLogs;
 }

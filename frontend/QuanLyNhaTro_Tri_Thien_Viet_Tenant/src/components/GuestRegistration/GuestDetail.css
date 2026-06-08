@@ -1,0 +1,75 @@
+/* GuestDetail Lightbox Image Modal styling */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  cursor: zoom-out;
+}
+
+.image-modal .modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 650px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.image-modal .close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f0f0f0;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+  color: #333;
+}
+
+.image-modal .close-btn:hover {
+  background: #e0e0e0;
+  transform: scale(1.05);
+}
+
+.modal-image-wrapper {
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+}
+
+.modal-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  color: #999;
+}
+
+.modal-image svg {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}

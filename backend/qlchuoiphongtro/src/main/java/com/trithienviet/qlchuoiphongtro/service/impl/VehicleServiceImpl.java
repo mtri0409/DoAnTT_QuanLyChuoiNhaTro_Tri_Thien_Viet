@@ -145,6 +145,7 @@ public class VehicleServiceImpl implements VehicleService {
         Vehicle vehicle = modelMapper.map(vehicleDTO, Vehicle.class);
         vehicle.setOwner(profile);
         vehicle.getBrand();
+        vehicle.setStatus(true);
         vehicle.setRoom(Optional.ofNullable(profile)
             .map(Profile::getRoomMember)
             .map(RoomMember::getContract)

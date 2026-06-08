@@ -61,6 +61,7 @@ import UpdatePostCategory from "../pages/post/UpdatePostCategory";
 import NewsPostEditForm from "../pages/post/NewsPostEditForm";
 import ListParkingLog from "../pages/park/ParkingLog";
 import CameraDashboard from "../pages/park/CameraDashboard";
+import GuestRegistrationManagementPage from "../pages/proflie/GuestRegistrationManagementPage";
 
 // =============================================================
 // PHÂN QUYỀN ROUTE (roles)
@@ -80,6 +81,7 @@ const AdminRoute = [
   { path: "/profile/:id/update", component: UpdateProfile, roles: ["ADMIN", "STAFF"] },
   { path: "/profile/:profileId/vehicle", component: CreateVehicle, roles: ["ADMIN", "STAFF"] },
   { path: "/profile/restore", component: ListProfileDeleted, roles: ["ADMIN", "STAFF"] },
+  { path: "/guests/management", component: GuestRegistrationManagementPage, roles: ["ADMIN", "STAFF"] },
 
   // ─── QUẢN LÝ TÀI KHOẢN (chỉ ADMIN) ────────────────────────
   { path: "/users", component: ListUser, roles: ["ADMIN"] },
