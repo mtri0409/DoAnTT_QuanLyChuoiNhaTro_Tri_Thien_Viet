@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
 import com.trithienviet.qlchuoiphongtro.service.OCRService;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
@@ -22,16 +21,13 @@ public class OCRController {
     private OCRService ocrService;
 
     @PostMapping(value = "/admin/ocr/water", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadAndScan(@RequestParam("file") MultipartFile file) {
-        // Bước A: (Bạn có thể thêm code lưu file vào database/thư mục ở đây)
-        
-        // Bước B: Quét lấy số
+    public ResponseEntity<Map<String, Object>> uploadAndScan(@RequestParam("file") MultipartFile file) {
         String resultNumber = ocrService.scanMeterImage(file);
 
         Map<String, Object> data = Map.of(
             "detectedNumber", resultNumber,
             "status", "success"
         );
-        return ResponseEntity.ok(ApiResponse.success(data, "Quét chỉ số nước thành công"));
+        return ResponseEntity.ok(data);
     }
 }

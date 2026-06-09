@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.payloads.LoginCredentials;
 import com.trithienviet.qlchuoiphongtro.payloads.UserDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.security.JWTUtil;
 import com.trithienviet.qlchuoiphongtro.service.UserService;
@@ -43,40 +42,35 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/auth/login")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> loginHandler(@RequestBody LoginCredentials credentials) {
+    public ResponseEntity<Map<String, Object>> loginHandler(@RequestBody LoginCredentials credentials) {
         try {
-            // Authenticate
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                              credentials.getUserName(),
                             credentials.getPassword()));
         } catch (Exception e) {
-            // Nếu bị IllegalAccessException hoặc BadCredentialsException sẽ rơi vào đây
             throw new RuntimeException("Xác thực thất bại: " + e.getMessage());
         }
 
-        // Lấy User để trả về data
         User user = userRepo.findByUserName(credentials.getUserName())
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
         if (user.getIsActice() != null && !user.getIsActice()) {
             throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
         }
-        // Generate JWT
+
         String token = jwtUtil.generateToken(user.getUserName());
 
-        // Trả data cho Frontend (React)
         Map<String, Object> data = Map.of(
                 "token", token,
                 "username", user.getUserName(),
-                "role", user.getRole().name() // Nên trả thêm Role để React phân quyền UI
+                "role", user.getRole().name()
         );
-        return ResponseEntity.ok(ApiResponse.success(data, "Đăng nhập thành công"));
+        return new ResponseEntity<>(data, HttpStatus.OK);
     }
 
-    // @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/auth/create-account/{profileId}")
-    public ResponseEntity<ApiResponse<UserDTO>> createAccount(
+    public ResponseEntity<UserDTO> createAccount(
             @PathVariable Long profileId,
             @RequestBody LoginCredentials credentials) {
 
@@ -85,14 +79,14 @@ public class AuthController {
                 credentials.getUserName(),
                 credentials.getPassword());
 
-        return new ResponseEntity<>(ApiResponse.success(newUser, "Tạo tài khoản thành công"), HttpStatus.CREATED);
+        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 
     @PostMapping("/auth/generare-account/{profileId}")
-    public ResponseEntity<ApiResponse<UserDTO>> generateAccount(@PathVariable Long profileId) {
+    public ResponseEntity<UserDTO> generateAccount(@PathVariable Long profileId) {
 
         UserDTO newUser = userService.generateAccountForFile(
                 profileId);
-        return new ResponseEntity<>(ApiResponse.success(newUser, "Tạo tài khoản thành công"), HttpStatus.CREATED);
+        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 }

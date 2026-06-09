@@ -21,7 +21,6 @@ import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ContractServiceDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.TerminateContractRequest;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.ContractService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,169 +34,165 @@ public class ContractController {
 
     private final ContractService contractService;
 
-    // ==================== CREATE (Admin) ====================
     @PostMapping("/admin/contracts")
-    public ResponseEntity<ApiResponse<ContractDTO>> create(@RequestBody ContractDTO dto) {
+    public ResponseEntity<ContractDTO> create(@RequestBody ContractDTO dto) {
         ContractDTO created = contractService.createContract(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(created));
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    // ==================== GET ALL (Admin, phân trang) ====================
     @GetMapping("/admin/contracts")
-    public ResponseEntity<ApiResponse<PageResponse<ContractDTO>>> getAll(
+    public ResponseEntity<PageResponse<ContractDTO>> getAll(
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
             @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.getAllContracts(
-                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
+        PageResponse<ContractDTO> response = contractService.getAllContracts(
+                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ==================== FILTER (Admin, lọc theo status + branchId, phân trang)
-    // ====================
-    // [FIX] Endpoint mới thay thế việc lọc chi nhánh client-side
-    // GET
-    // /api/admin/contracts/filter?status=ACTIVE&branchId=2&pageNumber=1&pageSize=10
     @GetMapping("/admin/contracts/filter")
-    public ResponseEntity<ApiResponse<PageResponse<ContractDTO>>> filter(
+    public ResponseEntity<PageResponse<ContractDTO>> filter(
             @RequestParam(required = false) ContractStatus status,
             @RequestParam(required = false) Long branchId,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
             @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.filterContracts(
-                status, branchId, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
+        PageResponse<ContractDTO> response = contractService.filterContracts(
+                status, branchId, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ==================== SEARCH (Admin, phân trang) ====================
     @GetMapping("/admin/contracts/search")
-    public ResponseEntity<ApiResponse<PageResponse<ContractDTO>>> search(
+    public ResponseEntity<PageResponse<ContractDTO>> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
             @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.searchContracts(
-                keyword, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
+        PageResponse<ContractDTO> response = contractService.searchContracts(
+                keyword, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ==================== GET BY ID (Public) ====================
     @GetMapping("/user/contracts/{id}")
-    public ResponseEntity<ApiResponse<ContractDTO>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.getContractById(id)));
+    public ResponseEntity<ContractDTO> getById(@PathVariable Long id) {
+        ContractDTO contract = contractService.getContractById(id);
+        return new ResponseEntity<>(contract, HttpStatus.OK);
     }
 
-    // ==================== GET BY STATUS (Admin, phân trang) ====================
     @GetMapping("/admin/contracts/status/{status}")
-    public ResponseEntity<ApiResponse<PageResponse<ContractDTO>>> getByStatus(
+    public ResponseEntity<PageResponse<ContractDTO>> getByStatus(
             @PathVariable ContractStatus status,
             @RequestParam(defaultValue = AppConstants.PAGE_NUMBER) int pageNumber,
             @RequestParam(defaultValue = AppConstants.PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "contractId") String sortBy,
             @RequestParam(defaultValue = AppConstants.SORT_DIR) String sortOrder) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.getContractsByStatus(
-                status, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
+        PageResponse<ContractDTO> response = contractService.getContractsByStatus(
+                status, Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ==================== UPDATE (Public) ====================
     @PutMapping("/user/contracts/{id}")
-    public ResponseEntity<ApiResponse<ContractDTO>> update(
+    public ResponseEntity<ContractDTO> update(
             @PathVariable Long id,
             @RequestBody ContractDTO dto) {
         ContractDTO updated = contractService.updateContract(id, dto);
-        return ResponseEntity.ok(ApiResponse.success(updated));
+        return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
-    // ==================== UPDATE STATUS (Admin) ====================
     @PutMapping("/admin/contracts/{id}/status")
-    public ResponseEntity<ApiResponse<String>> updateStatus(
+    public ResponseEntity<String> updateStatus(
             @PathVariable Long id,
             @RequestBody ContractStatus newStatus) {
         contractService.updateStatus(id, newStatus);
-        return ResponseEntity.ok(ApiResponse.success("Contract status updated successfully to: " + newStatus));
+        String message = "Contract status updated successfully to: " + newStatus;
+        return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
-    // ==================== DELETE (Admin) ====================
     @DeleteMapping("/admin/contracts/{id}")
-    public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long id) {
+    public ResponseEntity<String> delete(@PathVariable Long id) {
         contractService.deleteContract(id);
-        return ResponseEntity.ok(ApiResponse.success("Contract deleted successfully"));
+        return new ResponseEntity<>("Contract deleted successfully", HttpStatus.OK);
     }
 
-    // ==================== AUTO UPDATE STATUS (Admin) ====================
     @PostMapping("/admin/contracts/status-updates")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> autoUpdateStatus() {
+    public ResponseEntity<Map<String, Object>> autoUpdateStatus() {
         List<ContractDTO> updated = contractService.autoUpdateStatus();
-        return ResponseEntity.ok(ApiResponse.success(
-                Map.of(
-                        "updatedCount", updated.size(),
-                        "contracts", updated)));
+        Map<String, Object> response = Map.of(
+                "updatedCount", updated.size(),
+                "contracts", updated);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // ==================== MEMBERS (User/Tenant) ====================
     @PostMapping("/user/contracts/{contractId}/members/{profileId}")
-    public ResponseEntity<ApiResponse<String>> addMember(
+    public ResponseEntity<String> addMember(
             @PathVariable Long contractId,
             @PathVariable Long profileId) {
         contractService.addMember(contractId, profileId);
-        return ResponseEntity.ok(ApiResponse.success("Member added successfully"));
+        return new ResponseEntity<>("Member added successfully", HttpStatus.OK);
     }
 
     @DeleteMapping("/user/contracts/{contractId}/members/{profileId}")
-    public ResponseEntity<ApiResponse<String>> removeMember(
+    public ResponseEntity<String> removeMember(
             @PathVariable Long contractId,
             @PathVariable Long profileId) {
         contractService.removeMember(contractId, profileId);
-        return ResponseEntity.ok(ApiResponse.success("Member removed successfully"));
+        return new ResponseEntity<>("Member removed successfully", HttpStatus.OK);
     }
 
     @GetMapping("/user/contracts/{contractId}/members")
-    public ResponseEntity<ApiResponse<List<Long>>> getMembers(@PathVariable Long contractId) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.getMemberIds(contractId)));
+    public ResponseEntity<List<Long>> getMembers(@PathVariable Long contractId) {
+        List<Long> memberIds = contractService.getMemberIds(contractId);
+        return new ResponseEntity<>(memberIds, HttpStatus.OK);
     }
 
-    // ==================== GET BY ROOM (User/Tenant) ====================
     @GetMapping("/user/contracts/room/{roomId}")
-    public ResponseEntity<ApiResponse<List<ContractDTO>>> getByRoom(@PathVariable Long roomId) {
-        return ResponseEntity.ok(ApiResponse.success(contractService.getContractsByRoom(roomId)));
+    public ResponseEntity<List<ContractDTO>> getByRoom(@PathVariable Long roomId) {
+        List<ContractDTO> contracts = contractService.getContractsByRoom(roomId);
+        return new ResponseEntity<>(contracts, HttpStatus.OK);
     }
 
-    // ==================== SERVICES (User/Tenant) ====================
     @GetMapping("/user/contracts/{contractId}/services")
-    public ResponseEntity<ApiResponse<Map<String, List<ContractServiceDTO>>>> getServices(
+    public ResponseEntity<Map<String, List<ContractServiceDTO>>> getServices(
             @PathVariable Long contractId) {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("services", contractService.getServicesByContract(contractId))));
+        List<ContractServiceDTO> services = contractService.getServicesByContract(contractId);
+        Map<String, List<ContractServiceDTO>> response = Map.of("services", services);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/user/contracts/{contractId}/services")
-    public ResponseEntity<ApiResponse<Map<String, String>>> addServices(
+    public ResponseEntity<Map<String, String>> addServices(
             @PathVariable Long contractId,
             @RequestBody List<ContractServiceDTO> services) {
         contractService.addServices(contractId, services);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("message", "Add services to contract successfully")));
+        Map<String, String> response = Map.of("message", "Add services to contract successfully");
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/user/contracts/services/{id}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> updateService(
+    public ResponseEntity<Map<String, String>> updateService(
             @PathVariable Integer id,
             @RequestBody ContractServiceDTO dto) {
         contractService.updateService(id, dto);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("message", "Update contract service successfully")));
+        Map<String, String> response = Map.of("message", "Update contract service successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @DeleteMapping("/user/contracts/services/{id}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> deleteService(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> deleteService(@PathVariable Integer id) {
         contractService.deleteService(id);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("message", "Delete contract service successfully")));
+        Map<String, String> response = Map.of("message", "Delete contract service successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/admin/contracts/{id}/termination")
-    public ResponseEntity<ApiResponse<String>> terminate(
+    public ResponseEntity<String> terminate(
             @PathVariable Long id,
             @RequestBody(required = false) TerminateContractRequest request) {
         String reason = (request != null) ? request.getReason() : null;
         contractService.terminateContract(id, reason);
-        return ResponseEntity.ok(ApiResponse.success("Contract terminated successfully"));
+        return new ResponseEntity<>("Contract terminated successfully", HttpStatus.OK);
     }
 }

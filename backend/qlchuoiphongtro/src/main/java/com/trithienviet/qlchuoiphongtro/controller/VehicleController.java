@@ -9,7 +9,6 @@ import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.VehicleLoadDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.VehicleService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -23,7 +22,7 @@ public class VehicleController {
     private VehicleService vehicleService;
 
     @GetMapping("/admin/vehicles")
-    public ResponseEntity<ApiResponse<PageResponse<VehicleLoadDTO>>> getAllVehicles( 
+    public ResponseEntity<PageResponse<VehicleLoadDTO>> getAllVehicles( 
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
         @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_VEHICEL_BY, required = false) String sortBy,
@@ -37,11 +36,11 @@ public class VehicleController {
                         sortOrder,
                         branchId,
                         status) ;
-        return new ResponseEntity<>(ApiResponse.success(profileResponse), HttpStatus.OK);     
+        return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
 
     @GetMapping("/admin/vehicles/search")
-    public ResponseEntity<ApiResponse<PageResponse<VehicleLoadDTO>>> searchVehicles( 
+    public ResponseEntity<PageResponse<VehicleLoadDTO>> searchVehicles( 
         @RequestParam String keyword,
         @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
         @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
@@ -58,40 +57,40 @@ public class VehicleController {
                         sortOrder,
                         branchId,
                         status) ;
-        return new ResponseEntity<>(ApiResponse.success(profileResponse), HttpStatus.OK);     
+        return new ResponseEntity<>(profileResponse, HttpStatus.OK);     
     }
 
     @GetMapping("/user/vehicles/{vehicleId}")
-    public ResponseEntity<ApiResponse<VehicleLoadDTO>> getVehicleById(@PathVariable Long vehicleId)
+    public ResponseEntity<VehicleLoadDTO> getVehicleById(@PathVariable Long vehicleId)
     {
         VehicleLoadDTO vehicleLoadDTO = vehicleService.getVehicleById(vehicleId);
-        return new ResponseEntity<>(ApiResponse.success(vehicleLoadDTO), HttpStatus.OK);
+        return new ResponseEntity<>(vehicleLoadDTO, HttpStatus.OK);
     }   
 
     @PostMapping("/user/vehicles/{owner_id}")
-    public ResponseEntity<ApiResponse<VehicleDTO>> addVehicleForTenant(@Valid @PathVariable Long owner_id, @RequestBody VehicleDTO vehicelDTO) {
+    public ResponseEntity<VehicleDTO> addVehicleForTenant(@Valid @PathVariable Long owner_id, @RequestBody VehicleDTO vehicelDTO) {
         VehicleDTO addVehicle = vehicleService.addVehicleForTenant(owner_id, vehicelDTO);
-        return new ResponseEntity<>(ApiResponse.success(addVehicle), HttpStatus.OK);
+        return new ResponseEntity<>(addVehicle, HttpStatus.OK);
     }
     
     @PutMapping("/user/vehicles/{vehicleId}")
-    public ResponseEntity<ApiResponse<VehicleDTO>> updateVehicle(
+    public ResponseEntity<VehicleDTO> updateVehicle(
             @PathVariable Long vehicleId, 
             @Valid @RequestBody VehicleDTO vehicleDTO) {
         
         VehicleDTO updatedVehicle = vehicleService.updateVehicle(vehicleId, vehicleDTO);
-        return new ResponseEntity<>(ApiResponse.success(updatedVehicle), HttpStatus.OK);
+        return new ResponseEntity<>(updatedVehicle, HttpStatus.OK);
     }
 
     @DeleteMapping("/user/vehicles/{vehicleId}")
-    public ResponseEntity<ApiResponse<String>> deleteVehicle(@PathVariable Long vehicleId) {
+    public ResponseEntity<String> deleteVehicle(@PathVariable Long vehicleId) {
         String message =  vehicleService.deleteVehicle(vehicleId);
-        return new ResponseEntity<>(ApiResponse.success(message), HttpStatus.OK);
+        return new ResponseEntity<>(message, HttpStatus.OK);
     }
 
     @PostMapping("/admin/vehicles/{vehicleId}/restoration")
-    public ResponseEntity<ApiResponse<String>> restoreVehicle(@PathVariable Long vehicleId){
+    public ResponseEntity<String> restoreVehicle(@PathVariable Long vehicleId){
         String message = vehicleService.restoreVehilcle(vehicleId);
-        return new ResponseEntity<>(ApiResponse.success(message), HttpStatus.OK);
+        return new ResponseEntity<>(message, HttpStatus.OK);
     }
 }

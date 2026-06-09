@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.RoomDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.RoomService;
 
 @RestController
@@ -18,40 +17,37 @@ public class RoomController {
     private RoomService roomService;
 
     @PostMapping("/admin/rooms")
-    public ResponseEntity<ApiResponse<RoomDTO>> createRoom(@RequestBody RoomDTO roomDTO) {
+    public ResponseEntity<RoomDTO> createRoom(@RequestBody RoomDTO roomDTO) {
         RoomDTO created = roomService.createRoom(roomDTO);
-        return new ResponseEntity<>(ApiResponse.success(created), HttpStatus.CREATED);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/admin/rooms/{roomId}")
-    public ResponseEntity<ApiResponse<RoomDTO>> updateRoom(@PathVariable Long roomId, @RequestBody RoomDTO roomDTO) {
+    public ResponseEntity<RoomDTO> updateRoom(@PathVariable Long roomId, @RequestBody RoomDTO roomDTO) {
         RoomDTO updated = roomService.updateRoom(roomId, roomDTO);
-        return ResponseEntity.ok(ApiResponse.success(updated));
+        return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
     @DeleteMapping("/admin/rooms/{roomId}")
-    public ResponseEntity<ApiResponse<String>> deleteRoom(@PathVariable Long roomId) {
+    public ResponseEntity<String> deleteRoom(@PathVariable Long roomId) {
         String msg = roomService.deleteRoom(roomId);
-        return ResponseEntity.ok(ApiResponse.success(msg));
+        return new ResponseEntity<>(msg, HttpStatus.OK);
     }
 
-    // ── Public: Xem chi tiết phòng (vãng lai) ──────────────────────
     @GetMapping("/public/rooms/{roomId}")
-    public ResponseEntity<ApiResponse<RoomDTO>> getRoomById(@PathVariable Long roomId) {
+    public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long roomId) {
         RoomDTO room = roomService.getRoomById(roomId);
-        return ResponseEntity.ok(ApiResponse.success(room));
+        return new ResponseEntity<>(room, HttpStatus.OK);
     }
 
-    // ── Internal: Xem chi tiết phòng (cần auth) ─────────────────────
     @GetMapping("/admin/rooms/{roomId}")
-    public ResponseEntity<ApiResponse<RoomDTO>> getRoomByIdAuth(@PathVariable Long roomId) {
+    public ResponseEntity<RoomDTO> getRoomByIdAuth(@PathVariable Long roomId) {
         RoomDTO room = roomService.getRoomById(roomId);
-        return ResponseEntity.ok(ApiResponse.success(room));
+        return new ResponseEntity<>(room, HttpStatus.OK);
     }
 
-    // ── Public: Danh sách phòng đầy đủ filter (vãng lai) ───────────
     @GetMapping("/public/rooms")
-    public ResponseEntity<ApiResponse<PageResponse<RoomDTO>>> getAllRoomsPublic(
+    public ResponseEntity<PageResponse<RoomDTO>> getAllRoomsPublic(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "roomName") String sortBy,
@@ -64,12 +60,11 @@ public class RoomController {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
                 pageNumber, pageSize, sortBy, sortOrder,
                 floorId, branchId, search, status, maxPeople);
-        return new ResponseEntity<>(ApiResponse.success(page), HttpStatus.OK);
+        return new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    // ── Internal: Danh sách phòng đầy đủ filter (cần auth) ──────────
     @GetMapping("/admin/rooms")
-    public ResponseEntity<ApiResponse<PageResponse<RoomDTO>>> getAllRooms(
+    public ResponseEntity<PageResponse<RoomDTO>> getAllRooms(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "roomName") String sortBy,
@@ -82,6 +77,6 @@ public class RoomController {
         PageResponse<RoomDTO> page = roomService.getAllRooms(
                 pageNumber, pageSize, sortBy, sortOrder,
                 floorId, branchId, search, status, maxPeople);
-        return new ResponseEntity<>(ApiResponse.success(page), HttpStatus.OK);
+        return new ResponseEntity<>(page, HttpStatus.OK);
     }
 }

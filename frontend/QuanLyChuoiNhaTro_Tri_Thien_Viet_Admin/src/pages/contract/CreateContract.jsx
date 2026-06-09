@@ -504,15 +504,19 @@ const CreateContract = () => {
     };
     try {
       setSubmitting(true);
-      await apiContract.createContract(payload);
+      console.log("Gửi payload tạo hợp đồng:", payload);
+     const response = await apiContract.createContract(payload);
+     console.log("Hợp đồng đã tạo:", response);
       toast.success("Tạo hợp đồng thành công!");
       navigate("/contracts");
     } catch (err) {
-      const msg =
-        err.response?.data?.message || err.response?.data || "Có lỗi xảy ra!";
-      if (err.response?.status === 400 && typeof err.response.data === "object")
-        setErrors(err.response.data);
-      else toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
+
+      console.error("Lỗi tạo hợp đồng:", err.response);
+      const data = err.response?.data;
+      if (err.response?.status === 400 && typeof data === "object" && !data?.message)
+        setErrors(data);
+      else
+        toast.error(data?.message || data || "Có lỗi xảy ra!");
     } finally {
       setSubmitting(false);
     }

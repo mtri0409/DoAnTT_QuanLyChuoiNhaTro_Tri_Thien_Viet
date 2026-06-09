@@ -54,10 +54,11 @@ const CreateService = () => {
       navigate('/services/1');
 
     } catch (err) {
-      if (err.response?.status === 400) {
-        setErrors(err.response.data);
+      const data = err.response?.data;
+      if (err.response?.status === 400 && typeof data === "object" && !data?.message) {
+        setErrors(data);
       } else {
-        toast.error("Lỗi hệ thống.");
+        toast.error(data?.message || "Lỗi hệ thống.");
       }
     } finally {
       setLoading(false);

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.trithienviet.qlchuoiphongtro.payloads.DepositDTO;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.DepositService;
 
 @RestController
@@ -24,27 +23,26 @@ public class DepositController {
     @Autowired
     private DepositService depositService;
 
-    // Lấy tiền cọc theo phòng
     @GetMapping("/public/deposits/room/{roomId}")
-    public ResponseEntity<ApiResponse<DepositDTO>> getDepositByRoom(@PathVariable Long roomId) {
+    public ResponseEntity<DepositDTO> getDepositByRoom(@PathVariable Long roomId) {
         DepositDTO dto = depositService.getDepositByRoomId(roomId);
-        if (dto == null) return ResponseEntity.noContent().build();
-        return ResponseEntity.ok(ApiResponse.success(dto));
+        if (dto == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
-    // Tạo tiền cọc cho phòng (dùng khi cần tạo độc lập ngoài room)
     @PostMapping("/admin/deposits/room/{roomId}")
-    public ResponseEntity<ApiResponse<DepositDTO>> createDeposit(
+    public ResponseEntity<DepositDTO> createDeposit(
             @PathVariable Long roomId,
             @RequestParam BigDecimal amount) {
-        return new ResponseEntity<>(ApiResponse.success(depositService.createDeposit(roomId, amount)), HttpStatus.CREATED);
+        return new ResponseEntity<>(depositService.createDeposit(roomId, amount), HttpStatus.CREATED);
     }
 
-    // Cập nhật tiền cọc
     @PutMapping("/admin/deposits/room/{roomId}")
-    public ResponseEntity<ApiResponse<DepositDTO>> updateDeposit(
+    public ResponseEntity<DepositDTO> updateDeposit(
             @PathVariable Long roomId,
             @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(ApiResponse.success(depositService.updateDepositAmount(roomId, amount)));
+        return new ResponseEntity<>(depositService.updateDepositAmount(roomId, amount), HttpStatus.OK);
     }
 }

@@ -7,7 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.GuestRegistrationRequestDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.GuestRegistrationResponseDTO;
 

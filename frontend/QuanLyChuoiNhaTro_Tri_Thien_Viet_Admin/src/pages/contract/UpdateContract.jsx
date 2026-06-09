@@ -538,13 +538,11 @@ const UpdateContract = () => {
       navigate("/contracts");
     } catch (err) {
       console.error("Lỗi cập nhật hợp đồng:", err);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data ||
-        "Có lỗi xảy ra khi cập nhật hợp đồng!";
-      if (err.response?.status === 400 && typeof err.response.data === "object")
-        setErrors(err.response.data);
-      else toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
+      const data = err.response?.data;
+      if (err.response?.status === 400 && typeof data === "object" && !data?.message)
+        setErrors(data);
+      else
+        toast.error(data?.message || data || "Có lỗi xảy ra khi cập nhật hợp đồng!");
     } finally {
       setSubmitting(false);
     }

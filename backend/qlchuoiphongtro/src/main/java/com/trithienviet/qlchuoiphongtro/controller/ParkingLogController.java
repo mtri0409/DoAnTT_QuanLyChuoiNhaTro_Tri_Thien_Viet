@@ -15,7 +15,6 @@ import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ParkingLogDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.ParkingStatsResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.PlatePayload;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.service.ParkingLogService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,43 +32,32 @@ public class ParkingLogController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    // ==================== AI DETECTION ====================
-
-    /**
-     * Nhận dữ liệu từ AI Python (webhook)
-     * POST /api/v1/ai/receive-plate
-     */
-
     @PostMapping("/ai/receive-plate")
-    public ResponseEntity<ApiResponse<String>> receivePlateFromAI(@RequestBody PlatePayload payload) {
+    public ResponseEntity<String> receivePlateFromAI(@RequestBody PlatePayload payload) {
         log.info("📥 Nhận dữ liệu từ AI: trackId={}, plate={}",
                 payload.getTrackId(), payload.getBestPlate());
 
-        // Tiến hành lưu xuống Database thông qua Service
         ParkingLogDTO created = parkingLogService.createParking(payload);
 
-        // ========== BROADCAST QUA WEBSOCKET ==========
         if (created != null) {
             log.info("✅ Đã lưu parking log với ID: {}", created.getLogId());
 
             messagingTemplate.convertAndSend("/topic/plates", created);
             log.info("📡 Đã broadcast dữ liệu thành công qua WebSocket: /topic/plates");
 
-            return ResponseEntity.ok(ApiResponse.success("Đã lưu parking log thành công!"));
+            return new ResponseEntity<>("Đã lưu parking log thành công!", HttpStatus.OK);
         } else {
             log.warn("❌ Không thể lưu do biển số không hợp lệ");
 
-            // Broadcast lỗi qua kênh /topic/plates_errors
             messagingTemplate.convertAndSend("/topic/plates_errors", payload);
             log.info("📡 Đã broadcast lỗi qua WebSocket: /topic/plates_errors");
 
-            return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_PLATE", "Không thể lưu do biển số không hợp lệ", 400));
+            return new ResponseEntity<>("Không thể lưu do biển số không hợp lệ", HttpStatus.BAD_REQUEST);
         }
     }
-    // ==================== GET ====================
 
     @GetMapping("/parking-logs")
-    public ResponseEntity<ApiResponse<PageResponse<ParkingLogDTO>>> getAllParkingLogs(
+    public ResponseEntity<PageResponse<ParkingLogDTO>> getAllParkingLogs(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(defaultValue = "detectedAt") String sortBy,
@@ -80,26 +68,20 @@ public class ParkingLogController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) {
 
-        // Truyền thêm các tham số lọc vào hàm service
         PageResponse<ParkingLogDTO> response = parkingLogService.getAllParkingLogs(
                 pageNumber, pageSize, sortBy, sortOrder, licensePlate, direction, isVerified, fromDate, toDate);
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-    // ==================== DELETE ====================
 
     @DeleteMapping("/parking-logs/{logId}")
-    public ResponseEntity<ApiResponse<String>> deleteParkingLog(@PathVariable Long logId) {
+    public ResponseEntity<String> deleteParkingLog(@PathVariable Long logId) {
         String result = parkingLogService.deleteParkingLog(logId);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    // API 1: Bộ lọc tìm kiếm lịch sử xe theo ngày
-    // URL test:
-    // /api/v1/admin/parking-logs/filter?startDate=2026-05-24&endDate=2026-05-24
     @GetMapping("/admin/parking-logs/filter")
-    public ResponseEntity<ApiResponse<PageResponse<ParkingLogDTO>>> filterLogs(
+    public ResponseEntity<PageResponse<ParkingLogDTO>> filterLogs(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") Integer pageNumber,
@@ -107,16 +89,15 @@ public class ParkingLogController {
             @RequestParam(defaultValue = "detectedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder) {
 
-        return ResponseEntity.ok(ApiResponse.success(parkingLogService.filterParkingLogsByDate(
-                startDate, endDate, pageNumber, pageSize, sortBy, sortOrder)));
+        return new ResponseEntity<>(parkingLogService.filterParkingLogsByDate(
+                startDate, endDate, pageNumber, pageSize, sortBy, sortOrder), HttpStatus.OK);
     }
 
-    // URL test: /api/v1/parking-logs/stats?startDate=2026-05-24
     @GetMapping("/parking-logs/stats")
-    public ResponseEntity<ApiResponse<ParkingStatsResponse>> getStats(
+    public ResponseEntity<ParkingStatsResponse> getStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-        return ResponseEntity.ok(ApiResponse.success(parkingLogService.getParkingStats(startDate, endDate)));
+        return new ResponseEntity<>(parkingLogService.getParkingStats(startDate, endDate), HttpStatus.OK);
     }
 }

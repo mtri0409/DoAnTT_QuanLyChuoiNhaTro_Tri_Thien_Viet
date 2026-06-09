@@ -140,11 +140,11 @@ const CreateRoom = () => {
       navigate('/rooms/1');
     } catch (err) {
       console.error('Lỗi API:', err);
-      if (err.response?.status === 400) {
-        const be = err.response.data;
-        typeof be === 'object' && !Array.isArray(be) ? setErrors(be) : toast.error(be?.message || 'Dữ liệu không hợp lệ.');
+      const data = err.response?.data;
+      if (err.response?.status === 400 && typeof data === "object" && !Array.isArray(data) && !data?.message) {
+        setErrors(data);
       } else {
-        toast.error('Lỗi hệ thống hoặc mất kết nối Server.');
+        toast.error(data?.message || data || 'Lỗi hệ thống hoặc mất kết nối Server.');
       }
     } finally {
       setLoading(false);

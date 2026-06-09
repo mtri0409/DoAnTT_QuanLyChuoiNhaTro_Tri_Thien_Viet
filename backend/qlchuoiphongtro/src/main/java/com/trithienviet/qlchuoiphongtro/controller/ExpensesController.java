@@ -1,7 +1,6 @@
 package com.trithienviet.qlchuoiphongtro.controller;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ExpensesDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.service.ExpensesService;
@@ -39,41 +38,25 @@ public class ExpensesController {
         @Value("${project.image}")
         private String imagePath;
 
-        // ================================================================
-        // UPLOAD / GET ẢNH BẰNG CHỨNG
-        // ================================================================
-
-        /**
-         * Upload ảnh bằng chứng.
-         * POST /api/v1/admin/expenses/upload-evidence
-         * Response: { "fileName": "uuid.jpg", "url":
-         * "/api/v1/admin/expenses/evidence/uuid.jpg" }
-         */
         @PostMapping("/upload-evidence")
-        public ResponseEntity<ApiResponse<Map<String, String>>> uploadEvidence(
+        public ResponseEntity<Map<String, String>> uploadEvidence(
                         @RequestParam("file") MultipartFile file) {
                 try {
                         String folder = imagePath + "expenses/";
                         String fileName = fileService.uploadImage(folder, file);
                         String url = "/api/v1/admin/expenses/evidence/" + fileName;
-                        return ResponseEntity.ok(ApiResponse.success(Map.of("fileName", fileName, "url", url)));
+                        return ResponseEntity.ok(Map.of("fileName", fileName, "url", url));
                 } catch (IOException e) {
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                        .body(ApiResponse.error("UPLOAD_ERROR", "Không thể upload file: " + e.getMessage(), 500));
+                        throw new RuntimeException("Không thể upload file: " + e.getMessage());
                 }
         }
 
-        /**
-         * Lấy ảnh bằng chứng.
-         * GET /api/v1/admin/expenses/evidence/{fileName}
-         */
         @GetMapping("/evidence/{fileName}")
         public ResponseEntity<InputStreamResource> getEvidence(@PathVariable String fileName) {
                 try {
                         String folder = imagePath + "expenses/";
                         InputStream stream = fileService.getResource(folder, fileName);
 
-                        // Xác định content type theo đuôi file
                         MediaType mediaType = MediaType.IMAGE_JPEG;
                         String lower = fileName.toLowerCase();
                         if (lower.endsWith(".png"))
@@ -93,16 +76,8 @@ public class ExpensesController {
                 }
         }
 
-        // ================================================================
-        // TẠO CHI PHÍ
-        // ================================================================
-
-        /**
-         * Tạo chi phí mới.
-         * POST /api/v1/admin/expenses
-         */
         @PostMapping
-        public ResponseEntity<ApiResponse<ExpensesDTO>> createExpense(
+        public ResponseEntity<ExpensesDTO> createExpense(
                         @RequestParam String payer,
                         @RequestParam String expenseCategory,
                         @RequestParam BigDecimal amount,
@@ -115,25 +90,21 @@ public class ExpensesController {
                         @AuthenticationPrincipal UserDetails userDetails) {
 
                 return new ResponseEntity<>(
-                                ApiResponse.success(expenseService.createExpense(
+                                expenseService.createExpense(
                                                 payer, expenseCategory, amount, paymentDate,
                                                 payeeName, evidenceUrl, description,
                                                 maintenanceRequestId, branchId,
-                                                userDetails.getUsername())),
+                                                userDetails.getUsername()),
                                 HttpStatus.CREATED);
         }
 
-        // ================================================================
-        // XEM
-        // ================================================================
-
         @GetMapping("/{expenseId}")
-        public ResponseEntity<ApiResponse<ExpensesDTO>> getById(@PathVariable Long expenseId) {
-                return ResponseEntity.ok(ApiResponse.success(expenseService.getExpenseById(expenseId)));
+        public ResponseEntity<ExpensesDTO> getById(@PathVariable Long expenseId) {
+                return ResponseEntity.ok(expenseService.getExpenseById(expenseId));
         }
 
         @GetMapping
-        public ResponseEntity<ApiResponse<PageResponse<ExpensesDTO>>> filter(
+        public ResponseEntity<PageResponse<ExpensesDTO>> filter(
                         @RequestParam(required = false) String payer,
                         @RequestParam(required = false) String category,
                         @RequestParam(required = false) Integer branchId,
@@ -145,28 +116,24 @@ public class ExpensesController {
                         @RequestParam(defaultValue = "desc", required = false) String sortOrder) {
 
                 return ResponseEntity.ok(
-                                ApiResponse.success(expenseService.filterExpenses(
+                                expenseService.filterExpenses(
                                                 payer, category, branchId, from, to,
-                                                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder)));
+                                                Math.max(0, pageNumber - 1), pageSize, sortBy, sortOrder));
         }
 
         @GetMapping("/maintenance/{requestId}")
-        public ResponseEntity<ApiResponse<PageResponse<ExpensesDTO>>> getByMaintenanceRequest(
+        public ResponseEntity<PageResponse<ExpensesDTO>> getByMaintenanceRequest(
                         @PathVariable Integer requestId,
                         @RequestParam(defaultValue = "1") Integer pageNumber,
                         @RequestParam(defaultValue = "10") Integer pageSize) {
 
                 return ResponseEntity.ok(
-                                ApiResponse.success(expenseService.getExpensesByMaintenanceRequest(
-                                                requestId, Math.max(0, pageNumber - 1), pageSize)));
+                                expenseService.getExpensesByMaintenanceRequest(
+                                                requestId, Math.max(0, pageNumber - 1), pageSize));
         }
 
-        // ================================================================
-        // CẬP NHẬT / XÓA
-        // ================================================================
-
         @PatchMapping("/{expenseId}")
-        public ResponseEntity<ApiResponse<ExpensesDTO>> update(
+        public ResponseEntity<ExpensesDTO> update(
                         @PathVariable Long expenseId,
                         @RequestParam(required = false) String expenseCategory,
                         @RequestParam(required = false) BigDecimal amount,
@@ -176,13 +143,13 @@ public class ExpensesController {
                         @RequestParam(required = false) String description) {
 
                 return ResponseEntity.ok(
-                                ApiResponse.success(expenseService.updateExpense(
+                                expenseService.updateExpense(
                                                 expenseId, expenseCategory, amount,
-                                                paymentDate, payeeName, evidenceUrl, description)));
+                                                paymentDate, payeeName, evidenceUrl, description));
         }
 
         @DeleteMapping("/{expenseId}")
-        public ResponseEntity<ApiResponse<String>> delete(@PathVariable Long expenseId) {
-                return ResponseEntity.ok(ApiResponse.success(expenseService.deleteExpense(expenseId)));
+        public ResponseEntity<String> delete(@PathVariable Long expenseId) {
+                return ResponseEntity.ok(expenseService.deleteExpense(expenseId));
         }
 }

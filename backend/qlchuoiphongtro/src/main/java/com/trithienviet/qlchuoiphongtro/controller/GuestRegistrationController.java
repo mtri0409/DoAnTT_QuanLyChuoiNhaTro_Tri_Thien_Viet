@@ -24,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.trithienviet.qlchuoiphongtro.config.AppConstants;
 import com.trithienviet.qlchuoiphongtro.entity.User;
-import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.GuestRegistrationApprovalDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.GuestRegistrationRequestDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.GuestRegistrationResponseDTO;
@@ -49,12 +48,8 @@ public class GuestRegistrationController {
     @Autowired
     private com.trithienviet.qlchuoiphongtro.repo.RoomMemberRepo roomMemberRepo;
 
-    /**
-     * Người thuê phòng tạo đơn đăng ký người thân
-     * POST /api/v1/tenant/guests/register
-     */
     @PostMapping("/tenant/guests/register")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> registerGuest(
+    public ResponseEntity<GuestRegistrationResponseDTO> registerGuest(
             @Valid @RequestBody GuestRegistrationRequestDTO request,
             Authentication authentication) throws IOException {
 
@@ -66,18 +61,11 @@ public class GuestRegistrationController {
                 user.getUserId()
         );
 
-        return new ResponseEntity<>(
-                ApiResponse.success(response),
-                HttpStatus.CREATED
-        );
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    /**
-     * Người thuê phòng upload ảnh CCCD mặt trước
-     * PUT /api/v1/tenant/guests/{memberId}/id-front
-     */
     @PutMapping("/tenant/guests/{memberId}/id-front")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> uploadIdFrontImage(
+    public ResponseEntity<GuestRegistrationResponseDTO> uploadIdFrontImage(
             @PathVariable Integer memberId,
             @RequestParam("image") MultipartFile image) throws IOException {
 
@@ -86,15 +74,11 @@ public class GuestRegistrationController {
                 image
         );
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Người thuê phòng upload ảnh CCCD mặt sau
-     * PUT /api/v1/tenant/guests/{memberId}/id-back
-     */
     @PutMapping("/tenant/guests/{memberId}/id-back")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> uploadIdBackImage(
+    public ResponseEntity<GuestRegistrationResponseDTO> uploadIdBackImage(
             @PathVariable Integer memberId,
             @RequestParam("image") MultipartFile image) throws IOException {
 
@@ -103,15 +87,11 @@ public class GuestRegistrationController {
                 image
         );
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Quản lý duyệt đơn đăng ký người thân
-     * PATCH /api/v1/admin/guests/{memberId}/approve
-     */
     @PatchMapping("/admin/guests/{memberId}/approve")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> approveRegistration(
+    public ResponseEntity<GuestRegistrationResponseDTO> approveRegistration(
             @PathVariable Integer memberId,
             Authentication authentication) {
 
@@ -123,16 +103,11 @@ public class GuestRegistrationController {
                 admin.getProfile().getProfileId()
         );
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Quản lý từ chối đơn đăng ký người thân
-     * PATCH /api/v1/admin/guests/{memberId}/reject
-     * Body: { "rejectionReason": "Lý do từ chối" }
-     */
     @PatchMapping("/admin/guests/{memberId}/reject")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> rejectRegistration(
+    public ResponseEntity<GuestRegistrationResponseDTO> rejectRegistration(
             @PathVariable Integer memberId,
             @RequestBody GuestRegistrationApprovalDTO approval,
             Authentication authentication) {
@@ -146,15 +121,11 @@ public class GuestRegistrationController {
                 admin.getProfile().getProfileId()
         );
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Lấy danh sách đơn chờ duyệt
-     * GET /api/v1/admin/guests/pending
-     */
     @GetMapping("/admin/guests/pending")
-    public ResponseEntity<ApiResponse<PageResponse<GuestRegistrationResponseDTO>>> getPendingRegistrations(
+    public ResponseEntity<PageResponse<GuestRegistrationResponseDTO>> getPendingRegistrations(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize) {
 
@@ -174,16 +145,11 @@ public class GuestRegistrationController {
         pageResponse.setTotalPages(result.getTotalPages());
         pageResponse.setLastPage(result.isLast());
 
-        return ResponseEntity.ok(ApiResponse.success(pageResponse));
+        return new ResponseEntity<>(pageResponse, HttpStatus.OK);
     }
 
-    /**
-     * Lấy danh sách người thân của phòng (tất cả trạng thái)
-     * GET /api/v1/tenant/guests
-     * Tự động lấy roomId từ user đang đăng nhập
-     */
     @GetMapping("/tenant/guests")
-    public ResponseEntity<ApiResponse<List<GuestRegistrationResponseDTO>>> getGuestsByRoom(
+    public ResponseEntity<List<GuestRegistrationResponseDTO>> getGuestsByRoom(
             Authentication authentication) {
 
         User user = userRepo.findByUserName(authentication.getName())
@@ -194,16 +160,11 @@ public class GuestRegistrationController {
 
         List<GuestRegistrationResponseDTO> guests = guestRegistrationService.getGuestsByRoom(roomId);
 
-        return ResponseEntity.ok(ApiResponse.success(guests));
+        return new ResponseEntity<>(guests, HttpStatus.OK);
     }
 
-    /**
-     * Lấy danh sách người thân đã duyệt của phòng
-     * GET /api/v1/tenant/guests/approved
-     * Tự động lấy roomId từ user đang đăng nhập
-     */
     @GetMapping("/tenant/guests/approved")
-    public ResponseEntity<ApiResponse<List<GuestRegistrationResponseDTO>>> getApprovedGuestsByRoom(
+    public ResponseEntity<List<GuestRegistrationResponseDTO>> getApprovedGuestsByRoom(
             Authentication authentication) {
 
         User user = userRepo.findByUserName(authentication.getName())
@@ -214,28 +175,20 @@ public class GuestRegistrationController {
 
         List<GuestRegistrationResponseDTO> guests = guestRegistrationService.getApprovedGuestsByRoom(roomId);
 
-        return ResponseEntity.ok(ApiResponse.success(guests));
+        return new ResponseEntity<>(guests, HttpStatus.OK);
     }
 
-    /**
-     * Lấy chi tiết đơn đăng ký
-     * GET /api/v1/guests/{memberId}
-     */
     @GetMapping("/guests/{memberId}")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> getRegistrationDetail(
+    public ResponseEntity<GuestRegistrationResponseDTO> getRegistrationDetail(
             @PathVariable Integer memberId) {
 
         GuestRegistrationResponseDTO response = guestRegistrationService.getRegistrationDetail(memberId);
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Hủy đơn đăng ký
-     * DELETE /api/v1/guests/{memberId}
-     */
     @PatchMapping("/guests/{memberId}/cancel")
-    public ResponseEntity<ApiResponse<GuestRegistrationResponseDTO>> cancelRegistration(
+    public ResponseEntity<GuestRegistrationResponseDTO> cancelRegistration(
             @PathVariable Integer memberId,
             Authentication authentication) {
 
@@ -247,6 +200,6 @@ public class GuestRegistrationController {
                 user.getUserId()
         );
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

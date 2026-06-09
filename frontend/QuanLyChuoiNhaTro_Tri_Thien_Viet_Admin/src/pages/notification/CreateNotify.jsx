@@ -93,9 +93,12 @@ const CreateNotification = () => {
       toast.success("Gửi thông báo thành công!");
       navigate('/notifications'); 
     } catch (err) {
-        console.log(err.response)
-      if (err.response?.status === 400) setErrors(err.response.data || {});
-      else toast.error("Lỗi hệ thống.");
+        console.log(err.response);
+      const data = err.response?.data;
+      if (err.response?.status === 400 && typeof data === "object" && !data?.message)
+        setErrors(data || {});
+      else
+        toast.error(data?.message || "Lỗi hệ thống.");
     } finally { setLoading(false); }
   };
 
