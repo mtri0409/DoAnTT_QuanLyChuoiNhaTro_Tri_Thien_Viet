@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
   FaCheckCircle,
@@ -12,7 +12,6 @@ import {
   FaUniversity,
   FaQrcode,
 } from "react-icons/fa";
-import axiosInstance from "../../api/axios";
 
 const VNPAY_PROXY =
   import.meta.env.VITE_VNPAY_PROXY_URL || "http://localhost:3001";
@@ -20,6 +19,8 @@ const VNPAY_PROXY =
 const fmt = (n) => (n != null ? Number(n).toLocaleString("vi-VN") + " ₫" : "—");
 
 // ─── ResultScreen ──────────────────────────────────────────────────────────
+// Confirm API đã được server xử lý trong /payment/callback/web/:invoiceId
+// Frontend chỉ cần hiển thị kết quả từ query params VNPay trả về
 function ResultScreen({ searchParams }) {
   const navigate = useNavigate();
   const { invoiceId } = useParams();
@@ -30,27 +31,14 @@ function ResultScreen({ searchParams }) {
   const amount = rawAmount ? Number(rawAmount) / 100 : null;
   const isSuccess = responseCode === "00";
 
-  const confirmedRef = useRef(false);
-  const [confirmStatus, setConfirmStatus] = useState("idle");
-
-  useEffect(() => {
-    if (!isSuccess || confirmedRef.current) return;
-    confirmedRef.current = true;
-    setConfirmStatus("loading");
-
-    axiosInstance
-      .put(`/user/invoices/${invoiceId}/confirm-vnpay`, null, {
-        params: { amount, transactionCode: txnRef },
-      })
-      .then(() => setConfirmStatus("done"))
-      .catch((err) => {
-        if (err?.response?.status === 409 || err?.response?.status === 200) {
-          setConfirmStatus("done");
-        } else {
-          setConfirmStatus("error");
-        }
-      });
-  }, [isSuccess, invoiceId, amount, txnRef]);
+  // confirmStatus lấy từ query param do server inject (nếu có)
+  // hoặc mặc định "done" khi success vì server đã confirm rồi
+  const serverConfirm = searchParams.get("confirmStatus"); // optional
+  const confirmStatus = isSuccess
+    ? serverConfirm === "error"
+      ? "error"
+      : "done"
+    : null;
 
   return (
     <div className="d-flex flex-column bg-light" style={{ minHeight: "100vh" }}>
@@ -58,7 +46,6 @@ function ResultScreen({ searchParams }) {
         {isSuccess ? (
           <div className="card border-0 shadow-sm rounded-4">
             <div className="card-body p-4 text-center">
-              {/* Icon */}
               <div
                 className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 bg-success-subtle"
                 style={{ width: 72, height: 72 }}
@@ -70,7 +57,6 @@ function ResultScreen({ searchParams }) {
                 Hóa đơn của bạn đã được ghi nhận.
               </p>
 
-              {/* Transaction details */}
               <div
                 className="rounded-3 p-3 mb-4 text-start"
                 style={{ background: "#f8fafc" }}
@@ -96,15 +82,6 @@ function ResultScreen({ searchParams }) {
                     <span className="text-muted small">
                       Trạng thái cập nhật
                     </span>
-                    {confirmStatus === "loading" && (
-                      <span className="text-warning small d-flex align-items-center gap-1">
-                        <FaSpinner
-                          className="spinner-border spinner-border-sm"
-                          style={{ width: 12, height: 12 }}
-                        />
-                        Đang cập nhật...
-                      </span>
-                    )}
                     {confirmStatus === "done" && (
                       <span className="text-success small fw-semibold">
                         ✅ Đã cập nhật
@@ -179,12 +156,19 @@ function PaymentForm({ invoiceId, amount }) {
     setLoading(true);
     setError("");
     try {
-      const returnUrl = encodeURIComponent(
-        `${window.location.origin}/payment/${invoiceId}`,
-      );
-      const res = await fetch(
-        `${VNPAY_PROXY}/payment?amount=${amount}&invoiceId=${invoiceId}&returnUrl=${returnUrl}`,
-      );
+      // Key "authToken" khớp với AuthProvider (xem axios.js)
+      const token = localStorage.getItem("authToken") || "";
+
+      // KHÔNG truyền returnUrl — để server tự chọn callback route đúng
+      // Truyền source=web để server biết dùng /payment/callback/web/:id
+      const params = new URLSearchParams({
+        amount,
+        invoiceId,
+        source: "web",
+        ...(token ? { token: encodeURIComponent(token) } : {}),
+      });
+
+      const res = await fetch(`${VNPAY_PROXY}/payment?${params}`);
       if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
       const data = await res.json();
       if (data?.url) {
@@ -208,7 +192,6 @@ function PaymentForm({ invoiceId, amount }) {
   return (
     <div className="d-flex flex-column bg-light" style={{ minHeight: "100vh" }}>
       <div className="container py-4" style={{ maxWidth: 520 }}>
-        {/* Back */}
         <button
           className="btn btn-link text-secondary p-0 mb-3 d-flex align-items-center gap-2 small"
           style={{ textDecoration: "none" }}
@@ -218,11 +201,9 @@ function PaymentForm({ invoiceId, amount }) {
         </button>
 
         <div className="row g-3">
-          {/* Main payment card */}
           <div className="col-12">
             <div className="card border-0 shadow-sm rounded-4">
               <div className="card-body p-4">
-                {/* Header */}
                 <div className="d-flex align-items-center gap-3 mb-4">
                   <div
                     className="rounded-3 d-flex align-items-center justify-content-center bg-primary-subtle flex-shrink-0"
@@ -246,7 +227,6 @@ function PaymentForm({ invoiceId, amount }) {
                   </div>
                 </div>
 
-                {/* Amount block */}
                 <div
                   className="rounded-3 p-3 mb-4"
                   style={{ background: "#eff6ff" }}
@@ -266,7 +246,6 @@ function PaymentForm({ invoiceId, amount }) {
                   </div>
                 </div>
 
-                {/* Methods */}
                 <div
                   className="small fw-semibold text-uppercase text-muted mb-2"
                   style={{ letterSpacing: 1 }}
@@ -286,14 +265,12 @@ function PaymentForm({ invoiceId, amount }) {
                   ))}
                 </div>
 
-                {/* Error */}
                 {error && (
                   <div className="alert alert-danger d-flex align-items-center gap-2 rounded-3 small mb-3 py-2">
                     <FaExclamationTriangle /> {error}
                   </div>
                 )}
 
-                {/* CTA */}
                 <button
                   className="btn btn-primary fw-semibold w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
                   style={{ padding: "12px" }}
@@ -313,7 +290,6 @@ function PaymentForm({ invoiceId, amount }) {
                   )}
                 </button>
 
-                {/* Secure note */}
                 <div className="d-flex align-items-center justify-content-center gap-2 mt-3">
                   <FaShieldAlt className="text-success" size={12} />
                   <span className="text-muted" style={{ fontSize: 12 }}>
