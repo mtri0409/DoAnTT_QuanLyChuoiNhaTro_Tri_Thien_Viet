@@ -65,7 +65,7 @@ const apiContract = {
   },
 
   getContractById: (id) => {
-    return axiosClient.get(`/public/contracts/${id}`);
+    return axiosClient.get(`/user/contracts/${id}`); // FIX: /public/ → /user/
   },
 
   // ─── HỢP ĐỒNG THEO PHÒNG (dùng cho MeterReading) ─────────────────────────
@@ -76,7 +76,7 @@ const apiContract = {
    */
   getContractsByRoom: (roomId) => {
     return axiosClient
-      .get(`/public/contracts/room/${roomId}`)
+      .get(`/user/contracts/room/${roomId}`) // FIX: /public/ → /user/
       .then((res) => res.data ?? res);
   },
 
@@ -112,7 +112,7 @@ const apiContract = {
     sortOrder = "asc",
   ) => {
     return axiosClient
-      .get("/rooms", {
+      .get("/admin/rooms", {
         params: {
           pageNumber,
           pageSize,
@@ -133,7 +133,7 @@ const apiContract = {
   },
 
   updateContract: (id, dto) => {
-    return axiosClient.put(`/public/contracts/${id}`, dto);
+    return axiosClient.put(`/user/contracts/${id}`, dto); // FIX: /public/ → /user/
   },
 
   updateStatus: (id, newStatus) => {
@@ -145,50 +145,50 @@ const apiContract = {
   },
 
   autoUpdateStatus: () => {
-    return axiosClient.post("/admin/contracts/auto-update-status");
+    return axiosClient.post("/admin/contracts/status-updates"); // FIX: auto-update-status → status-updates
   },
 
   terminateContract: (id, reason = null) => {
-    return axiosClient.post(`/admin/contracts/${id}/terminate`, { reason });
+    return axiosClient.post(`/admin/contracts/${id}/termination`, { reason }); // FIX: terminate → termination
   },
 
   // ─── THÀNH VIÊN ───────────────────────────────────────────────────────────
 
   addMember: (contractId, profileId) => {
     return axiosClient.post(
-      `/public/contracts/${contractId}/members/${profileId}`,
+      `/user/contracts/${contractId}/members/${profileId}`, // FIX: /public/ → /user/
     );
   },
 
   removeMember: (contractId, profileId) => {
     return axiosClient.delete(
-      `/public/contracts/${contractId}/members/${profileId}`,
+      `/user/contracts/${contractId}/members/${profileId}`, // FIX: /public/ → /user/
     );
   },
 
   getMembers: (contractId) => {
-    return axiosClient.get(`/public/contracts/${contractId}/members`);
+    return axiosClient.get(`/user/contracts/${contractId}/members`); // FIX: /public/ → /user/
   },
 
   // ─── DỊCH VỤ ──────────────────────────────────────────────────────────────
 
   getServices: (contractId) => {
-    return axiosClient.get(`/public/contracts/${contractId}/services`);
+    return axiosClient.get(`/user/contracts/${contractId}/services`); // FIX: /public/ → /user/
   },
 
   addServices: (contractId, services) => {
     return axiosClient.post(
-      `/public/contracts/${contractId}/services`,
+      `/user/contracts/${contractId}/services`, // FIX: /public/ → /user/
       services,
     );
   },
 
   updateService: (id, dto) => {
-    return axiosClient.put(`/public/contracts/services/${id}`, dto);
+    return axiosClient.put(`/user/contracts/services/${id}`, dto); // FIX: /public/ → /user/
   },
 
   deleteService: (id) => {
-    return axiosClient.delete(`/public/contracts/services/${id}`);
+    return axiosClient.delete(`/user/contracts/services/${id}`); // FIX: /public/ → /user/
   },
 };
 

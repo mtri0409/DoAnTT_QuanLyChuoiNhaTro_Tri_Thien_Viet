@@ -13,21 +13,29 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem("authToken");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Log SAU khi gắn token
+  // console.log("🌐 URL:", config.url);
+  // console.log("👤 Auth:", config.headers.Authorization);
   return config;
 });
-
 // 2. RESPONSE INTERCEPTOR: Xử lý response v1 ApiResponse
 axiosInstance.interceptors.response.use(
   (response) => {
     const resData = response.data;
-    if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+    if (
+      resData &&
+      typeof resData === "object" &&
+      "success" in resData &&
+      "data" in resData
+    ) {
       response.data = resData.data;
     }
     return response;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

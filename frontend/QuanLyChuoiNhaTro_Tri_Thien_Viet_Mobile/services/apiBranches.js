@@ -1,8 +1,9 @@
+// apiBranches.js
 import axiosInstance from "./axios";
 const apiBranches = {
   getAllBranches: (pageNumber = 1, pageSize = 100) =>
     axiosInstance
-      .get("/branches", {
+      .get("/admin/branches", {
         params: { pageNumber, pageSize, sortBy: "branchId", sortOrder: "asc" },
       })
       .then((res) => res.data),
