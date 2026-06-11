@@ -40,8 +40,20 @@ const daysLeft = (expiresAt) =>
 const getFullImageUrl = (url) => {
   if (!url) return "";
   if (url.startsWith("http") || url.startsWith("data:")) return url;
-  return `${imgURL}${url}`;
+
+  const base = imgURL.endsWith("/") ? imgURL.slice(0, -1) : imgURL;
+  const path = url.startsWith("/") ? url : `/${url}`;
+
+  return `${base}${path}`;
 };
+
+const getMediaUrl = (media) =>
+  media?.url ||
+  media?.mediaUrl ||
+  media?.imageUrl ||
+  media?.fileUrl ||
+  media?.path ||
+  "";
 
 const postDetailCss = `
   .pd-page {
@@ -77,6 +89,15 @@ const postDetailCss = `
     background: #fff4ea;
     color: #b85618;
     border-color: #f0d8bd;
+  }
+
+  .pd-gallery-back {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 5;
+    margin-bottom: 0;
+    background: rgba(255,255,255,.94);
   }
 
   .pd-layout {
@@ -423,15 +444,38 @@ export default function PostDetail() {
       try {
         const postData = await userService.getPostById(postId);
         const p = postData?.data ?? postData;
+
         setPost(p);
+
+        if (p?.roomId) {
+          try {
+            const mediaData = await userService.getMediaByRoomId(p.roomId);
+            const raw = mediaData?.data ?? mediaData;
+            const list = Array.isArray(raw)
+              ? raw
+              : raw?.content || raw?.items || raw?.data || [];
+
+            setPost((prev) => ({
+              ...(prev || p || {}),
+              roomMedia: list,
+            }));
+          } catch (mediaErr) {
+            console.error("Không thể tải media phòng:", mediaErr);
+          }
+        }
       } catch (err) {
         const status = err?.response?.status;
-        if (status === 404) setError("Bài đăng không tồn tại hoặc đã hết hạn.");
-        else setError("Không thể tải bài đăng. Vui lòng thử lại.");
+
+        if (status === 404) {
+          setError("Bài đăng không tồn tại hoặc đã hết hạn.");
+        } else {
+          setError("Không thể tải bài đăng. Vui lòng thử lại.");
+        }
       } finally {
         setLoading(false);
       }
     };
+
     load();
   }, [postId]);
 
@@ -468,9 +512,14 @@ export default function PostDetail() {
   }
 
   const mediaList = post?.roomMedia ?? [];
-  const images = [
-    ...mediaList.filter((m) => !m.mediaType || m.mediaType.startsWith("image")),
-  ].sort((a, b) => (b.isThumbnail ? 1 : 0) - (a.isThumbnail ? 1 : 0));
+  const images = mediaList
+    .filter((m) => {
+      const type = m?.mediaType || m?.type || "";
+      const url = getMediaUrl(m);
+
+      return url && (!type || type.toLowerCase().startsWith("image"));
+    })
+    .sort((a, b) => (b.isThumbnail ? 1 : 0) - (a.isThumbnail ? 1 : 0));
 
   const currentImg = images[imgIndex];
   const left = daysLeft(post?.expiresAt);
@@ -483,17 +532,21 @@ export default function PostDetail() {
       <PostDetailStyles />
 
       <div className="pd-wrap">
-        <button type="button" onClick={() => navigate(-1)} className="pd-back">
-          <FaArrowLeft size={12} /> Quay lại
-        </button>
-
         <div className="pd-layout">
           <div className="pd-left">
             <div className="pd-gallery">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="pd-back pd-gallery-back"
+              >
+                <FaArrowLeft size={12} /> Quay lại
+              </button>
+
               {images.length > 0 ? (
                 <>
                   <img
-                    src={getFullImageUrl(currentImg.url)}
+                    src={getFullImageUrl(getMediaUrl(currentImg))}
                     alt={`Ảnh phòng ${imgIndex + 1}`}
                   />
 

@@ -93,6 +93,8 @@ const userService = {
     });
   },
 
+  
+
   getNewsPosts: (params = {}) => {
     const {
       pageNumber = 1,

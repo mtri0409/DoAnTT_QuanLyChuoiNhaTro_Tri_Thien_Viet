@@ -241,7 +241,7 @@ const CreateBranch = () => {
     try {
       await apiBranches.createBranch(formData);
       toast.success('Tạo chi nhánh thành công!');
-      navigate('/branches');
+      navigate('/branches/:id');
     } catch (err) {
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;

@@ -90,7 +90,7 @@ const apiProfile = {
   deleteProfile: (id) => axiosInstance.delete(`/admin/profiles/${id}`),
 
   getProfileById: (id) => {
-    return axiosInstance.get(`/admin/profiles/${id}`);
+    return axiosInstance.get(`/public/profiles/${id}`);
   },
   restoreProfile: (id) => axiosInstance.patch(`/admin/profile/restore/${id}`),
    uploadFrontImage: (id, formData) => {

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.trithienviet.qlchuoiphongtro.payloads.APIResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.ApiResponse;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -22,22 +22,22 @@ import jakarta.validation.ConstraintViolationException;
 public class MyGlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<APIResponse> myResourceNotFoundException(ResourceNotFoundException e) {
+    public ResponseEntity<ApiResponse> myResourceNotFoundException(ResourceNotFoundException e) {
         String message = e.getMessage();
-        APIResponse res = new APIResponse(message, false);
+        ApiResponse res = new ApiResponse(message, false);
         return new ResponseEntity<>(res, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(APIException.class)
-    public ResponseEntity<APIResponse> myAPIException(APIException e) {
+    public ResponseEntity<ApiResponse> myAPIException(APIException e) {
         String message = e.getMessage();
-        APIResponse res = new APIResponse(message, false);
+        ApiResponse res = new ApiResponse(message, false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<APIResponse> myResponseStatusException(ResponseStatusException e) {
-        APIResponse res = new APIResponse(e.getReason(), false);
+    public ResponseEntity<ApiResponse> myResponseStatusException(ResponseStatusException e) {
+        ApiResponse res = new ApiResponse(e.getReason(), false);
         return new ResponseEntity<>(res, e.getStatusCode());
     }
 
@@ -70,36 +70,36 @@ public class MyGlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<APIResponse> myAuthenticationException(AuthenticationException e) {
-        APIResponse res = new APIResponse(e.getMessage(), false);
+    public ResponseEntity<ApiResponse> myAuthenticationException(AuthenticationException e) {
+        ApiResponse res = new ApiResponse(e.getMessage(), false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingPathVariableException.class)
-    public ResponseEntity<APIResponse> myMissingPathVariableException(MissingPathVariableException e) {
-        APIResponse res = new APIResponse(e.getMessage(), false);
+    public ResponseEntity<ApiResponse> myMissingPathVariableException(MissingPathVariableException e) {
+        ApiResponse res = new ApiResponse(e.getMessage(), false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<APIResponse> myDataIntegrityException(DataIntegrityViolationException e) {
-        APIResponse res = new APIResponse(e.getMessage(), false);
+    public ResponseEntity<ApiResponse> myDataIntegrityException(DataIntegrityViolationException e) {
+        ApiResponse res = new ApiResponse(e.getMessage(), false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<APIResponse> handleIllegalArgumentException(
+    public ResponseEntity<ApiResponse> handleIllegalArgumentException(
             IllegalArgumentException e) {
 
-        APIResponse res = new APIResponse(e.getMessage(), false);
+        ApiResponse res = new ApiResponse(e.getMessage(), false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<APIResponse> handleRuntimeException(
+    public ResponseEntity<ApiResponse> handleRuntimeException(
             RuntimeException e) {
 
-        APIResponse res = new APIResponse(e.getMessage(), false);
+        ApiResponse res = new ApiResponse(e.getMessage(), false);
         return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
     }
 }

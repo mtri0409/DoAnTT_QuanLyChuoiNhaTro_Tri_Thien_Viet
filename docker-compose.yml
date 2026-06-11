@@ -16,8 +16,9 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
-      timeout: 5s
+      timeout: 40s
       retries: 5
+      start_period: 30s
 
   # 2. Spring Boot Backend Service
   backend:

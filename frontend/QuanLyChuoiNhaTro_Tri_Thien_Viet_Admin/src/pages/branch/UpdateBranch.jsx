@@ -307,7 +307,7 @@ const UpdateBranch = () => {
     try {
       await apiBranches.updateBranch(id, formData);
       toast.success('Cập nhật chi nhánh thành công!');
-      navigate('/branches');
+      navigate('/branches/:id');
     } catch (err) {
       if (err.response && err.response.status === 400) {
         const backendErrors = err.response.data;
