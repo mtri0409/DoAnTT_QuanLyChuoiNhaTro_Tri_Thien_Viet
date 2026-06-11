@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,32 @@ import {
   Alert,
   RefreshControl,
   Image,
+  Animated,
+  StatusBar,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import {
+  Zap,
+  Droplets,
+  Building2,
+  Layers,
+  Search,
+  X,
+  ChevronRight,
+  LogOut,
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Receipt,
+  User,
+  Camera,
+  Pencil,
+  DoorOpen,
+  CalendarDays,
+  BarChart3,
+} from "lucide-react-native";
 import apiBranches from "../services/apiBranches";
 import apiFloor from "../services/apiFloor";
 import apiMeterReading from "../services/apiMeterReading";
@@ -23,6 +47,7 @@ import apiInvoice from "../services/apiInvoice";
 import ImageCapture from "../components/readings/ImageCapture";
 import { useAuth } from "../context/AuthContext";
 
+const IS_IOS = Platform.OS === "ios";
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -30,7 +55,7 @@ const SERVICES = [
   {
     id: 1,
     label: "Điện",
-    emoji: "⚡",
+    Icon: Zap,
     color: "#f59e0b",
     bgColor: "#fffbeb",
     unit: "kWh",
@@ -38,7 +63,7 @@ const SERVICES = [
   {
     id: 2,
     label: "Nước",
-    emoji: "💧",
+    Icon: Droplets,
     color: "#3b82f6",
     bgColor: "#eff6ff",
     unit: "m³",
@@ -57,6 +82,13 @@ const STATUS_CONFIG = {
   done: { label: "✓ Đã xong", color: "#16a34a", bg: "#f0fdf4" },
   partial: { label: "~ Ghi dở", color: "#d97706", bg: "#fffbeb" },
   pending: { label: "• Chưa ghi", color: "#6b7280", bg: "#f9fafb" },
+};
+
+const STAT_COLORS = {
+  Tổng: "#3b82f6",
+  Xong: "#16a34a",
+  Dở: "#d97706",
+  Chưa: "#ef4444",
 };
 
 // ─── Picker Modal ─────────────────────────────────────────────────────────────
@@ -86,7 +118,7 @@ function PickerModal({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.modalClose}>✕</Text>
+              <X size={20} color="#6b7280" strokeWidth={2} />
             </TouchableOpacity>
           </View>
           <FlatList
@@ -114,7 +146,9 @@ function PickerModal({
                   >
                     {item[labelKey]}
                   </Text>
-                  {isSelected && <Text style={{ color: "#3b82f6" }}>✓</Text>}
+                  {isSelected && (
+                    <CheckCircle size={16} color="#1e3a8a" strokeWidth={2} />
+                  )}
                 </TouchableOpacity>
               );
             }}
@@ -136,7 +170,9 @@ function LogoutModal({ visible, onConfirm, onCancel }) {
     >
       <View style={styles.logoutOverlay}>
         <View style={styles.logoutSheet}>
-          <Text style={styles.logoutIcon}>👋</Text>
+          <View style={styles.logoutIconWrap}>
+            <LogOut size={28} color="#ef4444" strokeWidth={2} />
+          </View>
           <Text style={styles.logoutTitle}>Đăng xuất?</Text>
           <Text style={styles.logoutSub}>
             Bạn có chắc muốn đăng xuất khỏi hệ thống?
@@ -159,7 +195,6 @@ function LogoutModal({ visible, onConfirm, onCancel }) {
 }
 
 // ─── ConfirmSaveModal ─────────────────────────────────────────────────────────
-// Tương đương ConfirmSaveModal trên web: hiện cảnh báo nếu chỉ số âm / tiêu thụ cao
 function ConfirmSaveModal({ data, onConfirm, onCancel }) {
   if (!data) return null;
   const { svcLabel, svcUnit, oldValue, newValue, isInitial } = data;
@@ -177,17 +212,17 @@ function ConfirmSaveModal({ data, onConfirm, onCancel }) {
         onPress={onCancel}
       >
         <TouchableOpacity activeOpacity={1} style={styles.confirmSheet}>
-          {/* Header */}
           <View style={styles.confirmHeader}>
-            <Text style={styles.confirmHeaderIcon}>
-              {isNegative || isHighUsage ? "⚠️" : "✅"}
-            </Text>
+            {isNegative || isHighUsage ? (
+              <AlertCircle size={22} color="#f59e0b" strokeWidth={2} />
+            ) : (
+              <CheckCircle size={22} color="#16a34a" strokeWidth={2} />
+            )}
             <Text style={styles.confirmTitle}>
               Xác nhận lưu chỉ số {svcLabel}
             </Text>
           </View>
 
-          {/* Cảnh báo */}
           {isNegative && (
             <View
               style={[
@@ -215,7 +250,6 @@ function ConfirmSaveModal({ data, onConfirm, onCancel }) {
             </View>
           )}
 
-          {/* Nội dung */}
           {isInitial ? (
             <View
               style={[
@@ -277,7 +311,6 @@ function ConfirmSaveModal({ data, onConfirm, onCancel }) {
             </Text>
           )}
 
-          {/* Buttons */}
           <View style={styles.confirmBtns}>
             <TouchableOpacity
               style={styles.confirmCancelBtn}
@@ -304,7 +337,6 @@ function ConfirmSaveModal({ data, onConfirm, onCancel }) {
 }
 
 // ─── ConfirmEditModal ─────────────────────────────────────────────────────────
-// Tương đương ConfirmEditModal trên web: cảnh báo trước khi cho phép sửa lại
 function ConfirmEditModal({ data, onConfirm, onCancel }) {
   if (!data) return null;
   return (
@@ -316,7 +348,7 @@ function ConfirmEditModal({ data, onConfirm, onCancel }) {
       >
         <TouchableOpacity activeOpacity={1} style={styles.confirmSheet}>
           <View style={styles.confirmHeader}>
-            <Text style={styles.confirmHeaderIcon}>⚠️</Text>
+            <AlertCircle size={22} color="#d97706" strokeWidth={2} />
             <Text style={styles.confirmTitle}>Sửa lại chỉ số?</Text>
           </View>
           <Text style={styles.confirmEditBody}>
@@ -366,25 +398,27 @@ function ServiceCard({
   const isInitialSaved = rd?.status === "initial_saved";
   const isLoading = rd?.status === "loading";
   const hasError = rd?.status === "error";
+  const { Icon: SvcIcon } = svc;
 
-  // Phòng chưa HĐ: hiển thị UI nhập chỉ số đầu
   if (!hasContract) {
     const val = rd?.initialValue || "";
-    const isSavedInitial = isInitialSaved;
-
     return (
       <View
         style={[
           styles.serviceCard,
           {
             backgroundColor: "#e0f2fe",
-            borderColor: isSavedInitial ? "#7dd3fc" : "#bae6fd",
+            borderColor: isInitialSaved ? "#7dd3fc" : "#bae6fd",
           },
         ]}
       >
         <View style={styles.serviceHeader}>
-          <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
-          <Text style={[styles.serviceLabel, { color: svc.color }]}>
+          <View
+            style={[styles.serviceIconWrap, { backgroundColor: "#bae6fd" }]}
+          >
+            <SvcIcon size={16} color="#0284c7" strokeWidth={2.5} />
+          </View>
+          <Text style={[styles.serviceLabel, { color: "#0284c7" }]}>
             {svc.label}
           </Text>
           <View style={[styles.savedBadge, { backgroundColor: "#e0f2fe" }]}>
@@ -392,31 +426,30 @@ function ServiceCard({
               Chỉ số đầu
             </Text>
           </View>
-          {isSavedInitial && (
+          {isInitialSaved && (
             <View style={[styles.savedBadge, { backgroundColor: "#dcfce7" }]}>
-              <Text style={styles.savedBadgeText}>✓ Đã lưu</Text>
+              <CheckCircle size={10} color="#16a34a" strokeWidth={2.5} />
+              <Text style={styles.savedBadgeText}> Đã lưu</Text>
             </View>
           )}
         </View>
-
         <Text style={styles.initialHint}>
           Phòng chưa có hợp đồng — nhập chỉ số gốc của đồng hồ
         </Text>
-
         <View style={styles.inputRow}>
           <TextInput
             style={[
               styles.numberInput,
-              isSavedInitial && styles.numberInputSaved,
+              isInitialSaved && styles.numberInputSaved,
             ]}
             placeholder={`Số đầu đồng hồ (${svc.unit})`}
             placeholderTextColor="#9ca3af"
             keyboardType="numeric"
-            value={isSavedInitial ? val : rd?.initialValue || ""}
+            value={isInitialSaved ? val : rd?.initialValue || ""}
             onChangeText={(v) => onUpdate(svc.id, "initialValue", v)}
-            editable={!isSavedInitial}
+            editable={!isInitialSaved}
           />
-          {!isSavedInitial && (
+          {!isInitialSaved && (
             <TouchableOpacity
               style={[
                 styles.saveBtn,
@@ -439,7 +472,6 @@ function ServiceCard({
     );
   }
 
-  // Phòng có HĐ: UI bình thường
   const usage =
     rd?.newValue && !isNaN(Number(rd.newValue))
       ? Math.max(0, Number(rd.newValue) - (rd?.oldValue || 0))
@@ -456,22 +488,30 @@ function ServiceCard({
       ]}
     >
       <View style={styles.serviceHeader}>
-        <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
+        <View
+          style={[
+            styles.serviceIconWrap,
+            { backgroundColor: svc.color + "20" },
+          ]}
+        >
+          <SvcIcon size={16} color={svc.color} strokeWidth={2.5} />
+        </View>
         <Text style={[styles.serviceLabel, { color: svc.color }]}>
           {svc.label}
         </Text>
         {isSaved && (
           <View style={[styles.savedBadge, { backgroundColor: "#dcfce7" }]}>
-            <Text style={styles.savedBadgeText}>✓ Đã lưu</Text>
+            <CheckCircle size={10} color="#16a34a" strokeWidth={2.5} />
+            <Text style={styles.savedBadgeText}> Đã lưu</Text>
           </View>
         )}
-        {/* Nút sửa lại nếu đã lưu */}
         {isSaved && (
           <TouchableOpacity
             style={styles.editBtn}
             onPress={() => onEdit(svc.id)}
           >
-            <Text style={styles.editBtnText}>✏ Sửa</Text>
+            <Pencil size={11} color="#d97706" strokeWidth={2.5} />
+            <Text style={styles.editBtnText}> Sửa</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -510,7 +550,7 @@ function ServiceCard({
         <TouchableOpacity
           style={[
             styles.saveBtn,
-            { backgroundColor: isSaved ? "#16a34a" : "#111827" },
+            { backgroundColor: isSaved ? "#16a34a" : "#1e3a8a" },
             (!rd?.newValue || isSaved || isLoading) && styles.saveBtnDisabled,
           ]}
           onPress={() => onSave(svc.id)}
@@ -536,7 +576,6 @@ function ServiceCard({
         onOCRComplete={(val) => onOCR(svc.id, val)}
       />
 
-      {/* Xem ảnh đồng hồ sau khi lưu */}
       {isSaved && rd?.imageUri && (
         <TouchableOpacity
           style={styles.imagePreviewRow}
@@ -546,8 +585,9 @@ function ServiceCard({
             source={{ uri: rd.imageUri }}
             style={styles.imagePreviewThumb}
           />
+          <Camera size={12} color="#6b7280" strokeWidth={2} />
           <Text style={styles.imagePreviewText}>Xem ảnh đồng hồ</Text>
-          <Text style={styles.imagePreviewExpand}>⤢</Text>
+          <ChevronRight size={14} color="#9ca3af" strokeWidth={2} />
         </TouchableOpacity>
       )}
     </View>
@@ -575,6 +615,8 @@ function RoomCard({
   onCreateInvoice,
   createdInvoices,
 }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
   const roomStatus = (() => {
     const r = readings[room.roomId];
     if (r) {
@@ -586,47 +628,79 @@ function RoomCard({
     return roomStatusCache[room.roomId] ?? "pending";
   })();
   const statusCfg = STATUS_CONFIG[roomStatus];
-  // Ưu tiên contracts (đã load full khi mở phòng), fallback về contractCache (load ngầm)
   const contract = contracts?.[room.roomId] ?? contractCache?.[room.roomId];
   const hasContract = !!contract;
-  // contractCache đã load xong cho phòng này chưa?
   const contractLoaded =
     Object.prototype.hasOwnProperty.call(contracts, room.roomId) ||
     Object.prototype.hasOwnProperty.call(contractCache, room.roomId);
 
+  const pressIn = () =>
+    Animated.spring(scaleAnim, {
+      toValue: 0.985,
+      useNativeDriver: true,
+      tension: 200,
+    }).start();
+  const pressOut = () =>
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 200,
+    }).start();
+
   return (
-    <View style={[styles.roomCard, expanded && styles.roomCardExpanded]}>
+    <Animated.View
+      style={[
+        styles.roomCard,
+        expanded && styles.roomCardExpanded,
+        { transform: [{ scale: scaleAnim }] },
+      ]}
+    >
+      {/* Left accent bar */}
+      <View style={[styles.roomAccent, { backgroundColor: statusCfg.color }]} />
+
       <TouchableOpacity
         style={styles.roomHeader}
         onPress={() => onToggle(room.roomId)}
-        activeOpacity={0.7}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        activeOpacity={1}
       >
         <View
           style={[
-            styles.roomIcon,
-            { backgroundColor: expanded ? "#dbeafe" : "#f3f4f6" },
+            styles.roomIconWrap,
+            { backgroundColor: expanded ? "#dbeafe" : "#f1f5f9" },
           ]}
         >
-          <Text style={{ fontSize: 18 }}>🚪</Text>
+          <DoorOpen
+            size={20}
+            color={expanded ? "#1e3a8a" : "#64748b"}
+            strokeWidth={2}
+          />
         </View>
         <View style={styles.roomInfo}>
           <Text style={styles.roomName}>{room.roomName}</Text>
           <Text style={styles.roomSub} numberOfLines={1}>
             {room.floorName} · {room.branchName}
           </Text>
-          {/* Contract badge — giống web: loading / có HĐ / chưa có HĐ */}
           {!contractLoaded ? (
-            <Text style={{ fontSize: 10, color: "#aaa" }}>
-              ⏳ Đang tải HĐ...
-            </Text>
+            <View style={styles.contractBadgeLoading}>
+              <ActivityIndicator size={10} color="#94a3b8" />
+              <Text style={styles.contractBadgeLoadingText}>
+                Đang tải HĐ...
+              </Text>
+            </View>
           ) : contract ? (
-            <Text style={{ fontSize: 11, color: "#3b82f6", fontWeight: "600" }}>
-              HĐ #{contract.contractId} · Có hợp đồng
-            </Text>
+            <View style={styles.contractBadgeActive}>
+              <FileText size={10} color="#1e3a8a" strokeWidth={2.5} />
+              <Text style={styles.contractBadgeActiveText}>
+                HĐ #{contract.contractId} · Có hợp đồng
+              </Text>
+            </View>
           ) : (
-            <Text style={{ fontSize: 11, color: "#d97706", fontWeight: "600" }}>
-              ⚠ Chưa có hợp đồng
-            </Text>
+            <View style={styles.contractBadgeNone}>
+              <AlertCircle size={10} color="#d97706" strokeWidth={2.5} />
+              <Text style={styles.contractBadgeNoneText}>Chưa có hợp đồng</Text>
+            </View>
           )}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
@@ -634,21 +708,19 @@ function RoomCard({
             {statusCfg.label}
           </Text>
         </View>
-        <Text
-          style={[
-            styles.chevron,
-            { transform: [{ rotate: expanded ? "90deg" : "0deg" }] },
-          ]}
-        >
-          ›
-        </Text>
+        <ChevronRight
+          size={18}
+          color="#94a3b8"
+          strokeWidth={2}
+          style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
+        />
       </TouchableOpacity>
 
       {expanded && (
         <View style={styles.roomBody}>
           {!readings[room.roomId] ? (
             <View style={styles.loadingBox}>
-              <ActivityIndicator size="small" color="#9ca3af" />
+              <ActivityIndicator size="small" color="#1e3a8a" />
               <Text style={styles.loadingText}>Đang tải chỉ số...</Text>
             </View>
           ) : (
@@ -672,25 +744,35 @@ function RoomCard({
                 />
               ))}
 
-              {/* Footer: thông tin hợp đồng + nút tạo hóa đơn */}
               <View style={styles.roomFooter}>
-                <Text style={styles.roomFooterContract} numberOfLines={1}>
+                <View style={styles.roomFooterContractRow}>
                   {contract ? (
                     <>
-                      Hợp đồng{" "}
-                      <Text style={{ color: "#3b82f6", fontWeight: "700" }}>
-                        #{contract.contractId}
-                      </Text>{" "}
-                      ·{" "}
-                      {CONTRACT_STATUS_LABEL[contract.status] ??
-                        contract.status}
+                      <FileText size={12} color="#64748b" strokeWidth={2} />
+                      <Text style={styles.roomFooterContract} numberOfLines={1}>
+                        Hợp đồng{" "}
+                        <Text style={{ color: "#1e3a8a", fontWeight: "700" }}>
+                          #{contract.contractId}
+                        </Text>{" "}
+                        ·{" "}
+                        {CONTRACT_STATUS_LABEL[contract.status] ??
+                          contract.status}
+                      </Text>
                     </>
                   ) : (
-                    <Text style={{ color: "#d97706" }}>
-                      ⚠ Phòng chưa có hợp đồng
-                    </Text>
+                    <>
+                      <AlertCircle size={12} color="#d97706" strokeWidth={2} />
+                      <Text
+                        style={[
+                          styles.roomFooterContract,
+                          { color: "#d97706" },
+                        ]}
+                      >
+                        Phòng chưa có hợp đồng
+                      </Text>
+                    </>
                   )}
-                </Text>
+                </View>
                 {(() => {
                   const invoiceCreated =
                     contract && createdInvoices?.[contract.contractId];
@@ -713,6 +795,15 @@ function RoomCard({
                       disabled={!contract || !!invoiceCreated}
                       activeOpacity={invoiceCreated ? 1 : 0.7}
                     >
+                      <Receipt
+                        size={13}
+                        color={
+                          contract && (invoiceCreated || roomStatus === "done")
+                            ? "#fff"
+                            : "#64748b"
+                        }
+                        strokeWidth={2}
+                      />
                       <Text
                         style={[
                           styles.invoiceBtnText,
@@ -722,14 +813,13 @@ function RoomCard({
                           invoiceCreated && { color: "#fff" },
                         ]}
                       >
-                        🧾{" "}
                         {!contract
-                          ? "Tạo hóa đơn (cần HĐ)"
+                          ? " Tạo hóa đơn (cần HĐ)"
                           : invoiceCreated
-                            ? `✓ Đã tạo HĐ T${String(month).padStart(2, "0")}/${year}`
+                            ? ` ✓ Đã tạo HĐ T${String(month).padStart(2, "0")}/${year}`
                             : roomStatus === "done"
-                              ? `Tạo HĐ T${String(month).padStart(2, "0")}/${year}`
-                              : "Tạo hóa đơn (chưa ghi đủ)"}
+                              ? ` Tạo HĐ T${String(month).padStart(2, "0")}/${year}`
+                              : " Tạo hóa đơn (chưa ghi đủ)"}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -739,6 +829,28 @@ function RoomCard({
           )}
         </View>
       )}
+    </Animated.View>
+  );
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ icon: Icon, iconColor = "#cbd5e1", text, subtext }) {
+  return (
+    <View style={styles.emptyBox}>
+      <Icon size={40} color={iconColor} strokeWidth={1.5} />
+      <Text style={styles.emptyText}>{text}</Text>
+      {subtext ? <Text style={styles.emptySubtext}>{subtext}</Text> : null}
+    </View>
+  );
+}
+
+// ─── Footer Loader ─────────────────────────────────────────────────────────────
+function FooterLoader({ visible }) {
+  if (!visible) return <View style={{ height: 24 }} />;
+  return (
+    <View style={styles.footerLoader}>
+      <ActivityIndicator size="small" color="#1e3a8a" />
+      <Text style={styles.footerLoaderText}>Đang tải thêm phòng...</Text>
     </View>
   );
 }
@@ -758,7 +870,10 @@ function ImageLightbox({ uri, onClose }) {
           style={styles.lightboxImage}
           resizeMode="contain"
         />
-        <Text style={styles.lightboxClose}>✕ Đóng</Text>
+        <View style={styles.lightboxCloseBtn}>
+          <X size={16} color="#fff" strokeWidth={2.5} />
+          <Text style={styles.lightboxCloseText}>Đóng</Text>
+        </View>
       </TouchableOpacity>
     </Modal>
   );
@@ -766,9 +881,8 @@ function ImageLightbox({ uri, onClose }) {
 
 // ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
 export default function MeterReadingScreen() {
-  const { logout, user } = useAuth();
+  const { logout, user, loading: authLoading } = useAuth();
   const router = useRouter();
-
   const [branches, setBranches] = useState([]);
   const [floors, setFloors] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -777,16 +891,15 @@ export default function MeterReadingScreen() {
   const [searchRoom, setSearchRoom] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce search — chỉ trigger load phòng sau 400ms khi user ngừng gõ
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchRoom), 400);
     return () => clearTimeout(timer);
   }, [searchRoom]);
+
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [readings, setReadings] = useState({});
   const [contracts, setContracts] = useState({});
-  // Cache hợp đồng nhẹ cho tất cả phòng — hiển thị ngay trên header card (giống web)
   const [contractCache, setContractCache] = useState({});
   const [roomStatusCache, setRoomStatusCache] = useState({});
   const [expandedRooms, setExpandedRooms] = useState({});
@@ -798,21 +911,34 @@ export default function MeterReadingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [lightboxUri, setLightboxUri] = useState(null);
-
-  // Modals xác nhận lưu / sửa lại
   const [confirmModal, setConfirmModal] = useState(null);
   const [editModal, setEditModal] = useState(null);
-
-  // Track hóa đơn đã tạo: key = contractId, value = true
   const [createdInvoices, setCreatedInvoices] = useState({});
-  // Tạo tất cả hóa đơn hàng loạt
   const [bulkInvoiceLoading, setBulkInvoiceLoading] = useState(false);
   const [bulkInvoiceResult, setBulkInvoiceResult] = useState(null);
-
   const [showBranchPicker, setShowBranchPicker] = useState(false);
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
+
+  // Animated header (giống bills.js)
+  const headerAnim = useRef(new Animated.Value(-30)).current;
+  const headerFade = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(headerAnim, {
+        toValue: 0,
+        tension: 80,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerFade, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
@@ -823,15 +949,16 @@ export default function MeterReadingScreen() {
     label: String(y),
   }));
 
-  // Load branches
+  // ── Load branches ──
   useEffect(() => {
+    if (authLoading) return;
     apiBranches
       .getAllBranches(1, 100)
       .then((res) => setBranches(res.content || res || []))
       .catch(() => setBranches([]));
-  }, []);
+  }, [authLoading]);
 
-  // Load floors khi đổi chi nhánh
+  // ── Load floors khi đổi chi nhánh ──
   useEffect(() => {
     setSelectedFloor(null);
     setFloors([]);
@@ -873,20 +1000,17 @@ export default function MeterReadingScreen() {
       .catch(() => setFloors([]));
   }, [selectedBranch]);
 
-  // Fetch trạng thái nhẹ cho tất cả phòng (có lọc isInitial như bên web)
   const fetchAllRoomStatuses = useCallback(async (roomList, m, y) => {
     const results = await Promise.allSettled(
       roomList.map((room) =>
         apiMeterReading.getByRoomAndPeriod(room.roomId, m, y),
       ),
     );
-
     const newCache = {};
     results.forEach((result, idx) => {
       const roomId = roomList[idx].roomId;
       if (result.status === "fulfilled") {
         const existing = Array.isArray(result.value) ? result.value : [];
-        // Chỉ tính bản ghi thật (không phải initial) vào trạng thái
         const realRecords = existing.filter(
           (r) => r.newValue != null && !r.isInitial,
         );
@@ -901,7 +1025,6 @@ export default function MeterReadingScreen() {
     setRoomStatusCache((prev) => ({ ...prev, ...newCache }));
   }, []);
 
-  // Fetch hợp đồng nhẹ cho tất cả phòng — hiển thị badge HĐ trên header card (giống web)
   const fetchAllContracts = useCallback(async (roomList) => {
     const results = await Promise.allSettled(
       roomList.map((room) => apiContract.getContractsByRoom(room.roomId)),
@@ -921,7 +1044,7 @@ export default function MeterReadingScreen() {
     setContractCache((prev) => ({ ...prev, ...newCache }));
   }, []);
 
-  // ─── Load phòng trang đầu khi đổi filter (dùng getRoomsPaged — backend pagination) ──
+  // ── Load phòng trang đầu ──
   useEffect(() => {
     if (!selectedBranch) {
       setRooms([]);
@@ -974,7 +1097,6 @@ export default function MeterReadingScreen() {
     fetchAllContracts,
   ]);
 
-  // ─── Load trang tiếp theo từ backend ──────────────────────────────────────
   const loadMoreRooms = useCallback(async () => {
     if (loadingMore || !hasMorePages) return;
     setLoadingMore(true);
@@ -1013,18 +1135,14 @@ export default function MeterReadingScreen() {
     fetchAllContracts,
   ]);
 
-  // Reset khi đổi kỳ
   useEffect(() => {
     setReadings({});
     setContracts({});
     setExpandedRooms({});
     setRoomStatusCache({});
-    if (rooms.length > 0) {
-      fetchAllRoomStatuses(rooms, month, year);
-    }
+    if (rooms.length > 0) fetchAllRoomStatuses(rooms, month, year);
   }, [month, year, fetchAllRoomStatuses]);
 
-  // Load full data 1 phòng khi mở (hỗ trợ cả phòng chưa HĐ)
   const loadRoomData = useCallback(
     async (roomId) => {
       const initReadings = {};
@@ -1057,15 +1175,11 @@ export default function MeterReadingScreen() {
         const existing = Array.isArray(currentPeriod.value)
           ? currentPeriod.value
           : [];
-
         existing.forEach((r) => {
           const sid = Number(r.serviceId);
           if (!initReadings[sid]) return;
-
           if (hasContract) {
-            // Bỏ qua bản ghi "khởi đầu" (isInitial = true)
             if (r.isInitial) return;
-
             initReadings[sid] = {
               newValue: String(r.newValue ?? ""),
               oldValue: r.oldValue ?? 0,
@@ -1075,7 +1189,6 @@ export default function MeterReadingScreen() {
               imageUri: null,
             };
           } else {
-            // Phòng chưa có HĐ → bản ghi này là chỉ số khởi đầu
             initReadings[sid] = {
               newValue: "",
               oldValue: 0,
@@ -1088,7 +1201,6 @@ export default function MeterReadingScreen() {
         });
       }
 
-      // Chỉ fetch kỳ trước khi phòng có HĐ
       if (hasContract) {
         await Promise.allSettled(
           SERVICES.filter((svc) => initReadings[svc.id].status !== "saved").map(
@@ -1148,11 +1260,9 @@ export default function MeterReadingScreen() {
   const removeImage = (roomId, serviceId) =>
     handleFile(roomId, serviceId, null);
 
-  const handleOCRValue = (roomId, serviceId, val) => {
+  const handleOCRValue = (roomId, serviceId, val) =>
     updateReading(roomId, serviceId, "newValue", String(val));
-  };
 
-  // ── Mở modal xác nhận trước khi lưu ──
   const handleSaveClick = (roomId, serviceId) => {
     const r = readings[roomId]?.[serviceId];
     const contract = contracts[roomId];
@@ -1186,11 +1296,9 @@ export default function MeterReadingScreen() {
     }
   };
 
-  // ── Thực hiện lưu sau khi xác nhận ──
   const handleSaveConfirmed = async () => {
     const { roomId, serviceId, newValue, isInitial } = confirmModal;
     setConfirmModal(null);
-
     const r = readings[roomId]?.[serviceId];
 
     setReadings((prev) => ({
@@ -1210,8 +1318,8 @@ export default function MeterReadingScreen() {
           month,
           year,
           r.imageUri,
-          false, // isInitial
-          r.oldValue ?? 0, // oldValue — truyền rõ ràng tránh backend tự tính sai
+          false,
+          r.oldValue ?? 0,
         );
         setReadings((prev) => {
           const updated = {
@@ -1235,7 +1343,6 @@ export default function MeterReadingScreen() {
           return updated;
         });
       } else {
-        // Phòng chưa có HĐ: lưu chỉ số khởi đầu
         await apiMeterReading.saveReading(
           roomId,
           serviceId,
@@ -1243,7 +1350,7 @@ export default function MeterReadingScreen() {
           month,
           year,
           null,
-          true, // isInitial flag
+          true,
         );
         setReadings((prev) => ({
           ...prev,
@@ -1274,7 +1381,6 @@ export default function MeterReadingScreen() {
     }
   };
 
-  // ── Mở modal xác nhận sửa lại ──
   const handleEditClick = (roomId, serviceId) => {
     const r = readings[roomId]?.[serviceId];
     const svc = SERVICES.find((s) => s.id === serviceId);
@@ -1287,7 +1393,6 @@ export default function MeterReadingScreen() {
     });
   };
 
-  // ── Cho phép sửa lại sau xác nhận ──
   const handleEditConfirmed = () => {
     const { roomId, serviceId } = editModal;
     setEditModal(null);
@@ -1331,9 +1436,7 @@ export default function MeterReadingScreen() {
     setRefreshing(false);
   };
 
-  // rooms đã được backend lọc theo searchRoom + filter; stats tính trên toàn bộ list
   const filteredRooms = rooms;
-
   const statsMap = {
     Tổng: filteredRooms.length,
     Xong: filteredRooms.filter((r) => {
@@ -1359,13 +1462,6 @@ export default function MeterReadingScreen() {
     }).length,
   };
 
-  const STAT_COLORS = {
-    Tổng: "#3b82f6",
-    Xong: "#16a34a",
-    Dở: "#d97706",
-    Chưa: "#ef4444",
-  };
-
   const selectedBranchName =
     branches.find((b) => String(b.branchId) === String(selectedBranch))
       ?.branchName || "Chọn chi nhánh";
@@ -1375,7 +1471,9 @@ export default function MeterReadingScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Pickers */}
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+
+      {/* Modals */}
       <PickerModal
         visible={showBranchPicker}
         title="Chọn chi nhánh"
@@ -1421,136 +1519,122 @@ export default function MeterReadingScreen() {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutModal(false)}
       />
-
-      {/* Modal xác nhận lưu */}
       <ConfirmSaveModal
         data={confirmModal}
         onConfirm={handleSaveConfirmed}
         onCancel={() => setConfirmModal(null)}
       />
-
-      {/* Modal xác nhận sửa lại */}
       <ConfirmEditModal
         data={editModal}
         onConfirm={handleEditConfirmed}
         onCancel={() => setEditModal(null)}
       />
-
-      {/* Lightbox xem ảnh đồng hồ */}
       <ImageLightbox uri={lightboxUri} onClose={() => setLightboxUri(null)} />
+
+      {/* ── Animated Header (giống bills.js) ── */}
+      <Animated.View
+        style={[
+          styles.header,
+          { opacity: headerFade, transform: [{ translateY: headerAnim }] },
+        ]}
+      >
+        <View style={styles.headerTop}>
+          <View style={styles.headerIconWrap}>
+            <BarChart3 size={22} color="#fff" strokeWidth={2} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerSub}>Quản lý chỉ số</Text>
+            <Text style={styles.headerTitle}>Ghi Điện – Nước</Text>
+          </View>
+          {user?.userName && (
+            <View style={styles.headerUserWrap}>
+              <User size={13} color="#93c5fd" strokeWidth={2} />
+              <Text style={styles.headerUser}>{user.userName}</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={() => setShowLogoutModal(true)}
+            activeOpacity={0.7}
+          >
+            <LogOut size={16} color="#fca5a5" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter row */}
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={styles.filterChip}
+            onPress={() => setShowBranchPicker(true)}
+          >
+            <Building2 size={13} color="#93c5fd" strokeWidth={2} />
+            <Text style={styles.filterChipText} numberOfLines={1}>
+              {selectedBranchName}
+            </Text>
+            <ChevronRight size={12} color="#93c5fd" strokeWidth={2} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, !selectedBranch && { opacity: 0.4 }]}
+            onPress={() => selectedBranch && setShowFloorPicker(true)}
+          >
+            <Layers size={13} color="#93c5fd" strokeWidth={2} />
+            <Text style={styles.filterChipText} numberOfLines={1}>
+              {selectedFloor ? selectedFloorName : "Tất cả tầng"}
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.periodWrap}>
+            <TouchableOpacity
+              style={styles.periodChip}
+              onPress={() => setShowMonthPicker(true)}
+            >
+              <CalendarDays size={12} color="#93c5fd" strokeWidth={2} />
+              <Text style={styles.periodChipText}>
+                T{String(month).padStart(2, "0")}
+              </Text>
+            </TouchableOpacity>
+            <Text style={{ color: "#475569", fontSize: 12 }}>/</Text>
+            <TouchableOpacity
+              style={styles.periodChip}
+              onPress={() => setShowYearPicker(true)}
+            >
+              <Text style={styles.periodChipText}>{year}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search bar (giống bills.js) */}
+        <View style={styles.searchBar}>
+          <Search size={14} color="#94a3b8" strokeWidth={2} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tìm tên phòng..."
+            placeholderTextColor="#94a3b8"
+            value={searchRoom}
+            onChangeText={setSearchRoom}
+          />
+          {!!searchRoom && (
+            <TouchableOpacity onPress={() => setSearchRoom("")}>
+              <X size={14} color="#94a3b8" strokeWidth={2} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={["#1e3a8a"]}
+            tintColor="#1e3a8a"
+            title="Kéo xuống để làm mới"
+            titleColor="#64748b"
+          />
         }
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderRow}>
-            <View>
-              <Text style={styles.pageTitle}>⚡ Ghi Chỉ Số Điện – Nước</Text>
-              <Text style={styles.pageSubtitle}>
-                Chọn chi nhánh → mở phòng → nhập chỉ số
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.logoutBtn}
-              onPress={() => setShowLogoutModal(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.logoutBtnText}>Đăng Xuất →</Text>
-            </TouchableOpacity>
-          </View>
-          {user?.userName && (
-            <Text style={styles.userLabel}>👤 {user.userName}</Text>
-          )}
-        </View>
-
-        {/* Filter card */}
-        <View style={styles.filterCard}>
-          <TouchableOpacity
-            style={styles.filterBtn}
-            onPress={() => setShowBranchPicker(true)}
-          >
-            <Text style={styles.filterBtnIcon}>🏢</Text>
-            <Text
-              style={[
-                styles.filterBtnText,
-                !selectedBranch && styles.filterBtnPlaceholder,
-              ]}
-              numberOfLines={1}
-            >
-              {selectedBranchName}
-            </Text>
-            <Text style={styles.filterChevron}>›</Text>
-          </TouchableOpacity>
-
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              style={[
-                styles.filterBtn,
-                styles.filterBtnHalf,
-                !selectedBranch && styles.filterBtnDisabled,
-              ]}
-              onPress={() => selectedBranch && setShowFloorPicker(true)}
-            >
-              <Text style={styles.filterBtnIcon}>📐</Text>
-              <Text
-                style={[
-                  styles.filterBtnText,
-                  !selectedFloor && styles.filterBtnPlaceholder,
-                ]}
-                numberOfLines={1}
-              >
-                {selectedFloor ? selectedFloorName : "Tất cả tầng"}
-              </Text>
-            </TouchableOpacity>
-
-            <View
-              style={[
-                styles.filterBtn,
-                styles.filterBtnHalf,
-                { flexDirection: "row", gap: 6 },
-              ]}
-            >
-              <TouchableOpacity
-                onPress={() => setShowMonthPicker(true)}
-                style={styles.periodBtn}
-              >
-                <Text style={styles.periodBtnText}>
-                  T{String(month).padStart(2, "0")}
-                </Text>
-              </TouchableOpacity>
-              <Text style={{ color: "#9ca3af", alignSelf: "center" }}>/</Text>
-              <TouchableOpacity
-                onPress={() => setShowYearPicker(true)}
-                style={styles.periodBtn}
-              >
-                <Text style={styles.periodBtnText}>{year}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm tên phòng..."
-              placeholderTextColor="#9ca3af"
-              value={searchRoom}
-              onChangeText={setSearchRoom}
-            />
-            {!!searchRoom && (
-              <TouchableOpacity onPress={() => setSearchRoom("")}>
-                <Text style={styles.clearSearch}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
         {/* Stats strip */}
         {selectedBranch && (
           <View style={styles.statsStrip}>
@@ -1567,25 +1651,27 @@ export default function MeterReadingScreen() {
 
         {/* Content */}
         {!selectedBranch ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🏢</Text>
-            <Text style={styles.emptyText}>
-              Chọn chi nhánh để bắt đầu ghi chỉ số
+          <EmptyState
+            icon={Building2}
+            text="Chọn chi nhánh để bắt đầu"
+            subtext="Chọn chi nhánh → mở phòng → nhập chỉ số"
+          />
+        ) : loadingRooms ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color="#1e3a8a" />
+            <Text style={styles.loadingWrapText}>
+              Đang tải danh sách phòng...
             </Text>
           </View>
-        ) : loadingRooms ? (
-          <View style={styles.emptyState}>
-            <ActivityIndicator size="large" color="#6b7280" />
-            <Text style={styles.emptyText}>Đang tải phòng...</Text>
-          </View>
         ) : filteredRooms.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🚪</Text>
-            <Text style={styles.emptyText}>Không tìm thấy phòng nào</Text>
-          </View>
+          <EmptyState
+            icon={DoorOpen}
+            text="Không tìm thấy phòng nào"
+            subtext="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm"
+          />
         ) : (
           <>
-            {/* ── Banner tạo tất cả hóa đơn ── */}
+            {/* ── Bulk invoice banner ── */}
             {(() => {
               const eligibleRooms = filteredRooms.filter((r) => {
                 const c = contracts[r.roomId] ?? contractCache[r.roomId];
@@ -1610,6 +1696,9 @@ export default function MeterReadingScreen() {
 
               return (
                 <View style={styles.bulkBanner}>
+                  <View style={styles.bulkBannerIconWrap}>
+                    <Receipt size={18} color="#1e3a8a" strokeWidth={2} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.bulkBannerTitle}>
                       Tạo hóa đơn hàng loạt
@@ -1695,7 +1784,7 @@ export default function MeterReadingScreen() {
                       <Text style={styles.bulkBtnText}>
                         {allDone
                           ? "✓ Đã xong"
-                          : `🧾 Tạo tất cả (${eligibleRooms.length})`}
+                          : `Tạo tất cả (${eligibleRooms.length})`}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -1761,7 +1850,7 @@ export default function MeterReadingScreen() {
               />
             ))}
 
-            {/* ── Load trang tiếp từ backend ── */}
+            {/* Load more / Footer loader */}
             {hasMorePages && (
               <TouchableOpacity
                 style={styles.loadMoreBtn}
@@ -1770,11 +1859,19 @@ export default function MeterReadingScreen() {
                 disabled={loadingMore}
               >
                 {loadingMore ? (
-                  <ActivityIndicator color="#3b82f6" size="small" />
+                  <FooterLoader visible />
                 ) : (
-                  <Text style={styles.loadMoreText}>
-                    ↓ Tải thêm phòng ({rooms.length}/{totalRooms})
-                  </Text>
+                  <>
+                    <ChevronRight
+                      size={16}
+                      color="#1e3a8a"
+                      strokeWidth={2.5}
+                      style={{ transform: [{ rotate: "90deg" }] }}
+                    />
+                    <Text style={styles.loadMoreText}>
+                      Tải thêm phòng ({rooms.length}/{totalRooms})
+                    </Text>
+                  </>
                 )}
               </TouchableOpacity>
             )}
@@ -1785,289 +1882,294 @@ export default function MeterReadingScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f3f4f6" },
-  scroll: { flex: 1 },
+  safe: { flex: 1, backgroundColor: "#1e3a8a" }, // xanh để status bar liền màu với header
+  scroll: { flex: 1, backgroundColor: "#f1f5f9" },
   scrollContent: { padding: 16, paddingBottom: 40 },
 
-  // Header
-  pageHeader: { marginBottom: 16 },
-  pageHeaderRow: {
+  // ── Header (bills style) ──
+  header: {
+    backgroundColor: "#1e3a8a",
+    paddingTop: IS_IOS ? 12 : (StatusBar.currentHeight || 24) + 12,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 14,
+    gap: 14,
+    marginBottom: 0,
+  },
+  headerTop: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  pageSubtitle: { fontSize: 13, color: "#6b7280" },
-  userLabel: { fontSize: 12, color: "#9ca3af", marginTop: 4 },
-
-  // Logout button (header)
-  logoutBtn: {
-    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    gap: 4,
-  },
-  logoutBtnIcon: { fontSize: 14 },
-  logoutBtnText: { fontSize: 12, fontWeight: "700", color: "#dc2626" },
-
-  // Logout modal
-  logoutOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-  },
-  logoutSheet: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 28,
-    alignItems: "center",
-    width: "100%",
-  },
-  logoutIcon: { fontSize: 40, marginBottom: 12 },
-  logoutTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 6,
-  },
-  logoutSub: {
-    fontSize: 14,
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  logoutBtns: { flexDirection: "row", gap: 12, width: "100%" },
-  logoutCancelBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutCancelText: { fontSize: 15, fontWeight: "600", color: "#374151" },
-  logoutConfirmBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutConfirmText: { fontSize: 15, fontWeight: "700", color: "#fff" },
-
-  // Confirm modal (save & edit)
-  confirmOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  confirmSheet: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
-    width: "100%",
     gap: 12,
   },
-  confirmHeader: {
+  headerIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSub: { fontSize: 12, color: "#93c5fd", fontWeight: "500" },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.2,
+    marginTop: 2,
+  },
+  headerUserWrap: { flexDirection: "row", alignItems: "center", gap: 4 },
+  headerUser: { fontSize: 12, color: "#93c5fd", fontWeight: "500" },
+  logoutBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // ── Filter chips in header ──
+  filterRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  filterChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  confirmHeaderIcon: { fontSize: 20 },
-  confirmTitle: { fontSize: 16, fontWeight: "700", color: "#111827", flex: 1 },
-  alertBox: {
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 10,
-    borderWidth: 1,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 5,
+    flex: 1,
   },
-  alertText: { fontSize: 13, lineHeight: 18 },
-  confirmValueBox: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
-    gap: 4,
-  },
-  confirmValueLabel: {
-    fontSize: 10,
-    color: "#9ca3af",
+  filterChipText: {
+    flex: 1,
+    fontSize: 12,
     fontWeight: "600",
-    textTransform: "uppercase",
+    color: "#e2e8f0",
   },
-  confirmValueBig: { fontSize: 24, fontWeight: "800" },
-  confirmValueUnit: { fontSize: 14, fontWeight: "400", color: "#6b7280" },
-  confirmValueNote: { fontSize: 11, color: "#6b7280", marginTop: 2 },
-  confirmRowBoxes: {
+  periodWrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  confirmBox: {
-    flex: 1,
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 10,
-    padding: 10,
-    alignItems: "center",
-  },
-  confirmArrow: { fontSize: 18, color: "#9ca3af" },
-  confirmUsage: {
-    textAlign: "center",
-    fontSize: 13,
-    color: "#6b7280",
-  },
-  confirmBtns: { flexDirection: "row", gap: 10 },
-  confirmCancelBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmCancelText: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  confirmOkBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmOkText: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  confirmEditBody: {
-    fontSize: 14,
-    color: "#6b7280",
-    lineHeight: 20,
-  },
-
-  // Filter card
-  filterCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    gap: 8,
-  },
-  filterRow: { flexDirection: "row", gap: 8 },
-  filterBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
     paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  periodChip: { flexDirection: "row", alignItems: "center", gap: 4 },
+  periodChipText: { fontSize: 12, fontWeight: "700", color: "#e2e8f0" },
+
+  // ── Search bar (bills style) ──
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    gap: 6,
+    gap: 10,
   },
-  filterBtnHalf: { flex: 1 },
-  filterBtnDisabled: { opacity: 0.4 },
-  filterBtnIcon: { fontSize: 14 },
-  filterBtnText: { flex: 1, fontSize: 13, fontWeight: "500", color: "#374151" },
-  filterBtnPlaceholder: { color: "#9ca3af" },
-  filterChevron: { fontSize: 16, color: "#9ca3af" },
-  periodBtn: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  periodBtnText: { fontSize: 13, fontWeight: "700", color: "#3b82f6" },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    paddingHorizontal: 10,
-    gap: 6,
-  },
-  searchIcon: { fontSize: 14 },
-  searchInput: { flex: 1, height: 40, fontSize: 13, color: "#111827" },
-  clearSearch: { fontSize: 16, color: "#9ca3af", paddingHorizontal: 4 },
+  searchInput: { flex: 1, color: "#fff", fontSize: 14, padding: 0 },
 
-  // Stats
+  // ── Stats strip ──
   statsStrip: {
     flexDirection: "row",
     backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 16,
     marginBottom: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statItem: { flex: 1, alignItems: "center" },
   statValue: { fontSize: 20, fontWeight: "800" },
   statLabel: { fontSize: 11, color: "#6b7280", marginTop: 2 },
 
-  // Empty
-  emptyState: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 48,
+  // ── Loading states (bills style) ──
+  loadingWrap: {
+    flex: 1,
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+    gap: 14,
+    paddingTop: 60,
   },
-  emptyIcon: { fontSize: 40, opacity: 0.3 },
-  emptyText: { fontSize: 14, color: "#9ca3af", textAlign: "center" },
+  loadingWrapText: { fontSize: 14, color: "#64748b", fontWeight: "500" },
 
-  // Room card
-  roomCard: {
+  // ── Empty state (bills style) ──
+  emptyBox: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    marginBottom: 8,
-    overflow: "hidden",
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    gap: 10,
+    marginTop: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emptyText: { fontSize: 15, fontWeight: "700", color: "#374151" },
+  emptySubtext: { fontSize: 13, color: "#94a3b8", textAlign: "center" },
+
+  // ── Footer loader ──
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: "center",
+    gap: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  footerLoaderText: { fontSize: 13, color: "#64748b", fontWeight: "500" },
+
+  // ── Load more button ──
+  loadMoreBtn: {
+    marginTop: 4,
+    marginBottom: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#93c5fd",
+    backgroundColor: "#eff6ff",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  loadMoreText: { fontSize: 14, fontWeight: "600", color: "#1e3a8a" },
+
+  // ── Bulk invoice banner ──
+  bulkBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#93c5fd",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
+  bulkBannerIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#eff6ff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bulkBannerTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 2,
+  },
+  bulkBannerSub: { fontSize: 12, color: "#64748b" },
+  bulkBannerResult: { fontSize: 12, marginTop: 4 },
+  bulkBtn: {
+    backgroundColor: "#1e3a8a",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 86,
+  },
+  bulkBtnDone: { backgroundColor: "#16a34a" },
+  bulkBtnLoading: { backgroundColor: "#94a3b8" },
+  bulkBtnText: { fontSize: 12, fontWeight: "700", color: "#fff" },
+
+  // ── Room card (bills row style) ──
+  roomCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
+  },
   roomCardExpanded: { borderWidth: 1.5, borderColor: "#93c5fd" },
+  roomAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+  },
   roomHeader: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    padding: 14,
+    paddingLeft: 18,
     gap: 10,
   },
-  roomIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+  roomIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
   roomInfo: { flex: 1 },
-  roomName: { fontSize: 14, fontWeight: "700", color: "#111827" },
-  roomSub: { fontSize: 11, color: "#6b7280", marginTop: 2 },
+  roomName: { fontSize: 14, fontWeight: "700", color: "#1e293b" },
+  roomSub: { fontSize: 11, color: "#64748b", marginTop: 1 },
+
+  // Contract badge variants
+  contractBadgeLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 3,
+  },
+  contractBadgeLoadingText: { fontSize: 10, color: "#94a3b8" },
+  contractBadgeActive: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 3,
+  },
+  contractBadgeActiveText: {
+    fontSize: 11,
+    color: "#1e3a8a",
+    fontWeight: "600",
+  },
+  contractBadgeNone: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 3,
+  },
+  contractBadgeNoneText: { fontSize: 11, color: "#d97706", fontWeight: "600" },
+
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   statusBadgeText: { fontSize: 11, fontWeight: "600" },
-  chevron: { fontSize: 22, color: "#9ca3af", fontWeight: "300" },
+
   roomBody: {
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: "#f1f5f9",
     padding: 12,
     gap: 10,
   },
@@ -2078,44 +2180,56 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 8,
   },
-  loadingText: { color: "#9ca3af", fontSize: 13 },
+  loadingText: { color: "#64748b", fontSize: 13, fontWeight: "500" },
 
-  // Room footer (hợp đồng + nút tạo hóa đơn)
+  // Room footer
   roomFooter: {
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: "#f1f5f9",
     paddingTop: 10,
     gap: 8,
   },
-  roomFooterContract: { fontSize: 12, color: "#6b7280" },
+  roomFooterContractRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  roomFooterContract: { fontSize: 12, color: "#64748b", flex: 1 },
   invoiceBtn: {
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#f1f5f9",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    alignItems: "center",
+    borderColor: "#e2e8f0",
+    gap: 4,
   },
-  invoiceBtnActive: {
-    backgroundColor: "#3b82f6",
-    borderColor: "#3b82f6",
-  },
-  invoiceBtnDone: {
-    backgroundColor: "#16a34a",
-    borderColor: "#16a34a",
-  },
-  invoiceBtnDisabled: { opacity: 0.5 },
-  invoiceBtnText: { fontSize: 13, fontWeight: "600", color: "#374151" },
+  invoiceBtnActive: { backgroundColor: "#1e3a8a", borderColor: "#1e3a8a" },
+  invoiceBtnDone: { backgroundColor: "#16a34a", borderColor: "#16a34a" },
+  invoiceBtnDisabled: { opacity: 0.45 },
+  invoiceBtnText: { fontSize: 13, fontWeight: "600", color: "#64748b" },
 
-  // Service card
-  serviceCard: { borderRadius: 10, padding: 12, borderWidth: 1.5, gap: 8 },
+  // ── Service card ──
+  serviceCard: { borderRadius: 12, padding: 12, borderWidth: 1.5, gap: 8 },
   serviceHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
-  serviceEmoji: { fontSize: 16 },
+  serviceIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   serviceLabel: { fontSize: 14, fontWeight: "700", flex: 1 },
-  savedBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  savedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 20,
+  },
   savedBadgeText: { fontSize: 11, fontWeight: "600", color: "#16a34a" },
   editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#fef3c7",
     borderRadius: 6,
     paddingHorizontal: 8,
@@ -2137,20 +2251,20 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "#e2e8f0",
     paddingHorizontal: 12,
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1e293b",
   },
   numberInputSaved: { borderColor: "#86efac", backgroundColor: "#f0fdf4" },
   numberInputError: { borderColor: "#fca5a5" },
   saveBtn: {
     width: 60,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2158,8 +2272,6 @@ const styles = StyleSheet.create({
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   errorText: { fontSize: 12, color: "#ef4444" },
   initialHint: { fontSize: 12, color: "#0284c7" },
-
-  // Image preview (sau khi lưu)
   imagePreviewRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2171,9 +2283,8 @@ const styles = StyleSheet.create({
   },
   imagePreviewThumb: { width: 40, height: 32, borderRadius: 6 },
   imagePreviewText: { flex: 1, fontSize: 12, color: "#6b7280" },
-  imagePreviewExpand: { fontSize: 14, color: "#9ca3af" },
 
-  // Lightbox
+  // ── Lightbox ──
   lightboxOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.9)",
@@ -2181,72 +2292,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   lightboxImage: { width: "100%", height: "80%" },
-  lightboxClose: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 16,
-  },
-
-  // Bulk invoice banner
-  bulkBanner: {
+  lightboxCloseBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderColor: "#93c5fd",
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: 6,
+    marginTop: 16,
   },
-  bulkBannerTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  bulkBannerSub: { fontSize: 12, color: "#6b7280" },
-  bulkBannerResult: { fontSize: 12, marginTop: 4 },
-  bulkBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 80,
-  },
-  bulkBtnDone: { backgroundColor: "#16a34a" },
-  bulkBtnLoading: { backgroundColor: "#9ca3af" },
-  bulkBtnText: { fontSize: 12, fontWeight: "700", color: "#fff" },
+  lightboxCloseText: { color: "#fff", fontSize: 15, fontWeight: "600" },
 
-  // Load more
-  loadMoreBtn: {
-    marginTop: 4,
-    marginBottom: 8,
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderColor: "#93c5fd",
-    backgroundColor: "#eff6ff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadMoreText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3b82f6",
-  },
-
-  // Picker modal
+  // ── Picker modal ──
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -2254,8 +2308,8 @@ const styles = StyleSheet.create({
   },
   modalSheet: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: "60%",
     paddingBottom: 34,
   },
@@ -2265,10 +2319,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: "#f1f5f9",
   },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  modalClose: { fontSize: 18, color: "#6b7280" },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b" },
   pickerItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2280,5 +2333,112 @@ const styles = StyleSheet.create({
   },
   pickerItemSelected: { backgroundColor: "#eff6ff" },
   pickerItemText: { fontSize: 15, color: "#374151" },
-  pickerItemTextSelected: { color: "#3b82f6", fontWeight: "700" },
+  pickerItemTextSelected: { color: "#1e3a8a", fontWeight: "700" },
+
+  // ── Logout modal ──
+  logoutOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  logoutSheet: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+    width: "100%",
+    gap: 8,
+  },
+  logoutIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#fee2e2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  logoutTitle: { fontSize: 18, fontWeight: "800", color: "#1e293b" },
+  logoutSub: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  logoutBtns: { flexDirection: "row", gap: 12, width: "100%", marginTop: 8 },
+  logoutCancelBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutCancelText: { fontSize: 15, fontWeight: "600", color: "#374151" },
+  logoutConfirmBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutConfirmText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+
+  // ── Confirm modals ──
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  confirmSheet: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    gap: 12,
+  },
+  confirmHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  confirmTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b", flex: 1 },
+  alertBox: { borderRadius: 10, borderWidth: 1, padding: 10 },
+  alertText: { fontSize: 13, lineHeight: 18 },
+  confirmValueBox: { borderRadius: 10, borderWidth: 1, padding: 12, gap: 4 },
+  confirmValueLabel: {
+    fontSize: 10,
+    color: "#9ca3af",
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  confirmValueBig: { fontSize: 24, fontWeight: "800" },
+  confirmValueUnit: { fontSize: 14, fontWeight: "400", color: "#6b7280" },
+  confirmValueNote: { fontSize: 11, color: "#6b7280", marginTop: 2 },
+  confirmRowBoxes: { flexDirection: "row", alignItems: "center", gap: 8 },
+  confirmBox: { flex: 1, borderRadius: 10, padding: 10, alignItems: "center" },
+  confirmArrow: { fontSize: 18, color: "#9ca3af" },
+  confirmUsage: { textAlign: "center", fontSize: 13, color: "#6b7280" },
+  confirmBtns: { flexDirection: "row", gap: 10 },
+  confirmCancelBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmCancelText: { fontSize: 14, fontWeight: "600", color: "#374151" },
+  confirmOkBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmOkText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+  confirmEditBody: { fontSize: 14, color: "#64748b", lineHeight: 20 },
 });

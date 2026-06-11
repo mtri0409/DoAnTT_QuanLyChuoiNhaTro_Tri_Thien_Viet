@@ -6,12 +6,12 @@ export { imgURL };
 const apiRoomMedia = {
   createRoomMedia: (file, roomId, isThumbnail = false) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('roomId', roomId);
-    formData.append('isThumbnail', isThumbnail);
+    formData.append("file", file);
+    formData.append("roomId", roomId);
+    formData.append("isThumbnail", isThumbnail);
 
-    return axiosInstance.post('/admin/room-medias', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    return axiosInstance.post("/admin/room-medias", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
   },
 

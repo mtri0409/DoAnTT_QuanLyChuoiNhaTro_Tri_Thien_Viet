@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { View, ActivityIndicator } from "react-native";
 
 export default function Index() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -14,5 +14,11 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={isAuthenticated ? "/home" : "/login"} />;
+  if (!isAuthenticated) return <Redirect href="/login" />;
+
+  // Admin/Manager → giữ nguyên luồng cũ (app/home.js + Stack)
+  if (isAdmin) return <Redirect href="/home" />;
+
+  // Tenant → giao diện mới có bottom tabs
+  return <Redirect href="/(tenant)/home" />;
 }
