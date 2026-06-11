@@ -26,7 +26,7 @@ import {
 } from "lucide-react-native";
 import { Stack } from "expo-router";
 import { useAuth } from "../../../context/AuthContext";
-import { C, IS_IOS } from "./ProfileStyles";
+import { C, IS_IOS } from "../../../components/ProfileStyles";
 import apiProfile from "../../../services/apiProfile";
 import ProfileTab from "./ProfileTab";
 import VehicleTab from "./VehicleTab";

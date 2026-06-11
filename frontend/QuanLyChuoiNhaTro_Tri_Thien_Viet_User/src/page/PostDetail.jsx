@@ -458,7 +458,11 @@ export default function PostDetail() {
         <div className="pd-wrap">
           <div className="pd-error">
             <div className="pd-error-msg">{error}</div>
-            <button type="button" onClick={() => navigate(-1)} className="pd-back">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="pd-back"
+            >
               <FaArrowLeft size={12} /> Quay lại
             </button>
           </div>
@@ -570,7 +574,9 @@ export default function PostDetail() {
                   <div className="pd-price">
                     <FaMoneyBillWave size={14} />
                     <span>{formatPrice(post.price)}</span>
-                    <span style={{ color: "#8b7665", fontWeight: 600 }}>/tháng</span>
+                    <span style={{ color: "#8b7665", fontWeight: 600 }}>
+                      /tháng
+                    </span>
                   </div>
                 )}
 
@@ -626,8 +632,8 @@ export default function PostDetail() {
             <div className="pd-tip">
               <div className="pd-tip-title">Quan tâm tới phòng này?</div>
               <p>
-                Liên hệ trực tiếp với người đăng hoặc gọi cho quản lý để biết thêm
-                chi tiết về phòng và điều kiện ghép ở.
+                Liên hệ trực tiếp với người đăng hoặc gọi cho quản lý để biết
+                thêm chi tiết về phòng và điều kiện ghép ở.
               </p>
             </div>
           </aside>

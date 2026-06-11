@@ -29,8 +29,13 @@ import {
   X,
   Check,
 } from "lucide-react-native";
-import { s, C } from "./ProfileStyles";
-import { InfoRow, EditField, SectionCard, Divider } from "./ProfileComponents";
+import { s, C } from "../../../components/ProfileStyles";
+import {
+  InfoRow,
+  EditField,
+  SectionCard,
+  Divider,
+} from "../../../components/ProfileComponents";
 import axiosInstance from "../../../services/axios";
 
 const unwrap = (r) => r?.data ?? r;

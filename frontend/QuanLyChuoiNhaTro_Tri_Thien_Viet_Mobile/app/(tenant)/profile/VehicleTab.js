@@ -22,8 +22,8 @@ import {
   CreditCard,
   Save,
 } from "lucide-react-native";
-import { s, C, IS_IOS } from "./ProfileStyles";
-import { EditField } from "./ProfileComponents";
+import { s, C, IS_IOS } from "../../../components/ProfileStyles";
+import { EditField } from "../../../components/ProfileComponents";
 import axiosInstance from "../../../services/axios";
 
 const unwrap = (r) => r?.data ?? r;

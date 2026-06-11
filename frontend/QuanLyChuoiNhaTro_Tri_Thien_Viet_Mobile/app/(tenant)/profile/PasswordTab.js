@@ -11,8 +11,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { Lock, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react-native";
-import { s, C, IS_IOS } from "./ProfileStyles";
-import { EditField, SectionCard, Divider } from "./ProfileComponents";
+import { s, C, IS_IOS } from "../../../components/ProfileStyles";
+import {
+  EditField,
+  SectionCard,
+  Divider,
+} from "../../../components/ProfileComponents";
 import apiUser from "../../../services/apiUser";
 
 const TIPS = [
