@@ -56,7 +56,7 @@ public class PostServiceImpl implements PostService {
      * Thư mục lưu ảnh bài đăng — cấu hình trong application.properties.
      * Ví dụ: project.image.post=images/posts
      */
-    @Value("${project.image.post:images/posts}")
+    @Value("${path.images.post}")
     private String postImagePath;
 
     // ================================================================== //
