@@ -144,14 +144,14 @@ public class ProfileController {
         return new ResponseEntity<>(updatedProfile, HttpStatus.OK);
     }
 
-    @GetMapping("/public/profiles/{profileId}")
+    @GetMapping({"/public/profiles/{profileId}", "/admin/profiles/{profileId}"})
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
 
         ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
         return new ResponseEntity<>(profileDTO, HttpStatus.OK);
     }
 
-    @GetMapping("/public/profile/image/{fileName}")
+    @GetMapping({"/public/profile/image/{fileName}", "/admin/profile/image/{fileName}"})
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String fileName) throws IOException {
         InputStream imageStream = profileService.getIdentificationImage(fileName);
 
