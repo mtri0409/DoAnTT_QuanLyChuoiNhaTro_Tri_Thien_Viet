@@ -9,7 +9,7 @@ const FETCH_SIZE = 100;
 const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1000&auto=format&fit=crop";
 
-const getContent = res => {
+const getContent = (res) => {
   if (Array.isArray(res?.content)) return res.content;
   if (Array.isArray(res?.data?.content)) return res.data.content;
   if (Array.isArray(res)) return res;
@@ -17,27 +17,28 @@ const getContent = res => {
   return [];
 };
 
-const buildImageUrl = url => {
+const buildImageUrl = (url) => {
+  console.log("Building image URL for:", url);
   if (!url) return DEFAULT_IMAGE;
   if (url.startsWith("http")) return url;
 
   const base = imgURL.endsWith("/") ? imgURL.slice(0, -1) : imgURL;
   const path = url.startsWith("/") ? url : `/${url}`;
-
+  console.log("Building image URL:", { base, path });
   return `${base}${path}`;
 };
 
-const getImage = item => {
+const getImage = (item) => {
   return buildImageUrl(
     item.thumbnailUrl ??
       item.thumbnail_url ??
       item.imageUrl ??
       item.image_url ??
-      item.image
+      item.image,
   );
 };
 
-const formatDate = value => {
+const formatDate = (value) => {
   if (!value) return "";
 
   const date = new Date(value);
@@ -93,17 +94,17 @@ export default function NewsPage() {
         setArticles(articleData);
         setCategories(
           categoryData
-            .filter(category => category.active !== false)
+            .filter((category) => category.active !== false)
             .sort(
               (a, b) =>
                 (a.displayOrder ?? a.display_order ?? 0) -
-                (b.displayOrder ?? b.display_order ?? 0)
-            )
+                (b.displayOrder ?? b.display_order ?? 0),
+            ),
         );
 
         setError(null);
       })
-      .catch(err => {
+      .catch((err) => {
         if (!active) return;
 
         console.error("Fetch news error:", err);
@@ -127,7 +128,7 @@ export default function NewsPage() {
     if (banners.length === 0) return;
 
     const timer = setInterval(() => {
-      setCurrentSlide(prev => {
+      setCurrentSlide((prev) => {
         const next = prev + 1;
         return next >= banners.length ? 0 : next;
       });
@@ -139,13 +140,13 @@ export default function NewsPage() {
   const activeCategory = useMemo(() => {
     if (!slug) return null;
 
-    return categories.find(category => category.slug === slug) ?? null;
+    return categories.find((category) => category.slug === slug) ?? null;
   }, [slug, categories]);
 
   const displayedArticles = useMemo(() => {
     if (!activeCategory) return articles;
 
-    return articles.filter(article => {
+    return articles.filter((article) => {
       if (article.categorySlug) {
         return article.categorySlug === activeCategory.slug;
       }
@@ -177,7 +178,7 @@ export default function NewsPage() {
     ? Math.min(currentSlide, banners.length - 1)
     : 0;
 
-  const handleCategoryChange = category => {
+  const handleCategoryChange = (category) => {
     if (!category) {
       navigate("/tin-tuc");
       return;
@@ -208,16 +209,16 @@ export default function NewsPage() {
         setArticles(getContent(articleRes));
         setCategories(
           getContent(categoryRes)
-            .filter(category => category.active !== false)
+            .filter((category) => category.active !== false)
             .sort(
               (a, b) =>
                 (a.displayOrder ?? a.display_order ?? 0) -
-                (b.displayOrder ?? b.display_order ?? 0)
-            )
+                (b.displayOrder ?? b.display_order ?? 0),
+            ),
         );
         setError(null);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Fetch news error:", err);
         setBanners([]);
         setArticles([]);
@@ -628,7 +629,11 @@ export default function NewsPage() {
         {!loadingNews && error && (
           <div className="news-error" style={{ marginBottom: 28 }}>
             <p>{error}</p>
-            <button type="button" onClick={handleRetry} className="news-retry-btn">
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="news-retry-btn"
+            >
               Thử lại
             </button>
           </div>
@@ -649,7 +654,7 @@ export default function NewsPage() {
                 <img
                   src={getImage(slide)}
                   alt={slide.title || "Banner tin tức"}
-                  onError={e => {
+                  onError={(e) => {
                     e.currentTarget.src = DEFAULT_IMAGE;
                   }}
                 />
@@ -664,11 +669,14 @@ export default function NewsPage() {
                   <h2>{slide.title}</h2>
 
                   <p>
-                    {slide.summary ?? "Khám phá thông tin mới nhất về phòng trọ."}
+                    {slide.summary ??
+                      "Khám phá thông tin mới nhất về phòng trọ."}
                   </p>
 
                   <div className="news-meta">
-                    <span>{formatDate(slide.publishedAt ?? slide.createdAt)}</span>
+                    <span>
+                      {formatDate(slide.publishedAt ?? slide.createdAt)}
+                    </span>
                     <span>5 phút</span>
                   </div>
                 </div>
@@ -703,7 +711,7 @@ export default function NewsPage() {
             Tất cả
           </button>
 
-          {categories.map(category => (
+          {categories.map((category) => (
             <button
               key={category.categoryId}
               type="button"
@@ -725,7 +733,7 @@ export default function NewsPage() {
 
             {loadingNews && (
               <div className="news-grid">
-                {[1, 2, 3, 4, 5, 6].map(item => (
+                {[1, 2, 3, 4, 5, 6].map((item) => (
                   <div key={item} className="news-skeleton" />
                 ))}
               </div>
@@ -734,7 +742,7 @@ export default function NewsPage() {
             {!loadingNews && !error && (
               <div className="news-grid">
                 {displayedArticles.length > 0 ? (
-                  displayedArticles.map(item => (
+                  displayedArticles.map((item) => (
                     <NewsCard key={item.postId} item={item} />
                   ))
                 ) : (
@@ -751,7 +759,7 @@ export default function NewsPage() {
 
             {loadingNews && (
               <>
-                {[1, 2, 3, 4, 5].map(item => (
+                {[1, 2, 3, 4, 5].map((item) => (
                   <div
                     key={item}
                     className="news-skeleton"
@@ -764,7 +772,11 @@ export default function NewsPage() {
             {!loadingNews && !error && trendingArticles.length > 0 && (
               <>
                 {trendingArticles.map((item, index) => (
-                  <div key={item.postId} className="news-trending" onClick={() => navigate(`/tin-tuc/${item.slug}`)}>
+                  <div
+                    key={item.postId}
+                    className="news-trending"
+                    onClick={() => navigate(`/tin-tuc/${item.slug}`)}
+                  >
                     <div className="news-number">0{index + 1}</div>
 
                     <div>
