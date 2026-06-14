@@ -145,8 +145,12 @@ const RoomPreview = ({ room, detail, loading }) => {
     );
   }
 
+  // ✅ Fix: dùng roomMedia từ room (getMyRooms) hoặc detail (getRoomById)
+  // và check cả 2 field thumbnail / isThumbnail do backend trả về khác nhau
+  const mediaList = detail?.roomMedia ?? room?.roomMedia ?? [];
   const thumbnail =
-    detail?.roomMedia?.find((m) => m.isThumbnail) ?? detail?.roomMedia?.[0];
+    mediaList.find((m) => m.thumbnail === true || m.isThumbnail === true) ??
+    mediaList[0];
 
   return (
     <View style={styles.previewCard}>
@@ -216,11 +220,9 @@ export default function CreatePostScreen() {
       }),
     ]).start();
 
-    // create.js ~ dòng 219
     const load = async () => {
       try {
         const data = await apiRoom.getMyRooms();
-        console.log("✅ getMyRooms data:", JSON.stringify(data));
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data?.content)
@@ -228,7 +230,6 @@ export default function CreatePostScreen() {
             : Array.isArray(data?.data)
               ? data.data
               : [];
-        console.log("📋 list:", list);
         setRooms(list);
         if (list.length === 1) setSelectedRoom(list[0]);
       } catch (err) {
@@ -255,7 +256,6 @@ export default function CreatePostScreen() {
       setLoadingDetail(true);
       try {
         const data = await apiRoom.getRoomById(selectedRoom.roomId);
-        // interceptor đã unwrap → data là object phòng luôn, không cần data?.data
         setRoomDetail(data?.data ?? data);
       } catch {
         setRoomDetail(null);

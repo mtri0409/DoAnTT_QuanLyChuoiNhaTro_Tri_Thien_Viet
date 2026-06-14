@@ -69,7 +69,8 @@ const getFullImageUrl = (url) => {
   if (url.startsWith("http") || url.startsWith("data:")) return url;
   return `${imgURL}${url}`;
 };
-
+console.log("imgURL:", imgURL);
+console.log("Test image URL:", getFullImageUrl("/images/test.jpg"));
 const STATUS_CFG = {
   ACTIVE: { label: "Đang hoạt động", color: "#10b981", bg: "#ecfdf5" },
   CLOSED: { label: "Đã đóng", color: "#64748b", bg: "#f1f5f9" },
@@ -257,7 +258,9 @@ export default function PostDetailScreen() {
       ]).start();
     }
   }, [loading]);
-
+  // Log trong useEffect sau khi fetch xong
+  console.log("roomMedia:", roomMedia);
+  console.log("images:", images);
   const handleClose = () => {
     Alert.alert("Đóng bài đăng", "Bạn có chắc muốn đóng bài đăng này?", [
       { text: "Huỷ", style: "cancel" },

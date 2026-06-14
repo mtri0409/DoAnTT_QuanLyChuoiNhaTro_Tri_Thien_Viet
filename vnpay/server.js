@@ -10,7 +10,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 
 //doi ip mang cua dt + may tinh
-const BACKEND_API = "http://10.96.225.244:8080";
+const BACKEND_API = "http://192.168.1.162:8080";
 // process.env.BACKEND_API_URL ||
 
 const tokenStore = {};
