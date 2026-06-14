@@ -74,7 +74,7 @@ services:
     environment:
       VNP_TMN_CODE: ${VNP_TMN_CODE}
       VNP_HASH_SECRET: ${VNP_HASH_SECRET}
-      VNP_RETURN_URL: http://localhost:5174
+      VNP_RETURN_URL: http://192.168.0.100:5174
       PORT: 3001
     networks:
       - qlchuoiphongtro_network
