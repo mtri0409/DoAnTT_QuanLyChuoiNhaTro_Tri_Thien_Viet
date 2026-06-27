@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -190,7 +189,6 @@ public class RoommatePostServiceImpl implements RoommatePostService {
      * Chạy lúc 00:05 mỗi ngày, expire bài quá hạn và đồng bộ lại Room status.
      */
     @Override
-    @Scheduled(cron = "0 5 0 * * *")
     @Transactional
     public void expireOldPosts() {
         // Lấy danh sách bài sắp bị expire trước khi bulk-update để còn biết room nào

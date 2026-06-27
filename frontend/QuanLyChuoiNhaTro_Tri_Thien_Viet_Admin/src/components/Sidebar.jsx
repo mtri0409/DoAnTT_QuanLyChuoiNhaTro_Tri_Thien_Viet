@@ -6,7 +6,7 @@ import {
   FaWifi, FaCalculator, FaBell, FaRegNewspaper, FaWrench, FaBars,
   FaChartLine, FaMoneyBillWave, FaUserCog, FaClipboardList, FaBoxes,
   FaChevronDown,
-  FaCamera,
+  FaCamera, FaClock,
 } from "react-icons/fa";
 import { useSystemSetting } from "../context/SystemSettingContext";
 import { useAuth } from "../context/AuthContext";
@@ -48,6 +48,7 @@ const NAV_ITEMS = [
   // ─── Hệ thống (Admin only) ──────────────────────────────────
   { title: "Chi nhánh",   path: "/branches/1",   icon: <FaBuilding />,     group: "system", roles: ["ADMIN", "STAFF"] },
   { title: "Tài khoản",   path: "/users",        icon: <FaUserCog />,      group: "system", roles: ["ADMIN"] },
+  { title: "Scheduler",   path: "/schedulers",   icon: <FaClock />,        group: "system", roles: ["ADMIN"] },
   { title: "Cài đặt",     path: "/setting",      icon: <FaCogs />,         group: "system", roles: ["ADMIN", "STAFF"] },
   { title: "Thông báo",   path: "/notifications",icon: <FaBell />,         group: "system", roles: ["ADMIN", "STAFF", "TENANT"] },
 
