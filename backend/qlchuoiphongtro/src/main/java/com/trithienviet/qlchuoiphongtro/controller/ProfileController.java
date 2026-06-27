@@ -40,7 +40,7 @@ public class ProfileController {
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
 
-    @PutMapping({"/admin/profiles/{profileId}", "/user/profiles/{profileId}"})
+    @PutMapping({ "/admin/profiles/{profileId}", "/user/profiles/{profileId}" })
     public ResponseEntity<ProfileRequestDTO> updateProfile(@Valid @RequestBody ProfileRequestDTO profile,
             @PathVariable Long profileId) {
         ProfileRequestDTO updateProfile = profileService.updateProfile(profile, profileId);
@@ -126,7 +126,11 @@ public class ProfileController {
         return new ResponseEntity<>(profileService.getProfilesWithoutAccount(), HttpStatus.OK);
     }
 
-    @PutMapping({"/admin/profiles/{profileId}/idfrontimage", "/user/profiles/{profileId}/idfrontimage"})
+    @PutMapping({
+            "/admin/profiles/{profileId}/idfrontimage",
+            "/user/profiles/{profileId}/idfrontimage",
+            "/public/profiles/{profileId}/idfrontimage"
+    })
     public ResponseEntity<ProfileImageDTO> updateIdFrontImage(
             @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
@@ -135,7 +139,7 @@ public class ProfileController {
         return new ResponseEntity<>(updatedProfile, HttpStatus.OK);
     }
 
-    @PutMapping({"/admin/profiles/{profileId}/idbackimage", "/user/profiles/{profileId}/idbackimage"})
+    @PutMapping({ "/admin/profiles/{profileId}/idbackimage", "/user/profiles/{profileId}/idbackimage" })
     public ResponseEntity<ProfileImageDTO> updateIdBackImage(
             @PathVariable Long profileId,
             @RequestParam("image") MultipartFile image) throws IOException {
@@ -144,14 +148,14 @@ public class ProfileController {
         return new ResponseEntity<>(updatedProfile, HttpStatus.OK);
     }
 
-    @GetMapping({"/public/profiles/{profileId}", "/admin/profiles/{profileId}"})
+    @GetMapping({ "/public/profiles/{profileId}", "/admin/profiles/{profileId}" })
     public ResponseEntity<ProfileDetailDTO> getProfileById(@PathVariable Long profileId) {
 
         ProfileDetailDTO profileDTO = profileService.getProfileById(profileId);
         return new ResponseEntity<>(profileDTO, HttpStatus.OK);
     }
 
-    @GetMapping({"/public/profile/image/{fileName}", "/admin/profile/image/{fileName}"})
+    @GetMapping({ "/public/profile/image/{fileName}", "/admin/profile/image/{fileName}" })
     public ResponseEntity<InputStreamResource> getImage(@PathVariable String fileName) throws IOException {
         InputStream imageStream = profileService.getIdentificationImage(fileName);
 
