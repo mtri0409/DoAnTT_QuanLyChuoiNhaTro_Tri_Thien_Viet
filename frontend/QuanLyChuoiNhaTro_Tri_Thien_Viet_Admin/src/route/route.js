@@ -63,6 +63,7 @@ import ListParkingLog from "../pages/park/ParkingLog";
 import CameraDashboard from "../pages/park/CameraDashboard";
 import GuestRegistrationManagementPage from "../pages/proflie/GuestRegistrationManagementPage";
 import SchedulerList from "../pages/scheduler/SchedulerList";
+import AIConfig from "../pages/ai-config/AIConfig";
 
 // =============================================================
 // PHÂN QUYỀN ROUTE (roles)
@@ -158,6 +159,7 @@ const AdminRoute = [
 
   // ─── CÀI ĐẶT HỆ THỐNG (chỉ ADMIN) ──────────────────────────
   { path: "/setting", component: SystemSettings, roles: ["ADMIN", "STAFF"] },
+  { path: "/ai-config", component: AIConfig, roles: ["ADMIN", "STAFF"] },
 
   // ─── SCHEDULER (chỉ ADMIN) ──────────────────────────────────
   { path: "/schedulers", component: SchedulerList, roles: ["ADMIN"] },

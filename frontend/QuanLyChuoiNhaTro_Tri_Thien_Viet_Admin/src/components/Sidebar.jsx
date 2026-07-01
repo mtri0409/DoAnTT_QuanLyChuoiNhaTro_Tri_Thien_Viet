@@ -50,6 +50,7 @@ const NAV_ITEMS = [
   { title: "Tài khoản",   path: "/users",        icon: <FaUserCog />,      group: "system", roles: ["ADMIN"] },
   { title: "Scheduler",   path: "/schedulers",   icon: <FaClock />,        group: "system", roles: ["ADMIN"] },
   { title: "Cài đặt",     path: "/setting",      icon: <FaCogs />,         group: "system", roles: ["ADMIN", "STAFF"] },
+  { title: "Cấu hình AI", path: "/ai-config",    icon: <FaCogs />,         group: "system", roles: ["ADMIN", "STAFF"] },
   { title: "Thông báo",   path: "/notifications",icon: <FaBell />,         group: "system", roles: ["ADMIN", "STAFF", "TENANT"] },
 
   // ─── An ninh bãi xe ─────────────────────────────────────────
@@ -64,8 +65,8 @@ const GROUP_CONFIG = {
   service:   { label: "Dịch vụ",       icon: <FaBoxes size={14} />,         color: "#a78bfa" },
   operation: { label: "Vận hành",      icon: <FaWrench size={14} />,        color: "#fb923c" },
   system:    { label: "Hệ thống",      icon: <FaBuilding size={14} />,      color: "#94a3b8" },
+  settings:  { label: "Cài đặt",       icon: <FaCogs size={14} />,          color: "#3b82f6" },
   security:  { label: "An ninh",       icon: <FaCamera size={14} />,        color: "#f87171" },
-  settings:  { label: "Cài đặt",       icon: <FaCogs size={14} />,          color: "#94a3b8" },
 };
 
 const GROUP_ORDER = ["main", "core", "finance", "service", "operation", "system", "settings", "security"];

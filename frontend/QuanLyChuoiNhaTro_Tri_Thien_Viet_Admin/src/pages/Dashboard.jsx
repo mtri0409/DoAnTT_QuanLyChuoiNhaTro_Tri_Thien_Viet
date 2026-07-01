@@ -14,6 +14,7 @@ import apiBranches from "../api/apiBranches";
 import StatCard from "../components/StatCard";
 import MiniStat from "../components/MiniStast";
 import ReminderWidget from "../components/ReminderWidget";
+import AiAgentPanel from "../components/AiAgentPanel";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -35,6 +36,7 @@ const Dashboard = () => {
   
   const [branchDetail, setBranchDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAiOpen, setIsAiOpen] = useState(false);
 
   useEffect(() => { loadInitialData(); }, []);
   // Load lại dữ liệu khi đổi chi nhánh hoặc thời gian
@@ -145,6 +147,12 @@ const Dashboard = () => {
         <div className="col-12 col-sm-auto">
           <button className="btn btn-primary rounded-3 w-100" onClick={loadDashboardData}>
             <FaSyncAlt /> <span className="d-sm-none ms-1">Làm mới</span>
+          </button>
+        </div>
+
+        <div className="col-12 col-sm-auto">
+          <button className="btn btn-info rounded-3 w-100 text-white" onClick={() => setIsAiOpen(true)}>
+            🤖 AI
           </button>
         </div>
       </div>
@@ -266,6 +274,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <AiAgentPanel isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
     </div>
   );
 };

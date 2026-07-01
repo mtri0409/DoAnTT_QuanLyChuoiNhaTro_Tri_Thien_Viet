@@ -15,12 +15,14 @@ import {
   FaTimesCircle,
   FaMailBulk,
   FaBan,
+  FaFileExcel,
 } from "react-icons/fa";
 import apiInvoice from "../../api/apiInvoice";
 import apiBranches from "../../api/apiBranches";
 import Pagination from "../../components/Pagination";
 import { toast } from "react-toastify";
 import CreateInvoice from "../../components/CreateInvoice";
+import { exportToExcel } from "../../utils/excelHelper";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const TYPE_OPTIONS = [
@@ -202,6 +204,31 @@ export default function ListInvoice() {
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  const handleExportExcel = () => {
+    if (!data || !data.content || data.content.length === 0) {
+      toast.warning("Không có dữ liệu hóa đơn để xuất Excel!");
+      return;
+    }
+
+    const excelData = data.content.map((inv) => ({
+      "Mã Hóa Đơn": inv.invoiceId,
+      "Tên Khách Thuê": inv.contract?.representative?.fullName || "—",
+      "Số Điện Thoại": inv.contract?.representative?.phone || "—",
+      "Chi Nhánh": inv.contract?.room?.floor?.branch?.branchName || "—",
+      "Phòng": inv.contract?.room?.roomName || "—",
+      "Loại Hóa Đơn": TYPE_BADGE[inv.type]?.label || inv.type,
+      "Kỳ Hóa Đơn": inv.periodMonth ? `Tháng ${inv.periodMonth}/${inv.periodYear}` : "—",
+      "Tổng Tiền (VND)": inv.totalAmount,
+      "Đã Thu (VND)": inv.paidAmount || 0,
+      "Còn Nợ (VND)": inv.totalAmount - (inv.paidAmount || 0),
+      "Trạng Thái": STATUS_BADGE[inv.status]?.label || inv.status,
+      "Hạn Thanh Toán": inv.dueDate ? fmtDate(inv.dueDate) : "—",
+      "Ngày Tạo": inv.createdAt ? fmtDate(inv.createdAt) : "—"
+    }));
+
+    exportToExcel(excelData, "Danh_Sach_Hoa_Don", "Hóa Đơn");
+  };
 
   // ── Handlers ──
   const handleAction = async (invoiceId, action, label) => {
@@ -433,6 +460,13 @@ export default function ListInvoice() {
           </p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
+          <button
+            className="btn btn-outline-success shadow-sm d-flex align-items-center gap-2"
+            onClick={handleExportExcel}
+          >
+            <FaFileExcel size={14} />{" "}
+            <span className="d-none d-md-inline">Xuất Excel</span>
+          </button>
           <button
             className="btn btn-outline-warning shadow-sm d-flex align-items-center gap-2"
             onClick={() => setShowSendModal(true)}
