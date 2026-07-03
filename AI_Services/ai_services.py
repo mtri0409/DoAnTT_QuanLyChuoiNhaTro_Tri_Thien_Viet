@@ -15,13 +15,20 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from datetime import datetime
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Query, HTTPException
+from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 from vietocr.tool.predictor import Predictor
 from vietocr.tool.config import Cfg
 import torch
-import base64  
+import base64
+
+from models import ChatPayload, ChatResponse
+from tools import get_ai_config
+from graph.state import create_initial_state
+from graph.app import get_graph
+from graph.tool_registry import get_registry
 
 
 # ==================== TỐI ƯU CPU CHO PYTORCH ====================
@@ -30,7 +37,15 @@ os.environ["MKL_NUM_THREADS"] = "2"
 torch.set_num_threads(2)
 
 # ==================== CẤU HÌNH HỆ THỐNG ====================
-app = FastAPI(title="AI Detection & Streaming Service", version="3.0.0")
+app = FastAPI(title="AI Detection & Streaming & Conversational Agent Service", version="3.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 WATER_MODEL_PATH = Path("runs/best_water.pt")
 PLATE_MODEL_PATH = Path("runs/best_plate.pt")
@@ -40,7 +55,25 @@ DEBUG_DIR.mkdir(exist_ok=True)
 VIDEO_SOURCE = "0"  # Thay bằng URL RTSP nếu dùng camera IP
 FRAMES_TO_COLLECT = 5
 
-JAVA_API_URL = os.getenv("API_BACKEND_URL", "http://localhost:8080/api/v1/ai") + "/receive-plate"  # Webhook Backend Java
+# API URLs
+JAVA_BACKEND_API_BASE = os.getenv("API_BACKEND_URL", "http://localhost:8080")
+# If API_BACKEND_URL includes /api/v1/internal/ai-tools, strip it to get the base url
+if "/api/v1" in JAVA_BACKEND_API_BASE:
+    JAVA_BACKEND_API_BASE = JAVA_BACKEND_API_BASE.split("/api/v1")[0]
+
+JAVA_API_URL = f"{JAVA_BACKEND_API_BASE}/api/v1/ai/receive-plate"
+
+# Load AI config from Java backend
+ai_config = get_ai_config(JAVA_BACKEND_API_BASE)
+DEFAULT_AI_API_KEY = ai_config.get("API_KEY", os.getenv("DEFAULT_AI_API_KEY", ""))
+DEFAULT_AI_BASE_URL = ai_config.get("BASE_URL", os.getenv("DEFAULT_AI_BASE_URL", ""))
+DEFAULT_AI_MODEL = ai_config.get("MODEL", os.getenv("DEFAULT_AI_MODEL", ""))
+
+import logging
+logger = logging.getLogger(__name__)
+logger.info(f"[Startup] JAVA_BACKEND_API_BASE={JAVA_BACKEND_API_BASE}")
+logger.info(f"[Startup] AI config loaded: API_KEY={'***' if DEFAULT_AI_API_KEY else 'empty'}, BASE_URL={DEFAULT_AI_BASE_URL}, MODEL={DEFAULT_AI_MODEL}")
+logger.info(f"[Startup] Registered tools: {get_registry().list_tools()}")
 
 PLATE_REGEX = re.compile(r"^\d{2}[A-Z][0-9A-Z]\d{3,6}$")
 
@@ -468,20 +501,34 @@ def video_tracking_loop():
 @app.on_event("startup")
 def startup_event():
     global camera_reader, ocr_worker
-    camera_reader = FrameReader(VIDEO_SOURCE)
     ocr_worker = OcrWorker()
-    
-    camera_reader.start()
     ocr_worker.start()
     
-    # Chạy tracking loop ngầm
-    threading.Thread(target=video_tracking_loop, daemon=True).start()
-    print("✅ Real-time Video ALPR System Started!")
+    # Chỉ chạy camera reader ở backend nếu nguồn KHÔNG phải là webcam cục bộ "0"
+    if str(VIDEO_SOURCE) != "0":
+        camera_reader = FrameReader(VIDEO_SOURCE)
+        camera_reader.start()
+        # Chạy tracking loop ngầm
+        threading.Thread(target=video_tracking_loop, daemon=True).start()
+        print(f"✅ Real-time Video ALPR System Started for source: {VIDEO_SOURCE}")
+    else:
+        camera_reader = None
+        print("ℹ️ Local Webcam Mode (0) detected. Backend camera capture is disabled to allow UI webcam access.")
+    
+    # Compile LangGraph Agent
+    print("🤖 Compiling LangGraph Agent...")
+    try:
+        get_graph()
+        print("✅ LangGraph Agent Compiled and Ready!")
+    except Exception as e:
+        print(f"❌ Error compiling LangGraph agent: {e}")
 
 @app.on_event("shutdown")
 def shutdown_event():
-    camera_reader.stop()
-    ocr_worker.stop()
+    if camera_reader:
+        camera_reader.stop()
+    if ocr_worker:
+        ocr_worker.stop()
 
 # ==================== API ENDPOINTS CỦA WEB ====================
 
@@ -541,6 +588,151 @@ async def detect_upload(file: UploadFile = File(...), type: str = Query("auto"))
     if type == "water_meter" or (type == "auto" and img.shape[1] / img.shape[0] <= 1.5):
         return JSONResponse(content={"status": "success", **process_water_meter(img, 0.25)})
     return JSONResponse(content={"status": "error", "message": "Only water meter supported for static upload currently."})
+
+
+@app.post("/api/v1/chat", response_model=ChatResponse)
+async def chat_with_ai(payload: ChatPayload, request: Request):
+    """
+    Endpoint xử lý chat với AI sử dụng LangGraph.
+    """
+    logger.info(f"[Chat Endpoint] Received chat request from {request.client.host}: {payload.message!r}")
+
+    try:
+        # Resolve AI configuration
+        api_key = payload.api_key or DEFAULT_AI_API_KEY
+        base_url = payload.base_url or DEFAULT_AI_BASE_URL
+        model_name = payload.model_name or DEFAULT_AI_MODEL
+        java_backend_url = payload.java_backend_url or JAVA_BACKEND_API_BASE
+
+        logger.info(f"[Chat Endpoint] Resolved config: model={model_name}, base_url={base_url}, api_key={'***' if api_key else 'empty'}")
+
+        # Build initial state
+        state = create_initial_state()
+        state.update({
+            "current_message": payload.message,
+            "provider": payload.provider,
+            "api_key": api_key,
+            "base_url": base_url,
+            "model_name": model_name,
+            "java_backend_url": java_backend_url,
+            "thread_id": getattr(payload, "thread_id", None) or "default",
+        })
+
+        # Invoke LangGraph
+        graph = get_graph()
+        config = {"configurable": {"thread_id": state["thread_id"]}}
+        result = await graph.ainvoke(state, config)
+
+        response_text = result.get("response", "Xin lỗi, mình không xử lý được yêu cầu này.")
+        logger.info(f"[Chat Endpoint] Final response length: {len(response_text)}, preview: {response_text[:200]!r}")
+
+        return ChatResponse(
+            response=response_text,
+            provider=payload.provider,
+            model_name=model_name,
+            is_cached=False
+        )
+
+    except Exception as e:
+        logger.error(f"Error processing chat request: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI Service Error: {str(e)}"
+        )
+
+
+def process_single_frame_plate(frame: np.ndarray):
+    if plate_model is None or ocr_predictor is None:
+        return {"status": "error", "message": "YOLO or OCR model not loaded"}
+
+    # Run YOLO detection (no persist/track needed for single static frame)
+    results = plate_model(frame, verbose=False, conf=0.5)[0]
+
+    if len(results.boxes) == 0:
+        return {"status": "failed", "message": "No plate detected"}
+
+    best_box = None
+    best_conf = -1.0
+    best_class_name = ""
+
+    for box in results.boxes:
+        conf = float(box.conf[0])
+        if conf > best_conf:
+            best_conf = conf
+            best_box = box.xyxy[0].cpu().numpy()
+            cls_id = int(box.cls[0])
+            best_class_name = plate_model.names[cls_id]
+
+    if best_box is None:
+        return {"status": "failed", "message": "No valid boxes found"}
+
+    crop = crop_image(frame, best_box)
+    if crop.size == 0 or crop.shape[0] < 10 or crop.shape[1] < 10:
+        return {"status": "failed", "message": "Cropped plate image too small"}
+
+    try:
+        if best_class_name == 'BSV':
+            h = crop.shape[0]
+            split_point = int(h * 0.5)
+            pil_top = Image.fromarray(cv2.cvtColor(crop[:split_point, :], cv2.COLOR_BGR2RGB))
+            pil_bot = Image.fromarray(cv2.cvtColor(crop[split_point:, :], cv2.COLOR_BGR2RGB))
+            text_top = ocr_predictor.predict(pil_top).replace("-", "").replace(".", "").strip()
+            text_bot = ocr_predictor.predict(pil_bot).replace("-", "").replace(".", "").strip()
+            raw_text = f"{text_top}{text_bot}"
+        else:
+            pil_img = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+            raw_text = ocr_predictor.predict(pil_img)
+
+        valid_plate = clean_and_validate_plate(raw_text)
+        if valid_plate:
+            _, buffer = cv2.imencode('.jpg', crop, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            crop_base64 = base64.b64encode(buffer).decode('utf-8')
+
+            return {
+                "status": "success",
+                "plate": valid_plate,
+                "confidence": best_conf,
+                "type": best_class_name,
+                "crop_image": crop_base64
+            }
+        else:
+            return {
+                "status": "failed",
+                "message": f"Plate validation failed for raw text: {raw_text}"
+            }
+    except Exception as e:
+        return {"status": "error", "message": f"OCR failed: {str(e)}"}
+
+
+@app.post("/api/v1/detect-plate-frame")
+async def detect_plate_frame(file: UploadFile = File(...)):
+    """
+    Endpoint xử lý nhận diện biển số xe từ một frame ảnh gửi lên từ Frontend UI.
+    """
+    try:
+        data = await file.read()
+        nparr = np.frombuffer(data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if img is None:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Invalid image file"})
+
+        result = process_single_frame_plate(img)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Error in detect_plate_frame: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "java_backend_url": JAVA_BACKEND_API_BASE,
+        "tools": get_registry().list_tools(),
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

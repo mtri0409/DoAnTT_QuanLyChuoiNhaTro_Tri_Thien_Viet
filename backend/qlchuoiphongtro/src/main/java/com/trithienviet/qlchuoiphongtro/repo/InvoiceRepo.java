@@ -160,4 +160,168 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
                         @Param("type") String type,
                         @Param("month") Integer month,
                         @Param("year") Integer year);
+
+        /**
+         * Query 1: Danh sách cư dân có hóa đơn tháng quá hạn và còn nợ.
+         * Chỉ lấy ngườ đại diện của hợp đồng (contracts.representative_id) để tránh
+         * lặp hóa đơn khi một phòng có nhiều thành viên.
+         * @param branchName (Optional) Tên chi nhánh để lọc
+         * @param month (Optional) Tháng để lọc
+         * @param year (Optional) Năm để lọc
+         * Trả về: Tên khách thuê, SĐT, Chi nhánh, Tên phòng, Mã hóa đơn, Số tiền nợ, Hạn nộp
+         */
+        @Query(value = """
+            SELECT
+                p.full_name AS tenant_name,
+                p.phone AS tenant_phone,
+                b.branch_name AS branch_name,
+                r.room_name AS room_name,
+                i.invoice_id AS invoice_id,
+                i.total_amount - COALESCE(pay.amount, 0) AS debt_amount,
+                i.due_date AS due_date
+            FROM
+                invoices i
+            JOIN
+                contracts c ON i.contract_id = c.contract_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            JOIN
+                profiles p ON c.representative_id = p.profile_id
+            LEFT JOIN
+                payments pay ON i.invoice_id = pay.invoice_id AND pay.status = 'SUCCESS'
+            WHERE
+                i.status IN ('PENDING', 'PARTIAL')
+                AND i.type = 'MONTHLY'
+                AND (i.total_amount - COALESCE(pay.amount, 0)) > 0
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+                AND (:month IS NULL OR i.period_month = :month)
+                AND (:year IS NULL OR i.period_year = :year)
+            ORDER BY
+                i.due_date ASC, b.branch_name ASC, r.room_name ASC
+            """, nativeQuery = true)
+        List<Map<String, Object>> findDebtorsList(
+            @Param("branchName") String branchName,
+            @Param("month") Integer month,
+            @Param("year") Integer year
+        );
+
+        /**
+         * Query 2: Thống kê doanh thu theo chi nhánh, tháng, năm
+         * JOIN: payments → invoices → contracts → rooms → floors → branches
+         * @param branchName (Optional) Tên chi nhánh để lọc
+         * @param month (Optional) Tháng để lọc
+         * @param year (Optional) Năm để lọc
+         */
+        @Query(value = """
+            SELECT
+                b.branch_name AS branch_name,
+                MONTH(i.created_at) AS period_month,
+                YEAR(i.created_at) AS period_year,
+                SUM(pay.amount) AS total_revenue,
+                COUNT(DISTINCT i.invoice_id) AS invoice_count
+            FROM
+                payments pay
+            JOIN
+                invoices i ON pay.invoice_id = i.invoice_id
+            JOIN
+                contracts c ON i.contract_id = c.contract_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                pay.status = 'SUCCESS'
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+                AND (:month IS NULL OR MONTH(i.created_at) = :month)
+                AND (:year IS NULL OR YEAR(i.created_at) = :year)
+            GROUP BY
+                b.branch_name, MONTH(i.created_at), YEAR(i.created_at)
+            ORDER BY
+                YEAR(i.created_at) DESC, MONTH(i.created_at) DESC, b.branch_name
+            """, nativeQuery = true)
+        List<Map<String, Object>> findRevenueStats(
+            @Param("branchName") String branchName,
+            @Param("month") Integer month,
+            @Param("year") Integer year
+        );
+
+        /**
+         * Query 3: Thống kê tình trạng phòng (trống/đã thuê)
+         * @param branchName (Optional) Tên chi nhánh để lọc
+         */
+        @Query(value = """
+            SELECT
+                b.branch_name AS branch_name,
+                r.status AS room_status,
+                COUNT(r.room_id) AS room_count
+            FROM
+                rooms r
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            GROUP BY
+                b.branch_name, r.status
+            """, nativeQuery = true)
+        List<Map<String, Object>> findRoomStatusStats(@Param("branchName") String branchName);
+
+        /**
+         * Query 4: Thống kê số lượng người ở (room_members) theo chi nhánh
+         * @param branchName (Optional) Tên chi nhánh để lọc
+         */
+        @Query(value = """
+            SELECT
+                b.branch_name AS branch_name,
+                COUNT(rm.member_id) AS tenant_count
+            FROM
+                room_members rm
+            JOIN
+                contracts c ON rm.contract_id = c.contract_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                rm.is_staying = true
+                AND c.status = 'ACTIVE'
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            GROUP BY
+                b.branch_name
+            """, nativeQuery = true)
+        List<Map<String, Object>> findTenantCountStats(@Param("branchName") String branchName);
+
+        /**
+         * Query 5: Liệt kê chi tiết danh sách các phòng trống (AVAILABLE)
+         * @param branchName (Optional) Tên chi nhánh để lọc
+         */
+        @Query(value = """
+            SELECT
+                b.branch_name AS branch_name,
+                f.floor_number AS floor_name,
+                r.room_name AS room_name,
+                r.price AS price,
+                r.max_people AS max_people
+            FROM
+                rooms r
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                r.status = 'AVAILABLE'
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            ORDER BY
+                b.branch_name ASC, f.floor_number ASC, r.room_name ASC
+            """, nativeQuery = true)
+        List<Map<String, Object>> findVacantRoomsList(@Param("branchName") String branchName);
 }

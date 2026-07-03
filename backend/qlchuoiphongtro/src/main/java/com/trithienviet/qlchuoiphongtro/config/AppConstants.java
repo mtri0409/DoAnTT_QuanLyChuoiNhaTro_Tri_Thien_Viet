@@ -54,8 +54,10 @@ public class AppConstants {
                         "/api/v1/maintenance/images/**",
                         "/api/v1/admin/evidence/**", // Ảnh minh chứng chi phí (public display)
                         "/error",
+                        "/ws/**",
                         "/ws-parking/**",
                         "/api/v1/ai/**",
+                        "/api/v1/internal/ai-tools/**",
                         "/api/v1/public/**",
 
                         // ── Gửi thông báo liên hệ (Web User contact form) ────────────

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import {
@@ -22,6 +22,100 @@ const CameraDashboard = () => {
   const [isStreamOffline, setIsStreamOffline] = useState(false);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [plateHistory, setPlateHistory] = useState([]);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const [stream, setStream] = useState(null);
+
+  // Mở webcam khi chọn camera thật
+  useEffect(() => {
+    // Stop any existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (activeCam.isMock) {
+      setStream(null);
+      return;
+    }
+
+    navigator.mediaDevices
+      .getUserMedia({ video: { width: 1280, height: 720 } })
+      .then((mediaStream) => {
+        streamRef.current = mediaStream;
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+        setIsStreamOffline(false);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi mở camera trình duyệt:", err);
+        setIsStreamOffline(true);
+      });
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, [activeCam]);
+
+  // Luồng capture gửi lên FastAPI để nhận dạng
+  useEffect(() => {
+    if (activeCam.isMock || !stream) return;
+
+    const captureInterval = setInterval(() => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        async (blob) => {
+          if (!blob) return;
+          const formData = new FormData();
+          formData.append("file", blob, "frame.jpg");
+
+          try {
+            const response = await fetch("http://localhost:8000/api/v1/detect-plate-frame", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+            if (data.status === "success") {
+              // Đồng bộ sang Java Backend qua REST API
+              const javaApiUrl = SOCKET_URL.replace("/ws", "") + "/api/v1/ai/receive-plate";
+              fetch(javaApiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  track_id: Math.floor(Math.random() * 10000),
+                  status: "SUCCESS",
+                  best_plate: data.plate,
+                  timestamp: new Date().toISOString().slice(0, -1),
+                  plate_image_base64: data.crop_image,
+                  confidence_votes: "1/1",
+                  unique_valid_plates: [data.plate],
+                  raw_5_reads: [data.plate],
+                }),
+              }).catch((e) => console.error("Lỗi khi đồng bộ sang Java Backend:", e));
+            }
+          } catch (err) {
+            console.error("Lỗi gửi frame nhận dạng:", err);
+          }
+        },
+        "image/jpeg",
+        0.8
+      );
+    }, 1500);
+
+    return () => clearInterval(captureInterval);
+  }, [activeCam, stream]);
 
   const successSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav");
   const errorSound = new Audio("https://assets.mixkit.co/active_storage/sfx/911/911-500.wav");
@@ -158,23 +252,41 @@ const CameraDashboard = () => {
                 </div>
               </div>
 
-              <div className="h-100 d-flex align-items-center justify-content-center bg-black">
-                {!isStreamOffline || activeCam.isMock ? (
-                  <img
-                    src={activeCam.streamUrl}
-                    alt={activeCam.name}
-                    className="w-100 h-100"
-                    style={{ objectFit: activeCam.isMock ? "cover" : "contain" }}
-                    onError={() => { if (!activeCam.isMock) setIsStreamOffline(true); }}
-                  />
+              <div className="h-100 w-100 d-flex align-items-center justify-content-center bg-black">
+                {!isStreamOffline ? (
+                  activeCam.isMock ? (
+                    <img
+                      src={activeCam.streamUrl}
+                      alt={activeCam.name}
+                      className="w-100 h-100"
+                      style={{ objectFit: "cover" }}
+                    />
+                  ) : (
+                    <>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-100 h-100"
+                        style={{ objectFit: "contain" }}
+                      />
+                      <canvas
+                        ref={canvasRef}
+                        width="1280"
+                        height="720"
+                        style={{ display: "none" }}
+                      />
+                    </>
+                  )
                 ) : (
                   <div className="text-center p-5">
                     <div className="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: 72, height: 72 }}>
                       <FaVideoSlash size={28} className="text-light" />
                     </div>
-                    <h6 className="fw-bold mb-2">Mất tín hiệu camera</h6>
-                    <p className="text-muted small mb-3">Kiểm tra Python AI Service (port 8000)</p>
-                    <button onClick={() => setIsStreamOffline(false)} className="btn btn-primary btn-sm px-4">Kết nối lại</button>
+                    <h6 className="fw-bold mb-2">Không thể kết nối camera</h6>
+                    <p className="text-muted small mb-3">Kiểm tra quyền truy cập webcam trên trình duyệt của bạn</p>
+                    <button onClick={() => setIsStreamOffline(false)} className="btn btn-primary btn-sm px-4">Thử lại</button>
                   </div>
                 )}
               </div>

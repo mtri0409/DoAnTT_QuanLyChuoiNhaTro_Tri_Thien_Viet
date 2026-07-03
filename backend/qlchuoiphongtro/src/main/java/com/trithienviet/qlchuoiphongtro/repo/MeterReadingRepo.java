@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -114,6 +115,31 @@ public interface MeterReadingRepo extends JpaRepository<MeterReading, Long> {
                         "AND (:year IS NULL OR m.period_year = :year)", nativeQuery = true)
         UtilityProjection getUtilityAnalytics(
                         @Param("branchId") Long branchId,
+                        @Param("month") Integer month,
+                        @Param("year") Integer year,
+                        @Param("elecName") String elecName,
+                        @Param("waterName") String waterName);
+
+        @Query(value = "SELECT " +
+                        "m.period_month as period_month, " +
+                        "m.period_year as period_year, " +
+                        "b.branch_name as branch_name, " +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value ELSE 0 END), 0) as total_electric_usage, " +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :elecName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as total_electric_money, " +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value ELSE 0 END), 0) as total_water_usage, " +
+                        "COALESCE(SUM(CASE WHEN s.service_name LIKE CONCAT('%', :waterName, '%') THEN m.usage_value * s.price ELSE 0 END), 0) as total_water_money " +
+                        "FROM meter_readings m " +
+                        "JOIN services s ON m.service_id = s.service_id " +
+                        "JOIN rooms r ON m.room_id = r.room_id " +
+                        "JOIN floors f ON r.floor_id = f.floor_id " +
+                        "JOIN branches b ON f.branch_id = b.branch_id " +
+                        "WHERE (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%'))) " +
+                        "AND (:month IS NULL OR m.period_month = :month) " +
+                        "AND (:year IS NULL OR m.period_year = :year) " +
+                        "GROUP BY b.branch_name, m.period_year, m.period_month " +
+                        "ORDER BY m.period_year DESC, m.period_month DESC, b.branch_name ASC", nativeQuery = true)
+        List<Map<String, Object>> findUtilityStats(
+                        @Param("branchName") String branchName,
                         @Param("month") Integer month,
                         @Param("year") Integer year,
                         @Param("elecName") String elecName,

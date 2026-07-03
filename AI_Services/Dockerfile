@@ -18,7 +18,7 @@ RUN python -c "from vietocr.tool.predictor import Predictor; from vietocr.tool.c
 
 # Copy model weights and application source code
 COPY runs ./runs
-COPY ai_services.py .
+COPY . .
 
 # Expose the API port
 EXPOSE 8000

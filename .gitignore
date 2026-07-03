@@ -1,4 +1,4 @@
-gitignore# --- IDE & System Files ---
+# --- IDE & System Files ---
 .idea/
 .vscode/
 *.swp
@@ -27,44 +27,25 @@ Thumbs.db
 .npm
 **.bundle.js
 **.gz
+.vite/
+.vite/**
+
+# --- Python / AI Services ---
+__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+**/.venv/
+venv/
+**/venv/
 
 # --- Database ---
 **/database/*.log
 **/database/*.temp
 
-# --- Others ---
+# --- Media & Uploads ---
+**/images/**
+*.mp4
+uploads/
 temp/
 bin/
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> dev-tri
-#--- image
-**/images/**
-.vite/
-<<<<<<< HEAD
->>>>>>> ee57d37636e4387a4029c95a9c2ca81fc43fd468
-=======
-=======
-
->>>>>>> dev-tri
-
-#--- image
-**/images/**
-
-.vite/
-
-.vite/**
-
-*.mp4
-
-<<<<<<< HEAD
->>>>>>> dev-tri
-=======
->>>>>>> dev-tri
-uploads/
-
-**/venv/**

@@ -2,6 +2,7 @@ package com.trithienviet.qlchuoiphongtro.repo;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -62,5 +63,112 @@ public interface ContractRepo extends JpaRepository<Contract, Long> {
         Page<Contract> filterContracts(@Param("status") ContractStatus status,
                         @Param("branchId") Long branchId,
                         Pageable pageable);
+
+        /**
+         * Danh sách hợp đồng đã hết hạn (end_date < CURRENT_DATE).
+         * Trả về: tenant_name, tenant_phone, branch_name, room_name,
+         *         start_date, end_date, status
+         */
+        @Query(value = """
+            SELECT
+                p.full_name AS tenant_name,
+                p.phone AS tenant_phone,
+                b.branch_name AS branch_name,
+                r.room_name AS room_name,
+                c.start_date AS start_date,
+                c.end_date AS end_date,
+                c.status AS status
+            FROM
+                contracts c
+            JOIN
+                profiles p ON c.representative_id = p.profile_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                c.is_deleted = false
+                AND c.end_date < CURRENT_DATE
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            ORDER BY
+                c.end_date DESC, b.branch_name ASC, r.room_name ASC
+            """, nativeQuery = true)
+        List<Map<String, Object>> findExpiredContracts(
+                        @Param("branchName") String branchName);
+
+        /**
+         * Danh sách hợp đồng theo trạng thái cụ thể (PENDING, ACTIVE, EXPIRED, TERMINATED, CANCELLED, DEPOSITED).
+         * Trả về: tenant_name, tenant_phone, branch_name, room_name,
+         *         start_date, end_date, status
+         */
+        @Query(value = """
+            SELECT
+                p.full_name AS tenant_name,
+                p.phone AS tenant_phone,
+                b.branch_name AS branch_name,
+                r.room_name AS room_name,
+                c.start_date AS start_date,
+                c.end_date AS end_date,
+                c.status AS status
+            FROM
+                contracts c
+            JOIN
+                profiles p ON c.representative_id = p.profile_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                c.is_deleted = false
+                AND (:status IS NULL OR c.status = :status)
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            ORDER BY
+                c.end_date DESC, b.branch_name ASC, r.room_name ASC
+            """, nativeQuery = true)
+        List<Map<String, Object>> findContractsByStatus(
+                        @Param("status") String status,
+                        @Param("branchName") String branchName);
+
+        /**
+         * Danh sách hợp đồng sắp hết hạn trong một tháng cụ thể.
+         * Trả về: tenant_name, tenant_phone, branch_name, room_name,
+         *         start_date, end_date, status
+         */
+        @Query(value = """
+            SELECT
+                p.full_name AS tenant_name,
+                p.phone AS tenant_phone,
+                b.branch_name AS branch_name,
+                r.room_name AS room_name,
+                c.start_date AS start_date,
+                c.end_date AS end_date,
+                c.status AS status
+            FROM
+                contracts c
+            JOIN
+                profiles p ON c.representative_id = p.profile_id
+            JOIN
+                rooms r ON c.room_id = r.room_id
+            JOIN
+                floors f ON r.floor_id = f.floor_id
+            JOIN
+                branches b ON f.branch_id = b.branch_id
+            WHERE
+                c.is_deleted = false
+                AND c.status = 'ACTIVE'
+                AND c.end_date >= :startDate
+                AND c.end_date <= :endDate
+                AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
+            ORDER BY
+                c.end_date ASC, b.branch_name ASC, r.room_name ASC
+            """, nativeQuery = true)
+        List<Map<String, Object>> findContractsExpiringInMonth(
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        @Param("branchName") String branchName);
 
 }

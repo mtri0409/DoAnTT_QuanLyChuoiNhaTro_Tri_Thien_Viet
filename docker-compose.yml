@@ -1,4 +1,26 @@
 services:
+  # 0. Postgres for LangGraph checkpointer
+  ai_checkpoint:
+    image: postgres:15-alpine
+    container_name: qlchuoiphongtro_ai_checkpoint
+    restart: always
+    environment:
+      POSTGRES_DB: ai_checkpoint
+      POSTGRES_USER: ai
+      POSTGRES_PASSWORD: ${AI_DB_PASSWORD:-ai_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ai_checkpoint_data:/var/lib/postgresql/data
+    networks:
+      - qlchuoiphongtro_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai -d ai_checkpoint"]
+      interval: 5s
+      timeout: 40s
+      retries: 5
+      start_period: 30s
+
   # 1. MySQL Database Container
   db:
     image: mysql:8.0
@@ -11,8 +33,6 @@ services:
       - "${DB_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    networks:
-      - qlchuoiphongtro_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
@@ -43,8 +63,6 @@ services:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
-    networks:
-      - qlchuoiphongtro_network
 
   # 3. AI Services (FastAPI/YOLO)
   ai-services:
@@ -56,9 +74,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      API_BACKEND_URL: http://backend:8080/api/v1/ai
+      API_BACKEND_URL: http://host.docker.internal:8080/api/v1/internal/ai-tools
+      AI_CHECKPOINT_URL: postgresql://ai:${AI_DB_PASSWORD:-ai_password}@ai_checkpoint:5432/ai_checkpoint
     depends_on:
       - backend
+      - ai_checkpoint
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - qlchuoiphongtro_network
 
@@ -76,8 +98,6 @@ services:
       VNP_HASH_SECRET: ${VNP_HASH_SECRET}
       VNP_RETURN_URL: http://192.168.0.100:5174
       PORT: 3001
-    networks:
-      - qlchuoiphongtro_network
 
   # 5. Frontend Admin Web App
   admin-web:
@@ -88,8 +108,6 @@ services:
     restart: always
     ports:
       - "5173:80"
-    networks:
-      - qlchuoiphongtro_network
 
   # 6. Frontend Tenant Web App
   tenant-web:
@@ -100,8 +118,6 @@ services:
     restart: always
     ports:
       - "5174:80"
-    networks:
-      - qlchuoiphongtro_network
 
   # 7. Frontend User Web App
   user-web:
@@ -112,8 +128,6 @@ services:
     restart: always
     ports:
       - "5175:80"
-    networks:
-      - qlchuoiphongtro_network
 
   # 8. phpMyAdmin (Web UI to manage MySQL database)
   phpmyadmin:
@@ -130,14 +144,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - qlchuoiphongtro_network
 
 volumes:
   mysql_data:
     name: qlchuoiphongtro_mysql_data
+  ai_checkpoint_data:
+    name: qlchuoiphongtro_ai_checkpoint_data
 
 networks:
   qlchuoiphongtro_network:
     name: qlchuoiphongtro_net
     driver: bridge
+
