@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import userService from "../services/userService";
 import { imgURL } from "../services/userConfig";
+import logo from "../assets/logo.png";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,7 +28,7 @@ export default function Header() {
     }
 
     const result = rooms.filter((r) =>
-      r.roomName?.toLowerCase().includes(value.toLowerCase())
+      r.roomName?.toLowerCase().includes(value.toLowerCase()),
     );
 
     setFiltered(result);
@@ -40,7 +41,7 @@ export default function Header() {
     }
 
     const valid = room.roomMedia.find(
-      (m) => m.url && !m.url.includes("storage.troapp.vn")
+      (m) => m.url && !m.url.includes("storage.troapp.vn"),
     );
 
     if (!valid) return `${imgURL}/images/default.jpg`;
@@ -247,14 +248,23 @@ export default function Header() {
             width: 100%;
           }
         }
+          .site-brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          text-decoration: none;
+        }
+
+        .site-brand-logo {
+          height: 80px;      
+          width: auto;
+          object-fit: contain;
+        }
       `}</style>
 
       <div className="site-header-inner">
         <a href="/" className="site-brand">
-          <div className="site-brand-main">
-            Phòng Trọ <span>Rẻ</span>
-          </div>
-          <div className="site-brand-sub">Tìm phòng nhanh, giá rõ ràng</div>
+          <img src={logo} alt="Phòng Trọ Rẻ" className="site-brand-logo" />
         </a>
 
         <div
