@@ -236,7 +236,7 @@ public interface InvoiceRepo extends JpaRepository<Invoice, Long> {
             JOIN
                 branches b ON f.branch_id = b.branch_id
             WHERE
-                pay.status = 'SUCCESS'
+                pay.status = 'PAID'
                 AND (:branchName IS NULL OR LOWER(b.branch_name) LIKE LOWER(CONCAT('%', :branchName, '%')))
                 AND (:month IS NULL OR MONTH(i.created_at) = :month)
                 AND (:year IS NULL OR YEAR(i.created_at) = :year)

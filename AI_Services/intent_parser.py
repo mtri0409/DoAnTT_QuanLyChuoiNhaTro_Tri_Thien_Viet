@@ -6,45 +6,50 @@ from typing import Dict, Optional, Tuple
 DEBT_KEYWORDS = [
     "nợ", "nợ tiền", "chưa đóng", "chưa thanh toán", "chậm đóng", "quá hạn",
     "trốn tiền", "trốn bill", "nợ hóa đơn", "nợ tiền điện", "nợ tiền nước",
-    "chưa đóng tiền", "chưa nộp", "đóng muộn", "cư dân nợ"
+    "chưa đóng tiền", "chưa nộp", "đóng muộn", "cư dân nợ", "nợ phòng", "nợ tiền phòng",
+    "nợ tiền nhà", "nợ tiền phòng"
 ]
 
 REVENUE_KEYWORDS = [
     "doanh thu", "doanh thủ", "doang thu", "thu nhập", "báo cáo", "tài chính", "thu về", "doanh số",
-    "số tiền thu", "kinh doanh", "so sánh doanh thu"
+    "số tiền thu", "kinh doanh", "so sánh doanh thu", "tiền phòng", "doanh thu phòng", "doanh thu thuê"
 ]
 
-GREETING_KEYWORDS = ["xin chào", "chào", "cảm ơn", "thank", "giới thiệu", "hướng dẫn", "ai"]
+GREETING_KEYWORDS = ["xin chào", "chào", "cảm ơn", "thank", "giới thiệu", "hướng dẫn", "ai", "hello", "hi"]
 
 CONTRACT_KEYWORDS = [
     "hợp đồng", "hết hạn", "hợp đồng hết hạn", "hợp đồng sắp hết hạn", "hợp đồng đã hết hạn",
     "danh sách hợp đồng", "contract expired", "expired contract", "hết hạn hợp đồng",
-    "đang hiệu lực", "chờ bắt đầu", "chưa bắt đầu", "chấm dứt", "bị hủy", "đặt cọc", "đã cọc"
+    "đang hiệu lực", "chờ bắt đầu", "chưa bắt đầu", "chấm dứt", "bị hủy", "đặt cọc", "đã cọc",
+    "hủy hợp đồng", "chấm dứt hợp đồng", "hợp đồng sắp đáo hạn"
 ]
 
 EXPIRING_KEYWORDS = [
     "sắp hết hạn", "sắp đáo hạn", "sắp tới hạn", "hết hạn trong tháng", "đáo hạn trong tháng",
-    "hết hạn tháng này", "hết hạn tháng tới", "sắp hết"
+    "hết hạn tháng này", "hết hạn tháng tới", "hạn hợp đồng", "hạn hợp đồng tới"
 ]
 
 ROOM_STATUS_KEYWORDS = [
     "phòng trống", "phòng đã thuê", "trạng thái phòng", "tình trạng phòng", "còn trống",
-    "hết phòng", "phòng đang trống", "phòng chưa thuê", "trống phòng", "thuê phòng"
+    "hết phòng", "phòng đang trống", "phòng chưa thuê", "trống phòng", "thuê phòng", "tỷ lệ phòng", "số lượng phòng"
 ]
 
 VACANT_ROOMS_KEYWORDS = [
-    "liệt kê phòng trống", "danh sách phòng trống", "phòng nào trống", "phòng nào còn trống", 
-    "phòng trống nào", "liet ke phong trong", "danh sach phong trong", "phòng trống còn lại", "danh sách các phòng trống"
+    "liệt kê phòng trống", "danh sách phòng trống", "phòng nào trống", "phòng nào còn trống",
+    "phòng trống nào", "liet ke phong trong", "danh sach phong trong", "phòng trống còn lại", "danh sách các phòng trống",
+    "còn trống bao nhiêu", "phòng trống bao nhiêu"
 ]
 
 COMPARE_KEYWORDS = [
     "so sánh", "đối chiếu", "so sanh", "tỷ lệ phòng trống", "tỉ lệ phòng trống",
-    "số lượng người giữa các chi nhánh", "so sánh doanh thu", "so sánh chi nhánh", "các chi nhánh", "so sánh các chi nhánh"
+    "số lượng người giữa các chi nhánh", "so sánh doanh thu", "so sánh chi nhánh", "các chi nhánh", "so sánh các chi nhánh",
+    "giữa các chi nhánh", "giữa chi nhánh", "so sánh các", "đối chiếu"
 ]
 
 UTILITY_KEYWORDS = [
     "điện nước", "tiền điện", "tiền nước", "nước dùng", "dùng nước", "điện tiêu thụ", "nước tiêu thụ",
-    "số nước", "chỉ số nước", "số lượng nước", "số điện", "chỉ số điện", "lượng nước", "lượng điện"
+    "số nước", "chỉ số nước", "số lượng nước", "số điện", "chỉ số điện", "lượng nước", "lượng điện",
+    "tiêu thụ điện", "tiêu thụ nước", "hóa đơn điện", "hóa đơn nước"
 ]
 
 CONTRACT_STATUS_MAP = {
@@ -160,27 +165,43 @@ def infer_intent(message: str, now: Optional[datetime] = None) -> Dict[str, obje
         return {"tool": "none", "args": {"branch_name": None, "month": None, "year": None}}
 
     text = message.strip().lower()
+    normalized_text = " ".join(text.split())
     now = now or datetime.now()
 
+    has_greeting = any(k in normalized_text for k in GREETING_KEYWORDS)
+    has_compare = any(k in normalized_text for k in COMPARE_KEYWORDS)
+    has_debt = any(k in normalized_text for k in DEBT_KEYWORDS)
+    has_utility = any(k in normalized_text for k in UTILITY_KEYWORDS)
+    has_vacant = any(k in normalized_text for k in VACANT_ROOMS_KEYWORDS)
+    has_room_status = any(k in normalized_text for k in ROOM_STATUS_KEYWORDS)
+    has_expiring = any(k in normalized_text for k in EXPIRING_KEYWORDS)
+    has_contract = any(k in normalized_text for k in CONTRACT_KEYWORDS)
+    has_revenue = any(k in normalized_text for k in REVENUE_KEYWORDS)
+
     tool = "none"
-    if any(k in text for k in GREETING_KEYWORDS):
-        tool = "none"
-    elif any(k in text for k in COMPARE_KEYWORDS):
+    if has_compare:
         tool = "compare_branches"
-    elif any(k in text for k in DEBT_KEYWORDS):
+    elif has_debt:
         tool = "get_detailed_debtors"
-    elif any(k in text for k in REVENUE_KEYWORDS):
-        tool = "get_revenue_stats"
-    elif any(k in text for k in UTILITY_KEYWORDS):
+    elif has_utility:
         tool = "get_utility_stats"
-    elif any(k in text for k in VACANT_ROOMS_KEYWORDS):
+    elif has_vacant:
         tool = "get_vacant_rooms_list"
-    elif any(k in text for k in ROOM_STATUS_KEYWORDS):
+    elif has_room_status:
         tool = "get_room_status"
-    elif any(k in text for k in EXPIRING_KEYWORDS):
+    elif has_expiring:
         tool = "get_contracts_expiring_in_month"
-    elif any(k in text for k in CONTRACT_KEYWORDS):
+    elif has_contract:
         tool = "get_contracts_by_status"
+    elif has_revenue:
+        tool = "get_revenue_stats"
+    elif has_greeting:
+        tool = "none"
+
+    # Nếu có ý rõ ràng so sánh giữa các chi nhánh nhưng hệ thống chưa nhận diện compare keyword,
+    # giữ compare chỉ khi có từ khóa so sánh rõ ràng hoặc khi có cả doanh thu và nợ/room status cụm từ so sánh.
+    if tool == "get_revenue_stats" and has_compare:
+        tool = "compare_branches"
 
     args: Dict[str, Optional[object]] = {"branch_name": None, "month": None, "year": None, "status": None}
 
@@ -201,7 +222,7 @@ def infer_intent(message: str, now: Optional[datetime] = None) -> Dict[str, obje
     args["year"] = year
 
 
-    # Mặc định dùng tháng hiện tại cho get_contracts_expiring_in_month nếu không đề cập tháng
+    # Mặc định dùng tháng/năm hiện tại cho get_contracts_expiring_in_month nếu không đề cập tháng
     if tool in {"get_contracts_expiring_in_month"}:
         if args["month"] is None:
             args["month"] = now.month
@@ -211,10 +232,10 @@ def infer_intent(message: str, now: Optional[datetime] = None) -> Dict[str, obje
     # Guardrails: tháng/năm vượt ngưỡng thì fallback none
     if args.get("month") is not None and not (1 <= args["month"] <= 12):
         tool = "none"
-        args = {"branch_name": None, "month": None, "year": None}
+        args = {"branch_name": None, "month": None, "year": None, "status": None}
     if args.get("year") is not None and not (2020 <= args["year"] <= 2026):
         tool = "none"
-        args = {"branch_name": None, "month": None, "year": None}
+        args = {"branch_name": None, "month": None, "year": None, "status": None}
 
     return {"tool": tool, "args": args}
 
@@ -254,11 +275,9 @@ def extract_time_context(message: str, now: datetime) -> Tuple[Optional[int], Op
     # Ngày/tháng hoặc tháng/năm
     # Ưu tiên pattern tháng/năm trước
     patterns = [
-        r"tháng\s*(\d{1,2})\s*[^0-9/]*năm\s*(\d{4})",
-        r"tháng\s*(\d{1,2})/\s*(\d{4})",
-        r"(\d{1,2})/(\d{4})",
-        r"tháng\s*(\d{1,2})",
-        r"(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?",
+        r"tháng\s*(\d{1,2})\s*năm\s*(\d{4})",
+        r"(\d{1,2})\s*/\s*(\d{4})",
+        r"tháng\s*(\d{1,2})\b",
     ]
 
     for pattern in patterns:
@@ -266,30 +285,15 @@ def extract_time_context(message: str, now: datetime) -> Tuple[Optional[int], Op
         if not match:
             continue
         groups = match.groups()
-        if len(groups) == 3 and groups[2] is not None:
-            # dd/mm/yyyy hoặc mm/dd/yyyy: lấy tháng và năm
-            month = int(groups[1])
-            year_raw = groups[2]
-            year = int(year_raw) if len(year_raw) == 4 else (2000 + int(year_raw) if int(year_raw) < 50 else 1900 + int(year_raw))
-            return month, year
-        if len(groups) == 2:
-            first, second = int(groups[0]), int(groups[1])
-            if "tháng" in text[:match.start()] or "tháng" in text[match.start():match.end()]:
-                return first, second
-            # Trường hợp m/mm/yyyy, giả định mm là tháng
-            if 1 <= first <= 12 and 1 <= second <= 12:
-                # Có năm không?
-                year_match = re.search(r"(\d{4})", text)
-                year = int(year_match.group(1)) if year_match else now.year
-                return first, year
-            if 1 <= first <= 12:
-                if second > 1000:
-                    return first, second
-                return first, now.year
-        if len(groups) == 1:
+        if len(groups) == 2 and groups[0] and groups[1]:
+            month = int(groups[0])
+            year = int(groups[1])
+            if 1 <= month <= 12:
+                return month, year
+        if len(groups) == 1 and groups[0]:
             month = int(groups[0])
             if 1 <= month <= 12:
-                year_match = re.search(r"(\d{4})", text)
+                year_match = re.search(r"năm\s*(\d{4})", text)
                 year = int(year_match.group(1)) if year_match else now.year
                 return month, year
 
@@ -303,6 +307,7 @@ def extract_time_context(message: str, now: datetime) -> Tuple[Optional[int], Op
 def extract_branch_name(message: str) -> Optional[str]:
     patterns = [
         r"\bchi nhánh\b\s+([^,.;:!?]+)",
+        r"\bnhà trọ\b\s+([^,.;:!?]+)",
         r"\btại\b\s+([^,.;:!?]+)",
         r"\bở\b\s+([^,.;:!?]+)",
         r"\bcủa\b\s+([^,.;:!?]+)",
@@ -311,13 +316,13 @@ def extract_branch_name(message: str) -> Optional[str]:
         match = re.search(pattern, message, flags=re.IGNORECASE)
         if match:
             value = match.group(1).strip()
-            value = re.split(r"\b(?:ngày|tháng|thang|năm|year|quý|qui)\b", value, maxsplit=1)[0].strip()
-            value = re.sub(r"\s+\d{1,2}(?:/\d{1,2})?(?:/\d{2,4})?$", "", value).strip()
+            value = re.split(r"\b(?:ngày|tháng|thang|năm|year|quý|qui|giữa|và|cùng)\b", value, maxsplit=1)[0].strip()
+            value = re.sub(r"\b(?:ngày|tháng|thang|năm|year)\s*\d{1,2}(?:/\d{1,2})?(?:/\d{2,4})?\b", "", value, flags=re.IGNORECASE).strip()
             value = value.rstrip(" ,.;:-")
             if value:
                 val_lower = value.lower()
                 generic_terms = [
-                    "2 chi nhánh", "hai chi nhánh", "các chi nhánh", "mọi chi nhánh", 
+                    "2 chi nhánh", "hai chi nhánh", "các chi nhánh", "mọi chi nhánh",
                     "tất cả chi nhánh", "tất cả", "các", "mọi", "chi nhánh nào", "chi nhánh"
                 ]
                 if val_lower in generic_terms:
@@ -325,5 +330,11 @@ def extract_branch_name(message: str) -> Optional[str]:
                 if re.match(r"^\d+\s*chi\s*nhánh", val_lower) or val_lower.isdigit():
                     continue
                 return value
+
+    # Fallback tên chi nhánh riêng lẻ hoặc quận
+    branch_name_match = re.search(r"\b(bình thạnh|thủ đức|thủduc|quận\s*\d+|q\.?\s*\d+|bình tân|gò vấp|tân bình|quận bình thạnh)\b", message, flags=re.IGNORECASE)
+    if branch_name_match:
+        return branch_name_match.group(1).strip()
+
     return None
 
