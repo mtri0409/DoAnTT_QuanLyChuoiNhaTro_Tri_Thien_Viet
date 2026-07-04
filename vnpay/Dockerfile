@@ -5,8 +5,9 @@ WORKDIR /app
 # Copy package configuration files
 COPY package.json package-lock.json ./
 
-# Install project dependencies
-RUN npm install
+# Install project dependencies without running package lifecycle scripts
+# to avoid failing builds when optional download steps (for example ngrok) are blocked.
+RUN npm install --ignore-scripts
 
 # Copy application source code
 COPY server.js .env* ./

@@ -58,6 +58,8 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       UPLOAD_PATH: ${UPLOAD_PATH}
       AI_OCR_URL: http://ai-services:8000/api
+      AI_SERVICE_URL: http://ai-services:8000
+      JAVA_BACKEND_URL: http://backend:8080
     depends_on:
       db:
         condition: service_healthy
@@ -74,7 +76,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      API_BACKEND_URL: http://host.docker.internal:8080/api/v1/internal/ai-tools
+      API_BACKEND_URL: http://backend:8080/api/v1/internal/ai-tools
       AI_CHECKPOINT_URL: postgresql://ai:${AI_DB_PASSWORD:-ai_password}@ai_checkpoint:5432/ai_checkpoint
     depends_on:
       - backend
@@ -96,7 +98,8 @@ services:
     environment:
       VNP_TMN_CODE: ${VNP_TMN_CODE}
       VNP_HASH_SECRET: ${VNP_HASH_SECRET}
-      VNP_RETURN_URL: http://192.168.0.100:5174
+      VNP_RETURN_URL: http://${VPS_HOST}:5174
+      BACKEND_API_URL: http://backend:8080
       PORT: 3001
 
   # 5. Frontend Admin Web App

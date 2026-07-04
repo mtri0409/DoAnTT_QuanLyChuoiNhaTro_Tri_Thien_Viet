@@ -9,9 +9,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
-//doi ip mang cua dt + may tinh
-const BACKEND_API = "http://10.96.225.244:8080";
-// process.env.BACKEND_API_URL ||
+// Use the backend URL from environment so the proxy works in Docker and on localhost.
+const BACKEND_API =
+  process.env.BACKEND_API_URL || "http://localhost:8080";
 
 const tokenStore = {};
 
