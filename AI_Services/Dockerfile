@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
-
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --default-timeout=500 --retries 10 -r requirements.txt
 # Pre-download and cache VietOCR model weights during image build time.
 # This prevents downloading model weights at startup and allows offline execution.
 RUN python -c "from vietocr.tool.predictor import Predictor; from vietocr.tool.config import Cfg; config = Cfg.load_config_from_name('vgg_transformer'); config['device'] = 'cpu'; Predictor(config)"
