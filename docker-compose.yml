@@ -33,6 +33,8 @@ services:
       - "${DB_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - qlchuoiphongtro_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
@@ -65,6 +67,8 @@ services:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
+    networks:
+      - qlchuoiphongtro_network
 
   # 3. AI Services (FastAPI/YOLO)
   ai-services:
@@ -101,6 +105,8 @@ services:
       VNP_RETURN_URL: http://${VPS_HOST}:5174
       BACKEND_API_URL: http://backend:8080
       PORT: 3001
+    networks:
+      - qlchuoiphongtro_network
 
   # 5. Frontend Admin Web App
   admin-web:
@@ -111,6 +117,8 @@ services:
     restart: always
     ports:
       - "5173:80"
+    networks:
+      - qlchuoiphongtro_network
 
   # 6. Frontend Tenant Web App
   tenant-web:
@@ -121,6 +129,8 @@ services:
     restart: always
     ports:
       - "5174:80"
+    networks:
+      - qlchuoiphongtro_network
 
   # 7. Frontend User Web App
   user-web:
@@ -131,6 +141,8 @@ services:
     restart: always
     ports:
       - "5175:80"
+    networks:
+      - qlchuoiphongtro_network
 
   # 8. phpMyAdmin (Web UI to manage MySQL database)
   phpmyadmin:
@@ -147,6 +159,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - qlchuoiphongtro_network
 
 volumes:
   mysql_data:
@@ -158,4 +172,3 @@ networks:
   qlchuoiphongtro_network:
     name: qlchuoiphongtro_net
     driver: bridge
-
