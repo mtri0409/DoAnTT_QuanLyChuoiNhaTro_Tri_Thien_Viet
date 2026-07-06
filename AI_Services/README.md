@@ -1,6 +1,7 @@
 # AI Meter Reader Service 🚀
 
-Phân hệ AI Service chịu trách nhiệm tiếp nhận hình ảnh đồng hồ nước từ hệ thống, sử dụng mô hình học máy (YOLOv8 & PyTorch) để tự động nhận diện, cắt và trích xuất các chữ số hiển thị trên mặt đồng hồ (Meter Digits Detection & OCR).
+AI Services : Đảm nhận tác vụ chạy các moudle AI 
+- Chat Agent : Sử dụng LangGraph + LLM để phân tích câu hỏi (intent) tự nhiên của người và call function
 
 ## 🛠 Yêu cầu hệ thống (Prerequisites)
 

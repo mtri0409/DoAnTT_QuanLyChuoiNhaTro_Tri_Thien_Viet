@@ -56,7 +56,7 @@ VIDEO_SOURCE = "0"  # Thay bằng URL RTSP nếu dùng camera IP
 FRAMES_TO_COLLECT = 5
 
 # API URLs
-JAVA_BACKEND_API_BASE = os.getenv("API_BACKEND_URL", "http://localhost:8080")
+JAVA_BACKEND_API_BASE = os.getenv("API_BACKEND_URL")
 # If API_BACKEND_URL includes /api/v1/internal/ai-tools, strip it to get the base url
 if "/api/v1" in JAVA_BACKEND_API_BASE:
     JAVA_BACKEND_API_BASE = JAVA_BACKEND_API_BASE.split("/api/v1")[0]

@@ -1,6 +1,9 @@
 # Quan Ly Chuoi Nha Tro - Tri Thien Viet
 
-He thong quan ly chuoi nha tro tich hop AI nhan dien dong ho, thanh toan VNPay, va ung dung di dong.
+*/Xây dựng hệ thống quản lý chuỗi nhà trọ*
+
+- Hệ thống được tích hợp AI vào để xử lý các vấn đề
+- Trợ lý ảo với LangGraph + LLM để quản lý các thông tin nhà trọ
 
 ## Kien truc he thong
 
@@ -41,15 +44,16 @@ DB_USERNAME=root
 DB_PASSWORD=
 DB_PORT=3306
 
-JWT_SECRET=hethongquanlynhatroTri338Thien354Viet337
-MAIL_USERNAME=nhatrotrithienviet@gmail.com
-MAIL_PASSWORD=zgbfbmajebxwicra
+JWT_SECRET=this_is_random_jwt_secret
+MAIL_USERNAME=your_email
+MAIL_PASSWORD=your_app_password
 
-VNP_TMN_CODE=J28E86FM
-VNP_HASH_SECRET=OVHY8POT5SL9HD8DU5BJNGOLKF28QN41
+
+VNP_TMN_CODE=your_code_vnpay
+VNP_HASH_SECRET=your_hash_secret
 
 # IP LAN cua may chay Docker (khong dung localhost)
-HOST_IP=192.168.1.100
+HOST_IP=your_host_ip
 ```
 
 ### 2. Build & chay

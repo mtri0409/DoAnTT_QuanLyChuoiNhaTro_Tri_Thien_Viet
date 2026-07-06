@@ -17,6 +17,7 @@ Thumbs.db
 .project
 .settings/
 .classpath
+**.mvn
 
 # --- Node / Frontend (Cho folder frontend-web hoặc mobile) ---
 **/node_modules/
