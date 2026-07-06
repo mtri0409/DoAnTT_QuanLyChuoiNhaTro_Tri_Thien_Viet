@@ -17,31 +17,45 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Pageable;
 
+import com.trithienviet.qlchuoiphongtro.entity.Branch;
+import com.trithienviet.qlchuoiphongtro.entity.Contract;
+
+import com.trithienviet.qlchuoiphongtro.entity.ContractStatus;
+
 import com.trithienviet.qlchuoiphongtro.entity.Profile;
+import com.trithienviet.qlchuoiphongtro.entity.Room;
 import com.trithienviet.qlchuoiphongtro.entity.User;
 import com.trithienviet.qlchuoiphongtro.entity.Vehicle;
 import com.trithienviet.qlchuoiphongtro.exceptions.APIException;
 import com.trithienviet.qlchuoiphongtro.exceptions.ResourceNotFoundException;
+import com.trithienviet.qlchuoiphongtro.helper.NotificationHelper;
+import com.trithienviet.qlchuoiphongtro.payloads.ContractDTO;
 import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
 import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileDetailDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileImageDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileRequestDTO;
 import com.trithienviet.qlchuoiphongtro.repo.ProfileRepo;
 import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
 import com.trithienviet.qlchuoiphongtro.repo.VehicleRepo;
 import com.trithienviet.qlchuoiphongtro.service.FileService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
 import com.trithienviet.qlchuoiphongtro.service.ProfileService;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
     @Autowired
     private ProfileRepo profileRepo;
 
-    @Autowired 
+    @Autowired
     private UserRepo userRepo;
 
-    @Autowired 
+    @Autowired
     private VehicleRepo vehicleRepo;
 
     @Autowired
@@ -50,27 +64,183 @@ public class ProfileServiceImpl implements ProfileService {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired NotificationHelper notificationHelper;
+
     @Value("${path.images.identification}")
     private String path;
+
     @Override
-    public ProfileDTO createProfile(ProfileDTO profileDTO) {
+    public ProfileRequestDTO createProfile(ProfileRequestDTO profileDTO) {
         Profile profile = modelMapper.map(profileDTO, Profile.class);
         Profile savedProfile = profileRepo.save(profile);
-
-        return modelMapper.map(savedProfile, ProfileDTO.class);
+        
+        return modelMapper.map(savedProfile, ProfileRequestDTO.class);
     }
+
+    // @Override
+    // public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer
+    // pageSize, String sortBy,
+    // String sortOrder) {
+    // Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+    // ? Sort.by(sortBy).ascending()
+    // : Sort.by(sortBy).descending();
+
+    // Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+    // Page<Profile> profilePage = profileRepo.findAll(pageDetails);
+
+    // List<Profile> profiles = profilePage.getContent();
+    // List<ProfileDTO> profileDTOs = profiles.stream()
+    // .map(p -> modelMapper.map(p, ProfileDTO.class))
+    // .collect(Collectors.toList());
+
+    // PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+    // profileResponse.setContent(profileDTOs);
+    // profileResponse.setPageNumber(profilePage.getNumber());
+    // profileResponse.setPageSize(profilePage.getSize());
+    // profileResponse.setTotalElements(profilePage.getTotalElements());
+    // profileResponse.setTotalPages(profilePage.getTotalPages());
+    // profileResponse.setLastPage(profilePage.isLast());
+
+    // return profileResponse;
+    // }
+
     @Override
-    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public ProfileRequestDTO updateProfile(ProfileRequestDTO profileDTO, Long profileId) {
+
+        Profile profileFromDB = profileRepo.findById(profileId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
+        profileFromDB.setFullName(profileDTO.getFullName());
+        profileFromDB.setPhone(profileDTO.getPhone());
+        profileFromDB.setEmail(profileDTO.getEmail());
+        profileFromDB.setAddress(profileDTO.getAddress());
+        profileFromDB.setIdentityNumber(profileDTO.getIdentityNumber());
+
+        profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
+        profileFromDB.setIdIssueDate(profileDTO.getIdIssueDate());
+        profileFromDB.setIdIssuePlace(profileDTO.getIdIssuePlace());
+
+        Profile updatedProfile = profileRepo.save(profileFromDB);
+
+        return modelMapper.map(updatedProfile, ProfileRequestDTO.class);
+    }
+
+    @Transactional
+    @Override
+    public String deleteProfile(Long profileId) {
+        Profile profile = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        // Kiểm tra xem Profile này có đang là thành viên của hợp đồng ACTIVE không
+        if (profile.getRoomMember() != null
+                && profile.getRoomMember().getContract() != null) {
+
+            ContractStatus contractStatus = profile.getRoomMember().getContract().getStatus();
+
+            if ("ACTIVE".equals(contractStatus.name())) {
+                throw new APIException("Không thể xóa! Khách thuê đang có hợp đồng còn hiệu lực. " +
+                        "Vui lòng thanh lý hợp đồng trước.");
+            }
+        }
+        User user = profile.getUser();
+        if (user != null) {
+            user.setIsActice(false);
+            userRepo.save(user);
+        }
+
+        List<Vehicle> vehicles = profile.getVehicles();
+
+        if (vehicles != null) {
+            vehicles.forEach(vehicle -> {
+                vehicle.setStatus(false);
+            });
+            vehicleRepo.saveAll(vehicles);
+        }
+
+        profile.setIsActive(false);
+        profileRepo.save(profile);
+
+        return "Xóa thành công " + profileId + "!";
+    }
+
+    @Override
+
+    public PageResponse<ProfileDTO> getAllProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Integer branchId,Boolean status) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Profile> profilePage = profileRepo.findAll(pageDetails);
+        Page<Profile> profilePage;
+        if (branchId != null) {
+            profilePage = profileRepo.findTenantsByBranch(branchId, pageDetails,status);
+        } else {
+            profilePage = profileRepo.findAllTenants(pageDetails,status);
+        }
 
-        List<Profile> profiles = profilePage.getContent();
-        List<ProfileDTO> profileDTOs = profiles.stream()
-                .map(p -> modelMapper.map(p, ProfileDTO.class))
+        // List<Profile> profiles = profilePage.getContent();
+        List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                                                
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            System.out.print(">>-----------"+room);
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+   
+    @Override
+    public PageResponse<ProfileDTO> searchProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Integer branchId,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+
+        Page<Profile> profilePage = profileRepo.searchTenants(keyword,branchId, status,pageable);
+        
+          List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
 
         PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
@@ -84,48 +254,173 @@ public class ProfileServiceImpl implements ProfileService {
         return profileResponse;
     }
 
-    @Override
-    public ProfileDTO updateProfile(ProfileDTO profileDTO, Long profileId) {
+     @Override
+    public PageResponse<ProfileDTO> getInternalProfiles(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
 
-        Profile profileFromDB = profileRepo.findById(profileId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy hồ sơ với ID: " + profileId));
-        profileFromDB.setFullName(profileDTO.getFullName());
-        profileFromDB.setPhone(profileDTO.getPhone());
-        profileFromDB.setAddress(profileDTO.getAddress());
-        profileFromDB.setIdentity_number(profileDTO.getIdentityNumber());
-        profileFromDB.setIdFrontImage(profileDTO.getIdFrontImage());
-        profileFromDB.setIdBackImage(profileDTO.getIdBackImage());
-        profileFromDB.setIdExpirationDate(profileDTO.getIdExpirationDate());
-        profileFromDB.setIdIssueDate(profileDTO.getIdIssueDate());
-        profileFromDB.setIdIssuePlace(profileDTO.getIdIssuePlace());
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Profile>  profilePage = profileRepo.getInternalProfiles(pageDetails,status);
 
-        Profile updatedProfile = profileRepo.save(profileFromDB);
+        // List<Profile> profiles = profilePage.getContent();
+        List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                                                
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            System.out.print(">>-----------"+room);
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
 
-        return modelMapper.map(updatedProfile, ProfileDTO.class);
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
+    }
+      @Override
+    public PageResponse<ProfileDTO> searchInternalProfiles(String keyword, Integer pageNumber, Integer pageSize,String sortBy,String sortOrder,Boolean status) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") 
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sortByAndOrder);
+
+        Page<Profile> profilePage = profileRepo.searchInternalProfiles(keyword, status,pageable);
+        
+          List<ProfileDTO> profileDTOs = profilePage.getContent().stream()
+                .map(p -> {
+                    
+                    ProfileDTO dto = modelMapper.map(p, ProfileDTO.class);
+                    if (p.getRoomMember() != null && p.getRoomMember().getContract() != null) {
+                        Contract contract = p.getRoomMember().getContract();
+                        if (contract.getRoom() != null) {
+                            Room room = contract.getRoom();
+                            dto.setRoomName(room.getRoomName());
+                            if (room.getFloor() != null && room.getFloor().getBranch() != null) {
+                                Branch branch = room.getFloor().getBranch();
+                                dto.setBranchId(branch.getBranchId());
+                                dto.setBranchName(branch.getBranchName());
+                            }
+                        }
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        PageResponse<ProfileDTO> profileResponse = new PageResponse<>();
+        profileResponse.setContent(profileDTOs);
+        profileResponse.setPageNumber(profilePage.getNumber());
+        profileResponse.setPageSize(profilePage.getSize());
+        profileResponse.setTotalElements(profilePage.getTotalElements());
+        profileResponse.setTotalPages(profilePage.getTotalPages());
+        profileResponse.setLastPage(profilePage.isLast());
+
+        return profileResponse;
     }
 
-    @Transactional
-    @Override
-    public String deleteProfile(Long profileId)
-    {
-        Profile profile = profileRepo.findById(profileId)
-            .orElseThrow(()-> new ResourceNotFoundException("Profile","profileId",profileId));
-        
-       if (profile.getRoomMember() != null && 
-            profile.getRoomMember().getContract() != null) {
-            
-            String contractStatus = profile.getRoomMember().getContract().getStatus();
-            
-            // Dùng .equals() và viết hằng số ra trước để tránh NullPointer
-            if ("ACTIVE".equals(contractStatus)) {
-                throw new APIException("Không thể xóa! Khách thuê đang có hợp đồng còn hiệu lực. " +
-                                    "Vui lòng thanh lý hợp đồng trước.");
-            }
-        }
 
+    @Override
+    public ProfileDetailDTO getProfileById(Long profileId) {
+        Profile profile = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+
+        ProfileDetailDTO profileDTO = modelMapper.map(profile, ProfileDetailDTO.class);
+
+        if (profile.getRoomMember() != null && profile.getRoomMember().getContract() != null) {
+            Contract contract = profile.getRoomMember().getContract();
+            profileDTO.setActiveContractId(contract.getContractId());
+            
+            profileDTO.setContractEndDate(contract.getEndDate());
+            profileDTO.setBranchName(contract.getRoom().getFloor().getBranch().getBranchName());
+
+
+            if (contract.getRoom() != null) {
+                profileDTO.setRoomName(contract.getRoom().getRoomName());
+            }
+           
+        }
+         if(profile.getUser().getRole()!=null)
+            {
+                profileDTO.setRoleName(profile.getUser().getRole().toString());
+            }
+
+        return profileDTO;
+    }
+
+    @Override
+
+    public ProfileImageDTO updateIdFrontImage(Long profileId, MultipartFile image) throws IOException {
+        Profile profileFromDB = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        if (profileFromDB == null) {
+            throw new APIException("Không tìm thấy thông tin người dùng " + profileId);
+
+        }
+        String fileName = fileService.uploadImage(path, image);
+        profileFromDB.setIdFrontImage(fileName);
+        Profile updateIdFrontImage = profileRepo.save(profileFromDB);
+
+        return modelMapper.map(updateIdFrontImage, ProfileImageDTO.class);
+    }
+
+    @Override
+    public ProfileImageDTO updateIdBackImage(Long profileId, MultipartFile image) throws IOException {
+        Profile profileFromDB = profileRepo.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
+        if (profileFromDB == null) {
+            throw new APIException("Không tìm thấy thông tin người dùng " + profileId);
+
+        }
+        String fileName = fileService.uploadImage(path, image);
+        profileFromDB.setIdBackImage(fileName);
+        Profile updateIdFrontImage = profileRepo.save(profileFromDB);
+
+        return modelMapper.map(updateIdFrontImage, ProfileImageDTO.class);
+
+    }
+
+    @Override
+    public InputStream getIdentificationImage(String fileName) throws FileNotFoundException {
+        return fileService.getResource(path, fileName);
+    }
+
+    @Override
+    public List<ProfileDTO> getProfilesWithoutAccount() {
+        List<Profile> profiles = profileRepo.findAllByHasNoAccount();
+        // Chuyển đổi sang DTO và return
+        return profiles.stream()
+                .map(p -> modelMapper.map(p, ProfileDTO.class))
+                .collect(Collectors.toList());
+    }
+    @Override
+    public String restoreProfile(Long profileId){
+        Profile profile = profileRepo.findById(profileId)
+            .orElseThrow(() -> new ResourceNotFoundException("Hồ sơ","profile Id",profileId));
+        if(profile.getIsActive()){
+            throw new RuntimeException("Hồ sơ chưa bị xóa ");
+        }
         User user = profile.getUser();
         if (user != null) {
-            user.setIsActice(false); 
+            user.setIsActice(true); 
             userRepo.save(user);
         }
 
@@ -134,54 +429,24 @@ public class ProfileServiceImpl implements ProfileService {
         if(vehicles !=null)
         {
             vehicles.forEach(vehicle-> {
-                vehicle.setStatus(false);
+                vehicle.setStatus(true);
             });
             vehicleRepo.saveAll(vehicles);
         }
-       
-        profile.setIsActive(false);
+        profile.setIsActive(true);
         profileRepo.save(profile);
-        
-        return "Xóa thành công " + profileId + "!"; 
+        return "Khôi phục hồ sơ thành công !";
     }
 
-    @Override
-    public ProfileDTO getProfileById(Long profileId) {
-        Profile profile = profileRepo.findById(profileId)
-                .orElseThrow(() -> new ResourceNotFoundException("Profile", "profileId", profileId));
-        return modelMapper.map(profile, ProfileDTO.class);
-    }
+    public void remidUpdateIdentification(){
+        List<Profile> profiles = profileRepo.findIncompleteProfiles();
 
-    @Override
-    public ProfileDTO updateIdFrontImage(Long profileId,MultipartFile image) throws IOException{
-        Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
-            new ResourceNotFoundException("Profile","profileId",profileId));
-        if(profileFromDB == null){
-            throw new APIException("Không tìm thấy thông tin người dùng " +profileId);
+        if(profiles!=null)
+        {
+            for(Profile profile : profiles)
+            {
+                notificationHelper.sendIncompleteProfileReminders(profile);
+            }
         }
-        String fileName = fileService.uploadImage(path,image);
-        profileFromDB.setIdFrontImage(fileName);
-        Profile updateIdFrontImage = profileRepo.save(profileFromDB);
-        
-        return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
-    }
-
-    @Override
-    public ProfileDTO updateIdBackImage(Long profileId,MultipartFile image) throws IOException{
-        Profile profileFromDB = profileRepo.findById(profileId).orElseThrow(()-> 
-            new ResourceNotFoundException("Profile","profileId",profileId));
-        if(profileFromDB == null){
-            throw new APIException("Không tìm thấy thông tin người dùng " +profileId);
-        }
-        String fileName = fileService.uploadImage(path,image);
-        profileFromDB.setIdBackImage(fileName);
-        Profile updateIdFrontImage = profileRepo.save(profileFromDB);
-        
-        return modelMapper.map(updateIdFrontImage, ProfileDTO.class);
-    }
-
-    @Override
-    public InputStream getIdentificationImage(String fileName) throws FileNotFoundException {
-        return fileService.getResource(path, fileName);
     }
 }

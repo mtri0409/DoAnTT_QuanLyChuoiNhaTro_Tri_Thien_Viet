@@ -1,5 +1,7 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -28,11 +30,17 @@ public class RoomMedia {
 
     private String url;
     private String media;
-
+    private boolean thumbnail;
     @Size(min=5, message="Meadia type must contain at least 5 characters")
     private String mediaType;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="room_id")
+    @JsonIgnore
     private Room room;
+
+    // public void setThumbnail(boolean isThumbnail) {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'setThumbnail'");
+    // }
 }

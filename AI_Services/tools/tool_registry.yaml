@@ -1,0 +1,165 @@
+tools:
+  - name: get_detailed_debtors
+    description: Lấy danh sách cư dân có hóa đơn/chuyến nợ và các thông tin chi tiết.
+    function: tools.get_detailed_debtors
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc
+      - name: month
+        type: int
+        required: false
+        description: Tháng cần lọc (1-12)
+      - name: year
+        type: int
+        required: false
+        description: Năm cần lọc (2020-2026)
+    guardrails:
+      - month in 1..12
+      - year in 2020..2026
+
+  - name: get_revenue_stats
+    description: Lấy thống kê doanh thu theo tháng/năm/chi nhánh.
+    function: tools.get_revenue_stats
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc
+      - name: month
+        type: int
+        required: false
+        description: Tháng cần lọc (1-12)
+      - name: year
+        type: int
+        required: false
+        description: Năm cần lọc (2020-2026)
+    guardrails:
+      - month in 1..12
+      - year in 2020..2026
+
+  - name: get_contracts_by_status
+    description: Lấy danh sách hợp đồng theo trạng thái cụ thể.
+    function: tools.get_contracts_by_status
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: status
+        type: str
+        required: false
+        description: Trạng thái hợp đồng (PENDING, ACTIVE, EXPIRED, TERMINATED, CANCELLED, DEPOSITED)
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc
+    guardrails:
+      - status in [PENDING, ACTIVE, EXPIRED, TERMINATED, CANCELLED, DEPOSITED]
+
+  - name: get_contracts_expiring_in_month
+    description: Lấy danh sách hợp đồng sắp hết hạn trong một tháng cụ thể.
+    function: tools.get_contracts_expiring_in_month
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: month
+        type: int
+        required: false
+        description: Tháng cần kiểm tra (1-12)
+      - name: year
+        type: int
+        required: false
+        description: Năm cần kiểm tra (2020-2026)
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc
+    guardrails:
+      - month in 1..12
+      - year in 2020..2026
+
+  - name: get_room_status
+    description: Lấy thống kê số lượng phòng trống và phòng đã thuê theo chi nhánh.
+    function: tools.get_room_status
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc
+
+  - name: compare_branches
+    description: So sánh doanh thu, tỷ lệ phòng trống/đã thuê, số lượng người ở, số hóa đơn nợ và tổng số tiền nợ giữa tất cả các chi nhánh.
+    function: tools.compare_branches
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc (tùy chọn)
+      - name: month
+        type: int
+        required: false
+        description: Tháng cần so sánh doanh thu (tùy chọn)
+      - name: year
+        type: int
+        required: false
+        description: Năm cần so sánh doanh thu (tùy chọn)
+    guardrails:
+      - month in 1..12
+      - year in 2020..2026
+
+  - name: get_vacant_rooms_list
+    description: Liệt kê danh sách chi tiết các phòng trống (tên phòng, tầng, giá tiền, số người tối đa).
+    function: tools.get_vacant_rooms_list
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc (tùy chọn)
+
+  - name: get_utility_stats
+    description: Lấy thống kê tiêu thụ điện nước và số tiền điện nước tương ứng.
+    function: tools.get_utility_stats
+    args:
+      - name: java_backend_url
+        type: str
+        required: true
+        description: Base URL của Java Backend
+      - name: branch_name
+        type: str
+        required: false
+        description: Tên chi nhánh cần lọc (tùy chọn)
+      - name: month
+        type: int
+        required: false
+        description: Tháng cần lọc (tùy chọn)
+      - name: year
+        type: int
+        required: false
+        description: Năm cần lọc (tùy chọn)
+    guardrails:
+      - month in 1..12
+      - year in 2020..2026

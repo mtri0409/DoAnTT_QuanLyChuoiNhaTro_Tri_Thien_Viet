@@ -1,0 +1,84 @@
+/* pages/tenant/roommate-posts.css */
+
+/* Sticky utilities */
+.sticky-top-custom {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.sticky-sidebar {
+  position: sticky;
+  top: 76px;
+  align-self: flex-start;
+}
+
+@media (max-width: 768px) {
+  .sticky-sidebar {
+    position: relative;
+    top: 0;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Status dot */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 3px;
+}
+
+/* Description line clamp */
+.description-line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* Card hover effects */
+.card-hover-shadow {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card-hover-shadow:hover {
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.13);
+  transform: translateY(-2px);
+}
+
+.card-inactive {
+  opacity: 0.82;
+}
+
+/* Action bar slide */
+.action-bar-slide {
+  overflow: hidden;
+  transition: max-height 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-bar-show {
+  max-height: 56px;
+}
+
+.action-bar-hide {
+  max-height: 0;
+}
+
+/* Toast animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-slide {
+  animation: slideInRight 0.3s ease-out;
+}

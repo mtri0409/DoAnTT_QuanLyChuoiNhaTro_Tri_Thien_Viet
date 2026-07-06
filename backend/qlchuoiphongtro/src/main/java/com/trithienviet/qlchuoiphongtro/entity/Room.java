@@ -101,5 +101,6 @@ public class Room {
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles = new ArrayList<>();
-
+    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
+    private List<Contract> contracts;
 }

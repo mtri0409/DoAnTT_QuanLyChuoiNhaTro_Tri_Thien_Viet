@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MetterReadingDTO {
     private Long readingId;
-    private Integer roomId;
+    private Long roomId;
     private String roomName;
     private Integer serviceId;
     private String serviceName;
@@ -23,4 +23,10 @@ public class MetterReadingDTO {
     private BigDecimal usageValue;
     private String image;
     private LocalDateTime readingDate;
+
+    /**
+     * true = bản ghi số đầu đồng hồ (thêm phòng mới chưa có HĐ).
+     * Frontend dùng field này để phân biệt và không hiển thị vào tiêu thụ.
+     */
+    private Boolean isInitial;
 }

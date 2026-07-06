@@ -30,4 +30,8 @@ public class Branch {
 
     @ManyToMany(mappedBy = "branches")
     private List<User> users;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private Profile manager;
 }

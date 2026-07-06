@@ -1,0 +1,125 @@
+import axiosClient from "./axiosInstanceUser";
+
+const userService = {
+  getAllBranches: (
+    pageNumber = 1,
+    pageSize = 50,
+    sortBy = "branchId",
+    sortOrder = "asc",
+    search = "",
+  ) => {
+    return axiosClient.get("/public/branches", {
+      params: { pageNumber, pageSize, sortBy, sortOrder, search },
+    });
+  },
+
+  getAllAmenities: (
+    pageNumber = 0,
+    pageSize = 50,
+    sortBy = "amenityName",
+    sortOrder = "asc",
+  ) => {
+    return axiosClient.get("/public/amenities", {
+      params: { pageNumber, pageSize, sortBy, sortOrder },
+    });
+  },
+
+  getAllRooms: (
+    pageNumber = 0,
+    pageSize = 10,
+    sortBy = "roomName",
+    sortOrder = "asc",
+    floorId = null,
+    branchId = null,
+    search = "",
+    status = null
+  ) => {
+    return axiosClient.get("/public/rooms", {
+      params: {
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortOrder,
+        ...(floorId && { floorId }),
+        ...(branchId && { branchId }),
+        ...(search && { search }),
+        ...(status && { status }),
+      },
+    });
+  },
+
+  getRoomById: (roomId) => {
+    return axiosClient.get(`/public/rooms/${roomId}`);
+  },
+
+  getMediaByRoomId: (roomId) => {
+    return axiosClient.get(`/public/rooms/${roomId}/medias`);
+  },
+
+  getProfileById: (id) => {
+    return axiosClient.get(`/public/profiles/${id}`);
+  },
+
+  getAllFloors: () => {
+    return axiosClient.get("/public/floors");
+  },
+
+  getActivePosts: (
+    pageNumber = 0,
+    pageSize = 10,
+    roomId = null,
+    branchId = null,
+  ) => {
+    return axiosClient.get("/public/roommate-posts", {
+      params: {
+        pageNumber,
+        pageSize,
+        ...(roomId && { roomId }),
+        ...(branchId && { branchId }),
+      },
+    });
+  },
+
+  getPostById: (postId) => {
+    return axiosClient.get(`/public/roommate-posts/${postId}`);
+  },
+
+  createManualNotification: (profileId = 0, branchId = 0, data) => {
+    return axiosClient.post(`/notification/send-manual`, data, {
+      params: {
+        profileId: profileId || 0,
+        branchId: branchId || 0,
+      },
+    });
+  },
+
+  
+
+  getNewsPosts: (params = {}) => {
+    const {
+      pageNumber = 1,
+      pageSize = 100,
+      type = null,
+      categoryId = null,
+    } = params;
+
+    return axiosClient.get("/public/posts", {
+      params: {
+        pageNumber,
+        pageSize,
+        type: type || undefined,
+        categoryId: categoryId || undefined,
+      },
+    });
+  },
+
+  getNewsCategories: () => {
+    return axiosClient.get("/public/post-categories");
+  },
+
+  getNewsPostBySlug: (slug) => {
+    return axiosClient.get(`/public/posts/slug/${slug}`);
+  },
+};
+
+export default userService;

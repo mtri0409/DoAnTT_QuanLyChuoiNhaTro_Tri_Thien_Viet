@@ -17,4 +17,5 @@ public class ServiveDTO {
     private String unit;
     private BigDecimal price;
     private String serviceType;
+    private Boolean is_active;
 }

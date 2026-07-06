@@ -1,4 +1,4 @@
-gitignore# --- IDE & System Files ---
+# --- IDE & System Files ---
 .idea/
 .vscode/
 *.swp
@@ -17,6 +17,7 @@ Thumbs.db
 .project
 .settings/
 .classpath
+**.mvn
 
 # --- Node / Frontend (Cho folder frontend-web hoặc mobile) ---
 **/node_modules/
@@ -27,11 +28,25 @@ Thumbs.db
 .npm
 **.bundle.js
 **.gz
+.vite/
+.vite/**
+
+# --- Python / AI Services ---
+__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+**/.venv/
+venv/
+**/venv/
 
 # --- Database ---
 **/database/*.log
 **/database/*.temp
 
-# --- Others ---
+# --- Media & Uploads ---
+**/images/**
+*.mp4
+uploads/
 temp/
 bin/

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RoomMemberDTO {
     private Integer memberId;
-    private Integer contractId;
+    private Long contractId;
     private Long profileId;
     private Boolean isStaying;
 }

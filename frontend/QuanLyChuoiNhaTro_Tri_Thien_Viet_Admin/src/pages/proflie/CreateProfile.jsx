@@ -1,0 +1,281 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FaUserCircle, FaIdCard, FaMapMarkerAlt, FaPhoneAlt, 
+  FaCalendarAlt, FaArrowLeft, FaSave, FaExclamationCircle,
+  FaEnvelope 
+} from 'react-icons/fa';
+import apiProfile from '../../api/apiProfile';
+import apiUser from '../../api/apiUser';
+import { toast } from 'react-toastify';
+
+const CreateProfile = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    email: '', 
+    address: '',
+    identityNumber: '',
+    idExpirationDate: '',
+    idIssueDate: '',
+    idIssuePlace: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Xóa lỗi của field đó khi người dùng bắt đầu nhập lại
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{10}$/;
+
+    if (!formData.fullName || formData.fullName.length < 8) {
+      newErrors.fullName = "Họ tên phải có ít nhất 8 ký tự";
+    }
+    if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Số điện thoại phải đúng 10 chữ số";
+    }
+    if (!formData.email) {
+      newErrors.email = "Email là bắt buộc để gửi thông báo";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Định dạng email không hợp lệ (vd: abc@gmail.com)";
+    }
+    if (formData.identityNumber && formData.identityNumber.length !== 12) {
+      newErrors.identityNumber = "Số CCCD phải đúng 12 chữ số";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const response = await apiProfile.createProfile(formData);
+      await apiUser.generareAcount(response.profileId);
+      toast.success("Tạo hồ sơ và tài khoản khách thuê thành công!");
+      navigate('/profiles'); 
+    } catch (err) {
+      console.error("Lỗi API:", err.response);
+      const res = err.response;
+
+      if (res && res.status === 400) {
+        const errorData = res.data;
+        
+        // 1. Xử lý lỗi Duplicate Entry (như cái log Tri gửi)
+        if (errorData.message && errorData.message.includes("Duplicate entry")) {
+          if (errorData.message.includes("email")) {
+            setErrors({ email: "Email này đã tồn tại trên hệ thống!" });
+          } else if (errorData.message.includes("identity_number")) {
+            setErrors({ identityNumber: "Số CCCD này đã tồn tại trên hệ thống!" });
+          }
+        } 
+        // 2. Xử lý lỗi Validation từ Backend trả về dạng Map
+        else if (typeof errorData === 'object') {
+          setErrors(errorData);
+        } else {
+          toast.error(errorData.message || "Dữ liệu không hợp lệ.");
+        }
+      } else {
+        toast.error("Lỗi hệ thống hoặc mất kết nối Server.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderError = (fieldName) => {
+    if (!errors[fieldName]) return null;
+    return (
+      <div className="text-danger small mt-1 d-flex align-items-center gap-1 animate__animated animate__shakeX">
+        <FaExclamationCircle size={12}/> {errors[fieldName]}
+      </div>
+    );
+  };
+
+  return (
+    <div className="container-fluid py-4">
+      {/* Header */}
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <button onClick={() => navigate(-1)} className="btn btn-light border-0 shadow-sm rounded-circle p-2">
+          <FaArrowLeft className="text-muted" />
+        </button>
+        <div>
+          <h4 className="fw-bold text-dark mb-0 text-uppercase">Thêm khách thuê mới</h4>
+          <p className="text-muted small mb-0">Thông tin sẽ được dùng để gửi thông báo hóa đơn và nhắc nợ</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="row g-4">
+          
+          {/* CỘT TRÁI: THÔNG TIN LIÊN LẠC */}
+          <div className="col-lg-5">
+            <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+              <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
+                <div className="bg-primary-subtle p-2 rounded-3 text-primary">
+                  <FaUserCircle size={20} />
+                </div>
+                <h6 className="fw-bold mb-0 text-primary">Thông tin cơ bản</h6>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-muted">HỌ VÀ TÊN <span className="text-danger">*</span></label>
+                <input 
+                  type="text" name="fullName"
+                  className={`form-control bg-light border-0 py-2 ${errors.fullName ? 'is-invalid border-danger' : ''}`} 
+                  placeholder="VD: Phạm Đình Minh Tri" 
+                  value={formData.fullName}
+                  onChange={handleInputChange} 
+                />
+                {renderError('fullName')}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-muted">SỐ ĐIỆN THOẠI <span className="text-danger">*</span></label>
+                <div className="input-group">
+                  <span className={`input-group-text bg-light border-0 ${errors.phone ? 'border-danger border-end-0' : ''}`}>
+                    <FaPhoneAlt className="text-success" size={12}/>
+                  </span>
+                  <input 
+                    type="text" name="phone"
+                    className={`form-control bg-light border-0 py-2 ${errors.phone ? 'is-invalid border-danger border-start-0' : ''}`} 
+                    placeholder="09xx xxx xxx" 
+                    value={formData.phone}
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                {renderError('phone')}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-muted">EMAIL LIÊN HỆ <span className="text-danger">*</span></label>
+                <div className="input-group">
+                  <span className={`input-group-text bg-light border-0 ${errors.email ? 'border-danger border-end-0' : ''}`}>
+                    <FaEnvelope className="text-primary" size={12}/>
+                  </span>
+                  <input 
+                    type="email" name="email"
+                    className={`form-control bg-light border-0 py-2 ${errors.email ? 'is-invalid border-danger border-start-0' : ''}`} 
+                    placeholder="example@gmail.com" 
+                    value={formData.email}
+                    onChange={handleInputChange} 
+                  />
+                </div>
+                {renderError('email')}
+              </div>
+
+              <div className="mb-0">
+                <label className="form-label small fw-bold text-muted">ĐỊA CHỈ THƯỜNG TRÚ</label>
+                <textarea 
+                  name="address" rows="4" 
+                  className={`form-control bg-light border-0 ${errors.address ? 'is-invalid' : ''}`} 
+                  placeholder="Địa chỉ chi tiết..." 
+                  value={formData.address}
+                  onChange={handleInputChange}
+                ></textarea>
+                {renderError('address')}
+              </div>
+            </div>
+          </div>
+
+          {/* CỘT PHẢI: GIẤY TỜ ĐỊNH DANH */}
+          <div className="col-lg-7">
+            <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+              <div className="d-flex align-items-center gap-2 mb-4 border-bottom pb-3">
+                <div className="bg-info-subtle p-2 rounded-3 text-info">
+                  <FaIdCard size={20} />
+                </div>
+                <h6 className="fw-bold mb-0 text-info">Giấy tờ tùy thân (CCCD)</h6>
+              </div>
+
+              <div className="row g-3">
+                <div className="col-md-7">
+                  <label className="form-label small fw-bold text-muted">SỐ CCCD / ĐỊNH DANH</label>
+                  <input 
+                    type="text" name="identityNumber" 
+                    className={`form-control bg-light border-0 py-2 fw-bold text-primary ${errors.identityNumber ? 'is-invalid border-danger' : ''}`} 
+                    placeholder="12 chữ số" 
+                    value={formData.identityNumber}
+                    onChange={handleInputChange} 
+                  />
+                  {renderError('identityNumber')}
+                </div>
+
+                <div className="col-md-5">
+                  <label className="form-label small fw-bold text-muted">NƠI CẤP</label>
+                  <input 
+                    type="text" name="idIssuePlace" 
+                    className="form-control bg-light border-0 py-2" 
+                    value={formData.idIssuePlace}
+                    onChange={handleInputChange} 
+                  />
+                </div>
+
+                <div className="col-md-6 mt-4">
+                  <label className="form-label small fw-bold text-muted">
+                    <FaCalendarAlt className="me-1 text-muted"/> NGÀY CẤP
+                  </label>
+                  <input 
+                    type="date" name="idIssueDate" 
+                    className="form-control bg-light border-0 py-2" 
+                    value={formData.idIssueDate}
+                    onChange={handleInputChange} 
+                  />
+                </div>
+
+                <div className="col-md-6 mt-4">
+                  <label className="form-label small fw-bold text-muted">
+                    <FaCalendarAlt className="me-1 text-muted"/> NGÀY HẾT HẠN
+                  </label>
+                  <input 
+                    type="date" name="idExpirationDate" 
+                    className={`form-control bg-light border-0 py-2 ${errors.idExpirationDate ? 'is-invalid border-danger' : ''}`} 
+                    value={formData.idExpirationDate}
+                    onChange={handleInputChange} 
+                  />
+                  {renderError('idExpirationDate')}
+                </div>
+
+                <div className="col-12 mt-auto pt-5 text-end">
+                  <hr className="text-muted opacity-25 mb-4" />
+                  <button type="button" onClick={() => navigate('/profiles')} className="btn btn-light px-4 me-2 border-0 fw-bold">
+                    Hủy bỏ
+                  </button>
+                  <button type="submit" disabled={loading} className="btn btn-primary px-5 shadow-sm fw-bold d-inline-flex align-items-center gap-2">
+                    {loading ? (
+                      <><span className="spinner-border spinner-border-sm"></span> Đang lưu...</>
+                    ) : (
+                      <><FaSave size={14}/> Lưu hồ sơ</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default CreateProfile;

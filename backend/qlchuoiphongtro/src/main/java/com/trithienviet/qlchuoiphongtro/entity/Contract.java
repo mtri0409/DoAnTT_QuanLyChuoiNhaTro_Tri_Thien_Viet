@@ -8,6 +8,8 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,7 +30,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="contracts")
+@Table(name = "contracts")
 public class Contract {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,36 +41,50 @@ public class Contract {
     private Room room;
 
     @Column(name = "rent_price", precision = 10, scale = 2)
-    private BigDecimal rentPrice; 
+    private BigDecimal rentPrice;
 
     @Column(name = "deposit_amount", precision = 10, scale = 2)
-    private BigDecimal depositAmount; // Đây là con số Snapshot từ bảng Deposit 
-
+    private BigDecimal depositAmount; // Đây là con số Snapshot từ bảng Deposit
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "representative_id", nullable = false)
     private Profile representative;
 
+    @Column(nullable = false)
     private LocalDate startDate;
+
+    @Column(nullable = false)
     private LocalDate endDate;
-    private String status; // Ví dụ: "ACTIVE", "EXPIRED", "TERMINATED"
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ContractStatus status;
+
+    @Column
+    private LocalDateTime terminatedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String terminationReason;
+
     @Min(value = 1, message = "Billing day must be at least 1")
     @Max(value = 31, message = "Billing day cannot be greater than 31")
     private Integer billingDay; // lưu ngày sẽ tính tiền
-    
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomMember> roomMembers;
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
-    private List<ContractService> contractServices; // danh sách dịch vụ của hợp đồng
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ContractService> contractServices;// danh sách dịch vụ của hợp đồng
+
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
 
     // singnature online
 
     private String digitalSignature; // Chữ ký số hoặc mã hash xác thực
-    private LocalDateTime signedAt;   // Thời điểm ký chính xác
+    private LocalDateTime signedAt; // Thời điểm ký chính xác
 
-    private String ipAddress;    // Địa chỉ IP của người ký (để đối soát nếu có tranh chấp)
+    private String ipAddress; // Địa chỉ IP của người ký (để đối soát nếu có tranh chấp)
 
     private String deviceInformation; // Thiết bị ký (ví dụ: iPhone 15, Chrome Browser)
 
@@ -77,6 +93,6 @@ public class Contract {
 
     private String signatureImageUrl; // Link ảnh chữ ký tay (nếu cho phép vẽ tay trên màn hình)
 
-    @OneToMany(mappedBy="contract",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "contract", fetch = FetchType.LAZY)
     private List<Invoice> invoices;
 }

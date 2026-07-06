@@ -19,13 +19,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Getter
 @Setter
-@Table(name="deposits")
+@Table(name = "deposits")
 public class Deposit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,12 +43,14 @@ public class Deposit {
     @JoinColumn(name = "contract_id")
     private Contract contract;
 
-    
-    @DecimalMin(value = "0.0",message = "amout deposit can not less than 0 .")
-    @Column( precision = 10, scale = 2)
+    @OneToOne(mappedBy = "deposit", fetch = FetchType.LAZY)
+    private Invoice invoice;
+
+    @DecimalMin(value = "0.0", message = "amout deposit can not less than 0 .")
+    @Column(precision = 10, scale = 2)
     private BigDecimal amount;
-    
+
     private String status; // BOOKED, ACTIVE, REFUNDED, COMPENSATED (Bồi thường)
-    
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }

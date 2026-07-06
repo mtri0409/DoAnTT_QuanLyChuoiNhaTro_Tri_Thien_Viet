@@ -1,0 +1,65 @@
+/* Custom styling for Guest Registration Management */
+
+/* Room & Branch column styles */
+.room-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.room-info strong {
+  color: #333;
+}
+
+.branch-sub {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Image Zoom Modal (Lightbox) */
+.image-zoom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: zoom-out;
+}
+
+.image-zoom-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoomed-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  cursor: default;
+}
+
+.zoom-close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.zoom-close-btn:hover {
+  transform: scale(1.2);
+}

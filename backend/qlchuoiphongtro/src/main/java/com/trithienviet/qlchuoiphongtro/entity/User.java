@@ -1,9 +1,12 @@
 package com.trithienviet.qlchuoiphongtro.entity;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.ManyToAny;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,7 +48,7 @@ public class User {
     private Boolean isActice = true;
     
     @OneToOne 
-    @JoinColumn(name="profile_id", nullable = true)
+    @JoinColumn(name="profile_id", nullable = true,unique = true)
     private Profile profile;
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY)
     private List<Notification> notifications;
@@ -56,4 +59,10 @@ public class User {
                 inverseJoinColumns = @JoinColumn(name="branch_id")
                 )   
     private List<Branch> branches;
+    
+    private String resetToken;
+    private LocalDateTime resetTokenExpiry;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OtpToken> otpTokens = new ArrayList<>();
 }

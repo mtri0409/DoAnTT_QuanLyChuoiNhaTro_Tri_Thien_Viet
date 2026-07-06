@@ -24,11 +24,11 @@ import com.trithienviet.qlchuoiphongtro.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "Manager Room Application")
 
 public class AuthController {
-  
+
     @Autowired
     private JWTUtil jwtUtil;
 
@@ -41,47 +41,52 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("auth/login")
-    public Map<String, Object> loginHandler(@RequestBody LoginCredentials credentials) {
+    @PostMapping("/auth/login")
+    public ResponseEntity<Map<String, Object>> loginHandler(@RequestBody LoginCredentials credentials) {
         try {
-            // 1️⃣ Authenticate
             authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                    credentials.getUserName(),
-                    credentials.getPassword()
-                )
-            );
-        } catch (Exception e) { 
-            // Nếu bị IllegalAccessException hoặc BadCredentialsException sẽ rơi vào đây
+                    new UsernamePasswordAuthenticationToken(
+                             credentials.getUserName(),
+                            credentials.getPassword()));
+        } catch (Exception e) {
             throw new RuntimeException("Xác thực thất bại: " + e.getMessage());
         }
 
-        // Lấy User để trả về data
         User user = userRepo.findByUserName(credentials.getUserName())
-            .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
-        //  Generate JWT
+        if (user.getIsActice() != null && !user.getIsActice()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!");
+        }
+
         String token = jwtUtil.generateToken(user.getUserName());
 
-        // Trả data cho Frontend (React)
-        return Map.of(
-            "token", token,
-            "username", user.getUserName(),
-            "role", user.getRole().name() // Nên trả thêm Role để React phân quyền UI
+        Map<String, Object> data = Map.of(
+                "token", token,
+                "username", user.getUserName(),
+                "role", user.getRole().name()
         );
+        return new ResponseEntity<>(data, HttpStatus.OK);
     }
-    // @PreAuthorize("hasRole('ADMIN')")
+
     @PostMapping("/auth/create-account/{profileId}")
     public ResponseEntity<UserDTO> createAccount(
             @PathVariable Long profileId,
             @RequestBody LoginCredentials credentials) {
-        
-        UserDTO newUser = userService.createAccountForProfile(
-            profileId, 
-            credentials.getUserName(), 
-            credentials.getPassword()
-        );
 
+        UserDTO newUser = userService.createAccountForProfile(
+                profileId,
+                credentials.getUserName(),
+                credentials.getPassword());
+
+        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/auth/generare-account/{profileId}")
+    public ResponseEntity<UserDTO> generateAccount(@PathVariable Long profileId) {
+
+        UserDTO newUser = userService.generateAccountForFile(
+                profileId);
         return new ResponseEntity<>(newUser, HttpStatus.CREATED);
     }
 }

@@ -1,0 +1,55 @@
+import Home from "../pages/Home";
+import InvoiceDetail from "../pages/invoice/InvoiceDetail";
+import ListInvoice from "../pages/invoice/ListInvoice";
+import PaymentPage from "../pages/payment/PaymentPage";
+
+import CreatePost from "../pages/post/CreatePost";
+import EditPost from "../pages/post/EditPost";
+import PostDetail from "../pages/post/PostDetail";
+import RoommatePosts from "../pages/post/RoomatePosts";
+import NotificationPage from "../pages/notification/NotificationPage";
+
+import ChangePassword from "../pages/profile/ChangePassword";
+import CreateVehicle from "../pages/profile/CreateVehicleProfile";
+import VehicleGridLayout from "../pages/profile/ManagerVehicle";
+import ProfileDetail from "../pages/profile/ProfileDetail";
+import ProfileUpdate from "../pages/profile/UpdateProfile";
+import UpdateVehicle from "../pages/profile/UpdateVehicleProfile";
+import GuestRegistrationPage from "../pages/profile/GuestRegistrationPage";
+import ListMaintenanceRequest from "../pages/maintenance-request/ListMaintenanceRequest";
+import MaintenanceRequestDetail from "../pages/maintenance-request/MaintenanceRequestDetail";
+import TenantContractDetail from "../pages/contract/ContractDetail";
+
+import CreateMaintenanceRequest from "../pages/maintenance-request/CreateRequestModal";
+
+const AdminRoute = [
+  { path: "/", component: Home },
+  { path: "user/profile/:id", component: ProfileDetail },
+  { path: "user/profile/:id/update", component: ProfileUpdate },
+  { path: "user/profile/:id/guests", component: GuestRegistrationPage },
+  { path: "user/change-password", component: ChangePassword },
+  { path: "user/manager-vehicle/:id", component: VehicleGridLayout },
+  { path: "user/vehicle/:id/create", component: CreateVehicle },
+  { path: "user/vehicle/:id/update", component: UpdateVehicle },
+  { path: "user/bills", component: ListInvoice },
+  { path: "user/bills/:invoiceId", component: InvoiceDetail },
+  { path: "payment/:invoiceId", component: PaymentPage },
+  { path: "user/contract/:id", component: TenantContractDetail },
+
+  { path: "user/posts", component: RoommatePosts },
+  { path: "user/posts/create", component: CreatePost },
+  { path: "user/posts/:postId/edit", component: EditPost },
+  { path: "user/posts/:postId", component: PostDetail },
+  { path: "user/requests", component: ListMaintenanceRequest },
+  { path: "user/requests/create", component: CreateMaintenanceRequest },
+  { path: "user/requests/:requestId", component: MaintenanceRequestDetail },
+
+  { path: "user/profile/:id", component: ProfileDetail },
+  { path: "user/profile/:id/update", component: ProfileUpdate },
+  { path: "user/change-password", component: ChangePassword },
+  { path: "user/manager-vehicle/:id", component: VehicleGridLayout },
+  { path: "user/vehicle/:id/create", component: CreateVehicle },
+  { path: "user/vehicle/:id/update", component: UpdateVehicle },
+  { path: "user/notifications/", component: NotificationPage },
+];
+export default AdminRoute;

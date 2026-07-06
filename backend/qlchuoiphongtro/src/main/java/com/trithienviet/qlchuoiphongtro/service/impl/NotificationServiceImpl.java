@@ -1,0 +1,253 @@
+package com.trithienviet.qlchuoiphongtro.service.impl;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+// import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import com.trithienviet.qlchuoiphongtro.config.EmailTemplate;
+import com.trithienviet.qlchuoiphongtro.entity.Notification;
+import com.trithienviet.qlchuoiphongtro.entity.User;
+import com.trithienviet.qlchuoiphongtro.payloads.NotificationDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.NotificationLoadDTO;
+import com.trithienviet.qlchuoiphongtro.payloads.PageResponse;
+import com.trithienviet.qlchuoiphongtro.payloads.ProfileDTO;
+import com.trithienviet.qlchuoiphongtro.repo.NotificationRepo;
+import com.trithienviet.qlchuoiphongtro.repo.UserRepo;
+import com.trithienviet.qlchuoiphongtro.service.EmailService;
+import com.trithienviet.qlchuoiphongtro.service.NotificationService;
+
+@Service
+public class NotificationServiceImpl implements NotificationService {
+
+    @Autowired 
+    private ModelMapper modelMapper;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    @Autowired
+    private NotificationRepo notificationRepo;
+
+    @Autowired 
+    private EmailService emailService;
+
+    // ─── [FIX] Thêm case: profileId=0 && branchId=0 → lưu thẳng vào userId=1 (admin) ───
+    @Override
+    public void sendNotification(Long profileId, Integer branchId, NotificationDTO notificationDTO) {
+
+        // CASE 1: Gửi cho cá nhân theo profileId
+        if (profileId != null && profileId != 0) {
+            User user = userRepo.findByProfileId(profileId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với hồ sơ ID: " + profileId));
+
+            Notification notification = new Notification();
+            notification.setUser(user);
+            notification.setTitle(notificationDTO.getTitle());
+            notification.setContent("Xin chào " + user.getProfile().getFullName() + ", Chúng tôi xin gửi thông báo: " + notificationDTO.getContent());
+            notification.setType(notificationDTO.getType());
+            notification.setIsRead(false);
+            notification.setCreatedAt(LocalDateTime.now());
+            notificationRepo.save(notification);
+
+            String template = EmailTemplate.getManualNotification(notificationDTO.getTitle(), notificationDTO.getContent());
+            emailService.sendHtmlEmail(user.getProfile().getEmail(), notificationDTO.getTitle(), template);
+            return;
+        }
+
+        // CASE 2: Gửi cho toàn bộ người dùng trong chi nhánh
+        if (branchId != null && branchId != 0) {
+            if (notificationDTO.getTitle() == null || notificationDTO.getTitle().isBlank()) {
+                throw new RuntimeException("Tiêu đề thông báo không được để trống");
+            }
+
+            List<User> usersInBranch = userRepo.findAllByBranchId(branchId);
+            List<Notification> notifications = usersInBranch.stream().map(user -> {
+                Notification notify = new Notification();
+                notify.setUser(user);
+                notify.setTitle(notificationDTO.getTitle());
+                notify.setContent("Xin chào " + user.getProfile().getFullName() + ", Chúng tôi xin gửi thông báo: " + notificationDTO.getContent());
+                notify.setType(notificationDTO.getType());
+                notify.setIsRead(false);
+                notify.setCreatedAt(LocalDateTime.now());
+                return notify;
+            }).collect(Collectors.toList());
+
+            notificationRepo.saveAll(notifications);
+            return;
+        }
+
+        // CASE 3: [FIX] Cả profileId=0 và branchId=0 → khách vãng lai hỏi phòng
+        // Lưu thông báo vào userId=1 (admin) để admin nhận và xử lý
+        User admin = userRepo.findById(1L)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin (userId=1)"));
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(notificationDTO.getTitle() != null && !notificationDTO.getTitle().isBlank()
+            ? notificationDTO.getTitle()
+            : "Khách hàng hỏi thông tin phòng");
+        notification.setContent(notificationDTO.getContent());
+        notification.setType(notificationDTO.getType() != null ? notificationDTO.getType() : "GENERAL");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public List<NotificationLoadDTO> getNotificationsByUserId(Long userId) {
+        List<Notification> notifications = notificationRepo.findByUserUserIdOrderByCreatedAtDesc(userId);
+        return notifications.stream()
+                .map(noti -> modelMapper.map(noti, NotificationLoadDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void markAsRead(Long notiId) {
+        Notification notification = notificationRepo.findById(notiId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông báo"));
+        notification.setIsRead(true);
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public long countUnread(Long userId) {
+        return notificationRepo.countByUser_UserIdAndIsReadFalse(userId);
+    }
+
+    @Override
+    public PageResponse<NotificationLoadDTO> getAllNoti(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Notification> profilePage = notificationRepo.findAll(pageDetails);
+
+        List<NotificationLoadDTO> notificationDTOs = profilePage.getContent().stream()
+                .map(p -> modelMapper.map(p, NotificationLoadDTO.class))
+                .collect(Collectors.toList());
+
+        PageResponse<NotificationLoadDTO> response = new PageResponse<>();
+        response.setContent(notificationDTOs);
+        response.setPageNumber(profilePage.getNumber());
+        response.setPageSize(profilePage.getSize());
+        response.setTotalElements(profilePage.getTotalElements());
+        response.setTotalPages(profilePage.getTotalPages());
+        response.setLastPage(profilePage.isLast());
+        return response;
+    }
+
+    @Override
+    public void sendSystemNotification(Long profileId, String title, String content, String type) {
+        User user = userRepo.findByProfileId(profileId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với id " + profileId));
+        processAndSend(user.getUserId(), title, content, type);
+    }
+
+    private void processAndSend(Long userId, String title, String content, String type) {
+        if (title == null || title.trim().isEmpty()) {
+            throw new RuntimeException("Tiêu đề không được để trống!");
+        }
+
+        Notification notification = new Notification();
+
+        if (userId != 0) {
+            User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + userId));
+            notification.setUser(user);
+        } else {
+            notification.setUser(null);
+        }
+
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType(type);
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    // Mới thêm cho chức năng đăng ký người thân
+
+    @Override
+    public void notifyAdminGuestRegistration(String roomName, String guestName, String tenantName) {
+        // Gửi thông báo cho admin
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký người thân mới";
+        String content = String.format(
+                "Khách thuê %s vừa đăng ký %s để ở nhờ tại phòng %s. Vui lòng kiểm duyệt.",
+                tenantName,
+                guestName,
+                roomName
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_REGISTRATION");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public void notifyGuestApproved(String guestName, String roomName) {
+        // Gửi thông báo cho tất cả admin (userId=1)
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký được phê duyệt";
+        String content = String.format(
+                "%s đã được phê duyệt để ở nhờ tại phòng %s.",
+                guestName,
+                roomName
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_APPROVED");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+
+    @Override
+    public void notifyGuestRejected(String guestName, String roomName, String rejectionReason) {
+        // Gửi thông báo cho tất cả admin
+        User admin = userRepo.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản admin"));
+
+        String title = "Đơn đăng ký bị từ chối";
+        String content = String.format(
+                "Đơn đăng ký của %s tại phòng %s đã bị từ chối. Lý do: %s",
+                guestName,
+                roomName,
+                rejectionReason != null ? rejectionReason : "Không có"
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(admin);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setType("GUEST_REJECTED");
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepo.save(notification);
+    }
+}
